@@ -199,12 +199,12 @@ Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor 
 
 \begin{document}
 
-\conferenceinfo{POPL '14}{January 22--24, 2014, San Diego, California, USA.}
+\conferenceinfo{ICFP '14}{September 1--3, 2014, Gothenburg, Sweden.}
 \copyrightyear{2014}
 \copyrightdata{[to be supplied]} 
 
 \titlebanner{DRAFT---Do not distribute}
-\preprintfooter{Submitted to POPL'14}
+\preprintfooter{Submitted to ICFP '14}
 
 \title{Type-based Exception Analysis for\\Non-strict Higher-order Functional Languages\\with Imprecise Exception Semantics}
 
@@ -286,6 +286,7 @@ Many algorithms maintain invariants on the data structures they use, that cannot
 \subsection{\emph{risers}} \label{sec-risers} %%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 
 An example of such an algorithm is the |risers| function from \cite{Mitchell:2008:PBE:1411286.1411293}, computing monotonically increasing subsegments of a list:
+\begin{center}
 \begin{code}
 risers  ::  Ord alpha => [alpha] -> [[alpha]]
 risers  []               =  []
@@ -294,6 +295,7 @@ risers (x_1 : x_2 : xs)  =
     if x_1 <= x_2 then (x_1 : y) : ys else [x_1] : (y : ys)
         where (y : ys) = risers (x_2 : xs)
 \end{code}
+\end{center}
 For example:
 \begin{center}
 |risers [1, 3, 5, 1, 2] ~~~> [[1, 3, 5], [1, 2]]|.
@@ -304,12 +306,15 @@ The irrefutable pattern in the \textbf{where}-clause in the third alternative of
 \subsection{\emph{bitstring}} %%%%%%%%%%%%%%%%%%%%%%%%%%
 %format Integer = "\mathbb{Z}"
 Another example, from \cite{Freeman:1991:RTM:113445.113468}, comprises a collection of mathematical operations working on bitstrings: integers encoded as lists of the binary digits 0 and 1, with the least significant bit first. We model bitstrings as the type
+\begin{center}
 \begin{code}
 type Bitstring = [Integer]
 \end{code}
+\end{center}
 This type is a too lenient in that it does not restrict the elements of the lists to the digits 0 and 1. We can however maintain this property as an implicit invariant.
 
 If we now define an addition operation on bitstrings:
+\begin{center}
 \begin{code}
 add :: Bitstring -> Bitstring -> Bitstring
 add []      y      = y
@@ -319,6 +324,7 @@ add (0:x)   (1:y)  = 1 : add x y
 add (1:x)   (0:y)  = 1 : add x y
 add (1:x)   (1:y)  = 0 : add (add [1] x) y
 \end{code}
+\end{center}
 we see that the patterns in |add| are far from complete. However, if only passed arguments that satisfy the invariant it will neither crash due to a pattern-match failure, nor invalidate the invariant.
 
 \subsection{\emph{desugar}}\label{sec-desugar} %%%%%%%%%
@@ -335,22 +341,28 @@ We formulate our analysis in terms of a constraint-based type and effect system 
 
 \subsection{Data flow}
 
-How would we capture the informal reasoning we used in Section~\ref{sec-risers} to convince ourselves that |risers| does not cause a pattern-match failure using a type system? A reasonable first approach would be to annotate all list types with the kind of list it can be: $\SingletonNil$ if it must be an empty lists, a lists that that necessary has a nil-constructor at the head of its spine; $\SingletonCons$ if it must be a non-empty list having a cons-constructor at its head; $\SingletonNil \sqcup \SingletonCons$ if it can be either. We can then assign to each of the three individual branches of |risers| the following types:
+How would we capture the informal reasoning we used in Section~\ref{sec-risers} to convince ourselves that |risers| does not cause a pattern-match failure using a type system? A reasonable first approach would be to annotate all list types with the kind of list it can be: $\SingletonNil$ if it must be an empty list, a list that that necessary has a nil-constructor at the head of its spine; $\SingletonCons$ if it must be a non-empty list having a cons-constructor at its head; $\SingletonNil \sqcup \SingletonCons$ if it can be either. We can then assign to each of the three individual branches of |risers| the following types:
+\begin{center}
 \begin{code}
 risers_1 :: forall alpha. Ord alpha => N alpha -> N (NC alpha)
 risers_2 :: forall alpha. Ord alpha => CL alpha -> CL (NC alpha)
 risers_3 :: forall alpha. Ord alpha => CL alpha -> CL (NC alpha)
 \end{code}
+\end{center}
 From the three individual branches we may infer:
+\begin{center}
 \begin{code}
 risers :: forall alpha. Ord alpha => NC alpha -> NC (NC alpha)
 \end{code}
+\end{center}
 
 Assigning this type to |risers| will still let us believe that a pattern-match failure may occur in the irrefutable pattern in the \textbf{where}-clause, as this type tells us any invocation of |risers|---including the recursive call in the \textbf{where}-clause---may evaluate to an empty list.
 The problem is that |risers_1|---the branch that can never be reached from the call in the \textbf{where}-clause---is \emph{poisoning} the overall result. \emph{Polyvariance} (or \emph{property polymorphism}) can rescue us from this precarious situation, however. We can instead assign to each of the branches, and thereby the overall result, the type:
+\begin{center}
 \begin{code}
 risers :: forall alphabeta. Ord alpha => POLYV alpha beta -> POLYV (NC alpha) beta
 \end{code}
+\end{center}
 
 In the recursive call to |risers| we know the argument passed is a non-empty list, so we can instantiate $\beta$ to $\SingletonCons$, informing us that the result of the recursive call will be a non-empty list as well and guaranteeing that the irrefutable pattern-match will succeed.
 There is one little subtlety here, though: in a conventional Hindley--Milner type system we are not allowed, or even able, to instantiate $\beta$ to anything, as the type is kept monomorphic for recursive calls. We, therefore, have to extend our type system with \emph{polyvariant recursion}.
@@ -360,36 +372,46 @@ being a program analysis, we cannot rely on any programmer-supplied annotations-
 \subsection{Exception flow}
 
 The intentention of our analysis it to track the exceptions that may be raised during the execution of a program. As with the data flow we express this set of exceptions as an annotation on the type of a program. For example, the program:
+\begin{center}
 \begin{code}
 f x = x % 0
 \end{code}
+\end{center}
 should be given the exception type:
 %format Integer_alpha = "\mathbb{Z}^\alpha"
 %format Integer_alpha_divbyzero = "\mathbb{Z}^{\alpha \sqcup \textbf{div-by-zero}}"
 %format -_|_> = "\xrightarrow{\emptyset}"
+\begin{center}
 \begin{code}
 f :: forall alpha. Integer_alpha -_|_> Integer_alpha_divbyzero
 \end{code}
+\end{center}
 
 This type explains that $f$ is a function accepting an integer as its first and only parameter. As we are working in a call-by-name language, this integer might actually still be a thunk that raises an exception from the set $\alpha$ when evaluated. The program then divides this argument by zero, returning the result. While the result will be of type integer, this operation is almost guaranteed to raise a division-by-zero exception. It is \emph{almost} guaranteed and not completely guaranteed to raise a division-by-zero exception, as the division operator is strict in both of its arguments and might thus force the left-hand side argument to be evaluated before raising the \textbf{div-by-zero} exception. This evaluation might then in turn cause an exception from the set $\alpha$ to be raised first. The complete result type is thus an integer with an exception annotation consisting of the union (or \emph{join}) of the exception set $\alpha$ on the argument together with an additional exception \textbf{div-by-zero}. Finally, we note that there is an empty exception set annotating the function space constructor, indicating that no exceptions will be raised when evaluating $f$ to closure.
 
 While this approach seems promising at first, it is not immediately adequate for our puropose: detecting potential pattern-match failures that may occur at run time. Consider the following program:
+\begin{center}
 \begin{code}
 head (x : xs) = x
 \end{code}
+\end{center}
 After an initial desugaring step, a compiler will translate this program into:
 %format |-> = "\mapsto"
 %format pmf = "\PMF"
+\begin{center}
 \begin{code}
 head xxs = case xxs of { [] |-> pmf; x : xs |-> x }
 \end{code}
+\end{center}
 which can be assigned the exception type:
 %format tau_alpha = "\tau^\alpha"
 %format tau_alpha_beta_pfm = "\tau^{\alpha\sqcup\beta\sqcup\PMF}"
 %format taualphabeta = "\tau\alpha\beta"
+\begin{center}
 \begin{code}
 head :: forall taualphabeta. LABELLEDLIST tau_alpha beta -_|_> tau_alpha_beta_pfm
 \end{code}
+\end{center}
 This type tells us that |head| might always raise a \PMF exception, irrespective of what argument is applied to. Clearly, we won't be able to outperform a simple syntactic analysis in this manner.
 What we need is a way to introduce a dependency of the exception flow on the data flow of the program, so we can express that |head| will only raise a \PMF if it possible for the argument passed to it to be an empty list. We can do so by introducing conditional constraints into our type system:
 %format tau_abc = "\tau\alpha\beta\gamma"
