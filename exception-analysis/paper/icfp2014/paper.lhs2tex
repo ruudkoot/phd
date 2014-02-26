@@ -30,6 +30,8 @@ Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor 
 %format type = "\textbf{type}"
 %format where = "\textbf{where}"
 
+%format crash (a) = "\lightning^{" a "}"
+
 %format % = "\div"
 
 %format ~~> = "\leadsto"
@@ -133,7 +135,7 @@ Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor 
 \newcommand{\Close}[2]{\textbf{close}\ #1\ \textbf{in}\ #2}
 \newcommand{\CloseEMPH}[2]{\emph{\textbf{close}}\ #1\ \emph{\textbf{in}}\ #2}
 
-\newcommand{\PMF}{\textbf{pmf}\xspace}
+\newcommand{\PMF}{\textbf{pattern-match-failure}\xspace}
 
 %% Semantics
 \newcommand{\Eval}[4]{\left<#1; #2\right> \Downarrow \left<#3;#4\right>}
@@ -184,6 +186,7 @@ Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor 
 \newcommand{\CC}[5][]{#2 \sqsubseteq_\Ref #3 \Rightarrow #4 \leq_{#1} #5}
 \newcommand{\CCS}[5][]{#2 \sqsubseteq_\Ref #3 \Rightarrow #4 \sqsubseteq_{#1} #5}
 \newcommand{\CCD}[6][]{#2 \sqsubseteq_\Ref #3 \lor #4 \Rightarrow #5 \leq_{#1} #6}
+\newcommand{\CCDO}[6][]{#2 \sqsubseteq_{\Ref_{1}} #3 \lor #4 \Rightarrow #5 \leq_{#1} #6}
 
 %% Extensions
 \newcommand{\MP}[2]{#1~\star~#2}
@@ -268,7 +271,7 @@ Our contributions include the following:
 \item Accuracy is achieved through the simultaneous use of \emph{subtyping} (modelling data flow), \emph{conditional constraints} (modelling control flow), \emph{parametric polyvariance} (to achieve context-sensitivity) and \emph{polyvariant recursion} (to avoid poisoning).
 \item The analysis works for \emph{call-by-name} languages with an \emph{imprecise exception semantics}. Such a semantics is necessary to justify several program transformations applied by optimizing compilers for call-by-name languages with distinguishable exceptions%, but---perhaps counterintuitively---complicates precisely analyzing them.
 \item We give an operational semantics for imprecise exceptions and prove the analysis sound with respect to this semantics.
-\item The analysis presented in this paper is implemented in a prototype and, in addition to a pen-and-paper proof, the metatheory has been mostly mechanized. Both are available \ANONYMOUS{at \url{https://github.com/ruudkoot/exception-anaysis/}}{as supplementary materials}.
+\item The analysis presented in this paper is implemented as a prototype and, in addition to a pen-and-paper proof, the metatheory has been mostly mechanized in Coq. Both are available \ANONYMOUS{from: \url{http://www.staff.science.uu.nl/~0422819/tbea/}}{as supplementary materials}.
 \end{itemize}
 
 \subsection{Overview}
@@ -379,7 +382,7 @@ f x = x % 0
 \end{center}
 should be given the exception type:
 %format Integer_alpha = "\mathbb{Z}^\alpha"
-%format Integer_alpha_divbyzero = "\mathbb{Z}^{\alpha \sqcup \textbf{div-by-zero}}"
+%format Integer_alpha_divbyzero = "\mathbb{Z}^{\alpha \sqcup \textbf{division-by-zero}}"
 %format -_|_> = "\xrightarrow{\emptyset}"
 \begin{center}
 \begin{code}
@@ -387,7 +390,7 @@ f :: forall alpha. Integer_alpha -_|_> Integer_alpha_divbyzero
 \end{code}
 \end{center}
 
-This type explains that $f$ is a function accepting an integer as its first and only parameter. As we are working in a call-by-name language, this integer might actually still be a thunk that raises an exception from the set $\alpha$ when evaluated. The program then divides this argument by zero, returning the result. While the result will be of type integer, this operation is almost guaranteed to raise a division-by-zero exception. It is \emph{almost} guaranteed and not completely guaranteed to raise a division-by-zero exception, as the division operator is strict in both of its arguments and might thus force the left-hand side argument to be evaluated before raising the \textbf{div-by-zero} exception. This evaluation might then in turn cause an exception from the set $\alpha$ to be raised first. The complete result type is thus an integer with an exception annotation consisting of the union (or \emph{join}) of the exception set $\alpha$ on the argument together with an additional exception \textbf{div-by-zero}. Finally, we note that there is an empty exception set annotating the function space constructor, indicating that no exceptions will be raised when evaluating $f$ to closure.
+This type explains that $f$ is a function accepting an integer as its first and only parameter. As we are working in a call-by-name language, this integer might actually still be a thunk that raises an exception from the set $\alpha$ when evaluated. The program then divides this argument by zero, returning the result. While the result will be of type integer, this operation is almost guaranteed to raise a division-by-zero exception. It is \emph{almost} guaranteed and not completely guaranteed to raise a division-by-zero exception, as the division operator is strict in both of its arguments and might thus force the left-hand side argument to be evaluated before raising the \textbf{division-by-zero} exception. This evaluation might then in turn cause an exception from the set $\alpha$ to be raised first. The complete result type is thus an integer with an exception annotation consisting of the union (or \emph{join}) of the exception set $\alpha$ on the argument together with an additional exception \textbf{division-by-zero}. Finally, we note that there is an empty exception set annotating the function space constructor, indicating that no exceptions will be raised when evaluating $f$ to a closure.
 
 While this approach seems promising at first, it is not immediately adequate for our puropose: detecting potential pattern-match failures that may occur at run time. Consider the following program:
 \begin{center}
@@ -400,7 +403,9 @@ After an initial desugaring step, a compiler will translate this program into:
 %format pmf = "\PMF"
 \begin{center}
 \begin{code}
-head xxs = case xxs of { [] |-> pmf; x : xs |-> x }
+head xs = case  xs of
+                []      |->  crash pmf
+                y : ys  |->  y
 \end{code}
 \end{center}
 which can be assigned the exception type:
@@ -415,9 +420,11 @@ head :: forall taualphabeta. LABELLEDLIST tau_alpha beta -_|_> tau_alpha_beta_pf
 This type tells us that |head| might always raise a \PMF exception, irrespective of what argument is applied to. Clearly, we won't be able to outperform a simple syntactic analysis in this manner.
 What we need is a way to introduce a dependency of the exception flow on the data flow of the program, so we can express that |head| will only raise a \PMF if it possible for the argument passed to it to be an empty list. We can do so by introducing conditional constraints into our type system:
 %format tau_abc = "\tau\alpha\beta\gamma"
-%format tau_alpha_beta = "\tau^{\alpha\sqcup\beta\sqcup\gamma}\ \textbf{with} \left\{\SingletonNil \sqsubseteq \beta \Rightarrow \PMF \sqsubseteq \gamma\right\}"
+%format tau_alpha_beta = "\tau^{\alpha\sqcup\beta\sqcup\gamma}"
+%format constraint_set_thing = "\textbf{with} \left\{\SingletonNil \sqsubseteq \beta \Rightarrow \PMF \sqsubseteq \gamma\right\}"
 \begin{code}
-head :: forall tau_abc. LABELLEDLIST tau_alpha beta -_|_> tau_alpha_beta
+head :: forall tau_abc.  LABELLEDLIST tau_alpha beta -_|_> tau_alpha_beta
+                         constraint_set_thing
 \end{code}
 This type explains that |head| will return an element of type $\tau$ that might---when inspected---raise any exception present in the elements of the list ($\alpha$), the spine of the list ($\beta$) or from an additional set of exceptions ($\gamma$), with the constraint that if the list to which |head| is applied is empty, then this exception set contains the \PMF exception, otherwise it is taken to be empty.
 (We apologize for the slight abuse of notation---using the annotation $\beta$ to hold both data and exception-flow information---this will be remedied in the formal type system.)
@@ -465,11 +472,11 @@ f, x \in \textbf{Var} \quad
 %\label{fig-syntax}
 %\end{figure}
 
-\paragraph{Syntax} The values $v$ of the language include an exceptional value $\Crash{\ell}$ where the annotation $\ell$ is a set of \emph{exception labels}. We leave the exception labels uninterpreted, but an actual implementation will use them to distinguish between distinct exceptions (for example, division-by-zero or a pattern-match failure), as well as to store any additional information necessary to produce informative error messages, such as source locations.
+\paragraph{Syntax} The values $v$ of the language include an exceptional value $\Crash{\ell}$ where the annotation $\ell$ denotes a set of \emph{exception labels}. We leave the exception labels uninterpreted, but an actual implementation will use them to distinguish between distinct exceptions (for example, division-by-zero or a pattern-match failure), as well as to store any additional information necessary to produce informative error messages, such as source locations.
 
 We adopt the following syntactic convention: we denote non-exceptional values by $v$ and possibly exceptional values by $v^\ell$, where $\ell$ corresponds to the set of exception labels in case $v^\ell$ is an exceptional value and corresponding to the empty set otherwise.
 
-The \textbf{case}-construct in the language is always assumed to be complete. As our primary goal is to detect pattern-match failures produced by incomplete \textbf{case}-expressions, we assume any incomplete \textbf{case}-expressions written by the programmer has first been appropriately desugared into an equivalent complete \textbf{case}-expression by filling any out any missing arms in the incomplete \textbf{case}-expression with an exceptional value $\Crash{\PMF}$ before being passed to the analysis \cite{Augustsson:1985:CPM:5280.5303,Maranget:2008:CPM:1411304.1411311}.
+The \textbf{case}-construct in the language is always assumed to be complete. As our primary goal is to detect pattern-match failures produced by incomplete \textbf{case}-expressions, we assume any incomplete \textbf{case}-expression written by the programmer has first been appropriately desugared into an equivalent complete \textbf{case}-expression by filling out any missing arms in the incomplete \textbf{case}-expression with an exceptional value $\Crash{\PMF}$ before being passed to the analysis \cite{Augustsson:1985:CPM:5280.5303,Maranget:2008:CPM:1411304.1411311}.
 
 The $\textbf{close}$ and $\textbf{bind}$ constructs are only necessary to formalize the small-step operational semantics (Section \ref{sec-operational-semantics}) and are assumed to be absent from the program under analysis.
 
@@ -492,7 +499,7 @@ The types $\tau \in \Shape$ of the type system are given by:
 Types are \emph{simply annotated types}, comprised of a single base type consisting of an \emph{annotation variable} $\alpha \in \AnnVar$ and the compound types for functions, pairs and lists, each having its constructor annotated with an annotation variable.
 Simply annotated types are given meaning in combination with a mapping or substitution from its free annotation variables to a lattice $\AnnLat$, forming $\AnnLat$-annotated types.
 
-We define an auxiliary function $\left\lceil\ \cdot\ \right\rceil : \Shape \to \AnnVar$ that extracts the outer-most annotation from a simply annotated type~$\Sh$:
+The auxiliary function $\left\lceil\ \cdot\ \right\rceil : \Shape \to \AnnVar$ extracts the outer-most annotation from a simply annotated type~$\Sh$:
 \begin{eqnarray*}
 \begin{aligned}
 \left\lceil \alpha                        \right\rceil &= \alpha             \\
@@ -743,6 +750,7 @@ The atomic and structural constraint relations are qualified by an index $\iota$
 \end{eqnarray*}
 %\caption{Constraint indices}
 %\end{figure}
+Here $\Ref$ is used to indicate data-flow, while $\Exn$ indicates exception-flow.
 
 To ease the syntactic burden we freely write constraint expressions indexed by the two constraint indices $\Ref\Exn$ simultaneously. Formally these should always be read as standing for two separate constraint expressions: one indexed by $\Ref$ and the other indexed by $\Exn$. As none of the constraint expression in this paper contains more than one such paired index, no ambiguities should arise.
 Furthermore, \[c^g\quad ::=\quad c\quad ||\quad g\] and constraints $\BTrue \Rightarrow r$ shall be written simply as $r$.
@@ -1416,15 +1424,55 @@ We admit that ``non-strict higher-order functional languages with imprecise exce
 
 While the construction and destruction rules we defined for lists---keeping track of the constructors that can occur at the head of the spine, assuming the constructors occurring in the tail can always be both a nil and a cons-constructor---work adequately for functions operating on nil-terminated lists, this approach will not give useful results when extended to other algebraic data types and applied to the desugaring example from Section~\ref{sec-desugar}, even if extended to keep track of the constructors that can occur in the first $k$ positions of the spine. We critically rely on knowing which of the constructors can occur throughout the \emph{whole} spine of the abstract syntax tree.
 
-\begin{description}
-\item[Multipatterns] We would need to combine both approaches for an accurate analysis: we need to know which constructor can occur at the head of a data structure and which constructors can occur throughout the rest of the spine or, formulated differently, at the recursive positions of the data type. This approach is essentially equivalent to Catch's \emph{multipatterns} \cite{Mitchell:2008:PBE:1411286.1411293}.
+We would need to combine both approaches for an accurate analysis: we need to know which constructor can occur at the head of a data structure and which constructors can occur throughout the rest of the spine or, formulated differently, at the recursive positions of the data type. This approach is essentially equivalent to Catch's \emph{multipatterns} \cite{Mitchell:2008:PBE:1411286.1411293}.
 
-The most straightforward implementation splits the data flow into two separate flows $\delta_1$ and $\delta_2$: one to track the constructors occurring at the head of a spine and one to keep track of the constructors occuring in the tail of the spine. While technically simple, the required modifications to the type system are notationally heavy as---unlike between the data flow and the exception flow---values can flow directly between $\delta_1$ and $\delta_2$ and it therefore is no longer sufficient to attach a single flow index $\iota$ to the subtyping relation.
+The most straightforward implementation splits the data flow into two separate flows $\delta_1$ and $\delta_2$: one to track the constructors occurring at the head of a spine and one to keep track of the constructors occuring in the tail of the spine.
+\begin{eqnarray*}
+\iota, \kappa &::=& \Ref_1 \quad || \quad \Ref_2 \quad || \quad \Exn
+\end{eqnarray*}
+While technically simple, the required modifications to the type system are notationally heavy as---unlike between the data flow and the exception flow---values can flow directly between $\delta_1$ and $\delta_2$ and it therefore is no longer sufficient to attach a single flow index $\iota$ to the subtyping relation.
+\begin{eqnarray*}
+r &::=& ...
+  \quad || \quad \alpha_1\ {_\iota}\!\!\sqsubseteq_\kappa \alpha_2
+  \quad || \quad ...
+\end{eqnarray*}
 
-\item[Grammars] A more ambitious approach would be trying to infer (the production rules of) a grammar describing the structure of the spine of a datatype. This approach is reminiscent of both the |rectype|s of \cite{Freeman:1991:RTM:113445.113468} and Catch's \emph{regular expression patterns}. Experience with Catch has shown that a naive implementation of grammar inference has difficulty scaling to larger programs, but this might be alleviated by \emph{widening}: we can bound the complexity of a grammar by replacing if with a simpler, but soundly approximating, one. 
-
-This approach falls squarely in the area of ``further research needed.'' What kind of grammars would be suitable, can operations on them be expressed in our flow-based type system, when and how should we widen them?
-\end{description}
+The updated typing rules rules involving lists would read:
+\vspace*{2pt}
+%\begin{figure*}[!t]
+\begin{gather*}
+\Rule{T-Nil}
+     {C \Vdash \SingletonNil \sqsubseteq_{\Ref_{12}} \alpha} %% FIXME: subtyping/-effecting?
+     {\Judge{\LNil}{\TyList{\tau}{\alpha}}}
+     \BigBreak
+\Rule{T-Cons}
+     {\begin{gathered}
+      \Judge{e_1}{\tau_1}
+      \quad \Judge{e_2}{\TyList{\tau_2}{\alpha_2}}
+      \\ C \Vdash \tau_1 \leq_{{\Ref_{12}}\Exn} \tau
+      \quad C \Vdash \tau_2 \leq_{{\Ref_{12}}\Exn} \tau
+      \\ C \Vdash \SingletonCons \sqsubseteq_{\Ref_1} \alpha
+      \quad C \Vdash \alpha_2\ {_\Exn}\!\!\sqsubseteq_\Exn \alpha
+      \quad C \Vdash \alpha_2\ {_{\Ref_{12}}}\!\!\sqsubseteq_{\Ref_2} \alpha
+      \end{gathered}}
+     {\Judge{\LCons{e_1}{e_2}}{\TyList{\tau}{\alpha}}}
+     \BigBreak
+\Rule{T-Case}
+     {\begin{gathered}
+      \Judge{e_1}{\TyList{\tau_1}{\alpha_1}}
+      \quad \Judge{e_2}{\tau_2}
+      \\ \Judge[C; \Gamma, x_1 : \tau_1, x_2 : \TyList{\tau_1}{\beta}]{e_3}{\tau_3}
+      \\ C \Vdash\CCDO[\Ref_{12}\Exn]{\SingletonNil}{\alpha_1}{\exists_\Exn \alpha_1}{\tau_2}{\tau}
+      \\ C \Vdash\CCDO[\Ref_{12}\Exn]{\SingletonCons}{\alpha_1}{\exists_\Exn \alpha_1}{\tau_3}{\tau}
+      \\ C \Vdash\alpha_1\ {_{\Ref_2}}\!\!\sqsubseteq_{\Ref_{12}} \beta
+      \quad C \Vdash \alpha_1\ {_\Exn}\!\!\sqsubseteq_\Exn \beta
+      \quad C \Vdash\alpha_1\ {_\Exn}\!\!\sqsubseteq_\Exn \TopLevel{\tau}
+      \end{gathered}}
+     {\Judge{\Case{e_1}{e_2}{x_1}{x_2}{e_3}}{\tau}}
+\end{gather*}
+%\label{fig-multipatterns}
+%\end{figure*}
+\vspace*{2pt}
 
 Issues we have not yet fully investigated include parameterized and higher-kinded data types. In general polyvariance in the analysis should not be directly related to polymorphism in the underlying type system, so all fields in a data type can or should be polyvariantly parameterized, irrespective of whether the field is polymorphically parameterized in the underlying system. Since we are making use of subtyping, the variance (co-, contra-, in- or non-) of fields should be propagated to the polyvariant parameters.
 
@@ -2898,6 +2946,8 @@ By induction on the reduction relation.
 
     Applying the inversion lemma to $\Judge{\Bind{\rho_1}{v_1^{\ell_1}}}{\sigma_1}$ reveals it can only have been constructed by \CiteRule{T-Bind}, thus we have $\Judge{v_1^{\ell_1}}{\sigma_1}$, with $\Centail{\sigma_1 \leq_{\Ref\Exn} \sigma_1}$ following from the reflexivity of the subtype relation.
 \end{proof}
+
+%include algorithmproperties.lhs2tex
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
