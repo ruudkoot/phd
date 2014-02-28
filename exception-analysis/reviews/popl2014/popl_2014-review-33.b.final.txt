@@ -1,0 +1,106 @@
+===========================================================================
+                           POPL 2014 Review #33B
+                     Updated 16 Aug 2013 8:25:31pm BST
+---------------------------------------------------------------------------
+   Paper #33: Type-based Exception Analysis for Non-strict Higher-order
+              Functional Languages with Imprecise Exception Semantics
+---------------------------------------------------------------------------
+
+                              Goals: 3. The goals are good.  To the
+                                        standard of a perfectly acceptable
+                                        POPL paper.
+                          Execution: 1. The execution is lacking.
+                       Presentation: 2. The presentation is fine, to the
+                                        standard of a serious conference,
+                                        but not competitive here.
+                 Reviewer expertise: X. I have expertise in the subject
+                                        area of this paper.
+                      Overall merit: D. I will argue to reject this paper.
+
+               ===== Summary and Rationale for Scores =====
+
+This paper has the worthy and ambitious goal of analyzing Haskell
+programs for exceptions and pattern-match failures with a degree of
+precision significantly greater than what is typically achieved by
+existing type checkers.
+
+Towards this end, the authors formalize the operational semantics of a
+core, lazy higher-order language with Haskell's exception semantics,
+and give a type and effect system for this langauge with the following
+features:
+
+  -- An expressoin e is given a type t^l, where l soundly approximates:
+        a. the exceptions that e may raise
+        b. the values that e may reduce to, e.g., Nil or Cons
+
+  -- The labels are arranged in a lattice, which induces a subtyping
+     relation on types
+
+  -- The type system is monomorphic, except for generalization over
+     labels
+
+  -- There's polymorphic recursion over the labels
+
+  -- And there's additionally a constraint language associated with
+     types which impose lattice constraints on the labels in the type.
+
+This is a pretty complicated beast, and the authors prove a syntactic
+soundness results, establishing that the type of an expression is a
+sound approximation of the exceptions (and values) that can be
+produces at runtime.
+
+Some ideas for reducing the type system to an algorithm are presented,
+although there are no theorems guaranteeing the correspondence of the
+algorithm to the system.
+
+The authors speculate about what it might take to generalize the
+system to Haskell proper, particularly accounting for polymorphism and
+data types, although it seems like quite a lot of additional work
+would be required for that to be figured out properly.
+
+This paper caught my interest initially---a refinement type system
+tuned towards reasoning about exceptions could be a sweet spot in the
+design space. But, ultimately, I found this paper quite disappointing,
+for the following reasons:
+
+   - Even for the core monomorphic language, the type system is
+     dauntingly complex. I have my doubts about whether this could
+     scale to Haskell proper.
+
+   - There is no mention of the kinds of types that the system would
+     compute for typical programs. Leave alone the complex example of
+     section 2, are the types computed by this system readable for
+     even simple terms, e.g., List.hd, List.tl, List.reverse, etc.
+
+   - For an analysis like this, soundness is easy to achieve. The
+     main question in decided whether such a system is useful is
+     whether it is sufficiently precise. There is no discussion of
+     this whatsoever.
+
+   - The introduction claims that there is a prototype of the
+     analysis. But, there is no report about what that prototype can
+     do. You have some rather impressive sounding motivational
+     examples, e.g., reasoning that a desugaring phase of a compiler
+     produces restricts terms to a subset of the AST. Would be great
+     if your prototype could do that on something semi-realistic.
+
+   - Finally, on the presentation side: the formalism is a bit sloppy
+     in places. I was forced to try to read between the lines to
+     figure out the notation. Some examples:
+
+     -- The distinction between \delta and \xi: the first seems to be
+        for data, the second for exceptions. This is never spelled
+        out.
+
+     -- \Lambda_\iota: In some places you use this like an element of
+        the lattice (e.g., CM-Con). In other places it seems to be the
+        sub-lattice of \Lambda corresponding to either the data
+        constructors or the exceptions, depending on what \iota is
+        (e.g., CM-Exists).
+
+     -- The elements in \Lambda are just introduced on the fly: 0, -,
+        +, T_Z, etc. ... rather frustrating to have to guess at what
+        you mean by this.
+
+In summary, this is an interesting problem, but the solution and
+execution are quite disappointing and not quite up to par for POPL.

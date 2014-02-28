@@ -1,0 +1,234 @@
+Dear Ruud,
+
+Thank you for your submission to ESOP 2014. The ESOP'14
+author response period is now open. Please return your
+response by 23:59 UTC-11 (this is America Samoa time),
+Wednesday, December 4th, 2013. All initially requested reviews
+are in, with every paper having at least 3 reviews.
+
+During this time, you will have access to the current
+state of your reviews and have the opportunity to submit a
+response of up to 500 words. Please keep in mind the
+following during this process:
+
+* The response must focus on any factual errors in the
+reviews and any questions posed by the reviewers. It must
+not provide new research results or reformulate the
+presentation.  Try to be as concise and to the point as
+possible.
+
+* The review response period is an opportunity to react to
+the reviews, but not a requirement to do so. Thus, if you
+feel the reviews are accurate and the reviewers have not
+asked any questions, then you should not respond.
+
+* The reviews are as submitted by the PC members, without
+any coordination between them. Thus, there may be
+inconsistencies. Furthermore, these are not the final
+versions of the reviews. The reviews will be updated to take
+into account the discussions at the program committee
+meeting, and we may find it necessary to solicit other
+outside reviews after the review response period.
+
+* The program committee will read your responses carefully
+and take this information into account during the
+discussions. On the other hand, the program committee will
+not directly respond to your responses, either before the
+program committee meeting or in the final versions of the
+reviews.
+
+* Your response will be seen by all PC members who have
+access to the discussion of your paper, so please try to be
+polite and constructive.
+
+The reviews on your paper are attached to this letter. To
+submit your response you should log on the EasyChair Web
+site for ESOP 2014 and select your submission on the menu.
+
+Best wishes,
+
+Zhong Shao
+
+----------------------- REVIEW 1 ---------------------
+PAPER: 7
+TITLE: Type-based Exception Analysis for Non-strict Higher-order Functional Languages with Imprecise Exception Semantics
+AUTHORS: (anonymous)
+
+
+----------- REVIEW -----------
+Summary:
+
+The authors present a type-based approach to checking for errors such
+as pattern match failures. The type system includes types with
+constraints that record exception-flow as well as data-flow
+information. The type system is proven sound with respect to an
+operational semantics with imprecise exception semantics. Finally the
+authors present a constraint solving procedure (the soundness or
+completeness of which they do not show)
+
+Opinion:
+
+Pros:
+
+This is a promising line of work and based on sound foundations: for a
+good precise exception analysis one also needs to track data flow, as
+well as to introduce some form of polymorphism. I like the fact that
+the language of constraints is relatively simple (by design). These
+constraints should indeed take the form of implications, since they
+arise from pattern match clauses, so this all feels "right". The paper
+contains examples and is relatively clearly written.
+
+Cons:
+This work feels somewhat incomplete:
+
+(i) There is no proof of -- even soundness, let alone completeness --
+    of the solving algorithm. I was quite dissapointed to see that the
+    paper abruptly finishes after presenting the algorithm and I was
+    expecting the authors to return to the thorny issues that were
+    only mentioned in 4.5 and justified the shape of the constraints.
+
+(ii) As there is a somewhat big volume of related work, I felt that
+     the lack of an implementation and experimental evaluation of the
+     approach in a reasonably sized testsuite -- as well as
+     quantifying the potential need for annotations -- is a drawback
+     of the paper. It is very hard for readers to understand what are
+     the limitations of this approach and there is no accompanying
+     discussion.
+
+(iii) I felt that some of the comparison with related work was a bit
+      shallow; in particular the ESOP'13 work on extending liquid
+      types with abstract refinements (that introduce in effect types
+      that are polymorphic in their refinements) was not discussed.
+
+(iv) The type system (Fig 2.) is somewhat confusing: in some typing
+     rule premises we assert that the type of the expression is a
+     type, e.g.  first premise of rule [App]. However, other rules
+     only instantiate with type variables (not types) e.g. [Var] and
+     other rules require that some of the premises are typed with a
+     type variable, e.g. first precondition of [If]. So -- if we have
+     a polymorphic expression
+
+     f :: forall a b. a -> b
+
+     that we apply to:
+
+     f 3 4 5
+
+     I do not see how this is typeable. In fact I am not sure I
+     understand which expressions are typeable in this type system!
+
+     I think the intention of the authors is to present a constraint
+     generation judgement, instead of a type system, but currently Fig
+     2 has a mixed flavor that is not very helpful.
+
+(v) Section 6: I was confused from this section. Is this part of the
+    type system or not really?
+
+----------------------- REVIEW 2 ---------------------
+PAPER: 7
+TITLE: Type-based Exception Analysis for Non-strict Higher-order Functional Languages with Imprecise Exception Semantics
+AUTHORS: (anonymous)
+
+
+----------- REVIEW -----------
+This paper presents a type-based exception analysis that allows the compiler to track when partial case analysis is safe (because the compiler can prove that only those cases that are handled can be reached). This is a very important problem is general (both for programmer productivity as well as for runtime efficiency). The paper does a good job intro ducting the problem and the solution.
+
+Comments for the authors:
+
+Choosing to work with a call-by-name calculus seems to complicate (or at least obfuscate the interesting bits in) a lot of the development; for example, one has to deal with imprecise exceptions. What does this choice buy in terms of exposition of the basic ideas of this paper? Why not instead base the analysis on a call-by-value calculus with arguably simpler rules?
+
+The type system looks reasonable; but please work out the examples introduced earlier in the paper through the formal system. Also, please comment on what the tradeoffs/limitations of this approach are -- even better, show examples.
+
+It is a bit disappointing to see no metatheory on constraint solving? How do we know it terminates, e.g.?
+
+Could you sketch an algorithm that handles polymorphism?
+
+----------------------- REVIEW 3 ---------------------
+PAPER: 7
+TITLE: Type-based Exception Analysis for Non-strict Higher-order Functional Languages with Imprecise Exception Semantics
+AUTHORS: (anonymous)
+
+
+----------- REVIEW -----------
+The paper presents a type constraint-based approach to data- and
+exception-flow analysis in a higher-order, lazy language with
+imprecise exception semantics (i.e. distinct exceptional behaviors are
+resolved non-deterministically).  The approach is based on generating
+constraint sets which refine the types of well-typed programs.  The
+constraints express data- and exception-flow behavior.  The system is
+proved to be a conservative extension, meaning if a program is
+well-typed (under the standard typing system), then it is well typed
+in constraint annotated system -- in other words, it is an analysis,
+not a type system (which rules out programs).  A type soundness
+argument is made to show the analysis soundly predicts the data and
+exception flow of a program.  A sketch for extending the system to a
+polymorphic type systems is given.
+
+The paper is well written (with the exception of the related work
+section and the conclusion of the paper), and has a nice informal
+development followed by a clean formal development.  The expected
+formal properties are stated and thoroughly worked out in the appendix
+(although I only skimmed through the supplementary material).
+
+But there are a few significant shortcomings:
+
+Based on the title of this paper, the work is concerned with
+non-strict languages with imprecise exception semantics, which narrows
+the potential impact down to a very small range (basically Haskell).
+And the semantics considered are indeed lazy and imprecise.  But is
+there anything fundamental in the technique of the analysis to these
+two attributes?  Could the approach be applied to a strict language
+with a deterministic order of evaluation that made the exception
+behavior precise?  Strictness seems quite plausible.  The exact
+exception semantics seems less obvious since the non-determinism of
+exceptions is reflected in the union of exception sets, but that's
+just a guess (and certain an imprecise abstract semantics would be
+sound for a precise concrete semantics).  The point here is, why
+needlessly narrow the scope of the paper so much?  The technical
+development of the paper could be carried out just as is it is now
+since you have to pick something, and Haskell is as important a
+language as any, but afterward, discuss how the technique applies to
+other kinds of languages (if it can).  The results seem broader than
+the presentation would suggest.
+
+There is no evaluation.  There are hundreds of papers that formulate a
+static analysis and prove it sound, but at this point, why should we
+value a new one?  This paper's evidence to favor the proposed system
+only comes in the form of a couple small examples.  Without some kind
+of evaluation it's difficult to infer how useful this analysis will
+be in practice.
+
+The related work section, in most cases, does not relate this work to
+existing research, it just gives a long list of citations with one
+sentence summaries. E.g. "The static contract check HALO [20]
+translates a Haskell program and its contracts into first-order
+predicates, which can be proven by SMT solver."  Please relate this
+cited work to the current paper.  There are also some curious
+omissions.  There has been lots of work on exception and data flow
+analysis in the setting of soft-typing by Fagan, Flanagan, etc.  There
+is contract verification for strict languages by Tobin-Hochstadt.
+There is refinement type inference work by Jagannathan.  There is work
+on type-based conditional constraint style analyses by Scott F. Smith.
+
+There's no conclusion to this paper.  It just ends.  The last sentence
+of the paper is the one quoted above.  Space is a concern, but ending
+without a take away message undermines the effectiveness of the paper.
+
+So overall, I believe there is all the material for a good paper here,
+but it needs improvement before it's ready for publication.
+
+Small remarks:
+
+\oplus in 4.1 is not discussed until much later.
+
+Isn't the type language of 4.2 missing some base type constructors?
+
+4.4 makes frequent reference to rule names, which do not appear in the
+figure.
+
+The \Lambda_\iota lattice of 4.5 is a forward reference.
+
+References to rules in figure 2 use a "T-" prefix, which does not
+appear in the figure.
+
+Fig 2.: what does the bold T and F.  Is this defined somewhere?

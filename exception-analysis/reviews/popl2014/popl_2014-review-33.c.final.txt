@@ -1,0 +1,123 @@
+===========================================================================
+                           POPL 2014 Review #33C
+                     Updated 23 Aug 2013 9:19:36pm BST
+---------------------------------------------------------------------------
+   Paper #33: Type-based Exception Analysis for Non-strict Higher-order
+              Functional Languages with Imprecise Exception Semantics
+---------------------------------------------------------------------------
+
+                              Goals: 3. The goals are good.  To the
+                                        standard of a perfectly acceptable
+                                        POPL paper.
+                          Execution: 2. The execution is fine, to the
+                                        standard of a serious conference,
+                                        but not competitive here.
+                       Presentation: 1. The presentation is lacking.
+                 Reviewer expertise: Y. I am knowledgeable in the area,
+                                        though not an expert.
+                      Overall merit: C. Weak paper, though I will not fight
+                                        strongly against it.
+
+               ===== Summary and Rationale for Scores =====
+
+Contributions summary:
+----------------------
+
+This paper describes a static analysis to detect exceptions in higher
+order languages, with an imprecise exception semantics. It aims at
+discovering exceptions a program may launch, mainly due to match case
+failures in ML or Haskell like languages. While the compilers
+typically provide syntactic analyses that catches possible match
+failures, these analyses are not very precise and to not take into
+account properties of the programs. For instance, a program may never
+call function f with the empty list as an argument so the empty list
+case may be safely omited.
+
+A few examples show the need for a more precise analysis, including a
+"risers" function (detection of increasing sub-lists of a list), a bit
+strings manipulation function, and the compiler desugaring routines.
+
+The analysis is specified for a fairly large sub-set of a Haskell like
+language. The exception imprecise semantics is fully given. The type
+system accumulates constraints over type labels, that can be solved
+afterwards. The type labels constrain the values that are represented
+by the types. Recursive functions require a least-fixpoint computation
+in an abstract lattice of type instances.
+
+Many possible extensions are discussed (polymorphism, more general
+algebraic data-types...).
+
+
+Comments:
+---------
+
+The issue that is considered here is relevant and interesting. While
+many other works defined uncaught exceptions analyses, I am not aware
+of many analyses that tie closely properties of the values that flow
+in a program with the exceptions that might be raised.
+
+The route followed by this work seem rather close to what one would
+expect of a typing system to track such properties.
+
+The informal sections are fairly clear and well-written, so the issue
+and the intuition of the solution are quite intuitive.
+
+However, the main technical sections (section 4 and 5) are terse and
+rather hard to follow. I see several issues here. First, the language
+subset that is formalized contains quite a lot of constructions and
+some of them do not seem necessary here to really show the analysis
+(it would be easy to cut down the system by removing fst and snd
+---standard operators---, encoding if then else as a case ---it does
+not seem to me that would cause us to lose anything). Second, these
+sections contain almost no example. Some regular references to at
+least one of the motivation examples would make the behavior of the
+analysis much more intuitive. In particular, it would be useful to see
+the form of the constraints generated. Another (in my opinion even
+worse) issue is that the semantics of most the typing judgments
+defined in sections 4.5 and 4.6 is not defined formally or is much
+later than their definition point. The paper would be much easier to
+follow (and I would feel much more confident it is sound) if the
+soundness relation judgment "x |- y" was specified *before* all the
+deduction rules are given (while reading the rules in figure 2, I felt
+like I was trying to guess what that semantics was, and I found this
+quite confusing).
+
+The section on the inference algorithm is not really better in that
+regards: 5.1 looks like a rewriting of some of the rules of figure 2
+while the least fixpoint iteration for recursive functions (5.3) would
+deserve a much more precise treatment. As it is, it is not clear to me
+that the authors have a precise way to guarantee the termination of
+the iterates. None of the algorithms shown in section 5 comes with a
+soundness statement.
+
+The complexity of the constraint solving also seems fairly high. I
+think the paper would be much stronger if it came with an experimental
+evaluation (e.g., with the examples shown in section 2).
+
+Such an evaluation would also help to assess the precision of the
+method. Section 4.7 mentions a very simple lattice for detecting
+possible divisions by zero, but it seems unrealistic to expect this
+lattice to validate many programs that contain divisions but are safe
+with respect to division by zero. I expect the analysis to do much
+better on cases such as the rises example. The result with a desugar
+compiler code (section 2.3) would also be interesting to see (will it
+scale ? what constraints lattice would be needed ? would it be
+possible to infer that lattice automatically ?).
+
+To conclude, this paper attacks an interesting issue, but is severely
+lacking both in terms of evaluation and presentation.
+
+
+Minor remarks and typos:
+------------------------
+
+- p3: an empty lists -> list
+      a lists that that -> a list that
+- p3: puropose -> purpose
+- p3: should the syntax not include non empty lists as values ?
+  (it would seem logical to me)
+- p4: if it a closed -> if it is
+- p6: emptyness -> emptiness
+- p7: its two field -> fields
+- p7: I fail to understand the explanation of the T-CASE rule
+- p8: is value -> is a value

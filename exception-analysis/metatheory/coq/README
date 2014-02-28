@@ -1,0 +1,17 @@
+
+This directory contains mechanized Coq proofs to accompany our paper entitled:
+
+Type-based Exception Analysis for Non-strict Higher-order Functional Languages 
+with Imprecise Exception Semantics
+
+The paper version of these proofs (and more) are in an addendum to the paper.
+
+Our proofs can be found in ExceptionAnalysis.v. It uses the LibTactics.v [1] and 
+SfLib.v [2] that we deliver also in compiled form. Simply open ExceptionAnalysis.v 
+in your favorite Coq IDE and run it (we used CoqIdE 8.3pl5).
+
+Further details about our mechanized proofs are in ExceptionAnalysis.v.
+
+
+[1] Arthur Chargueraud
+[2] Software Foundations Library

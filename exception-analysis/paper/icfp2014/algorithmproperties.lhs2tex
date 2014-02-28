@@ -1,0 +1,304 @@
+ 
+      
+\newcommand{\TODO}{{\color{red}Todo: }}            
+\newcommand{\sq}{\sqsubseteq}
+\newcommand{\dom}{\mbox{dom}}                                                            
+
+\subsection{Properties of the algorithm}
+
+In this section, we first prove the algorithm to be sound
+with respect to the normalized type system of
+Figure~\ref{fig-normalized-typesystem}. We then proceed to prove
+the algorithm to be complete for the monovariantly recursive variant 
+of this type system; we cannot hope the same to hold for the
+polyvariantly recursive type system, but note that
+\begin{itemize}
+  \item the algorithm can type correctly the |risers| function, which 
+        cannot be typed under the monovariantly recursive type system
+  \item by doling out fresh variables for longer, the algorithm can be made
+    ``more complete'', and, intuitively at least, should be able to 
+    type more programs. In other words, choosing to allow more fresh variables
+    increases the precision of the algorithm, but at a cost.
+    Another way to increase the precision of the algorithm is by extending
+    the data flow lattice, and providing more precise abstract operators.
+\end{itemize}
+
+\subsection{Soundness}
+
+\TODO def. typeOf must go into the paper, or define it here.
+
+\TODO def. |gen|? And |inst|?
+
+The complete algorithm consists of three elements: the constraint gathering traversal of algorithm |w|, a decomposition phase that decomposes each of
+the subtyping constraint (e.g. $\tau_1 \leq_\iota \tau_2$) into its constituents
+(following the syntaxt-directed rules \CiteRule{SA-X} of Section~\ref{sec-constraints}), and the solver |solve| that subsequently
+solves the set of constraints that results from this decomposition phase.
+
+We start by proving various properties of |solve|, in particular that
+given a finite set of constraints, it computes the least solution                              
+of these constraints, where, intuitively, least means smaller sets of
+refinements and exceptions. Formally, we are looking for the least
+substitution under the following ordering: given two ground substitutions
+$\theta_\iota$ and $\theta'_\iota$, $\theta_\iota \sq_\iota \theta'_\iota$ if and only if
+\begin{itemize}                                                                                       
+  \item $\dom(\theta_\iota) \subseteq \dom(\theta'_\iota)$
+  \item  for all $\alpha \in \dom(\theta_\iota): \theta_\iota \alpha \sq_\iota \theta'_\iota \alpha$                                                                                
+\end{itemize}
+where  $\dom(f)$ denotes the domain of the function $f$.
+
+\TODO Note that we have notation $\theta \alpha$ in one place,
+and a different notation in the algorithm. Do we want to make these consistent?
+
+The definition naturally extends to pairs of ground substitutions
+$\left<\theta_\Ref, \theta_\Exn\right>$:
+$\left<\theta_\Ref, \theta_\Exn\right> \sq \left<\theta'_\Ref, \theta'_\Exn\right>$ if and only if
+$\theta_\Ref \sq_\Ref \theta'_\Ref$, and
+$\theta_\Exn \sq_\Exn \theta'_\Exn$.
+
+
+\begin{lemma}[Guards stay true]\label{lemma-guards}
+Let |theta| and |theta'| both be a pair of ground subsitutions,
+and let |g| be any guard such that |theta ||= g|. 
+If |theta sq theta'| then |theta' ||= g|.
+\end{lemma}
+\begin{proof}
+The proof is by induction on the structure of |g|. 
+The base cases are |true| and |somecon  <||? alpha|.
+The former is a trivial case. For the latter case,
+|somecon  <||? alpha|, |theta ||= g| can only follow by 
+\CiteRule{CM-Con}. So we have |somecon <||? theta alpha|, 
+and since |theta sq theta'|, also |theta alpha sq theta' alpha|, so that
+|somecon <||? theta' alpha|, which proves, again 
+by \CiteRule{CM-Con} that |theta' ||= somecon  <||? alpha|.
+
+Consider next the case |theta ||= g_1 \/ g_2|. 
+By inspection of the rules for constraint satisfaction, 
+this can only happen 
+if either |theta ||= g_1| or |theta ||= g_2|.
+Without loss of generality, we consider only the former case.
+We apply the induction hypotheses to |theta ||= g_1| and 
+obtain that |theta' ||= g_1|, which allows us to conclude
+that |theta' ||= g1 \/ g_2| by \CiteRule{CM-Left}.
+
+The final case is |exists_i_a|. By inspection of the constraint
+satisfaction rules, only the rule \CiteRule{CM-Exists} allows
+us to establish that |theta ||= exists_i_a|. So, 
+there exists an $\ell$ such that $\ell \sq_\iota \theta \alpha$.
+Because |theta sq theta'|, also |theta alpha sq theta' alpha|, so that 
+$\ell \sq_\iota \theta' \alpha$ by transitivity of $\sq$. We can 
+now apply \CiteRule{CM-Exists} again to obtain |theta' ||= exists_i_a|.
+\end{proof}
+ 
+In order to ensure that the solving process terminates, we need that the
+lattices we work with satisfy the Ascending Chain Condition (ACC). For the lattice of exceptions, this will follow since it is always finite, but
+for the data flow lattice (which is more a matter of choice than anything else), this must be imposed as a side condition.
+
+The following proof of termination follows the main ideas of the soundness proof of the Maximal Fixed Point iteration algorithm~(see, e.g., \cite{nnh}), 
+except that we need to account for the fact that some of
+our constraints are conditional.
+
+\TODO $\sqcup$ should also have two different variants, right? Maybe then also
+reconsider the statement below
+
+\begin{lemma}[Termination of |solve|]\label{lemma-termination}
+Let |C| be a finite set of constraints without subtyping constraints.
+If $\sqcup$ is the join operator of a lattice that has Ascending Chain Condition (ACC), then |solve C| terminates.
+\end{lemma}
+\begin{proof}
+The function |solve| starts with two for-loops, each of which terminates
+because the set of constraints |C| is finite (and it follows that the number
+of variables occurring in |C| is also finite). 
+
+As to the while loop, it is clear that the work list size can only increase
+if |theta_i_a| changes for one |alpha|; otherwise the size of the work list
+decreases by one. Since both lattices, for exception and for data flow,
+satisfy ACC, a change to any |theta_i_a| can only be made a finite number of
+times.
+\end{proof}
+
+\begin{lemma}[Least solutions]
+Let |C| be a finite set of constraints without subtyping constraints,
+and define |theta = solve C|. Then |theta| is a least solution of |C|.
+\end{lemma}
+\begin{proof}
+By Lemma~\ref{lemma-termination}, |theta| is well-defined.
+
+To prove that the solution returned by |solve| is the least solution
+to |C|, let |thetao| be a least solution to |C|. We now proceed
+to prove that (a) the solution |theta = V subst_ref subst_exn| as computed
+by the algorithm is always such that |theta sq thetao|.
+We then prove (b) that as the work list becomes empty, |theta| 
+is a solution for |C|. Since |theta| is then a solution for |C|
+that is smaller than or equal to the least solution for |C|, 
+they must be the same.
+
+For part (a), we prove that |V subst_ref subst_exn sq thetao| is
+an invariant of |solve|. We first note that |subst_ref_alpha|
+and |subst_exn_alpha| are set to $\emptyset$ (i.e. $\bot$) 
+at the start of |solve|, so the invariant holds trivially
+before we consider the loop condition for the very first time.
+
+Consider then a single iteration of the while loop, and let
+|gr| be the constraint under consideration in this iteration.
+If |V subst_ref subst_exn ||= g| is not true, then neither 
+|subst_ref| nor |subst_exn| changes, and the invariant remains true.
+
+If |V subst_ref subst_exn ||= g|, then we need to consider the two cases
+(remember that subtyping constraints do not occur in |C|). Note that by
+Lemma~\ref{lemma-guards}, |thetao ||= g|, which implies that
+also |thetao ||= r|, since |thetao| is a solution for |C|.
+
+\noindent \textbf{Case} |somecon  <||? alpha|: if |theta_i_a == theta_i_a ||#||
+somecon|, then neither |subst_ref| nor |subst_exn| changes, and the invariant
+remains true. If, on the other hand, |theta_i_a /= theta_i_a ||#|| somecon|,
+then we obtain
+\begin{code}
+new^theta_i_a = old^theta_i_a |#| somecon sq thetao_i_a |#| somecon,
+\end{code} because of monotonicity of |sq| and |old^theta_i_a sq thetao_i_a|. 
+And since |thetao| is a solution for |r|,
+we have that
+\begin{code}
+thetao_i_a |#| somecon = thetao_i_a,
+\end{code}
+so that taken together, we obtain |new^theta_i_a sq thetao_i_a|.
+
+
+\noindent \textbf{Case} |alpha_1  <||? alpha_2|: unless 
+|theta_i_a /= theta_i_a1 ||#|| theta_i_a2|, nothing changes and 
+the invariant holds. If 
+|theta_i_a /= theta_i_a1 ||#|| theta_i_a2|, then 
+\begin{code}
+new^theta_i_a2 = old^theta_i_a1 |#| old^theta_i_a2  sq thetao_i_a1 |#| thetao_i_a2,
+\end{code}
+because of the invariant (twice), and monotonicity of $\sqcup$.
+Analogously to the previous case, |thetao ||= alpha_1  <||? alpha_2|,
+so that by \CiteRule{CM-Var} |thetao_i_a1 sq thetao_i_a2|.
+But then, by definition of $\sqcup$, |thetao_i_a1 ||#|| 
+thetao_i_a2 = thetao_i_a2|, and we are done.
+
+As to part (b), it remains to show that as the algorithm ends, 
+|theta = V subst_ref subst_exn| is a solution to |C|. 
+Consider any constraint |g => r| $\in$ |C| such that |theta ||= gr|
+does not hold. This can only be the case if |theta ||= g|, but not
+|theta ||= r|. 
+
+We can establish that |theta ||= r| has been considered
+at some point during the while loop, at a moment that |theta ||= g| held:
+either |g| was true before the first iteration of the while loop, and then |gr| and thereby |theta ||= r| was considered because 
+|worklist| was initialized to contain all of |C| for the lop. Or |theta ||= g| became true during an iteration of the while loop, because of an assignment
+to some |theta_i_a|. Such an assignment can only influence the truthfulness of 
+|theta ||= g|, if |alpha| actually occurs in |g|. But this means that, by definition of |dep|, |gr| was added to the worklist. 
+Since the worklist is empty upon termination of the algorithm, this implies 
+that |gr| was considered while |theta ||= g| held, in which case |theta ||= r|
+was considered to ensure that afterwards |theta ||= r|. Consider now the
+last time that |gr| was considered. At that point |theta ||= g|, because
+of Lemma~\ref{lemma-guards} and the fact |theta| monotonically increases.
+
+\textbf{Case} |r = somecon  <||? alpha|: since |theta_i_a| grows monotonically and |somecon| is a constant, |theta ||= r| will continue to be true during
+the remainder of the execution of the algorithm.
+
+\textbf{Case} |r = alpha_1  <||? alpha_2|: the only way for |theta ||= r| to
+fail to hold at the end of the algorithm is because |theta_i_a1| changed
+since the last time |gr| was considered. But in that case,
+the definition of |dep| ensures that |gr| is added to the worklist, 
+which implies that |gr| was considered later, which contradicts our earlier
+assumption.
+\end{proof}
+
+
+\begin{lemma}[Decomposition]\label{lemma-decompose}
+For any finite constraint set |C|, |decompose C| terminates, and
+for any |theta|: |theta ||= C| if and only of |theta ||= decompose C|.
+\end{lemma}
+\begin{proof}
+Since |C| is finite, non-termination can only arise from |decompose c|
+not terminating for a certain constraint |c|. But decomposition is defined
+in a way that in recursive calls the argument to |decompose| strictly decrease
+in size. This ensures termination of |decompose|.
+
+\TODO decompose, proof of equivalence, follow the rules, may need
+type correctness to ensure other possibilities than the ones listed
+are not possible.
+\end{proof}
+
+\begin{theorem}[Soundness algorithm]
+Assume that the lattice to represent dataflow has the ACC. 
+If |w env e = V tau C| and |theta = solve (decompose C)|, then
+$\Judge[\theta\ C; \theta\ \Gamma]{e}{\theta\ \tau}$.  
+\end{theorem}                                                            
+\begin{proof} 
+The algorithm |solve (decompose C)| terminates under the condition
+that both lattices (for data flow and exceptions has ACC). The former
+is true by assumption, for the latter we remark that it consists
+of subsets of $\{\ \Crash{\ell} \mid \ell\ \mbox{a program point}\}$.
+The lattice of exceptions is clearly finite, and therefore has ACC.
+
+We now proceed by induction on the structure of |e|.
+
+\noindent\textbf{Case} |e = x|:
+
+By Lemma~\ref{decompose}, we have |theta ||= C|.
+
+\noindent\textbf{Case} |e = c|:
+
+\noindent\textbf{Case} |e = Crash|:
+
+\noindent\textbf{Case} |e = (Abs x e)|:
+
+\noindent\textbf{Case} |e = (App e_1 e_2)|:
+
+\noindent\textbf{Case} |e = (Let x e_1 e_2)|:
+
+\noindent\textbf{Case} |e = (If e_1 e_2 e_3)|:
+
+\noindent\textbf{Case} |e = (Op e_1 e_2)|:
+
+\noindent\textbf{Case} |e = (Pair e_1 e_2)|:
+
+\noindent\textbf{Case} |e = (Fst e)|:
+
+\noindent\textbf{Case} |e = (Snd e)|: similar to |(Fst e)|.
+
+\noindent\textbf{Case} |e =  (e==[])|:
+
+\noindent\textbf{Case} |e =  (e_1 : e_2)|:
+
+\noindent\textbf{Case} |e = (Case e_1 e_2 x_1 x_2 e_3)|:
+
+                                         
+
+
+\end{proof}
+     
+\subsection{Completeness}
+
+In order to prove (a form of) completeness, we resort to a less expressive
+type system, which is the type system in Figure~\ref{fig-normalized-typesystem},
+but where the rule \CiteRule{T-Fix} is replaced by the monovariant
+version given in Figure~\ref{fig-monofix}. In this rule, we demand
+that the type inferred for |f| is a monotype, without constraints.
+This is a special case of the original rule \CiteRule{T-Fix}
+from Figure~\ref{fig-normalized-typesystem}, and therefore this change does not
+affect the soundness theorem we have just established.
+
+We now prove that the algorithm in Section~\ref{sec-algorithm} is complete
+for the monovariant type system. We further note that our algorithm is not 
+complete for the extension to a polyvariantly recursive type system,
+since we have to explicitly bound the number of variables by reusing them,
+thereby poisoning the results. However, this should not be considered a problem.
+In fact, with polyvariant recursion we can (soundly) validate more programs,
+|risers| being an example in case. And intuitively,
+the completeness of the algorithm can be increased by postponing the 
+reuse of variables, playing the same role as widening does in abstract
+interpretation.
+
+\begin{figure}[!t]
+\begin{gather}
+\Rule{T-Fix}
+     {\Judge[C; \Gamma, f : \tau_1]{e}{\tau_2}
+      \quad C \Vdash \tau_2 \leq_{\Ref\Exn} \tau_1}
+     {\Judge{\Fix{f}{e}}{\SUBST{\tau_1}}}
+\end{gather}
+\caption{The monovariant type rule for |fix|}
+\label{fig-monofix}
+\end{figure}

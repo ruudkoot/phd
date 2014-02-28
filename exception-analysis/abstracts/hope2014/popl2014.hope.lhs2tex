@@ -1,4 +1,4 @@
-\documentclass[authoryear,preprint]{sigplanconf}
+\documentclass[authoryear,nocopyrightspace]{sigplanconf}
 
 %% FIXME: Rule [T-Abs] still introduces a bit of poisoning. A rule with more
 %%        fresh variables would likely result in a nicer proof (as for [T-Fst]).
@@ -29,8 +29,6 @@ Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor 
 %format else = "\textbf{else}"
 %format type = "\textbf{type}"
 %format where = "\textbf{where}"
-
-%format crash (a) = "\lightning^{" a "}"
 
 %format % = "\div"
 
@@ -135,7 +133,7 @@ Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor 
 \newcommand{\Close}[2]{\textbf{close}\ #1\ \textbf{in}\ #2}
 \newcommand{\CloseEMPH}[2]{\emph{\textbf{close}}\ #1\ \emph{\textbf{in}}\ #2}
 
-\newcommand{\PMF}{\textbf{pattern-match-failure}\xspace}
+\newcommand{\PMF}{\textbf{pmf}\xspace}
 
 %% Semantics
 \newcommand{\Eval}[4]{\left<#1; #2\right> \Downarrow \left<#3;#4\right>}
@@ -186,7 +184,6 @@ Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor 
 \newcommand{\CC}[5][]{#2 \sqsubseteq_\Ref #3 \Rightarrow #4 \leq_{#1} #5}
 \newcommand{\CCS}[5][]{#2 \sqsubseteq_\Ref #3 \Rightarrow #4 \sqsubseteq_{#1} #5}
 \newcommand{\CCD}[6][]{#2 \sqsubseteq_\Ref #3 \lor #4 \Rightarrow #5 \leq_{#1} #6}
-\newcommand{\CCDO}[6][]{#2 \sqsubseteq_{\Ref_{1}} #3 \lor #4 \Rightarrow #5 \leq_{#1} #6}
 
 %% Extensions
 \newcommand{\MP}[2]{#1~\star~#2}
@@ -202,16 +199,17 @@ Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor 
 
 \begin{document}
 
-\conferenceinfo{ICFP '14}{September 1--3, 2014, Gothenburg, Sweden.}
+\conferenceinfo{POPL '14}{January 22--24, 2014, San Diego, California, USA.}
 \copyrightyear{2014}
 \copyrightdata{[to be supplied]} 
 
 \titlebanner{DRAFT---Do not distribute}
-\preprintfooter{Submitted to ICFP '14}
+\subtitle{(Abstract of POPL '14 submission)}
+\preprintfooter{Submitted to POPL'14}
 
 \title{Type-based Exception Analysis for\\Non-strict Higher-order Functional Languages\\with Imprecise Exception Semantics}
 
-\authorinfo{\ANONYMOUS{Ruud Koot}{Robb Stark}\thanks{This material is based upon work supported by the \ANONYMOUS{Netherlands Organisation for Scientific Research (NWO)}{Night's Watch}.}\and \ANONYMOUS{Jurriaan Hage}{Daenerys Targaryen}}
+\authorinfo{\ANONYMOUS{Ruud Koot}{Robb Stark}\thanks{This material is based upon work supported by the \ANONYMOUS{Netherlands Organisation for Scientific Research (NWO)}{Night's Watch}.} \and \ANONYMOUS{Jurriaan Hage}{Daenerys Targaryen}}
 {Department of Computing and Information Sciences\\Utrecht University}
 {\ANONYMOUS{\{r.koot,j.hage\}@@uu.nl}{\{r.stark,d.targaryen\}@@winterfell.no}}
 %\authorinfo{Robb Stark\thanks{This material is based upon work supported by the \ANONYMOUS{Netherlands Organisation for Scientific Research (NWO)}{Night's Watch}.}}
@@ -221,48 +219,15 @@ Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor 
 \maketitle
 
 \begin{abstract}
-Most statically typed functional programming languages allow programmers to write partial functions: functions that are not defined on all the elements of their domain as specified by their type. Applying a partial function to a value on which it is not defined will raise a run-time exception, thus in practise well-typed programs can and \emph{do} go wrong.
+Most statically typed functional programming languages allow programmers to write partial functions: functions that are not defined on all the elements of the domain they are claimed to work on by their type. Thus in practise, well-typed programs can---and \emph{do}---still go wrong.
+A compiler should warn the programmer about the places in the program where such wrongness may occur. 
 
-Contemporary compilers for functional languages employ a local and purely syntactic analysis to detect incomplete \textbf{case}-expressions---those that do not cover all possible patterns of constructors.
-As programs often maintain invariants on their data---restricting the potential values of the scrutinee to a subtype of its given or inferred type---many of these incomplete \textbf{case}-expressions are harmless.
+Contemporary compilers for functional languages employ a local and purely syntactic analysis to detect incomplete \textbf{case}-expressions---those that do not cover all possible patterns of constructors allowed for by the type of the scrutinee, the source of most partiality in a program.
+As programs often maintain invariants on their data---restricting the potential values of the scrutinee to a subtype of its given or inferred type---many of these incomplete \textbf{case}-expressions are in actuality completely benign.
 Such an analysis will thus report many false positives, overwhelming the programmer.
 
 We develop and prove the correctness of a constraint-based type system that detects harmful sources of partiality by accurately tracing the flow of both exceptions---the manifestation of partiality gone wrong---and ordinary data through the program, as well as the dependencies between them.
 The latter is crucial for usable precision, but has been omitted from previously published exception analyses.
-\end{abstract}
-
-% FIXME: add/remove categories (http://www.acm.org/about/class/ccs98-html, or 2012?)
-\category{D.2.4}{Software Engineering}{Software/Program Verification}
-%\category{D.3}{Software}{Applicative (functional) languages}
-%\category{D.3.3}{Programming Languages}{Language Constructs and Features}[Polymorphism]
-%\category{F.3.1}{Logics and Meanings of Programs}{Specifying and Verifying and Reasoning about Programs}[Logics of programs]
-\category{F.3.1}{Logics and Meanings of Programs}{Specifying and Verifying and Reasoning about Programs}[Mechanical verification]
-\category{F.3.2}{Logics and Meanings of Programs}{Semantics of Programming Languages}[Program analysis]
-%\category{F.3.3}{Logics and Meanings of Programs}{Studies of Program Constructs}[Type structure]
-
-% FIXME: what to put here?
-\terms
-Languages, Theory, Verification
-
-% FIXME: add/remove keywords
-\keywords
-type-based program analysis, exception analysis, imprecise exceptions, pattern-matching, polymorphic recursion, static contract checking
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Introduction}\label{sec-introduction} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-Many modern programming languages come equipped with a type system. Type systems attempt to prevent bad behaviour at run-time by rejecting programs that may cause such behaviour at compile-time. As predicting the dynamic behaviour of an arbitrary program is undecidable, type systems---or at least those in languages relying on type inference---will always have to either reject some programs that can never cause bad behaviour, or accept some that do.
-
-A major source of trouble are \emph{partial functions}---functions that are not defined on all the elements of their domain, usually because they cannot be given any sensible definition on some of those elements. Canonical examples include the division operator, which is undefined when its right-hand argument is zero, and the |head| function, extracting the first element from a list, which is undefined on the empty list. %FIXME: openFile
-Outright rejecting such functions does not seem like a reasonable course of action, so we are only left with the possibility of accepting them as well-typed at compile-time and having them raise an \emph{exception} at run-time, when invoked on an element of their domain on which they were left undefined.
-
-Still, we would like to warn the programmer when we accept a correctly typed program that may potentially crash due to an exception at run-time. Most compilers for functional languages will already emit a warning when a function is defined by a non-exhaustive pattern-match, listing the missing patterns. These warnings are generated by a very local and syntactic analysis, however, generating many false positives, distracting the programmer. For example, they will complain the |head| function is missing a clause for the empty list, even if |head| is only ever invoked on a syntactically non-empty list, or not at all. Worse still are spurious warnings for local let-bound functions, for which one can no longer argue the warning is useful, as the function cannot be called from a different context at a future time.
-
-Unlike other exception analyses that have appeared in the literature---%FIXME: list 'em
-which primarily attempt to track uncaught user-thrown or environment-induced exceptions, such as those that could be encountered when reading invalid data from disk---we are first and foremost concerned with accurately tracking the exceptions raised by failed pattern-matches. Therefore, our analysis might equally well be called a \emph{pattern-match analysis}, although it is certainly not strictly limited to one as such. To get results of usable accuracy---eliminating as many false positives as possible---requires carefully keeping track of the data-flow through the program. This additionally improves the accuracy of reporting potential exceptions not related to pattern matching and opens the way for employing the analysis to perform static contract checking.
-
-\subsection{Contributions}
 
 Our contributions include the following:
 \begin{itemize}
@@ -270,14 +235,9 @@ Our contributions include the following:
 \item Accuracy is achieved through the simultaneous use of \emph{subtyping} (modelling data flow), \emph{conditional constraints} (modelling control flow), \emph{parametric polyvariance} (to achieve context-sensitivity) and \emph{polyvariant recursion} (to avoid poisoning).
 \item The analysis works for \emph{call-by-name} languages with an \emph{imprecise exception semantics}. Such a semantics is necessary to justify several program transformations applied by optimizing compilers for call-by-name languages with distinguishable exceptions%, but---perhaps counterintuitively---complicates precisely analyzing them.
 \item We give an operational semantics for imprecise exceptions and prove the analysis sound with respect to this semantics.
-\item The analysis presented in this paper is implemented as a prototype and, in addition to a pen-and-paper proof, the metatheory has been mostly mechanized in Coq. Both are available \ANONYMOUS{from: \url{http://www.staff.science.uu.nl/~0422819/tbea/}}{as supplementary materials}.
+\item The analysis presented in this paper is implemented in a prototype and, in addition to a pen-and-paper proof, the metatheory has been mostly mechanized.
 \end{itemize}
-
-%\subsection{Overview}
-%In Section~\ref{sec-motivation} we give a number of examples where we, as a programmer, would like to be presented with more accurate warnings---about possible exceptions a program can raise or pattern-match failures that can occur at run-time---than compilers will currently provide.
-%In Section~\ref{sec-informalities} we give an informal overview of how this problem can be addressed using a type system, and the features such a type system should support in order to obtain sufficiently accurate results.
-%In Section~\ref{sec-formalities} we present a formalized static and dynamic semantics and state a number metatheoretic results to prove the soundness of our analysis.
-%In Section~\ref{sec-algorithm} we discuss the algorithmic issues complicating the automatic inference of types in our proposed type system and how they can be overcome. In Section~\ref{sec-extensions} we discuss a number of extensions to the exception analyis and indicate a number of directions for future research. Finally, we discuss the related work on exception and pattern-match analyses in Section~\ref{sec-relatedwork}.
+\end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Motivation}\label{sec-motivation} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -285,10 +245,7 @@ Our contributions include the following:
 
 Many algorithms maintain invariants on the data structures they use, that cannot easily be encoded into their types. These invariants often ensure that certain incomplete \textbf{case}-expressions are guaranteed not to cause a pattern-match failure.
 
-\subsection{\emph{risers}} \label{sec-risers} %%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-
-An example of such an algorithm is the |risers| function from \citet{Mitchell:2008:PBE:1411286.1411293}, computing monotonically increasing subsegments of a list:
-\begin{center}
+An example of such an algorithm is the |risers| function from \cite{Mitchell:2008:PBE:1411286.1411293}, computing monotonically increasing subsegments of a list:
 \begin{code}
 risers  ::  Ord alpha => [alpha] -> [[alpha]]
 risers  []               =  []
@@ -297,74 +254,37 @@ risers (x_1 : x_2 : xs)  =
     if x_1 <= x_2 then (x_1 : y) : ys else [x_1] : (y : ys)
         where (y : ys) = risers (x_2 : xs)
 \end{code}
-\end{center}
 For example:
 \begin{center}
 |risers [1, 3, 5, 1, 2] ~~~> [[1, 3, 5], [1, 2]]|.
 \end{center}
 
-The irrefutable pattern in the \textbf{where}-clause in the third alternative of |risers| expects the recursive call to return a non-empty list. A naive analysis might raise a warning here. If we think a bit longer, however, we see that we also pass the recursive call to |risers| a non-empty list. This means we will end up in either the second or third alternative inside the recursive call. Both the second alternative and both branches of the \textbf{if}-expression in the third alternative produce a non-empty list, satisfying the assumption we made earlier and allowing us to conclude that this function is total and will never raise a pattern-match failure exception. (Raising or propagating an exception because we pattern-match on exceptional values present in the input is still possible, though.)
-
-\subsection{\emph{bitstring}} %%%%%%%%%%%%%%%%%%%%%%%%%%
-%format Integer = "\mathbb{Z}"
-Another example, from \citet{Freeman:1991:RTM:113445.113468}, comprises a collection of mathematical operations working on bitstrings: integers encoded as lists of the binary digits 0 and 1, with the least significant bit first. We model bitstrings as the type
-\begin{center}
-\begin{code}
-type Bitstring = [Integer]
-\end{code}
-\end{center}
-This type is too lenient in that it does not restrict the elements of the lists to the digits 0 and 1. We can however maintain this property as an implicit invariant.
-
-If we now define an addition operation on bitstrings:
-\begin{center}
-\begin{code}
-add :: Bitstring -> Bitstring -> Bitstring
-add []      y      = y
-add x       []     = x
-add (0:x)   (0:y)  = 0 : add x y
-add (0:x)   (1:y)  = 1 : add x y
-add (1:x)   (0:y)  = 1 : add x y
-add (1:x)   (1:y)  = 0 : add (add [1] x) y
-\end{code}
-\end{center}
-we see that the patterns in |add| are far from complete. However, if only passed arguments that satisfy the invariant it will neither crash due to a pattern-match failure, nor invalidate the invariant.
-
-\subsection{\emph{desugar}}\label{sec-desugar} %%%%%%%%%
-
-Compilers work with large and complex data types to represent the abstract syntax tree. These data structures must be able to represent all syntactic constructs the parser is able to recognize. This results in an abstract syntax tree that is unnecessarily complex, and too cumbersome for the later stages of the compiler---such as the optimizer---to work with. This problem is resolved by \emph{desugaring} the original abstract syntax tree into a simpler---but semantically equivalent---abstract syntax tree that does not use all of the constructors available in the original abstract syntax tree.
-
-The compiler writer now has a choice between two different options: either write a desugaring stage |desugar :: ComplexAST -> SimpleAST|---duplicating most of the data type representing and functions operating on the abstract syntax tree---or take the easy route |desugar :: AST -> AST| and assume certain constructors will no longer be present in the abstract syntax tree at stages of the compiler executed after the desugaring step. The former has all the usual downsides of code duplication---such as having to manually keep multiple data types synchronized---while the latter forgoes many of the advantages of strong typing and type safety: if the compiler pipeline is restructured and one of the stages that was originally assumed to run only after the desugaring suddenly runs before that point the error might only be detected at run-time by a pattern-match failure. A pattern-match analysis should be able to detect such errors statically.
+The irrefutable pattern in the \textbf{where}-clause in the third alternative of |risers| expects the recursive call to return a non-empty list. A naive analysis might raise a warning here. If we think a bit longer, however, we see that we also pass the recursive call to |risers| a non-empty list. This means we will end up in either the second or third alternative inside the recursive call. Both the second alternative and both branches of the \textbf{if}-expression in the third alternative produce a non-empty list, satisfying the assumption we made earlier and allowing us to conclude that this functional is total and will never raise a pattern-match failure exception. (Raising or propagating an exception because we pattern-match on exceptional values present in the input still belongs to the possibilities, though.)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Informalities}\label{sec-informalities} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Informal overview}\label{sec-informalities} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-We formulate our analysis in terms of a constraint-based type and effect system \cite{Talpin:1994:TED:191349.184660,NNA,Abadi:1999:CCD:292540.292555}.
+We formulate our analysis in terms of a constraint-based type and effect system \cite{Talpin:1994:TED:191349.184660,Abadi:1999:CCD:292540.292555}.
 
 \subsection{Data flow}
 
-How would we capture the informal reasoning we used in Section~\ref{sec-risers} to convince ourselves that |risers| does not cause a pattern-match failure using a type system? A reasonable first approach would be to annotate all list types with the kind of list it can be: $\SingletonNil$ if it must be an empty list, a list that necessarily has a nil-constructor at the head of its spine; $\SingletonCons$ if it must be a non-empty list having a cons-constructor at its head; $\SingletonNil \sqcup \SingletonCons$ if it can be either. We can then assign to each of the three individual branches of |risers| the following types:
-\begin{center}
+How would we capture the informal reasoning we used in Section~\ref{sec-motivation} to convince ourselves that |risers| does not cause a pattern-match failure using a type system? A reasonable first approach would be to annotate all list types with the kind of list it can be: $\SingletonNil$ if it must be an empty lists, a lists that that necessary has a nil-constructor at the head of its spine; $\SingletonCons$ if it must be a non-empty list having a cons-constructor at its head; $\SingletonNil \sqcup \SingletonCons$ if it can be either. We can then assign to each of the three individual branches of |risers| the following types:
 \begin{code}
 risers_1 :: forall alpha. Ord alpha => N alpha -> N (NC alpha)
 risers_2 :: forall alpha. Ord alpha => CL alpha -> CL (NC alpha)
 risers_3 :: forall alpha. Ord alpha => CL alpha -> CL (NC alpha)
 \end{code}
-\end{center}
 From the three individual branches we may infer:
-\begin{center}
 \begin{code}
 risers :: forall alpha. Ord alpha => NC alpha -> NC (NC alpha)
 \end{code}
-\end{center}
 
 Assigning this type to |risers| will still let us believe that a pattern-match failure may occur in the irrefutable pattern in the \textbf{where}-clause, as this type tells us any invocation of |risers|---including the recursive call in the \textbf{where}-clause---may evaluate to an empty list.
 The problem is that |risers_1|---the branch that can never be reached from the call in the \textbf{where}-clause---is \emph{poisoning} the overall result. \emph{Polyvariance} (or \emph{property polymorphism}) can rescue us from this precarious situation, however. We can instead assign to each of the branches, and thereby the overall result, the type:
-\begin{center}
 \begin{code}
 risers :: forall alphabeta. Ord alpha => POLYV alpha beta -> POLYV (NC alpha) beta
 \end{code}
-\end{center}
 
 In the recursive call to |risers| we know the argument passed is a non-empty list, so we can instantiate $\beta$ to $\SingletonCons$, informing us that the result of the recursive call will be a non-empty list as well and guaranteeing that the irrefutable pattern-match will succeed.
 There is one little subtlety here, though: in a conventional Hindley--Milner type system we are not allowed, or even able, to instantiate $\beta$ to anything, as the type is kept monomorphic for recursive calls. We, therefore, have to extend our type system with \emph{polyvariant recursion}.
@@ -373,60 +293,51 @@ being a program analysis, we cannot rely on any programmer-supplied annotations-
 
 \subsection{Exception flow}
 
-The intention of our analysis it to track the exceptions that may be raised during the execution of a program. As with the data flow we express this set of exceptions as an annotation on the type of a program. For example, the program:
-\begin{center}
+The intentention of our analysis it to track the exceptions that may be raised during the execution of a program. As with the data flow we express this set of exceptions as an annotation on the type of a program. For example, the program:
 \begin{code}
 f x = x % 0
 \end{code}
-\end{center}
 should be given the exception type:
 %format Integer_alpha = "\mathbb{Z}^\alpha"
-%format Integer_alpha_divbyzero = "\mathbb{Z}^{\alpha \sqcup \textbf{division-by-zero}}"
+%format Integer_alpha_divbyzero = "\mathbb{Z}^{\alpha \sqcup \textbf{div-by-zero}}"
 %format -_|_> = "\xrightarrow{\emptyset}"
-\begin{center}
 \begin{code}
 f :: forall alpha. Integer_alpha -_|_> Integer_alpha_divbyzero
 \end{code}
-\end{center}
 
-This type explains that $f$ is a function accepting an integer as its first and only parameter. As we are working in a call-by-name language, this integer might actually still be a thunk that raises an exception from the set $\alpha$ when evaluated. The program then divides this argument by zero, returning the result. While the result will be of type integer, this operation is almost guaranteed to raise a division-by-zero exception. It is \emph{almost} guaranteed and not completely guaranteed to raise a division-by-zero exception, as the division operator is strict in both of its arguments and might thus force the left-hand side argument to be evaluated before raising the \textbf{division-by-zero} exception. This evaluation might then in turn cause an exception from the set $\alpha$ to be raised first. The complete result type is thus an integer with an exception annotation consisting of the union (or \emph{join}) of the exception set $\alpha$ on the argument together with an additional exception \textbf{division-by-zero}. Finally, we note that there is an empty exception set annotating the function space constructor, indicating that no exceptions will be raised when evaluating $f$ to a closure.
+This type explains that $f$ is a function accepting an integer as its first and only parameter. As we are working in a call-by-name language, this integer might actually still be a thunk that raises an exception from the set $\alpha$ when evaluated. The program then divides this argument by zero, returning the result. While the result will be of type integer, this operation is almost guaranteed to raise a division-by-zero exception. It is \emph{almost} guaranteed and not completely guaranteed to raise a division-by-zero exception, as the division operator is strict in both of its arguments and might thus force the left-hand side argument to be evaluated before raising the \textbf{div-by-zero} exception. This evaluation might then in turn cause an exception from the set $\alpha$ to be raised first. The complete result type is thus an integer with an exception annotation consisting of the union (or \emph{join}) of the exception set $\alpha$ on the argument together with an additional exception \textbf{div-by-zero}. Finally, we note that there is an empty exception set annotating the function space constructor, indicating that no exceptions will be raised when evaluating $f$ to closure.
 
-While this approach seems promising at first, it is not immediately adequate for our purpose: detecting potential pattern-match failures that may occur at run time. Consider the following program:
-\begin{center}
+While this approach seems promising at first, it is not immediately adequate for our puropose: detecting potential pattern-match failures that may occur at run time. Consider the following program:
 \begin{code}
 head (x : xs) = x
 \end{code}
-\end{center}
 After an initial desugaring step, a compiler will translate this program into:
 %format |-> = "\mapsto"
 %format pmf = "\PMF"
-\begin{center}
 \begin{code}
-head xs = case  xs of
-                []      |->  crash pmf
-                y : ys  |->  y
+head xxs = case xxs of { [] |-> pmf; x : xs |-> x }
 \end{code}
-\end{center}
 which can be assigned the exception type:
 %format tau_alpha = "\tau^\alpha"
 %format tau_alpha_beta_pfm = "\tau^{\alpha\sqcup\beta\sqcup\PMF}"
 %format taualphabeta = "\tau\alpha\beta"
-\begin{center}
 \begin{code}
 head :: forall taualphabeta. LABELLEDLIST tau_alpha beta -_|_> tau_alpha_beta_pfm
 \end{code}
-\end{center}
 This type tells us that |head| might always raise a \PMF exception, irrespective of what argument is applied to. Clearly, we won't be able to outperform a simple syntactic analysis in this manner.
 What we need is a way to introduce a dependency of the exception flow on the data flow of the program, so we can express that |head| will only raise a \PMF if it possible for the argument passed to it to be an empty list. We can do so by introducing conditional constraints into our type system:
 %format tau_abc = "\tau\alpha\beta\gamma"
-%format tau_alpha_beta = "\tau^{\alpha\sqcup\beta\sqcup\gamma}"
-%format constraint_set_thing = "\textbf{with} \left\{\SingletonNil \sqsubseteq \beta \Rightarrow \PMF \sqsubseteq \gamma\right\}"
+%format tau_alpha_beta = "\tau^{\alpha\sqcup\beta\sqcup\gamma}\ \textbf{with} \left\{\SingletonNil \sqsubseteq \beta \Rightarrow \PMF \sqsubseteq \gamma\right\}"
 \begin{code}
-head :: forall tau_abc.  LABELLEDLIST tau_alpha beta -_|_> tau_alpha_beta
-                         constraint_set_thing
+head :: forall tau_abc. LABELLEDLIST tau_alpha beta -_|_> tau_alpha_beta
 \end{code}
 This type explains that |head| will return an element of type $\tau$ that might---when inspected---raise any exception present in the elements of the list ($\alpha$), the spine of the list ($\beta$) or from an additional set of exceptions ($\gamma$), with the constraint that if the list to which |head| is applied is empty, then this exception set contains the \PMF exception, otherwise it is taken to be empty.
-(We apologize for the slight abuse of notation---using the annotation $\beta$ to hold both data and exception-flow information---this will be remedied in the formal type system.)
+(We apologize for the slight abuse of notation---using the annotation $\beta$ to hold both data and exception-flow information---this is remedied in the formal type system.)
+
+\bibliographystyle{abbrvnat}
+\bibliography{popl2014} % FIXME: merge .bbl here and add \softraggedright
+
+\end{document}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Formalities}\label{sec-formalities} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -471,11 +382,11 @@ f, x \in \textbf{Var} \quad
 %\label{fig-syntax}
 %\end{figure}
 
-\paragraph{Syntax} The values $v$ of the language include an exceptional value $\Crash{\ell}$ where the annotation $\ell$ denotes a set of \emph{exception labels}. We leave the exception labels uninterpreted, but an actual implementation will use them to distinguish between distinct exceptions (for example, division-by-zero or a pattern-match failure), as well as to store any additional information necessary to produce informative error messages, such as source locations.
+\paragraph{Syntax} The values $v$ of the language include an exceptional value $\Crash{\ell}$ where the annotation $\ell$ is a set of \emph{exception labels}. We leave the exception labels uninterpreted, but an actual implementation will use them to distinguish between distinct exceptions (for example, division-by-zero or a pattern-match failure), as well as to store any additional information necessary to produce informative error messages, such as source locations.
 
 We adopt the following syntactic convention: we denote non-exceptional values by $v$ and possibly exceptional values by $v^\ell$, where $\ell$ corresponds to the set of exception labels in case $v^\ell$ is an exceptional value and corresponding to the empty set otherwise.
 
-The \textbf{case}-construct in the language is always assumed to be complete. As our primary goal is to detect pattern-match failures produced by incomplete \textbf{case}-expressions, we assume any incomplete \textbf{case}-expressions written by the programmer has first been appropriately desugared into an equivalent complete \textbf{case}-expression by filling out any missing arms in the incomplete \textbf{case}-expression with an exceptional value $\Crash{\PMF}$ before being passed to the analysis \cite{Augustsson:1985:CPM:5280.5303,Maranget:2008:CPM:1411304.1411311}. % ,Maranget:2008:CPM:1411304.1411311
+The \textbf{case}-construct in the language is always assumed to be complete. As our primary goal is to detect pattern-match failures produced by incomplete \textbf{case}-expressions, we assume any incomplete \textbf{case}-expressions written by the programmer has first been appropriately desugared into an equivalent complete \textbf{case}-expression by filling any out any missing arms in the incomplete \textbf{case}-expression with an exceptional value $\Crash{\PMF}$ before being passed to the analysis \cite{Augustsson:1985:CPM:5280.5303,Maranget:2008:CPM:1411304.1411311}.
 
 The $\textbf{close}$ and $\textbf{bind}$ constructs are only necessary to formalize the small-step operational semantics (Section \ref{sec-operational-semantics}) and are assumed to be absent from the program under analysis.
 
@@ -498,7 +409,7 @@ The types $\tau \in \Shape$ of the type system are given by:
 Types are \emph{simply annotated types}, comprised of a single base type consisting of an \emph{annotation variable} $\alpha \in \AnnVar$ and the compound types for functions, pairs and lists, each having its constructor annotated with an annotation variable.
 Simply annotated types are given meaning in combination with a mapping or substitution from its free annotation variables to a lattice $\AnnLat$, forming $\AnnLat$-annotated types.
 
-The auxiliary function $\left\lceil\ \cdot\ \right\rceil : \Shape \to \AnnVar$ extracts the outer-most annotation from a simply annotated type~$\Sh$:
+We define an auxiliary function $\left\lceil\ \cdot\ \right\rceil : \Shape \to \AnnVar$ that extracts the outer-most annotation from a simply annotated type~$\Sh$:
 \begin{eqnarray*}
 \begin{aligned}
 \left\lceil \alpha                        \right\rceil &= \alpha             \\
@@ -712,7 +623,7 @@ Note that \CiteRule{E-Op1} and \CiteRule{E-Op2}, as well a several other reducti
 If both the left and right-hand side of the operator reduce to a numeric value, \CiteRule{E-OpNum} will reduce the expression to its interpretation $\InterpretOp{n_1\,\oplus\,n_2}$. %FIXME: strange formatting in InterpretOp
 If either of, or both, the arguments reduce to an exceptional value, the rules \CiteRule{E-OpExn1}, \CiteRule{E-OpExn2} and \CiteRule{E-OpExn3} will propagate the exception labels of all the exceptional values in the expression.
 The rules \CiteRule{E-Pair} and \CiteRule{E-Cons} wrap the syntactic pair and cons constructors in a closure to make them into values---in a call-by-name language constructors are only evaluated up to weak head normal form (\emph{whnf}) and can still contain unevaluated subexpressions that need to have their free variables closed over in their original scope.
-\CiteRule{E-Fst} evaluates the argument passed to $\Fst$to a normal form. If it is an exceptional value, \CiteRule{E-FstExn} will propagate it; if it is a closed pair constructor, \CiteRule{E-FstPair} will project the first argument and bind its free variables in the environment it has been closed over. Accordingly for \CiteRule{E-Snd}, \CiteRule{E-SndExn} and \CiteRule{E-SndPair}.
+\CiteRule{E-Fst} evaluates the argument passed to $\Fst$to a normal form. If it is an exceptional value, \CiteRule{E-FstExn} will propagate it; if it a closed pair constructor, \CiteRule{E-FstPair} will project the first argument and bind its free variables in the environment it has been closed over. Accordingly for \CiteRule{E-Snd}, \CiteRule{E-SndExn} and \CiteRule{E-SndPair}.
 \CiteRule{E-Case} will evaluate the scrutinee of a \textbf{case}-expression to a normal form. If it evaluates to a nil-constructor, \CiteRule{E-CaseNil} will select the first arm. If it evaluates to a closed cons-constructor, \CiteRule{E-CaseCons} will select the second arm, binding $x_1$ and $x_2$ to respectively the first and second component of the constructor in the environment the constructor was closed over. In case the scrutinee evaluates to an exceptional value \CiteRule{E-CaseExn1}, \mbox{\CiteRule{E-CaseExn2}} and \CiteRule{E-CaseExn3} will continue evaluating both arms and gather and propagate all exception labels encountered. In the reduction rule \CiteRule{E-CaseExn-3} we still need to bind $x_1$ and $x_2$ to some expression in $\rho$. As this expression we take $\Crash{\emptyset}$ in both cases, as it is the least committing value in our system: it is associated with both an empty set of exceptional values, as well as with an empty set of non-exceptional values.
 \CiteRule{E-Bind1} and \CiteRule{E-Bind2} will continue evaluating any expression $e$ in the given environment $\rho_1$ until it has been fully reduced to a value, which either contains no free variables, or has them explicitly closed over by a \textbf{close}-construct.
 
@@ -736,20 +647,19 @@ r &::=& \AnnLat_\iota \sqsubseteq_\iota \alpha
 %\caption{Syntax of constraints}
 %\end{figure}
 
-The left-hand side $g$ of a conditional constraint, its \emph{guard}, consists of a disjunction of \emph{atomic guards} $\AnnLat_\iota \sqsubseteq_\iota \alpha$, relating an element of the lattice $\AnnLat_\iota$ to an annotation variable $\alpha$, and \emph{non-emptiness guards} $\exists_\iota \alpha$, a predicate on the annotation variable $\alpha$.
+The left-hand side $g$ of a conditional constraint, its \emph{guard}, consists of a disjunction of \emph{atomic guards} $\AnnLat_\iota \sqsubseteq_\iota \alpha$, relating an element of the lattice $\AnnLat_\iota$ to an annotation variable $\alpha$, and \emph{non-emptyness guards} $\exists_\iota \alpha$, a predicate on the annotation variable $\alpha$.
 
 The right-hand side $r$ of a conditional or unconditional constraint can either be an \emph{atomic constraint} $\AnnLat_\iota \sqsubseteq_\iota \alpha$, relating an element of the lattice $\AnnLat_\iota$ to an annotation variable $\alpha$, or an atomic constraint $\alpha_1 \sqsubseteq_\iota \alpha_2$, relating two annotation variables, or it can be a \emph{structural constraint} $\Sh_1 \leq_\iota \Sh_2$, relating two simply annotated types.
 
-The asymmetry between the allowed forms of the antecedent $g$ and consequent $r$ of the conditional constraints is intentional: they allow constraints to be formed that are expressive enough to build an accurate analysis, but limited enough so as to allow tractable constraint solving. Both allowing constraints of the form $g_1 \lor g_2$ on the right-hand side of a conditional, or allowing constraints of the form $\alpha_1 \sqsubseteq_\iota \alpha_2$ on the left-hand side of a conditional make constraint solving notoriously difficult: the former because it cannot be trivially decomposed into a set of simpler constraints and the latter because it does not behave monotonically under a fixed-point iteration.
+The asymmetry between the allowed forms of the antecedent $g$ and consequent $r$ of the conditional constraints are intentional: they allow constraints to be formed that are expressive enough to build an accurate analysis, but limited enough so as to allow tractable constraint solving. Both allowing constraints of the form $g_1 \lor g_2$ on the right-hand side of a conditional, or allowing constraints of the form $\alpha_1 \sqsubseteq_\iota \alpha_2$ on the left-hand side of a conditional make constraint solving notoriously difficult: the former because it cannot be trivially decomposed into a set of simpler constraints and the latter because it does not behave monotonically under a fixed-point iteration.
 
-The atomic and structural constraint relations are qualified by an index $\iota$, which for the purpose of our analysis can be one of two constants:
+The atomic and structural constraint relations are qualified by an index $\iota$, which for the purposes of our analysis can be one of two constants:
 %\begin{figure}[h]
 \begin{eqnarray*}
 \iota &::=& \Ref \quad || \quad \Exn
 \end{eqnarray*}
 %\caption{Constraint indices}
 %\end{figure}
-Here $\Ref$ is used to indicate data-flow, while $\Exn$ indicates exception-flow.
 
 To ease the syntactic burden we freely write constraint expressions indexed by the two constraint indices $\Ref\Exn$ simultaneously. Formally these should always be read as standing for two separate constraint expressions: one indexed by $\Ref$ and the other indexed by $\Exn$. As none of the constraint expression in this paper contains more than one such paired index, no ambiguities should arise.
 Furthermore, \[c^g\quad ::=\quad c\quad ||\quad g\] and constraints $\BTrue \Rightarrow r$ shall be written simply as $r$.
@@ -765,11 +675,11 @@ Constraints are given meaning by the \emph{constraint satisfaction} predicate $\
              {\CM{g \Rightarrow r}}
         \quad
         \Rule{CM-Con}
-             {\ell_\iota \sqsubseteq_\iota \theta_\iota \alpha}
-             {\CM{\ell_\iota \sqsubseteq_\iota \alpha}}
+             {\Lambda_\iota \sqsubseteq_\iota \theta_\iota \alpha}
+             {\CM{\Lambda_\iota \sqsubseteq_\iota \alpha}}
         \BigBreak
         \Rule{CM-Exists}
-             {\ell_\iota \sqsubseteq_\iota \theta_\iota \alpha \quad \ell_\iota \neq \bot_\iota}
+             {\exists \ell \in \Lambda_\iota : \ell \sqsubseteq_\iota \theta_\iota \alpha }
              {\CM{\exists_\iota \alpha}}
         \quad
         \Rule{CM-Left}
@@ -915,11 +825,10 @@ The subtyping relation is as usual for a type and effect system, thus note the s
      {\Judge{e_1}{\TyFun{\tau_1}{\tau_2}{\alpha}}
       \quad \Judge{e_2}{\tau_3}
       \quad C \Vdash \tau_3 \leq_{\Ref\Exn} \tau_1
-      \quad C \Vdash \tau_2 \leq_{\Ref\Exn} \tau_4
       \quad C \Vdash \alpha \sqsubseteq_\Exn \TopLevel{\tau_2}
       \quad C \Vdash \exists_\Exn \alpha \Rightarrow \TopLevel{\tau_3} \sqsubseteq_\Exn \TopLevel{\tau_2}
      }
-     {\Judge{\App{e_1}{e_2}}{\tau_4}}
+     {\Judge{\App{e_1}{e_2}}{\tau_2}}
      \BigBreak
 \Rule{T-Abs}
      {\Judge[C; \Gamma, x : \tau_1]{e}{\tau_2}}
@@ -1035,7 +944,7 @@ The typing rule \CiteRule{T-Op} for primitive operators will be discussed in Sec
 \CiteRule{T-Fst} and \CiteRule{T-Snd} are standard type rules for projections from a pair. As they implicitly perform a pattern-match, they have to propagate any exceptions that can occur when evaluating the pair-constructor to the resulting type.
 \CiteRule{T-Nil} gives the nil-constructor the type list of $\tau$, with $\tau$ unconstrained, and an annotation $\alpha$ indicating the head of the spine of the list can at least contain a nil-constructor.
 \CiteRule{T-Cons} merges data-flow and exception-flow of the head and elements in the tail of the list, annotates the resulting type with an $\alpha$ indicating the head of the spine of the list can at least contain a cons-constructor, and propagates the exceptions that can occur in the tail of the spine of the list to the resulting type.
-\CiteRule{T-Case} is similar to \CiteRule{T-If}. The additional complication lies in the fact that the pattern for a cons-constructor must also bring its two fields into scope and give them an appropriate type.
+\CiteRule{T-Case} is similar to \CiteRule{T-If}. The additional complication lies in the fact that the pattern for a cons-constructor must also bring its two field into scope and give them an appropriate type.
 Note how in \CiteRule{T-Cons} and \CiteRule{T-Case} exceptional and non-exceptional values are treated asymmetrically. In the rule \CiteRule{T-Cons} exceptional values in the spine of the tail of the list flow into the result, while we only remember $\SingletonCons$ as the non-exceptional value than can occur at the head of the spine of the resulting list. 
 This choice means that in \CiteRule{T-Case}, while we have more precise information about the head of the list, we have to be \emph{pessimistic} about the shape of the list that gets bound to $x_2$. %\begin{WORKINPROGRESS}We argue that is not such a big problem in practice and in fact unavoidable.\end{WORKINPROGRESS} % FIXME: can't remember the shape up to infinite depth, can easily extend the lattice to record the length of lists
 Conversely, for exceptional values we have less precise information about the head of the spine of the list. % FIXME: argue that this isn't going to be a problem in practice.
@@ -1072,7 +981,7 @@ This restriction states that the interpretation of an operator and its abstract 
 \begin{mydef}\label{operator-monotonicity}%[Operator monotonicity]
 An operator constraint set $\omega_\oplus$ is \emph{monotonic} if, whenever $\Centail{\omega_\oplus(\alpha_1, \alpha_2, \alpha)}$ and $\Centail{\alpha_1' \sqsubseteq_{\Ref\Exn} \alpha_1}$, $\Centail{\alpha_2' \sqsubseteq_{\Ref\Exn} \alpha_2}$, $\Centail{\alpha \sqsubseteq_{\Ref\Exn} \alpha'}$ then $\Centail{\omega_\oplus(\alpha_1', \alpha_2', \alpha')}$.
 \end{mydef}
-Informally this means that operator constraint sets can only let the result of evaluating an operator and its operands depend on the values of those operands and not the other way around: the operator constraint sets must respect the fact that we are defining a \emph{forwards} analysis.
+Informally this means that operator constraint sets can only let the result of evaluating an operator and its operands depend on the values of those operands and not the other way around: the operator constraint sets must respect the fact that we are defining a \emph{forwards analysis}.
 
 \subsection{Declarative rules}
 While we have formulated the analysis directly as a normalized type system, we do need to appeal to the three logical rules that have been folded into the non-logical ones---in order to make the system syntax-directed---in the metatheoretic proofs. Their formulation should hold no surprises:
@@ -1105,7 +1014,7 @@ If $e$ is well-typed in the underlying type system, then it can be given a type 
 %\end{proof}
 
 \begin{theorem}[Progress]
-    If $\Judge{e}{\sigma}$ then either $e$ is a value or there exist an $e'$, such that for any $\rho$ with $\EC{\Gamma}{\rho}$ we have $\Reduce{e}{e'}$.
+    If $\Judge{e}{\sigma}$ then either $e$ is value or there exist an $e'$, such that for any $\rho$ with $\EC{\Gamma}{\rho}$ we have $\Reduce{e}{e'}$.
 \end{theorem}
 %\begin{proof}\small
 %	By induction on the typing derivation. We show a single case; the full proof an be found in the appendix.
@@ -1127,8 +1036,6 @@ If $\Judge{e}{\sigma_1}$, $\Reduce{e}{e'}$ and $\EC{\Gamma}{\rho}$ then $\Judge{
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 The analysis can be implemented as a three-stage type inference process. In the first stage we invoke a standard Hindley--Milner type inference algorithm to make sure the input program is well-typed and to give the second stage  access to the underlying types of all subexpressions. The second stage generates a set of constraints and the third stage solves those constraints.
-
-\subsection{Constraint generation}
 
 %format (V (x) (y)) = "\left<" x ", " y "\right>"
 %format (setOf (a)) = "\left\{\begin{gathered}" a "\end{gathered}\right\}"
@@ -1199,86 +1106,74 @@ The analysis can be implemented as a three-stage type inference process. In the 
 
 %format wop a1 a2 a = "\omega_\oplus(" a1 "," a2 "," a ")"
 
-\begin{figure*}[!t]
-    \centering
-    \begin{minipage}{0.5\textwidth}%
-        \centering
-        \begin{small}
-        \begin{code}
-          w'                         ::  Env -> Expr -> Ty :*: Set Constr
-          w'  env  x                 =   inst (lookup env x)
-          w'  env  c                 =   typeOf c
-          w'  env  Crash             =   typeOf Crash
-          w'  env  (Abs x e)         =   do  tau_1 <- freshFrom (ulTy x)
-                                             (V tau_2 C_2) <- w (env, x :: tau_1) e
-                                             alpha <- fresh
-                                             return (V (ShFun tau_1 tau_2 alpha) C_2)
-          w'  env  (App e_1 e_2)     =   do  (V (ShFun tau_1 tau_2 alpha) C_1)  <-  w  env  e_1
-                                             (V tau_3 C_2)                      <-  w  env  e_2
-                                             C_3 <- setOf (tau_3 <<#& tau_1, alpha <|& topLevel tau_2 /// exists_exn alpha => topLevel tau_3 <|& topLevel tau_2)
-                                             return (V tau_2 (C_1 # C_2 # C_3))
-          w'  env  (Let x e_1 e_2)   
-                                     =   do  (V tau_1 C_1)    <-  w env  e_1
-                                             sigma_1          <-  gen env tau_1 C_1
-                                             (V tau_2 C_2)    <-  w (env, x :: sigma_1) e_2
-                                             return (V tau_2 (C_1 # C_2))
-          w'  env  (If e_1 e_2 e_3)  
-                                     =   do  (V (alpha_1) (C_1))    <- w env e_1
-                                             (V (tau_2) (C_2))      <- w env e_2
-                                             (V tau_3 C_3)          <- w env e_3
-                                             tau <- freshFrom (ulTy (e_2))
-                                             C_4 <- setOf (alpha_1 <|& topLevel tau /// T <|# alpha_1 \/ exists_exn alpha_1 => tau_2 <<#& tau /// F <|# alpha_1 \/ exists_exn alpha_1 => tau_3 <<#& tau)
-                                             return (V (tau) (C_1 # C_2 # C_3 # C_4))
-          w'  env  (Op e_1 e_2)      =   do  (V alpha_1 C_1)  <-  w env e_1
-                                             (V alpha_2 C_2)  <-  w env e_2
-                                             alpha <- fresh
-                                             C_3 <- setOf (alpha_1 <|& alpha, alpha_2 <|& alpha)
-                                             C_4 <- wop alpha_1 alpha_2 alpha
-                                             return (V (alpha) (C_1 # C_2 # C_3 # C_4))
-        \end{code}
-        \end{small}
-    \end{minipage}%
-    \begin{minipage}{0.5\textwidth}%
-        \centering
-        \begin{small}
-        \begin{code}
-          w'  env  (Pair e_1 e_2)    =   do  (V tau_1 C_1)  <-  w env e_1
-                                             (V tau_2 C_2)  <-  w env e_2
-                                             alpha <- fresh
-                                             return (V (ShPair tau_1 tau_2 alpha) (C_1 # C_2))
-          w'  env  (Fst e)           =   do  (V (ShPair tau_1 tau_2 alpha) C_1) <- w env e
-                                             tau <- freshFrom (ulTy (Fst e))
-                                             C_2 <- setOf (tau_1 <<#& tau, alpha <|& topLevel tau)
-                                             return (V tau (C_1 # C_2))
-          w'  env  (Snd e)           =   do  (V (ShPair tau_1 tau_2 alpha) C_1) <- w env e
-                                             tau <- freshFrom (ulTy (Snd e))
-                                             C_2 <- setOf (tau_2 <<#& tau, alpha <|& topLevel tau)
-                                             return (V tau (C_1 # C_2))
-          w'  env  (e==[])           =   do  tau <- freshFrom (ulTy e)
-                                             alpha <- fresh
-                                             return (V (ShList tau alpha) (setOf (NIL <|# alpha)))
-          w'  env  (e_1 : e_2)       =   do  (V tau_1 C_1) <- w env e_1
-                                             (V (ShList tau_2 alpha_2) C_2) <- w env e_2
-                                             tau    <- fresh
-                                             alpha  <- fresh
-                                             C_3 <- setOf (tau_1 <<#& tau, tau_2 <<#& tau /// CONS <|# alpha, alpha_2 <|# alpha)
-                                             return (V (ShList tau alpha) (C_1 # C_2 # C_3))
-          w'  env  (Case e_1 e_2 x_1 x_2 e_3)
-                                     =   do  (V (ShList tau_1 alpha_1) C_1) <- w env e_1
-                                             (V tau_2 C_2) <- w env e_2
-                                             beta <- fresh
-                                             (V tau_3 C_3) <- w (env, x_1 :: tau_1, x_2 :: (ShList tau_1 beta)) e_3
-                                             tau <- freshFrom (ulTy e_2)
-                                             C_4 <- setOf (alpha_1 <|& topLevel tau /// NIL <|# alpha_1 \/ exists_exn alpha_1 => tau_2 <<#& tau /// CONS <|# alpha_1 \/ exists_exn alpha_1 => tau_3 <<#& tau /// NIL |#| CONS <|# beta, alpha_1 <|& beta)
-                                             return (V tau (C_1 # C_2 # C_3 # C_4))
-        \end{code}
-        \end{small}
-    \end{minipage}%
-    \caption{Constraint inference algorithm}
-    \label{fig-consraint-generation}
-\end{figure*}
+\subsection{Constraint generation}
 
-The constraint inference algorithm $\mathcal{W}$ is given in Figure~\ref{fig-consraint-generation}. The case for \textbf{fix} is discussed in Section~\ref{sec-knowingwhentostop}. As the \textbf{close} and \textbf{bind}-constructs are included for metatheoretic purposes only and assumed not to be present in the initial unevaluated program text, we do not need to include any cases for them in the algorithm.
+%\begin{figure}[h]
+%    \vspace{-.5em}
+%\begin{small}
+%      w'  env  (Fix x e)         =   ...
+    \begin{code}
+      w'                         ::  Env -> Expr -> Ty :*: Set Constr
+      w'  env  x                 =   inst (lookup env x)
+      w'  env  c                 =   typeOf c
+      w'  env  Crash             =   typeOf Crash
+      w'  env  (Abs x e)         =   do  tau_1 <- freshFrom (ulTy x)
+                                         (V tau_2 C_2) <- w (env, x :: tau_1) e
+                                         alpha <- fresh
+                                         return (V (ShFun tau_1 tau_2 alpha) C_2)
+      w'  env  (App e_1 e_2)     =   do  (V (ShFun tau_1 tau_2 alpha) C_1)  <-  w  env  e_1
+                                         (V tau_3 C_2)                      <-  w  env  e_2
+                                         C_3 <- setOf (tau_3 <<#& tau_1, alpha <|& topLevel tau_2 /// exists_exn alpha => topLevel tau_3 <<& topLevel tau_2)
+                                         return (V tau_2 (C_1 # C_2 # C_3))
+      w'  env  (Let x e_1 e_2)   
+                                 =   do  (V tau_1 C_1)    <-  w env  e_1
+                                         sigma_1          <-  gen env tau_1 C_1
+                                         (V tau_2 C_2)    <-  w (env, x :: sigma_1) e_2
+                                         return (V tau_2 (C_1 # C_2))
+      w'  env  (If e_1 e_2 e_3)  
+                                 =   do  (V (alpha_1) (C_1))    <- w env e_1
+                                         (V (tau_2) (C_2))      <- w env e_2
+                                         (V tau_3 C_3)          <- w env e_3
+                                         tau <- freshFrom (ulTy (e_2))
+                                         C_4 <- setOf (alpha_1 <|& topLevel tau /// T <|# alpha_1 \/ exists_exn alpha_1 => tau_2 <<#& tau /// F <|# alpha_1 \/ exists_exn alpha_1 => tau_3 <<#& tau)
+                                         return (V (tau) (C_1 # C_2 # C_3 # C_4))
+      w'  env  (Op e_1 e_2)      =   do  (V alpha_1 C_1)  <-  w env e_1
+                                         (V alpha_2 C_2)  <-  w env e_2
+                                         alpha <- fresh
+                                         C_3 <- setOf (alpha_1 <|& alpha, alpha_2 <|& alpha)
+                                         C_4 <- wop alpha_1 alpha_2 alpha
+                                         return (V (alpha) (C_1 # C_2 # C_3 # C_4))
+      w'  env  (Pair e_1 e_2)    =   do  (V tau_1 C_1)  <-  w env e_1
+                                         (V tau_2 C_2)  <-  w env e_2
+                                         alpha <- fresh
+                                         return (V (ShPair tau_1 tau_2 alpha) (C_1 # C_2))
+      w'  env  (Fst e)           =   do  (V (ShPair tau_1 tau_2 alpha) C_1) <- w env e
+                                         tau <- freshFrom (ulTy (Fst e))
+                                         C_2 <- setOf (tau_1 <<#& tau, alpha <|& topLevel tau)
+                                         return (V tau (C_1 # C_2))
+      w'  env  (e==[])           =   do  tau <- freshFrom (ulTy e)
+                                         alpha <- fresh
+                                         return (V (ShList tau alpha) (setOf (NIL <|# alpha)))
+      w'  env  (e_1 : e_2)       =   do  (V tau_1 C_1) <- w env e_1
+                                         (V (ShList tau_2 alpha_2) C_2) <- w env e_2
+                                         tau    <- fresh
+                                         alpha  <- fresh
+                                         C_3 <- setOf (tau_1 <<#& tau, tau_2 <<#& tau /// CONS <|# alpha, alpha_2 <|# alpha)
+                                         return (V (ShList tau alpha) (C_1 # C_2 # C_3))
+      w'  env  (Case e_1 e_2 x_1 x_2 e_3)
+                                 =   do  (V (ShList tau_1 alpha_1) C_1) <- w env e_1
+                                         (V tau_2 C_2) <- w env e_2
+                                         (V tau_3 C_3) <- w (env, x_1 :: tau_1, x_2 :: (ShList tau_1 beta)) e_3
+                                         tau <- freshFrom (ulTy e_2)
+                                         C_4 <- setOf (alpha_1 <|& topLevel tau /// NIL <|# alpha_1 \/ exists_exn alpha_1 => tau_2 <<#& tau /// CONS <|# alpha_1 \/ exists_exn alpha_1 => tau_3 <<#& tau /// NIL |#| CONS <|# beta, alpha_1 <|& beta)
+                                         return (V tau (C_1 # C_2 # C_3 # C_4))
+    \end{code}
+%      w'  env  (Snd e)           =   do  (V (ShPair tau_1 tau_2 alpha) C_1) <- w env e
+%                                         tau <- freshFrom (ulTy (Snd e))
+%                                         C_2 <- setOf (tau_2 <<#& tau, alpha <|& topLevel tau)
+%                                         return (V tau (C_1 # C_2))
+%To save space we omitted the case for \textbf{snd}, which is implemented analogous to the case for \textbf{fst}.
+The case for \textbf{fix} is discussed in Section~\ref{sec-knowingwhentostop}. As the \textbf{close} and \textbf{bind}-constructs are included for metatheoretic purposes only and assumed not to be present in the initial unevaluated program text, we do not need to include any cases for them in the algorithm.
 
 The auxiliary function |freshFrom| creates a type with the same type-constructor shape as the given underlying type, with all annotation variables fresh; |gen| quantifies over all annotation variables free in $\tau$ but not free in $\Gamma$; |inst| instantiates all quantified annotation variables in $\tau$ and $C$ with fresh ones.
 
@@ -1315,39 +1210,23 @@ The auxiliary function |freshFrom| creates a type with the same type-constructor
 %format D_a = " D[\alpha]"
 %format D_a1 = " D[\alpha_1]"
 %format D_a2 = " D[\alpha_2]"
-%format D_tvc = " D[tv\ c]"
 %format g_1
 %format g_2
 %format worklist = " W"
 
 %format entails = "\Vdash"
 
-%format COMMENT_INITIALIZATION     = "\text{--- \emph{initialization}}"
-%format COMMENT_DEPENDENCYANALYSIS = "\text{--- \emph{dependency analysis of constraints}}"
-%format COMMENT_WORKLIST           = "\text{--- \emph{fix-point iteration using worklist}}"
-
-%format singletonC = "\left\{c\right\}"
-
-%format vrs = " V "
-%format SINGLETONalpha_1 = "\left\{\alpha_1\right\}"
-%format SINGLETONalpha = "\left\{\alpha\right\}"
-
 The constraint solver $\mathcal{S}$ takes a constraint set $C$ and produces a substitution $\theta$ that solves it. The solver assumes that all subtyping constaints ($\leq_\iota$) have been decomposed into atomic constrains ($\sqsubseteq_\iota$) using the syntax-directed part of the subtyping relation (\textsc{SA}) as a decomposition algorithm.
 
-\begin{figure}[!h]
-    \begin{small}
+%\begin{figure}[!h]
     \begin{code}
         solve    ::  Set Constr -> Subst
-        solve C  =   do  COMMENT_INITIALIZATION
-                         foreach alpha `elem` fv C do
+        solve C  =   do  foreach alpha `elem` fv C do
                            subst_ref_alpha  <- empty
                            subst_exn_alpha  <- empty
                            D_a              <- empty
-                         COMMENT_DEPENDENCYANALYSIS
                          foreach c `elem` C do
-                           foreach alpha `elem` dv c do
-                              D_tvc <- D_a # singletonC
-                         COMMENT_WORKLIST
+                           D <- dep D c
                          worklist <- C
                          while worklist /= empty do
                            gr # worklist <- worklist
@@ -1356,35 +1235,35 @@ The constraint solver $\mathcal{S}$ takes a constraint set $C$ and produces a su
                                somecon  <|? alpha    |-> if  theta_i_a /= theta_i_a |#| somecon then
                                                              theta_i_a <- theta_i_a |#| somecon
                                                              worklist <- worklist # D_a
-                               alpha_1  <|? alpha_2  |-> if  theta_i_a2 /= theta_i_a1 |#| theta_i_a2 then
-                                                             theta_i_a2 <- theta_i_a1 |#| theta_i_a2
-                                                             worklist <- worklist # D_a2
+                               alpha_1  <|? alpha_2  |-> if  theta_i_a /= theta_i_a1 |#| theta_i_a2 then
+                                                             theta_i_a1 <- theta_i_a1 # theta_i_a2
+                                                             worklist <- worklist # D_a1
                          return (V subst_ref subst_exn)
-
-        dv     ::  Constr -> Set Var
-        dv  c  =   do  vrs <- empty
-                       case c of
-                           g => alpha_1 <|? alpha_2  |-> vrs <- vrs # SINGLETONalpha_1
-                       case c of
-                           somecon <|? alpha => r    |-> vrs <- vrs # SINGLETONalpha
-                           exists_i_a => r           |-> vrs <- vrs # SINGLETONalpha
-                           g_1 \/ g_2 => r           |-> vrs <- vrs # dv g_1 # dv g_2
-                       return vrs
-                          
-        tv     ::  Constr -> Var
-        tv c   =  do  case c of
-                          r => somecon  <|? alpha    |->  return alpha
-                          r => alpha_1  <|? alpha_2  |->  return alpha_2
     \end{code}
-    \end{small}
 %    \label{fig-constraint-solver}
-    \caption{Constraint solver}
-\end{figure}
+%    \caption{Constraint solver}
+%\end{figure}
 
-The constraint solver $\mathcal{S}$ relies on the a function |dv| that determines the \emph{dependent variables} of a constraint $c$: the variables that if updated may require the constraint to be reevaluated duting the fix-point iteration.
+The constraint solver $\mathcal{S}$ relies on a recursive subroutine $\mathcal{D}$ that performs a dependency analysis on the constraints, expressed as a dependency map |D :: Map Var Constr|. There is an entry in the dependency map for each variable for which we are solving, associating it with a set of constraints that may need to be reconsidered by the constraint solver whenever the variable's value is updated.
 
-% The solver runs in $O(||C||^3)$. %, where $||C|| \leq c k^w D T$ and $k$ them maximum number of nested \textbf{fix}-operators, $w$ the maximum number of iterations allowed . 
-% A practical implementation would iterate over the strongly-connected components in the dependency graph and use other heuristics when picking a constraint from the working list.
+%\begin{figure}[!h]
+    \begin{code}
+        dep'      ::  (Map Var Constr) -> Constr -> (Map Var Constr)
+        dep' D c  =   do  case c of
+                              g => alpha_1 <|? alpha_2  |-> D_a1 <- D_a1 # c
+                          case c of
+                              somecon <|? alpha => r    |-> D_a <- D_a # c
+                              exists_i_a => r           |-> D_a <- D_a # c
+                              g_1 \/ g_2 => r           |-> do  D <- dep D (g_1 => r)
+                                                                D <- dep D (g_2 => r)
+                          return D
+    \end{code}
+%    \label{fig-dependency-analysis}
+%    \caption{Constraint dependency analysis}
+%\end{figure}
+
+The solver runs in $O(||C||^3)$. %, where $||C|| \leq c k^w D T$ and $k$ them maximum number of nested \textbf{fix}-operators, $w$ the maximum number of iterations allowed . 
+A practical implementation would iterate over the strongly-connected components in the dependency graph and use other heuristics when picking a constraint from the working list.
 
 \subsection{Knowing when to stop}\label{sec-knowingwhentostop}
 %format bottomType = "\bot_{\lfloor f \rfloor}"
@@ -1402,13 +1281,13 @@ So far we have omitted the algorithmic rule for \textbf{fix}. It performs a Klee
                           return (V tau_2 (C_2))
 \end{code}
 
-Problematically, it is not guaranteed that $\sigma'$ will ever become a generic instance of $\sigma$. \citet{Dussart:1995:PRS:647163.717680} show that this is the case for a simpler type of constraints (subtyping only) by noting that any variable that does not occur free in $\sigma$ or $\Gamma$ can be eliminated (e.g., the constraint set $\{\alpha_1 \sqsubseteq \alpha_2, \alpha_2 \sqsubseteq \alpha_3\}$ with $\alpha_2$ not free in $\sigma$ and $\Gamma$ can be reduced to $\{\alpha_1 \sqsubseteq \alpha_3\}$). The result then follows from the fact that only a finite (quadratic) number of subtype constraints can be formed over the finite set of remaining variables.
+Problematically, it is not guaranteed that $\sigma'$ will ever become a generic instance of $\sigma$. \cite{Dussart:1995:PRS:647163.717680} show that this is the case for a simpler type of constraints (subtyping only) by noting that any variable that does not occur free in $\sigma$ or $\Gamma$ can be eliminated (e.g., the constraint set $\{\alpha_1 \sqsubseteq \alpha_2, \alpha_2 \sqsubseteq \alpha_3\}$ with $\alpha_2$ not free in $\sigma$ and $\Gamma$ can be reduced to $\{\alpha_1 \sqsubseteq \alpha_3\}$). The result then follows from the fact that only a finite (quadratic) number of subtype constraints can be formed over the finite set of remaining variables.
 
 We also have conditional constraints and variables occurring in their left-hand side cannot easily be eliminated. However, as static program analysis is the art of computing sound approximations to (seemingly or actual) intractable problems, we should not immediately despair:
     \begin{enumerate}
         \item The constraint set \[\left\{ \Lambda_\iota \sqsubseteq_\iota \alpha \Rightarrow r, g_1 \Rightarrow \beta_1 \sqsubseteq_\iota \alpha, g_2 \Rightarrow \beta_2 \sqsubseteq_\iota \alpha \right\}\] with $\alpha$ not free in $\sigma$ or $\Gamma$, can---after having suitably extended the allowed syntax of constraints---be rewritten into: \[ \left\{ \Lambda_\iota \sqsubseteq_\iota (g_1 \Rightarrow \beta_1 \sqcup g_2 \Rightarrow \beta_2) \Rightarrow r \right\} \]
         As $g_1$ and $g_2$ may again contain variables that need to be eliminated, and we want to keep the size of the individual constraints bounded, we may eventually need to approximate constraints $g \Rightarrow \alpha$ by setting their guard to \textbf{true}.
-        \item Alternatively, during the first $k$ Kleene--Mycroft iterations we can neglect to eliminate variables that occur on the left-hand side of a constraint, building an additional finite set $I$ of ineliminable variables. During the later iterations we intentionally introduce poisoning in the style of \citet{VanHorn:2010:AAM:1863543.1863553}, by instead of generating a fresh variable that will end up in the left-hand side of constraint, reusing a variable from $I$.
+        \item Alternatively, during the first $k$ Kleene--Mycroft iterations we can neglect to eliminate variables that occur on the left-hand side of a constraint, building an additional finite set $I$ of ineliminable variables. During the later iterations we intentionally introduce poisoning by, instead of generating a fresh variable that will end up in the left-hand side of constraint, reusing a variable from $I$.
         The trick would be in picking variables in such a way that would not disturb a fixed-point that may already have been reached after $k$ iterations.
     \end{enumerate}
 
@@ -1419,12 +1298,11 @@ We also have conditional constraints and variables occurring in their left-hand 
 \subsection{Polymorphism} \label{sec-polymorphism}
 
 Consider the polymorphic function |apply|:
-\begin{center}
+
 \begin{code}
 apply :: forall alphabeta. (alpha -> beta) -> alpha -> beta
 apply f x = f x
 \end{code}
-\end{center}
 
 As we cannot inspect an expression with a polymorphic type other than by the exceptions that it may raise when forced to weak head normal form, it is sufficient to treat them as any other base type.
 
@@ -1437,7 +1315,7 @@ Care needs to be taken when we instantiate the polymorphic variables of a polymo
 
 For example, instantiating the polymorphic underlying type of |apply| with $\left[\alpha \mapsto \TyPair{\mathbb{Z}}{\mathbb{Z}}{}, \beta \mapsto \TyPair{\TyBool}{\TyBool}{} \right]$ will give rise to the instantiation $\left[\alpha \mapsto \TyPair{\eta}{\theta}{\alpha}, \beta \mapsto \TyPair{\iota}{\kappa}{\beta}, \gamma \mapsto \TyPair{\lambda}{\mu}{\gamma} \right]$ of the polyvariant type used in the analysis:
 \begin{multline*}
-    \TyForallNOOVERLINE{\alpha\beta\gamma\delta\epsilon\zeta\eta\theta\iota\kappa\lambda\mu}{\TyFun{\left(\TyFun{\TyPair{\eta}{\theta}{\alpha}}{\TyPair{\iota}{\kappa}{\beta}}{\delta}\right)}{\TyFun{\TyPair{\lambda}{\mu}{\gamma}}{\TyPair{\iota}{\kappa}{\beta}}{\zeta}}{\epsilon}\\}{\left\{\TyPair{\lambda}{\mu}{\gamma} \leq_{\Ref\Exn} \TyPair{\eta}{\theta}{\alpha}, \delta \sqsubseteq_\Exn \beta, \exists_\Exn \delta \Rightarrow \gamma \sqsubseteq_\Exn \beta \right\}}
+    \TyForallNOOVERLINE{\alpha\beta\gamma\delta\epsilon\zeta\eta\theta\iota\kappa\lambda\mu}{\TyFun{\left(\TyFun{\TyPair{\eta}{\theta}{\alpha}}{\TyFun{\iota}{\kappa}{\beta}}{\delta}\right)}{\TyFun{\TyPair{\lambda}{\mu}{\gamma}}{\TyFun{\iota}{\kappa}{\beta}}{\zeta}}{\epsilon}\\}{\left\{\TyPair{\lambda}{\mu}{\gamma} \leq_{\Ref\Exn} \TyPair{\eta}{\theta}{\alpha}, \delta \sqsubseteq_\Exn \beta, \exists_\Exn \delta \Rightarrow \gamma \sqsubseteq_\Exn \beta \right\}}
 \end{multline*}
 In the general case we need to:
     \begin{enumerate}
@@ -1455,57 +1333,15 @@ We admit that ``non-strict higher-order functional languages with imprecise exce
 
 While the construction and destruction rules we defined for lists---keeping track of the constructors that can occur at the head of the spine, assuming the constructors occurring in the tail can always be both a nil and a cons-constructor---work adequately for functions operating on nil-terminated lists, this approach will not give useful results when extended to other algebraic data types and applied to the desugaring example from Section~\ref{sec-desugar}, even if extended to keep track of the constructors that can occur in the first $k$ positions of the spine. We critically rely on knowing which of the constructors can occur throughout the \emph{whole} spine of the abstract syntax tree.
 
-We would need to combine both approaches for an accurate analysis: we need to know which constructor can occur at the head of a data structure and which constructors can occur throughout the rest of the spine or, formulated differently, at the recursive positions of the data type. This approach is reminiscent of Catch's \emph{multipatterns} \cite{Mitchell:2008:PBE:1411286.1411293}.
+\begin{description}
+\item[Multipatterns] We would need to combine both approaches for an accurate analysis: we need to know which constructor can occur at the head of a data structure and which constructors can occur throughout the rest of the spine or, formulated differently, at the recursive positions of the data type. This approach is essentially equivalent to Catch's \emph{multipatterns} \cite{Mitchell:2008:PBE:1411286.1411293}.
 
-The most straightforward implementation splits the data flow into two separate flows $\delta_1$ and $\delta_2$: one to track the constructors occurring at the head of a spine and one to keep track of the constructors occuring in the tail of the spine.
-\begin{eqnarray*}
-\iota, \kappa &::=& \Ref_1 \quad || \quad \Ref_2 \quad || \quad \Exn
-\end{eqnarray*}
-While technically simple, the required modifications to the type system are notationally heavy as---unlike between the data flow and the exception flow---values can flow directly between $\delta_1$ and $\delta_2$ and it therefore is no longer sufficient to attach a single flow index $\iota$ to the subtyping relation.
-\begin{eqnarray*}
-r &::=& ...
-  \quad || \quad \alpha_1\ {_\iota}\!\!\sqsubseteq_\kappa \alpha_2
-  \quad || \quad ...
-\end{eqnarray*}
+The most straightforward implementation splits the data flow into two separate flows $\delta_1$ and $\delta_2$: one to track the constructors occurring at the head of a spine and one to keep track of the constructors occuring in the tail of the spine. While technically simple, the required modifications to the type system are notationally heavy as---unlike between the data flow and the exception flow---values can flow directly between $\delta_1$ and $\delta_2$ and it therefore is no longer sufficient to attach a single flow index $\iota$ to the subtyping relation.
 
-The updated typing rules rules involving lists would read:
-\vspace*{2pt}
-%\begin{figure*}[!t]
-%\begin{small}
-\begin{gather*}
-\Rule{T-Nil}
-     {C \Vdash \SingletonNil \sqsubseteq_{\Ref_{12}} \alpha} %% FIXME: subtyping/-effecting?
-     {\Judge{\LNil}{\TyList{\tau}{\alpha}}}
-     \BigBreak
-\Rule{T-Cons}
-     {\begin{gathered}
-      \Judge{e_1}{\tau_1}
-      \quad \Judge{e_2}{\TyList{\tau_2}{\alpha_2}}
-      \\ C \Vdash \tau_1 \leq_{{\Ref_{12}}\Exn} \tau
-      \quad C \Vdash \tau_2 \leq_{{\Ref_{12}}\Exn} \tau
-      \\ C \Vdash \SingletonCons \sqsubseteq_{\Ref_1} \alpha
-      \quad C \Vdash \alpha_2\ {_\Exn}\!\!\sqsubseteq_\Exn \alpha
-      \quad C \Vdash \alpha_2\ {_{\Ref_{12}}}\!\!\sqsubseteq_{\Ref_2} \alpha
-      \end{gathered}}
-     {\Judge{\LCons{e_1}{e_2}}{\TyList{\tau}{\alpha}}}
-     \BigBreak
-\Rule{T-Case}
-     {\begin{gathered}
-      \Judge{e_1}{\TyList{\tau_1}{\alpha_1}}
-      \quad \Judge{e_2}{\tau_2}
-      \\ \Judge[C; \Gamma, x_1 : \tau_1, x_2 : \TyList{\tau_1}{\beta}]{e_3}{\tau_3}
-      \\ C \Vdash\CCDO[\Ref_{12}\Exn]{\SingletonNil}{\alpha_1}{\exists_\Exn \alpha_1}{\tau_2}{\tau}
-      \\ C \Vdash\CCDO[\Ref_{12}\Exn]{\SingletonCons}{\alpha_1}{\exists_\Exn \alpha_1}{\tau_3}{\tau}
-      \\ C \Vdash\alpha_1\ {_{\Ref_2}}\!\!\sqsubseteq_{\Ref_{12}} \beta
-      \quad C \Vdash \alpha_1\ {_\Exn}\!\!\sqsubseteq_\Exn \beta
-      \quad C \Vdash\alpha_1\ {_\Exn}\!\!\sqsubseteq_\Exn \TopLevel{\tau}
-      \end{gathered}}
-     {\Judge{\Case{e_1}{e_2}{x_1}{x_2}{e_3}}{\tau}}
-\end{gather*}
-%\end{small}
-%\label{fig-multipatterns}
-%\end{figure*}
-\vspace*{2pt}
+\item[Grammars] A more ambitious approach would be trying to infer (the production rules of) a grammar describing the structure of the spine of a datatype. This approach is reminiscent of both the |rectype|s of \cite{Freeman:1991:RTM:113445.113468} and Catch's \emph{regular expression patterns}. Experience with Catch has shown that a naive implementation of grammar inference has difficulty scaling to larger programs, but this might be alleviated by \emph{widening}: we can bound the complexity of a grammar by replacing if with a simpler, but soundly approximating, one. 
+
+This approach falls squarely in the area of ``further research needed.'' What kind of grammars would be suitable, can operations on them be expressed in our flow-based type system, when and how should we widen them?
+\end{description}
 
 Issues we have not yet fully investigated include parameterized and higher-kinded data types. In general polyvariance in the analysis should not be directly related to polymorphism in the underlying type system, so all fields in a data type can or should be polyvariantly parameterized, irrespective of whether the field is polymorphically parameterized in the underlying system. Since we are making use of subtyping, the variance (co-, contra-, in- or non-) of fields should be propagated to the polyvariant parameters.
 
@@ -1523,47 +1359,34 @@ Issues we have not yet fully investigated include parameterized and higher-kinde
 \section{Related Work}\label{sec-relatedwork} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\paragraph{Catch and Dialyzer} The Catch case totality checker \cite{Mitchell:2008:PBE:1411286.1411293} employs a first-order backwards analysis, inferring preconditions on functions under which it is guaranteed that no exceptions will be raised or pattern-match failures will occur. To analyze Haskell programs, a specially crafted and incomplete defunctionalization step is required. In contrast, our forwards analysis is type-driven and will naturally work on higher-order programs. Furthermore, Catch assumes functions are strict in all their arguments, while our analysis tries to model the call-by-name semantics more accurately.
+\paragraph{Catch and Dialyzer} Most closely related to our work is Mitchell's case totality checker Catch \cite{Mitchell:2008:PBE:1411286.1411293}. Catch is a first-order backwards analysis, inferring preconditions on functions under which it is guaranteed that no exceptions will be raised or pattern-match failures will occur. To analyze Haskell programs, a specially crafted and incomplete defunctionalization step is required. In contrast, our forwards analysis is type-driven and will naturally work on higher-order programs. Furthermore, Catch assumes functions are strict in all their arguments, while our analysis tries to model the call-by-name semantics more accurately.
 
 The Dialyzer discrepancy analyzer for Erlang \cite{Lindahl:2006:PTI:1140335.1140356} works in a similar spirit to our analysis, except that it has a dual notion of soundness: Dialyzer will only warn about function applications that are guaranteed to generate an exception. 
 
 \paragraph{Exception analyses} Several exception analyses have been described in the literature, primarily targeting the detection of uncaught exceptions in ML.
-The exception analysis in \citet{kyi} is based on abstract interpretation.
-\citet{Guzman94anextended} and \citet{Fahndrich:1998:TDE:893957} describe type-based exception analyses, neither are very precise.
-The row-based type system for exception analysis described in \citet{Leroy:2000:TAU:349214.349230} does containing a data-flow analysis component, although one that is specialized towards tracking value-carrying exceptions instead of value-dependent exceptions and thus employing less precise unification methods instead of subtyping.
-\citet{Glynn:2002:EAN:581478.581488} developed the first exception analysis for non-strict languages. It is a type-based analysis using Boolean constraints and, although it does not take data flow into account, has a similar flavour to our system.
+The exception analysis in \cite{kyi} is based on abstract interpretation.
+\cite{Guzman94anextended} and \cite{Fahndrich:1998:TDE:893957} describe type-based exception analyses, neither are very precise.
+The row-based type system for exception analysis described in \cite{Leroy:2000:TAU:349214.349230} does containing a data-flow analysis component, although one that is specialized towards tracking value-carrying exceptions instead of value-dependent exceptions and thus employing less precise unification methods instead of subtyping.
+\cite{Glynn:2002:EAN:581478.581488} developed the first exception analysis for non-strict languages. It is a type-based analysis using Boolean constraints and, although it does not take data flow into account, has a similar flavour to our system.
 
-\paragraph{Conditional constraints} The use of conditional constraints in program analysis can be traced back to \citet{DBLP:conf/ifip/Reynolds68}. %% \begin{WORKINPROGRESS}(So sayeth Pottier, didn't immediately see this when skimming over the original.)\ \end{WORKINPROGRESS}
-\citet{Heintze:1994:SAM:182409.182495} uses conditional constraints to model branches in \textbf{case}-expressions for a dead-code analysis.
+\paragraph{Conditional constraints} The use of conditional constraints in program analysis can be traced back to \cite{DBLP:conf/ifip/Reynolds68}. %% \begin{WORKINPROGRESS}(So sayeth Pottier, didn't immediately see this when skimming over the original.)\ \end{WORKINPROGRESS}
+\cite{Heintze:1994:SAM:182409.182495} uses conditional constraints to model branches in \textbf{case}-expressions for a dead-code analysis.
 Constraint-based $k$-CFA analyses \cite{Shivers:1988:CFA:53990.54007}, although traditionally not formulated as a type system, can use conditional constraints to let the control flow depend on the data flow.
-\citet{Aiken:1994:STC:174675.177847} uses conditional constraints to formulate a soft-typing system for dynamic languages.
-\citet{Pottier:2000:VCT:763845.763849} developed an expressive constraint-based type system incorporating subtyping, conditional constraints and rows and applied it to several inference problems, including accurate pattern-matchings.
-
-\paragraph{Refinement types (\ala dependent types) and contract checking} There has been a long line of work exploring various approaches of \emph{refinement types} in the sense of using \emph{dependent types} to specify contracts (also termed \emph{contract types} or \emph{refinement predicates}).
-A refinement type expressing all natural numbers greater than or equal to five would be written as: \[ \{ x : \mathbb{N}\ ||\ x \geq 5 \} \]
-Dependent ML \cite{Xi:2007:DMA:1230756.1230759} purposely limits the expressiveness of contracts, so contract checking---although not inference---remains decidable.
-\citet{Xu:2009:SCC:1480881.1480889} uses symbolic evaluation to check contracts on Haskell programs.
-\citet{Knowles:2010:HTC:1667048.1667051} developed a framework for \emph{hybrid type checking}, where the checking of contracts that could not be proven to either always hold or be violated at compile-time are deferred until run-time.
-The work on \emph{liquid types} by \citet{Rondon:2008:LT:1375581.1375602} attempts to automatically infer such refinements using the technique of predicate abstraction.
-MoCHi \cite{Kobayashi:2011:PAC:1993498.1993525} employs higher-order model checking.
-HALO \cite{Vytiniotis:2013:HHL:2429069.2429121} is a static contract checker that works by translating a Haskell program and its contracts into first-order logic, which can then be proven using an SMT solver.
+\cite{Aiken:1994:STC:174675.177847} uses conditional constraints to formulate a soft-typing system for dynamic languages.
+\cite{Pottier:2000:VCT:763845.763849} developed an expressive constraint-based type system incorporating subtyping, conditional constraints and rows and applied it to several inference problems, including accurate pattern-matchings.
 
 %format data = "\textbf{data}"
 %format rectype = "\textbf{rectype}"
 
-\paragraph{Refinement types (\ala intersection types)} The refinement type system in \citet{Freeman:1991:RTM:113445.113468} attempts to assign more accurate, refined types to already well-typed ML programs using \emph{union} and \emph{intersection types} \cite{Pierce91programmingwithIUP} with the detection of potential pattern-match failures and reduction of warnings about incomplete patterns as one of its goals. In addition to allowing the programmer to define algebraic data types, e.g.:
-\begin{center}
+\paragraph{Refinement types (\ala intersection types)} The refinement type system in \cite{Freeman:1991:RTM:113445.113468} attempts to assign more accurate, refined types to already well-typed ML programs using \emph{union} and \emph{intersection types} \cite{Pierce91programmingwithIUP} with the detection of potential pattern-match failures and reduction of warnings about incomplete patterns as one of its goals. In addition to allowing the programmer to define algebraic data types, e.g.:
 \begin{code}
 data FPList = [] | alpha : FPList
 \end{code}
-\end{center}
 it also allows the programmer to specify a finite number of ``interesting'' recursive types that refine those algebraic types:
-\begin{center}
 \begin{code}
 rectype FPNil        =           []
 rectype FPSingleton  =  alpha :  []
 \end{code}
-\end{center}
 
 The refinements |FPNil| and |FPSingleton| respectively select the subtypes of empty and singleton lists from the complete list type. From these recursive types, and using a type union operator, a finite type lattice can be computed automatically:
 \begin{center}
@@ -1581,25 +1404,30 @@ The refinements |FPNil| and |FPSingleton| respectively select the subtypes of em
 \end{tikzpicture}
 \end{center}
 The constructors of the algebraic data type in question can then be more accurately typed in terms of intersection types over this lattice:
-\begin{center}
 \begin{code}
 []     ::  forall alpha.  FPNil alpha
 _ : _  ::  forall alpha.  alpha  ->  FPNil        alpha  ->  FPSingleton alpha
            /\             alpha  ->  FPSingleton  alpha  ->  FPList alpha
            /\             alpha  ->  FPList       alpha  ->  FPList alpha
 \end{code}
-\end{center}
 
 Finally, the |case|-construct, interpreted as a higher-order function and specialized to lists, can be given the intersection type:
-\begin{center}
 \begin{code}
 forall alpha  beta_1 beta_2.  FPNil alpha        -> beta_1  -> (alpha  -> FPList  alpha  -> bot     )  -> beta_1
               /\              FPSingleton alpha  -> beta_1  -> (alpha  -> FPNil   alpha  -> beta_2  )  -> beta_1 \/ beta_2
               /\              FPList alpha       -> beta_1  -> (alpha  -> FPList  alpha  -> beta_2  )  -> beta_1 \/ beta_2
 \end{code}
-\end{center}
 
 Compared to our analysis the inference of intersection types would make this a \emph{relational analysis}, while our use of subtyping and conditional constraints only define a \emph{functional} relation between input and output variables. This would seem to imply our analysis is less precise. As the system by Freeman put some restrictions on recursive definitions of recursive types, it is unclear to us if |risers| could be given a suitable refinement type that precludes the occurrence of pattern-match failures. Additionally, the use of intersection types leads to a superexponential blowup of the size of types in the number of |rectype|-definitions.
+
+\paragraph{Refinement types (\ala dependent types) and contract checking} There has been a long line of work exploring various approaches of \emph{refinement types} in the sense of using \emph{dependent types} to specify contracts (also termed \emph{contract types} or \emph{refinement predicates}).
+A refinement type expressing all natural numbers greater than or equal to five would be written as: \[ \{ x : \mathbb{N}\ ||\ x \geq 5 \} \]
+Dependent ML \cite{Xi:2007:DMA:1230756.1230759} purposely limits the expressiveness of contracts, so contract checking---although not inference---remains decidable.
+\cite{Xu:2009:SCC:1480881.1480889} uses symbolic evaluation to check contracts on Haskell programs.
+\cite{Knowles:2010:HTC:1667048.1667051} developed a framework for \emph{hybrid type checking}, where the checking of contracts that could not be proven to either always hold or be violated at compile-time are deferred until run-time.
+The work on \emph{liquid types} by \cite{Rondon:2008:LT:1375581.1375602} attempts to automatically infer such refinements using the technique of predicate abstraction.
+MoCHi \cite{Kobayashi:2011:PAC:1993498.1993525} employs higher-order model checking.
+HALO \cite{Vytiniotis:2013:HHL:2429069.2429121} is a static contract checker that works by translating a Haskell program and its contracts into first-order logic, which can then be proven using an SMT solver.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\section{Future Research}\label{sec-futureresearch} %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1627,8 +1455,6 @@ We would like to thank \ANONYMOUS{Stefan Holdermans}{Tyrion Lannister} for his c
 
 %\clearpage
 
-\bibliographystyle{abbrvnat}
-\bibliography{paper} % FIXME: merge .bbl here and add \softraggedright
 
 \clearpage
 

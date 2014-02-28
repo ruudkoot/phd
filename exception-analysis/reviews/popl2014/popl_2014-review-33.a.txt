@@ -1,0 +1,67 @@
+===========================================================================
+                           POPL 2014 Review #33A
+                     Updated 7 Aug 2013 3:31:30pm BST
+---------------------------------------------------------------------------
+   Paper #33: Type-based Exception Analysis for Non-strict Higher-order
+              Functional Languages with Imprecise Exception Semantics
+---------------------------------------------------------------------------
+
+                              Goals: 3. The goals are good.  To the
+                                        standard of a perfectly acceptable
+                                        POPL paper.
+                          Execution: 2. The execution is fine, to the
+                                        standard of a serious conference,
+                                        but not competitive here.
+                       Presentation: 2. The presentation is fine, to the
+                                        standard of a serious conference,
+                                        but not competitive here.
+                 Reviewer expertise: Y. I am knowledgeable in the area,
+                                        though not an expert.
+                      Overall merit: C. Weak paper, though I will not fight
+                                        strongly against it.
+
+               ===== Summary and Rationale for Scores =====
+
+Summary:
+The problem faced in the paper is to design a type system for functional languages which statically prevents pattern-match failures (invoking a function defined by cases on a non-handled case, or trying to match with a pattern (e.g., a list pattern x::xs) an expression whose value does not match, e.g., is an empty list). Tht type system should be able to accept safe programs that a  naive analysis would reject, by detecting that in function invocations f e, or irrefutable patterns p = e, the value of e is guaranteed to be of an appropriate shape. 
+
+More precisely, the authors consider a call-by-name functional language (with pairs and lists as compound types) with "imprecise exception semantics", which has been introduced by Peyton-Jones et al. (PLDI '99). Roughly, this means that, in case evaluation of some subterms raises an exception, the evaluation of the compound term can non deterministically raise one of the possible exceptions. This semantics is needed to preserve some program transformations such as case switching. 
+
+On top of this language, the authors design an extension of the canonical monomorphic type system for such a language where types of expressions are annotated with the set of the exceptions they could possibly throw (actually they take a more abstract approach where types are elements of a lattice, but I guess in pratice they are sets of exceptions). Such annotations are polymorphic, that is, they include annotation variables, and a type schema consists of a polymorphic type togehter with a set of constraints on annotation variables. They prove soundness of the type system, provide a type inference algorithm, based on generating and then solving constraints (they do not mention resuts about the algorithm), and in the supplementary material they provide a prototype and a mechanized proof. 
+
+Overall evaluation: the paper presents valuable work and the contribution is worked out well (type inferece algorithm, detailed proofs with mechanized version, prototype). The technical treatment looks sound. 
+However, I have some criticisms:
+- I found the concrete problem solved by the paper much more specific than I would have expected from the introductory part. They actually consider the language proposed in PLDI'99 and it is not clear how and why the solution is specific to such language. In particular, constructors are just those of pairs and lists whereas one would have expected a general tratement of inductive data types, and the generalization does not look trivial. 
+- The proposed type system is rather complicate, and the paper lacks in my opinion to provide a clear intuition of which are the main ideas underlying the type system. Some typing example could help. 
+
+Detailed comments:
+You should use a spell checker.
+Abstract and Introduction
+"the source of most partiality in a program" and other sentences: at first reading I was slightly confused since partiality of functions computed by programs can  also be due to non termination. You should more appropriately introduce the problem as: statically avoiding raising of dynamic error "invoking a function defined by cases on a non handled case".
+Introduction last sentence of first paragraph: usually type systems are conservative, that is, the first alternative is taken.
+Page 2 1.1: full stop missing at the end of third item.
+1.2: a number metatheoretic result -> a number of metatheoretic results
+second column  first paragraph: functional -> function
+2.2: a too -> too
+2.3: it seems to me that in the "easy route" the function from AST into AST should not be "desugar" but a function working on simpleAST. 
+Page 3 first paragraph: -> it must be an empty list, a list that 
+3.1 Since in your formal treatment you consider a canonical monomorphic type system, perhaps it would be better not to use polymorphism in the introductory examples. 
+3.2 -> intention … is to track 
+I found a logical gap when starting to read this section, since in 3.1 annotations on the type (apices) denote the kind (empty or non empty) of the list, that is, a subtype, whereas here they denote possibly thrown exceptions. 
+Could you justify better the fact that you choose a call-by-name semantics? what will change with call-by-value semantics?
+I do not understand the phrasing "this integer might actually still be a thunk". It seems to me that you confuse syntax and semantics here: the argument of the function is an integer, not a term; however, to compute the exceptions possibly raised by an application of the function, of course it is necessary to also take into account those raised by evaluating the argument, and this with both call-by-name and call-by-value semantics. Or I missed something.  
+Again when you say "when evaluating f to closure" it seems to me that you have a too low level view of the semantics.
+Second column paragraph 2: -> purpose
+Page 4 paragraph 2: this explanation does not correspond to the formal syntax.
+Paragraph 3: any out any -> out any
+I do not understand the paragraph "As call-by-name ... " I do not see any relation between being call-by-name and this syntactic choices, perhaps what you mean is just that you choose an Haskell-like syntax. 
+Subsection 4.2 would perhaps be better placed after semantics. 
+Could you explain better what this lattice is expected to be? I guess the lattice of subsets of exceptions, why do not you take this more concrete choice? 
+Subsection 4.4 third paragraph: "will be further motivated …" the other rules are not a motivation for this semantics, but rather a way to model it. 
+Subsection 4.5: "The right-hand side of a conditional or unconditional ..." a few lines above you said that constraints are conditional.
+Could you explain the meaning of the two indexes delta and chi?
+Rules for constraint satisfaction are straightforward, the only interesting point you should stress is the basis of the definition, which is given by the ordering of the lattice.
+The role of Lambda is not clear: it is the name of the lattice, or a metavariable over its elements?
+Could you explain what a normalized type system is?
+Rules T-Con and T-exn are a bit tricky, would it not be better to directly assign to a constant the top type? (which I guess should be the empty set of exceptions).
+

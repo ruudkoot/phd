@@ -1,0 +1,66 @@
+===========================================================================
+                           POPL 2014 Review #33D
+                    Updated 27 Aug 2013 10:08:18pm BST
+---------------------------------------------------------------------------
+   Paper #33: Type-based Exception Analysis for Non-strict Higher-order
+              Functional Languages with Imprecise Exception Semantics
+---------------------------------------------------------------------------
+
+                              Goals: 3. The goals are good.  To the
+                                        standard of a perfectly acceptable
+                                        POPL paper.
+                          Execution: 2. The execution is fine, to the
+                                        standard of a serious conference,
+                                        but not competitive here.
+                       Presentation: 1. The presentation is lacking.
+                 Reviewer expertise: Z. I am not an expert. My evaluation
+                                        is that of an informed outsider.
+                      Overall merit: C. Weak paper, though I will not fight
+                                        strongly against it.
+
+               ===== Summary and Rationale for Scores =====
+
+The paper tackles the problem of statically verifying that a Haskell program does not crash with a pattern match failure. The techniques are more general than just Haskell, and the analysis tackles more than just pattern-match failures, but that goal provides the main focus. The problem is real, and previous work in this field has suffered from a number of drawbacks, including: being imprecise; requiring a first-order language; only showing problems not proofs of the absence of problems; requiring whole-program analysis etc. The modular type-based approach in this paper would certainly solve many of those problems.
+
+The English in this paper needs some attention. In many places there are clunky phrases which harm the flow of the paper. I have called out a few of the awkward bits, which are found more frequently in the Abstract, Introduction and Motivation.
+
+I am not qualified to fully evaluate the type system presented (and thus my Execution score is not to be relied upon), but I felt that the end system makes trade offs, and that these trade offs are not adequately addressed. Can you give examples of snippets you can proof exception-free? Examples which you know are exception-free but cannot prove safe? It is certainly an interesting point in the design space, and has many advantages over Catch, but it appears (at first glance) that Catch has superior power. As you mention in the extensions, you have avenues for adding more power - it isn't clear if that is essential to make it useful in practice.
+
+Minor remarks:
+
+Abstract: Needs some work making the English more concise and precise. Phrases like "wrongness" and "in actuality completely benign" make it harder to read than necessary.
+
+S1: "may cause such behaviour at compile-time" - not clear from the language alone if the crashes are happening at runtime or compile-time.
+
+S1: "not a reasonable course of action" - many people would disagree with you.
+
+S1: The key point to bring out is that defining head causes a pattern match error, but using head does not. The local pattern warning is not too conservative, just wrong.
+
+1.1: The contributions are nice, both the way you snap together type systems and the operational semantics.
+
+1.1: "mostly" mechanised. Clarify what that means.
+
+2.1: You use Haskell but with : and :: swapped. Given the language in question is clearly Haskell, why not use Haskell syntax?
+
+2.1 and throughout (including 5.3, 7): Many examples of cite should be citet.
+
+2.1: "functional" ==> "function"
+
+2.2: "is a too lenient" ==> "is too lenient"
+
+3.1: The first paragraph is impressively confusing, you use head to mean both the first element of a list and the first cons in a list.
+
+3.1: "that that" ==> "that"
+
+3.2: You never define pmf
+
+4.1: Haskell has catch, although it would be fair to argue people rarely catch pmf.
+
+4.5: Would be nice to see examples of constraints before launching into ASTs.
+
+4.5: "constraints are intentional" ==> "constraints is intentional"
+
+4.7: Definition 1 and 2 use (-) instead of (+) in a few places.
+
+4.9: Is this what you proved?
+

@@ -1,0 +1,70 @@
+We would like to thank the reviewers for their constructive feedback.
+
+==REMARKS==
+
+    CBN/CBV:
+
+        The primary reason for choosing a call-by-name language lies in our
+        ambition of scaling the analysis to the full Haskell language. This
+        choice does influence several technical details (the need for an
+        exception type for both argument and result type of a function, as
+        well as an exception annotation on the function space constructor
+        itself). Somewhat counter-intuitively the imprecise exception semantics
+        complicate things for the analysis as well (we need non-emptiness
+        guards). But these are details we want to handle given our ambitions.
+        
+        Some of the general ideas of the algorithm, such as the use of
+        implication constraints, could be transfered to an analysis for a
+        call-by-value language.
+
+    Related work:
+
+        Due to the page limit we had to make some concessions in the Related
+        Work section. We will try to incorporate some of the suggestions,
+        criticism and pointers to other related work offered by the reviewers.
+
+    Constraint solving:
+
+        We do not have a fully worked-out proof of correctness of the
+        constraint solver, but one can at least convince oneself that the
+        algorithm terminates as follows:
+        
+            During each iteration of the while-loop either W will decrease or
+            \theta will increase. As long as \Lambda_\iota satisfy the
+            ascending chain condition (trivially if they are finite) the
+            algorithm will terminate.
+            
+        To see that the algorithm finds the least solution, note that
+        constraints appearing on the left-hand side of an implication are
+        monotonic when used as a predicate (as in the if-then statement
+        within the while-loop). Intuitively: once a guard holds in iteration
+        $n$ of the algorithm, it will never fail to hold during a later
+        iteration. This property can fail to hold for more expressive
+        constraint languages, as explained in Section 4.5.
+
+==QUESTIONS==
+
+    - Reviewer 1(iv): The expressions which are typeable in the system in
+            Figure 2 are exactly those expressions which are typeable in the
+            underlying type system. Furthermore, types in the analysis have
+            the same shape as the underlying types. So 'f 3 4 5' is indeed not
+            typeable, but this is because it would not be typeable in the
+            underlying (monomorphic) type system with f : A -> B for base
+            types A, B. Instead, f would be given the type
+
+                forall a b c d. a -> b -> c -> d.
+                
+            An alternative presentation in terms of an annotated type system
+            (intertwining both the underlying type system and the analysis)
+            would be possible, but would in our opinion complicate the
+            presentation more than it would help to clarify.
+
+    - Reviewer 1(v): Section 6 presents an extension of the analysis. It is
+            not included in Figure 2.
+
+    - Reviewer 2: Section 6 sketches an algorithm that handles polymorphism.
+
+    - Reviewer 3: "Isn't the type language of 4.2 missing some base type
+            constructors?": No, these are all subsumed by the type variable
+            \alpha. Concrete base type are part of the underlying type system,
+            not the analysis.
