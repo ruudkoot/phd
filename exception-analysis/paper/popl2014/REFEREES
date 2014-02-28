@@ -1,0 +1,7 @@
+Fritz Henglein (polymoprhpic binding-time naakysis)
+Martin Sulzmann (exception analysis, non-strict)
+Manuel Fandrich (exception analysis ML, conditional constraints)
+Neil Mitchel (Catch)
+Leroy/Pessaux (Exception analysis, Ocaml)
+Pottier (Conditional constraints)
+Simon Peyton Jones (imprecise exceptions)
