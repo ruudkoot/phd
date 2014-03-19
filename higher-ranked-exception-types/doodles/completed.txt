@@ -1,0 +1,24 @@
+∀e2::EXN. ∀e1::EXN :=> EXN.
+    (∀e0::EXN. bool{e0} --{e2}-> bool{e1 e0})
+        --{e8}-> (∀e4::EXN. ∀e3::EXN. [bool{e3}]{e4}
+            --{e7 e2 e1}-> [bool{e5 e2 e1 e4 e3}]{e6 e2 e1 e4 e3})
+
+
+5,EXN :=> ((EXN :=> EXN) :=> (EXN :=> (EXN :=> EXN)))
+6,EXN :=> ((EXN :=> EXN) :=> (EXN :=> (EXN :=> EXN)))
+7,EXN :=> ((EXN :=> EXN) :=> EXN)
+8,EXN
+
+
+------------------------------------------------------------------------------------
+
+
+∀e2::EXN. ∀e1::EXN :=> EXN. ( (∀e0::EXN.(bool{e0}->bool{(e1 e0)}){e2})
+    -> (∀e5::EXN. ∀e4::EXN :=> EXN. ((∀e3::EXN.(bool{e3}->bool{(e4 e3)}){e5})
+        -> bool{e6 e2 e1 e5 e4}){e7 e2 e1})){e8}
+
+
+6,EXN :=> ((EXN :=> EXN) :=> (EXN :=> ((EXN :=> EXN) :=> EXN)))
+7,EXN :=> ((EXN :=> EXN) :=> EXN)
+8,EXN
+

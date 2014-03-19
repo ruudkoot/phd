@@ -46,3 +46,8 @@ constSeq x y = x `seq` y
 
 rank2Seq :: (forall a. a) -> b
 rank2Seq x = x `seq` error "b"
+
+-- | Lambdas
+
+flipConstSeq :: a -> b -> a
+flipConstSeq = \x -> x `seq` (\y -> x)
