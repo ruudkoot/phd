@@ -1,8 +1,7 @@
 {-# LANGUAGE ViewPatterns #-}
 
 -- TODO: use right-to-left syntax for environments to avoid headaches.
--- TODO: rename env_i, env_j, ... to env0, env1, ...
--- TODO: do we get nicer types if we generate fresh name later?
+-- NOTE: fresh variable are generated in an order that results in nice types
 
 module Main where
 
@@ -34,7 +33,7 @@ data Exn
     | ExnApp Exn Exn
 
 instance Show Exn where
-    show (ExnVar n) = "e" ++ show n
+    show (ExnVar n)     = "e" ++ show n
     show (ExnApp e1 e2) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
 
 data ExnTy
@@ -44,10 +43,14 @@ data ExnTy
     | ExnArr  ExnTy ExnTy Exn
 
 instance Show ExnTy where
-    show (ExnForall e k t) = "(∀e" ++ show e ++ "::" ++ show k ++ "." ++ show t ++ ")"
-    show (ExnBool exn) = "bool{" ++ show exn ++ "}"
-    show (ExnList t exn) = "[" ++ show t ++ "]{" ++ show exn ++ "}"
-    show (ExnArr t1 t2 exn) = "(" ++ show t1 ++ " -{" ++ show exn ++ "}-> " ++ show t2 ++ ")"
+    show (ExnForall e k t)
+        = "(∀e" ++ show e ++ "::" ++ show k ++ "." ++ show t ++ ")"
+    show (ExnBool exn)
+        = "bool{" ++ show exn ++ "}"
+    show (ExnList t exn)
+        = "[" ++ show t ++ "]{" ++ show exn ++ "}"
+    show (ExnArr t1 t2 exn)
+        = "(" ++ show t1 ++ " --{" ++ show exn ++ "}-> " ++ show t2 ++ ")"
 
 data Kind = EXN | Kind :=> Kind
     deriving Show
@@ -57,24 +60,24 @@ type Env = [(Name, Kind)]
 -- | Completion
 
 complete' :: Env -> Ty -> (ExnTy, Env)
-complete' env ty = evalState (complete env ty) 0
+complete' env ty = evalState (complete env ty) 1
 
 complete :: Env -> Ty -> Fresh (ExnTy, Env)
-complete env_i Bool = do
+complete env0 Bool = do
     e <- fresh
-    return ( ExnBool (exnFromEnv (ExnVar e) env_i)
-           , [(e, kindFromEnv env_i)]              )
-complete env_i (List t) = do
-    (t', env_j) <- complete env_i t
+    return (ExnBool (exnFromEnv (ExnVar e) env0)
+           ,[(e, kindFromEnv env0)])
+complete env0 (List t) = do
     e <- fresh
-    return ( ExnList t' (exnFromEnv (ExnVar e) env_i)
-           , env_j ++ [(e, kindFromEnv env_i)]        )
-complete env_i (t1 :-> t2) = do
-    (t1', env_j) <- complete [] t1 -- fully-flexible = in any context
-    (t2', env_k) <- complete (env_j ++ env_i) t2
+    (t', env1) <- complete env0 t
+    return (ExnList t' (exnFromEnv (ExnVar e) env0)
+           ,env1 ++ [(e, kindFromEnv env0)])
+complete env0 (t1 :-> t2) = do
+    (t1', env1) <- complete [] t1            -- fully-flexible = in any context
     e <- fresh
-    return ( forallFromEnv env_j (ExnArr t1' t2' (exnFromEnv (ExnVar e) env_i))
-           , env_k ++ [(e, kindFromEnv env_i)]                        )
+    (t2', env2) <- complete (env1 ++ env0) t2
+    return (forallFromEnv env1 (ExnArr t1' t2' (exnFromEnv (ExnVar e) env0))
+           ,env2 ++ [(e, kindFromEnv env0)])
 
 exnFromEnv :: Exn -> Env -> Exn
 exnFromEnv exn (map fst -> es) = foldr (\e r -> ExnApp r (ExnVar e)) exn es
