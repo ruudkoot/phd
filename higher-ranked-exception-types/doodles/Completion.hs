@@ -1,6 +1,7 @@
 {-# LANGUAGE ViewPatterns #-}
 
 -- TODO: use right-to-left syntax for environments to avoid headaches.
+-- TODO: pretty print types
 -- NOTE: fresh variable are generated in an order that results in nice types
 
 module Main where
