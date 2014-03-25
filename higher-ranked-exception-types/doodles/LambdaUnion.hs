@@ -1,4 +1,4 @@
-module Main where
+module LambdaUnion where
 
 -- TODO: make use of the fact that terms are always fully applied
 -- TODO: non-deterministic full β-reduction
