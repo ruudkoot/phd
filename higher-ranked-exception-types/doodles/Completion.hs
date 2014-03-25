@@ -1,5 +1,6 @@
 {-# LANGUAGE ViewPatterns #-}
 
+-- TODO: put annotations back on type constructor arguments?
 -- TODO: use right-to-left syntax for environments to avoid headaches.
 -- TODO: pretty print types
 -- NOTE: fresh variable are generated in an order that results in nice types

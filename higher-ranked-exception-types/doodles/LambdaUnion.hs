@@ -1,5 +1,7 @@
 module Main where
 
+-- TODO: make use of the fact that terms are always fully applied
+-- TODO: non-deterministic full β-reduction
 -- TODO: capture-avoiding substitution
 -- TODO: types (kinds)
 -- TODO: generate arbitrary (well-typed) terms
@@ -54,7 +56,7 @@ reduce :: Tm -> Maybe Tm
 reduce (App (Abs x e1)    e2)   = Just $ subst x e2 e1
 reduce (App (Union e1 e2) e3)   = Just $ Union (App e1 e3) (App e2 e3)
 reduce (Union (Union e1 e2) e3) = Just $ Union e1 (Union e2 e3)
--- order unions
+-- order unions (through applications; what to do about abstractions?)
 -- combine arguments
 reduce _                        = Nothing
 
