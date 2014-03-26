@@ -37,21 +37,19 @@ instance Show Exn where
 
 data ExnTy
     = ExnForall Name Kind ExnTy
-    | ExnBool
-    | ExnList ExnTy Exn
-    | ExnArr  ExnTy Exn ExnTy Exn
+    | ExnBool             Exn
+    | ExnList ExnTy       Exn
+    | ExnArr  ExnTy ExnTy Exn
 
 instance Show ExnTy where
     show (ExnForall e k t)
         = "(∀e" ++ show e ++ "::" ++ show k ++ "." ++ show t ++ ")"
-    show (ExnBool)
-        = "bool"
+    show (ExnBool exn)
+        = "bool{" ++ show exn ++ "}"
     show (ExnList t exn)
-        = "[" ++ show t ++ "{" ++ show exn ++ "}]"
-    -- TODO: print top-level annotation on the arrow for readability
-    show (ExnArr t1 exn1 t2 exn2)
-        = "(" ++ show t1 ++ "{" ++ show exn1 ++ "} -> "
-              ++ show t2 ++ "{" ++ show exn2 ++ ")"
+        = "[" ++ show t ++ "]{" ++ show exn ++ "}"
+    show (ExnArr t1 t2 exn)
+        = "(" ++ show t1 ++ " --{" ++ show exn ++ "}-> " ++ show t2 ++ ")"
 
 data Kind = EXN | Kind :=> Kind
     deriving Show

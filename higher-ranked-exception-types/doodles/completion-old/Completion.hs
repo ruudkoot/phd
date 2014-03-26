@@ -12,27 +12,24 @@ type Env = [(Name, Kind)]
 
 -- | Completion
 
-complete' :: Env -> Ty -> (ExnTy, Exn, Env)
+complete' :: Env -> Ty -> (ExnTy, Env)
 complete' env ty = evalFresh (complete env ty) 1
 
-complete :: Env -> Ty -> Fresh (ExnTy, Exn, Env)
+complete :: Env -> Ty -> Fresh (ExnTy, Env)
 complete env0 Bool = do
     e <- fresh
-    return (ExnBool
-           ,exnFromEnv (ExnVar e) env0
+    return (ExnBool (exnFromEnv (ExnVar e) env0)
            ,[(e, kindFromEnv env0)])
 complete env0 (List t) = do
     e <- fresh
-    (t', exn, env1) <- complete env0 t
-    return (ExnList t' exn
-           ,exnFromEnv (ExnVar e) env0
+    (t', env1) <- complete env0 t
+    return (ExnList t' (exnFromEnv (ExnVar e) env0)
            ,env1 ++ [(e, kindFromEnv env0)])
 complete env0 (t1 :-> t2) = do
-    (t1', exn1, env1) <- complete [] t1            -- fully-flexible = in any context
+    (t1', env1) <- complete [] t1            -- fully-flexible = in any context
     e <- fresh
-    (t2', exn2, env2) <- complete (env1 ++ env0) t2
-    return (forallFromEnv env1 (ExnArr t1' exn1 t2' exn2)
-           ,exnFromEnv (ExnVar e) env0
+    (t2', env2) <- complete (env1 ++ env0) t2
+    return (forallFromEnv env1 (ExnArr t1' t2' (exnFromEnv (ExnVar e) env0))
            ,env2 ++ [(e, kindFromEnv env0)])
 
 exnFromEnv :: Exn -> Env -> Exn

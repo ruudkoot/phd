@@ -1,18 +1,6 @@
 (bool -> bool) -> [bool -> bool] -> [bool]
 
 
-∀e2::EXN. ∀e3::EXN => EXN.
-    (∀e1::EXN. bool{e1} --{e2}-> bool{e3 e1})
-        --{e4}-> (∀e5::EXN. ∀e7::EXN. ∀e8::EXN => EXN.
-            [∀e6::EXN. bool{e6} --{e7}-> bool{e8 e6}]{e5}
-                --{e9 e2 e3}-> [bool{e11 e2 e3 e5 e7 e8}]{e10 e2 e3 e5 e7 e8})
-
-
-e4  :: EXN
-e9  :: EXN => (EXN => EXN) => EXN
-e10 :: EXN => (EXN => EXN) => EXN => EXN => (EXN => EXN) => EXN
-e11 :: EXN => (EXN => EXN) => EXN => EXN => (EXN => EXN) => EXN
-
 
 ------------------------------------------------------------------------------------
 
@@ -20,18 +8,6 @@ e11 :: EXN => (EXN => EXN) => EXN => EXN => (EXN => EXN) => EXN
 (bool -> bool) -> [bool] -> [bool -> bool]
 
 
-∀e2::EXN. ∀e3::EXN => EXN.
-    (∀e1::EXN. bool{e1} --{e2}-> bool{e3 e1})
-        --{e4}-> (∀e5::EXN. ∀e6::EXN. [bool{e6}]{e5}
-            --{e7 e2 e3}-> [∀e9::EXN. bool{e9}
-                --{e10 e2 e3 e5 e6}-> bool{e11 e2 e3 e5 e6 e9}]{e8 e2 e3 e5 e6})
-
-
-e4  :: EXN
-e7  :: EXN => (EXN => EXN) => EXN
-e8  :: EXN => (EXN => EXN) => EXN => EXN => EXN
-e10 :: EXN => (EXN => EXN) => EXN => EXN => EXN
-e11 :: EXN => (EXN => EXN) => EXN => EXN => EXN => EXN
 
 
 ------------------------------------------------------------------------------------
@@ -40,32 +16,12 @@ e11 :: EXN => (EXN => EXN) => EXN => EXN => EXN => EXN
 (bool -> bool) -> [bool] -> [bool]
 
 
-∀e2::EXN. ∀e1::EXN => EXN.
-    (∀e0::EXN. bool{e0} --{e2}-> bool{e1 e0})
-        --{e8}-> (∀e4::EXN. ∀e3::EXN. [bool{e3}]{e4}
-            --{e7 e2 e1}-> [bool{e5 e2 e1 e4 e3}]{e6 e2 e1 e4 e3})
-
-
-e8 :: EXN
-e7 :: EXN => (EXN => EXN) => EXN
-e6 :: EXN => (EXN => EXN) => EXN => EXN => EXN
-e5 :: EXN => (EXN => EXN) => EXN => EXN => EXN
-
-
 ------------------------------------------------------------------------------------
 
 
 (bool -> bool) -> (bool -> bool) -> bool
 
 
-∀e2::EXN. ∀e1::EXN => EXN. ( (∀e0::EXN.(bool{e0}->bool{(e1 e0)}){e2})
-    -> (∀e5::EXN. ∀e4::EXN => EXN. ((∀e3::EXN.(bool{e3}->bool{(e4 e3)}){e5})
-        -> bool{e6 e2 e1 e5 e4}){e7 e2 e1})){e8}
-
-
-e8 :: EXN
-e7 :: EXN => (EXN => EXN) => EXN
-e6 :: EXN => (EXN => EXN) => EXN => (EXN => EXN) => EXN
 
 
 ------------------------------------------------------------------------------------
@@ -74,74 +30,12 @@ e6 :: EXN => (EXN => EXN) => EXN => (EXN => EXN) => EXN
     -> ((bool -> bool) -> bool -> bool) -> (bool -> bool) -> bool -> bool
 
 
-∀e8::EXN.
-    ∀e12::EXN => (EXN => (EXN => EXN) => EXN)
-            => (EXN => (EXN => EXN) => EXN => EXN) => EXN.
-    ∀e14::EXN => (EXN => (EXN => EXN) => EXN)
-            => (EXN => (EXN => EXN) => EXN => EXN) => EXN => (EXN => EXN) => EXN.
-    ∀e15::EXN => (EXN => (EXN => EXN) => EXN)
-            => (EXN => (EXN => EXN) => EXN => EXN) => EXN => (EXN => EXN) => EXN => EXN.
-        (∀e4::EXN. ∀e6::EXN => (EXN => EXN) => EXN.
-            ∀e7::EXN => (EXN => EXN) => EXN => EXN.
-                (∀e2::EXN. ∀e3::EXN => EXN.
-                        (∀e1::EXN. bool{e1} --{e2}-> bool{e3 e1})
-                    --{e4}->
-                        (∀e5::EXN. bool{e5} --{e6 e2 e3}-> bool{e7 e2 e3 e5}))
-            --{e8}->
-                (∀e10::EXN. ∀e11::EXN => EXN.
-                        (∀e9::EXN. bool{e9} --{e10}-> bool{e11 e9})
-                    --{e12 e4 e6 e7}->
-                        (∀e13::EXN. bool{e13} --{e14 e4 e6 e7 e10 e11}->
-                            bool{e15 e4 e6 e7 e10 e11 e13})))
-    --{e16}->
-        (∀e20::EXN. ∀e22::EXN => (EXN => EXN) => EXN.
-            ∀e23::EXN => (EXN => EXN) => EXN => EXN.
-                (∀e18::EXN. ∀e19::EXN => EXN.
-                        (∀e17::EXN. bool{e17} --{e18}-> bool{e19 e17})
-                    --{e20}->
-                        (∀e21::EXN. bool{e21} --{e22 e18 e19}-> bool{e23 e18 e19 e21}))
-            --{e24 e8 e12 e14 e15}->
-                (∀e26::EXN. ∀e27::EXN => EXN.
-                        (∀e25::EXN.(bool{e25} --{e26}-> bool{e27 e25}))
-                    --{e28 e8 e12 e14 e15 e20 e22 e23}->
-                            (∀e29::EXN.(bool{e29}
-                        --{e30 e8 e12 e14 e15 e20 e22 e23 e26 e27}->
-                            bool{e31 e8 e12 e14 e15 e20 e22 e23 e26 e27 e29}))))
-
-
-e16 :: EXN
-e24 :: EXN => ((EXN => ((EXN => ((EXN => EXN) => EXN)) => ((EXN => ((EXN => EXN) => (EXN => EXN))) => EXN))) => ((EXN => ((EXN => ((EXN => EXN) => EXN)) => ((EXN => ((EXN => EXN) => (EXN => EXN))) => (EXN => ((EXN => EXN) => EXN))))) => ((EXN => ((EXN => ((EXN => EXN) => EXN)) => ((EXN => ((EXN => EXN) => (EXN => EXN))) => (EXN => ((EXN => EXN) => (EXN => EXN)))))) => EXN)))
-e28 :: EXN => ((EXN => ((EXN => ((EXN => EXN) => EXN)) => ((EXN => ((EXN => EXN) => (EXN => EXN))) => EXN))) => ((EXN => ((EXN => ((EXN => EXN) => EXN)) => ((EXN => ((EXN => EXN) => (EXN => EXN))) => (EXN => ((EXN => EXN) => EXN))))) => ((EXN => ((EXN => ((EXN => EXN) => EXN)) => ((EXN => ((EXN => EXN) => (EXN => EXN))) => (EXN => ((EXN => EXN) => (EXN => EXN)))))) => (EXN => ((EXN => ((EXN => EXN) => EXN)) => ((EXN => ((EXN => EXN) => (EXN => EXN))) => EXN))))))
-e30 :: EXN => ((EXN => ((EXN => ((EXN => EXN) => EXN)) => ((EXN => ((EXN => EXN) => (EXN => EXN))) => EXN))) => ((EXN => ((EXN => ((EXN => EXN) => EXN)) => ((EXN => ((EXN => EXN) => (EXN => EXN))) => (EXN => ((EXN => EXN) => EXN))))) => ((EXN => ((EXN => ((EXN => EXN) => EXN)) => ((EXN => ((EXN => EXN) => (EXN => EXN))) => (EXN => ((EXN => EXN) => (EXN => EXN)))))) => (EXN => ((EXN => ((EXN => EXN) => EXN)) => ((EXN => ((EXN => EXN) => (EXN => EXN))) => (EXN => ((EXN => EXN) => EXN))))))))
-e31 :: EXN => ((EXN => ((EXN => ((EXN => EXN) => EXN)) => ((EXN => ((EXN => EXN) => (EXN => EXN))) => EXN))) => ((EXN => ((EXN => ((EXN => EXN) => EXN)) => ((EXN => ((EXN => EXN) => (EXN => EXN))) => (EXN => ((EXN => EXN) => EXN))))) => ((EXN => ((EXN => ((EXN => EXN) => EXN)) => ((EXN => ((EXN => EXN) => (EXN => EXN))) => (EXN => ((EXN => EXN) => (EXN => EXN)))))) => (EXN => ((EXN => ((EXN => EXN) => EXN)) => ((EXN => ((EXN => EXN) => (EXN => EXN))) => (EXN => ((EXN => EXN) => (EXN => EXN)))))))))
-
 
 ------------------------------------------------------------------------------------
 
 
 ((bool -> bool) -> bool -> bool) -> (bool -> bool) -> bool -> bool
 
-
-∀e4::EXN. ∀e6::EXN => (EXN => EXN) => EXN. ∀e7::EXN => (EXN => EXN) => EXN => EXN.
-        (∀e2::EXN. ∀e3::EXN => EXN.
-                (∀e1::EXN. bool{e1} --{e2}-> bool{e3 e1})
-            --{e4}->
-                (∀e5::EXN. bool{e5} --{e6 e2 e3}-> bool{e7 e2 e3 e5}))
-    --{e8}->
-        (∀e10::EXN. ∀e11::EXN => EXN.
-                (∀e9::EXN.(bool{e9} --{e10}-> bool{e11 e9}))
-            --{e12 e4 e6 e7}->
-                (∀e13::EXN. (bool{e13} --{e14 e4 e6 e7 e10 e11}->
-                    bool{e15 e4 e6 e7 e10) e11 e13})))
-
-
-e8  :: EXN
-e12 :: EXN => (EXN => (EXN => EXN) => EXN)
-            => (EXN => (EXN => EXN) => EXN => EXN) => EXN
-e14 :: EXN => (EXN => (EXN => EXN) => EXN)
-            => (EXN => (EXN => EXN) => EXN => EXN) => EXN => (EXN => EXN) => EXN
-e15 :: EXN => (EXN => (EXN => EXN) => EXN) => (EXN => (EXN => EXN) => EXN => EXN)
-            => EXN => (EXN => EXN) => EXN => EXN
 
 
 ------------------------------------------------------------------------------------
@@ -150,18 +44,6 @@ e15 :: EXN => (EXN => (EXN => EXN) => EXN) => (EXN => (EXN => EXN) => EXN => EXN
 ((bool -> bool) -> bool -> bool) -> bool -> bool
 
 
-∀e4::EXN. ∀e6::EXN => (EXN => EXN) => EXN. ∀e7::EXN => (EXN => EXN) => EXN => EXN.
-        (∀e2::EXN. ∀e3::EXN => EXN. (∀e1::EXN. bool{e1} --{e2}-> bool{e3 e1})
-            --{e4}-> (∀e5::EXN. bool{e5} --{e6 e2 e3}-> bool{e7 e2 e3 e5}))
-    --{e8}->
-        (∀e9::EXN. bool{e9} --{e10 e4 e6 e7}-> bool{e11 e4 e6 e7 e9})
-
-
-e8  :: EXN
-e10 :: EXN => (EXN => (EXN => EXN) => EXN) => (EXN => (EXN => EXN) => EXN => EXN) => EXN
-e11 :: EXN => (EXN => (EXN => EXN) => EXN) => (EXN => (EXN => EXN) => EXN => EXN)
-            => EXN => EXN
-
 
 ------------------------------------------------------------------------------------
 
@@ -169,14 +51,3 @@ e11 :: EXN => (EXN => (EXN => EXN) => EXN) => (EXN => (EXN => EXN) => EXN => EXN
 ((bool -> bool) -> bool) -> bool
 
 
-∀e4::EXN. ∀e5::EXN => (EXN => EXN) => EXN.
-        (∀e2::EXN. ∀e3::EXN => EXN.
-                (∀e1::EXN. bool{e1} --{e2}-> bool{e3 e1})
-            --{e4}->
-                bool{e5 e2 e3})
-    --{e6}->
-        bool(e7 e4 e5}
-
-
-e6 :: EXN
-e7 :: EXN => (EXN => (EXN => EXN) => EXN) => EXN
