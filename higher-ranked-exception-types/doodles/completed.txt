@@ -1,6 +1,24 @@
 (bool -> bool) -> [bool -> bool] -> [bool]
 
 
+∀e2::EXN. ∀e3::EXN :=> EXN.
+        (∀e1::EXN. bool{e1} -> bool{e3 e1}){e2}
+    ->
+        (∀e5::EXN. ∀e7::EXN. ∀e8::EXN :=> EXN.
+                [(∀e6::EXN. bool{e6} -> bool{e8 e6}){e7}]{e5}
+            ->
+                [bool{e11 e2 e3 e5 e7 e8}]{e10 e2 e3 e5 e7 e8}
+        ){e9 e2 e3}
+
+
+e4
+
+
+e4  :: EXN
+e9  :: EXN :=> (EXN :=> EXN) :=> EXN
+e10 :: EXN :=> (EXN :=> EXN) :=> EXN :=> EXN :=> (EXN :=> EXN) :=> EXN
+e11 :: EXN :=> (EXN :=> EXN) :=> EXN :=> EXN :=> (EXN :=> EXN) :=> EXN
+
 
 ------------------------------------------------------------------------------------
 

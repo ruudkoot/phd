@@ -51,7 +51,7 @@ instance Show ExnTy where
     -- TODO: print top-level annotation on the arrow for readability
     show (ExnArr t1 exn1 t2 exn2)
         = "(" ++ show t1 ++ "{" ++ show exn1 ++ "} -> "
-              ++ show t2 ++ "{" ++ show exn2 ++ ")"
+              ++ show t2 ++ "{" ++ show exn2 ++ "})"
 
 data Kind = EXN | Kind :=> Kind
     deriving Show
