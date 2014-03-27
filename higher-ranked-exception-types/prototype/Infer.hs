@@ -6,7 +6,8 @@ import           Common
 import qualified LambdaUnion as LU
 import qualified Completion  as C
 
-import Data.Maybe (fromJust)
+import qualified Data.Map    as M
+import           Data.Maybe  (fromJust)
 
 -- | Expressions
 
@@ -36,6 +37,7 @@ data Constr = Exn :<: Name
 
 -- * Reconstruction
 
+-- TODO: env1, ... are kind environments, rename?
 reconstruct :: Env -> Expr -> Fresh (ExnTy, Name, [Constr])
 reconstruct env (Var x)
     = do let Just (t, exn) = lookup x env
@@ -50,13 +52,13 @@ reconstruct env (Abs x ty tm)
          let exn2' = solve c1 v exn2
          let t' = ExnForall exn EXN (C.forallFromEnv env1 (
                     ExnArr t1' (ExnVar exn) t2' exn2'
-                ))
+                  ))
          e <- fresh
          return (t', e, [])
 reconstruct env (App e1 e2)
     = do (t1, exn1, c1) <- reconstruct env e1
          (t2, exn2, c2) <- reconstruct env e2
-         (ExnArr t2' (ExnVar exn2') t' exn') <- instantiate t1
+         ExnArr t2' (ExnVar exn2') t' exn' <- instantiate t1
          let subst = [(exn2', ExnVar exn2)] <.> merge [] t2 t2'
          e <- fresh
          let c = c1 ++ c2 ++ [substExn' subst exn' :<: e, ExnVar exn1 :<: e]
@@ -110,4 +112,23 @@ reapply env es exn
 -- * Constraint solving
 
 solve :: [Constr] -> [Name] -> Name -> Exn
-solve = error "solve"
+solve cs xs e =
+    let dependencies :: M.Map Name [Constr]
+        dependencies = foldr f M.empty cs
+            where f c@(exn :<: _) d
+                    = foldr (\e -> M.insertWith (++) e [c]) d (fevExn exn)
+        
+        analysis', analysis'', analysis :: M.Map Name Exn
+        analysis' = foldr f M.empty cs
+            -- FIXME: we need an abstracted Empty depending on the kind...
+            where f (_ :<: e) d = M.insert e ExnEmpty d
+        analysis'' = foldr f analysis' xs
+            where f e d = M.insert e (ExnVar e) d
+        analysis = M.insert e ExnEmpty analysis''
+        
+     in worklist f cs analysis M.! e
+        where f = undefined
+     
+worklist :: (c -> a -> ([c], a)) -> [c] -> a -> a
+worklist f [] x     = x
+worklist f (c:cs) x = let (cs', x') = f c x in worklist f (cs ++ cs') x'

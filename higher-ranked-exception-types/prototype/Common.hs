@@ -29,11 +29,16 @@ data Ty
     deriving Show
 
 data Exn
-    = ExnVar Name
+    = ExnEmpty
+    -- TODO: ExnCon
+    | ExnVar Name
     | ExnApp Exn Exn
     | ExnAbs Name Kind Exn
-    
+
+-- FIXME: βη∪-normalization goes here!
 instance Eq Exn where
+    ExnEmpty == ExnEmpty
+        = True
     ExnVar n == ExnVar n'
         = n == n'
     ExnApp e1 e2 == ExnApp e1' e2'
@@ -44,6 +49,7 @@ instance Eq Exn where
         = False
 
 instance Show Exn where
+    show (ExnEmpty)     = "∅"
     show (ExnVar n)     = "e" ++ show n
     show (ExnApp e1 e2) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
     show (ExnAbs n k e) = "(λe" ++ show n ++ ":" ++ show k ++ "." ++ show e ++ ")"
@@ -54,6 +60,7 @@ data ExnTy
     | ExnList ExnTy Exn
     | ExnArr  ExnTy Exn ExnTy Exn
     
+-- FIXME: relies on a correct Eq instance for Exn
 instance Eq ExnTy where
     ExnForall e k t == ExnForall e' k' t'
         = k == k' && t == substExnTy e' e t'
