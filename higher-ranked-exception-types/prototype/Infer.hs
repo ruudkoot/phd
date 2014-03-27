@@ -151,8 +151,9 @@ interpret env (ExnAbs x k e)
     = ExnAbs x k (interpret (M.delete x env) e)
 
 -- TODO: move to LambdaUnion
+-- FIXME: need to do βη∪-normalization here
 isIncludedIn :: Exn -> Exn -> Bool
-isIncludedIn = error "isIncludedIn"
+isIncludedIn exn1 exn2 = ExnUnion exn1 exn2 == exn2
 
 worklist :: (c -> a -> ([c], a)) -> [c] -> a -> a
 worklist f [] x     = x
