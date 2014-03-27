@@ -43,6 +43,7 @@ subst x e (Var y)
     | otherwise = Var y
 subst x e (Abs y e')
     | x == y          = Abs y e'
+    -- FIXME: does this catch all captures?
     | y `member` fv e = error "variable captured"
     | otherwise       = Abs y (subst x e e')
 subst x e (App e1 e2)

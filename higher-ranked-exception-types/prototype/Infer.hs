@@ -6,6 +6,8 @@ import           Common
 import qualified LambdaUnion as LU
 import qualified Completion  as C
 
+import Data.Maybe (fromJust)
+
 -- | Expressions
 
 data Expr
@@ -20,10 +22,19 @@ instance Show Expr where
     
 -- | Exception type reconstruction
 
+-- * Environments
+
 type Env = [(Name, (ExnTy, Exn))]
+
+fev :: Env -> [Name]
+fev = concatMap (\(_, (ty, exn)) -> fevExnTy ty ++ fevExn exn)
+
+-- * Constraints
 
 data Constr = Exn :<: Name
     deriving Show
+
+-- * Reconstruction
 
 reconstruct :: Env -> Expr -> Fresh (ExnTy, Name, [Constr])
 reconstruct env (Var x)
@@ -51,52 +62,8 @@ reconstruct env (App e1 e2)
          let c = c1 ++ c2 ++ [substExn' subst exn' :<: e, ExnVar exn1 :<: e]
          return (substExnTy' subst  t', e, c)
 
-fev :: Env -> [Name]
-fev = error "fev"
-
-solve :: [Constr] -> [Name] -> Name -> Exn
-solve = error "solve"
-
-type Subst = [(Name, Exn)]
-
--- TODO: check domains are non-intersecting
-(<.>) :: Subst -> Subst -> Subst
-subst1 <.> subst2 = subst1 ++ map (\(x,exn) -> (x, substExn' subst1 exn)) subst2
-
-substExn' :: Subst -> Exn -> Exn
-substExn' = error "substExn'"
-
-substExnTy' :: Subst -> ExnTy -> ExnTy
-substExnTy' = error "substExnTy'"
-         
--- * Merge
-
-type KindEnv = [(Name, Kind)]
-
-merge :: KindEnv -> ExnTy -> ExnTy -> Subst
-merge env = undefined
-         
 -- * Instantiation
 
-substExn :: Name -> Name -> Exn -> Exn
-substExn e e' (ExnVar e'')
-    | e == e''  = ExnVar e'
-    | otherwise = ExnVar e''
-substExn e e' (ExnApp exn1 exn2)
-    = ExnApp (substExn e e' exn1) (substExn e e' exn2)
-
-substExnTy :: Name -> Name -> ExnTy -> ExnTy
-substExnTy e e' (ExnForall e'' k t)
-    | e == e''  = ExnForall e'' k t
-    | otherwise = ExnForall e'' k (substExnTy e e' t)
-substExnTy e e' (ExnBool)
-    = ExnBool
-substExnTy e e' (ExnList t exn)
-    = ExnList (substExnTy e e' t) (substExn e e' exn)
-substExnTy e e' (ExnArr t1 exn1 t2 exn2)
-    = ExnArr (substExnTy e e' t1) (substExn e e' exn1)
-             (substExnTy e e' t2) (substExn e e' exn2)
-         
 instantiate :: ExnTy -> Fresh ExnTy
 instantiate (ExnForall e k t)
     = do e' <- fresh
@@ -104,3 +71,43 @@ instantiate (ExnForall e k t)
          return (substExnTy e e' t')
 instantiate t
     = do return t
+    
+-- * Merge / match
+
+type KindEnv = [(Name, Kind)]
+
+merge :: KindEnv -> ExnTy -> ExnTy -> Subst
+merge env (ExnForall e k t) (ExnForall e' k' t')
+    | k == k'   = merge ((e,k) : env) t (substExnTy e' e t')
+    | otherwise = error "merge: kind mismatch"
+merge env (ExnBool) (ExnBool)
+    = []
+merge env (ExnList t (ExnVar exn)) (ExnList t' (ExnVar exn'))
+    | t == t', exn == exn' = []
+    | otherwise            = error "merge: lists"
+merge env (ExnArr t1 (ExnVar exn1) t2 exn2) (ExnArr t1' (ExnVar exn1') t2' exn2')
+    | t1 == t1', exn1 == exn1'
+        = let (e, es) = deapply exn2'
+           in [(e, reapply env es exn2)] <.> merge env t2 t2'
+    | otherwise = error "merge: function space"
+merge _ _ _
+    = error "merge: fail"
+    
+-- NOTE: here the fully-appliedness and left-to-rightness comes into play
+-- TODO: check this restriction in never violated
+-- TODO: encode this restriction into Exn?
+deapply :: Exn -> (Name, [Name])
+deapply (ExnVar e) = (e, [])
+deapply (ExnApp e1 (ExnVar e2))
+    = let (e, es) = deapply e1
+       in (e, es ++ [e2])           -- TODO: keep this in reverse order?
+deapply _ = error "deapply: malformed"
+
+reapply :: KindEnv -> [Name] -> Exn -> Exn
+reapply env es exn
+    = foldr (\e r -> ExnAbs e (fromJust $ lookup e env) r) exn es
+    
+-- * Constraint solving
+
+solve :: [Constr] -> [Name] -> Name -> Exn
+solve = error "solve"
