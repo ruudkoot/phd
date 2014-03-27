@@ -126,9 +126,34 @@ solve cs xs e =
             where f e d = M.insert e (ExnVar e) d
         analysis = M.insert e ExnEmpty analysis''
         
+        f :: Constr -> M.Map Name Exn -> ([Constr], M.Map Name Exn)
+        f (exn :<: e) analysis
+                -- FIXME: need a whole lot more βη∪-normalization here
+                = let exn1 = interpret analysis exn
+                      exn2 = analysis M.! e
+                   in if exn1 `isIncludedIn` exn2
+                      then ([], analysis)
+                      else (dependencies M.! e
+                           ,M.insert e (ExnUnion exn1 exn2) analysis)      
      in worklist f cs analysis M.! e
-        where f = undefined
-     
+
+-- TODO: move to LambdaUnion?
+interpret :: M.Map Name Exn -> Exn -> Exn
+interpret env (ExnEmpty)
+    = ExnEmpty
+interpret env (ExnUnion e1 e2)
+    = ExnUnion (interpret env e1) (interpret env e2)
+interpret env (ExnVar e)
+    = env M.! e
+interpret env (ExnApp e1 e2)
+    = ExnApp (interpret env e1) (interpret env e2)
+interpret env (ExnAbs x k e)
+    = ExnAbs x k (interpret (M.delete x env) e)
+
+-- TODO: move to LambdaUnion
+isIncludedIn :: Exn -> Exn -> Bool
+isIncludedIn = error "isIncludedIn"
+
 worklist :: (c -> a -> ([c], a)) -> [c] -> a -> a
 worklist f [] x     = x
 worklist f (c:cs) x = let (cs', x') = f c x in worklist f (cs ++ cs') x'

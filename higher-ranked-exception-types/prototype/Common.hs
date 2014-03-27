@@ -28,8 +28,10 @@ data Ty
     | List Ty
     deriving Show
 
+-- TODO: replace this with module LambdaUnion
 data Exn
     = ExnEmpty
+    | ExnUnion Exn Exn
     -- TODO: ExnCon
     | ExnVar Name
     | ExnApp Exn Exn
@@ -39,6 +41,8 @@ data Exn
 instance Eq Exn where
     ExnEmpty == ExnEmpty
         = True
+    ExnUnion e1 e2 == ExnUnion e1' e2'
+        = error "Exn.(==): screwed"
     ExnVar n == ExnVar n'
         = n == n'
     ExnApp e1 e2 == ExnApp e1' e2'
@@ -49,10 +53,11 @@ instance Eq Exn where
         = False
 
 instance Show Exn where
-    show (ExnEmpty)     = "∅"
-    show (ExnVar n)     = "e" ++ show n
-    show (ExnApp e1 e2) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
-    show (ExnAbs n k e) = "(λe" ++ show n ++ ":" ++ show k ++ "." ++ show e ++ ")"
+    show (ExnEmpty)       = "∅"
+    show (ExnUnion e1 e2) = "(" ++ show e1 ++ "∪" ++ show e2 ++ ")"
+    show (ExnVar n)       = "e" ++ show n
+    show (ExnApp e1 e2)   = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
+    show (ExnAbs n k e)   = "(λe" ++ show n ++ ":" ++ show k ++ "." ++ show e ++ ")"
 
 data ExnTy
     = ExnForall Name Kind ExnTy
