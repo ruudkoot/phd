@@ -137,6 +137,11 @@ solve cs xs e =
                            ,M.insert e (ExnUnion exn1 exn2) analysis)      
      in worklist f cs analysis M.! e
 
+-- TODO: move to LambdaUnion
+-- FIXME: need to do βη∪-normalization here or make sure (==) does it for us
+isIncludedIn :: Exn -> Exn -> Bool
+isIncludedIn exn1 exn2 = ExnUnion exn1 exn2 == exn2
+
 -- TODO: move to LambdaUnion?
 interpret :: M.Map Name Exn -> Exn -> Exn
 interpret env (ExnEmpty)
@@ -149,11 +154,6 @@ interpret env (ExnApp e1 e2)
     = ExnApp (interpret env e1) (interpret env e2)
 interpret env (ExnAbs x k e)
     = ExnAbs x k (interpret (M.delete x env) e)
-
--- TODO: move to LambdaUnion
--- FIXME: need to do βη∪-normalization here
-isIncludedIn :: Exn -> Exn -> Bool
-isIncludedIn exn1 exn2 = ExnUnion exn1 exn2 == exn2
 
 worklist :: (c -> a -> ([c], a)) -> [c] -> a -> a
 worklist f [] x     = x

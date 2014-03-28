@@ -2,6 +2,8 @@ module Common where
 
 -- TODO: put annotations back on type constructor arguments?
 
+import qualified LambdaUnion as LU
+
 import Control.Monad
 import Control.Monad.State
 import Data.List (delete)
@@ -28,6 +30,17 @@ data Ty
     | List Ty
     deriving Show
 
+data Kind = EXN | Kind :=> Kind
+    deriving (Eq, Show)
+    
+kind2sort :: Kind -> LU.Sort
+kind2sort EXN         = LU.C
+kind2sort (k1 :=> k2) = kind2sort k1 LU.:=> kind2sort k2
+
+sort2kind :: LU.Sort -> Kind
+sort2kind LU.C           = EXN
+sort2kind (s1 LU.:=> s2) = sort2kind s1 :=> sort2kind s2
+
 -- TODO: replace this with module LambdaUnion
 data Exn
     = ExnEmpty
@@ -37,20 +50,23 @@ data Exn
     | ExnApp Exn Exn
     | ExnAbs Name Kind Exn
 
+exn2lu :: Exn -> LU.Tm
+exn2lu (ExnEmpty      ) = LU.Empty
+exn2lu (ExnUnion e1 e2) = LU.Union (exn2lu e1) (exn2lu e2)
+exn2lu (ExnVar   n    ) = LU.Var n
+exn2lu (ExnApp   e1 e2) = LU.App (exn2lu e1) (exn2lu e2)
+exn2lu (ExnAbs   n k e) = LU.Abs n (kind2sort k) (exn2lu e)
+
+lu2exn :: LU.Tm -> Exn
+lu2exn (LU.Empty      ) = ExnEmpty
+lu2exn (LU.Union e1 e2) = ExnUnion (lu2exn e1) (lu2exn e2)
+lu2exn (LU.Var   n    ) = ExnVar n
+lu2exn (LU.App   e1 e2) = ExnApp (lu2exn e1) (lu2exn e2)
+lu2exn (LU.Abs   n s e) = ExnAbs n (sort2kind s) (lu2exn e)
+
 -- FIXME: βη∪-normalization goes here!
 instance Eq Exn where
-    ExnEmpty == ExnEmpty
-        = True
-    ExnUnion e1 e2 == ExnUnion e1' e2'
-        = error "Exn.(==): screwed"
-    ExnVar n == ExnVar n'
-        = n == n'
-    ExnApp e1 e2 == ExnApp e1' e2'
-        = e1 == e1' && e2 == e2'
-    ExnAbs n k e == ExnAbs n' k' e'
-        = k == k' && e == substExn n' n e'
-    _ == _
-        = False
+    e1 == e2 = LU.synEqAlpha (LU.normalize (exn2lu e1)) (LU.normalize (exn2lu e2))
 
 instance Show Exn where
     show (ExnEmpty)       = "∅"
@@ -90,9 +106,6 @@ instance Show ExnTy where
         = "(" ++ show t1 ++ "{" ++ show exn1 ++ "} -> "
               ++ show t2 ++ "{" ++ show exn2 ++ "})"
 
-data Kind = EXN | Kind :=> Kind
-    deriving (Eq, Show)
-    
 -- | Free exception variables
 
 fevExn :: Exn -> [Name]
