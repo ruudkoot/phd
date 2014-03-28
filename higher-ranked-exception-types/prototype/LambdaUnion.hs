@@ -86,6 +86,7 @@ reduce :: Tm -> Maybe Tm
 reduce (App (Abs x k e1)  e2)   = Just $ subst x e2 e1
 reduce (App (Union e1 e2) e3)   = Just $ Union (App e1 e3) (App e2 e3)
 reduce (Union (Union e1 e2) e3) = Just $ Union e1 (Union e2 e3)
+-- remove Empty
 -- order unions (through applications; what to do about abstractions?)
 -- combine arguments
 reduce _                        = Nothing
