@@ -62,6 +62,12 @@ fv (Abs   x k e) = delete x (fv e)
 fv (App   e1 e2) = union (fv e1) (fv e2)
 fv (Union e1 e2) = union (fv e1) (fv e2)
 
+maxName :: Tm -> Name
+maxName (Var   x    ) = x
+maxName (Abs   x k e) = maxName e
+maxName (App   e1 e2) = max (maxName e1) (maxName e2)
+maxName (Union e1 e2) = max (maxName e1) (maxName e2)
+
 -- * Substitution
 
 -- FIXME: the ∪-distributivity case in reduce does a tricky substitution which
@@ -166,7 +172,7 @@ normalize Empty
 -- * η-expansion
 
 -- TODO: we also need to do "∅-expansion", but we cannot always do this without
---       knowing its sort
+--       knowing its sort; instead there currently is a small hack in reduce
 
 type Env = [(Name, Sort)]
 
@@ -192,3 +198,11 @@ etaExpand' x C           = do return $ Var x
 etaExpand' x (s1 :=> s2) = do y <- fresh
                               e <- etaExpand' x s2
                               return (Abs y s1 (App e (Var y)))
+                              
+-- * Semantic equality
+
+semanticallyEqual :: Env -> Tm -> Tm -> Bool
+semanticallyEqual env e1 e2 =
+    let e1' = evalFresh (etaExpand env e1) (maxName e1 + 1)
+        e2' = evalFresh (etaExpand env e2) (maxName e2 + 1)
+     in synEqAlpha (normalize e1') (normalize e2')
