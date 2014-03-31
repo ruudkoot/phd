@@ -104,7 +104,7 @@ reduce (Union (Abs x s e) (Abs x' s' e'))
     | otherwise = error "reduce: sort mismatch"
 -- ∪-idempotence
 reduce (Union (Var x) (Var x'))
-    = return (Var x)
+    | x == x' = return (Var x)
 reduce (Union (Var x) (Union (Var x') e2))
     | x == x' = return (Union (Var x) e2)
 -- ∪-congruence(?)
@@ -160,6 +160,8 @@ normalize (Union e1 e2)
        in case reduce (Union e1' e2') of
             Just e' -> normalize e'
             Nothing -> Union e1' e2'
+normalize Empty
+    = Empty
             
 -- * η-expansion
 
