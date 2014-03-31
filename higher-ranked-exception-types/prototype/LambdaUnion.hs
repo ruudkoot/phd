@@ -12,6 +12,7 @@ import Names
 
 import Data.Maybe (fromJust)
 import Data.Set
+import GHC.Exts   (sortWith)
 
 -- | Expressions
 
@@ -123,7 +124,7 @@ reduce (Union e1 (Union e2 e3))
 -- ∪-associativity
 reduce (Union (Union e1 e2) e3)
     = return (Union e1 (Union e2 e3))
--- ∪-commutativity
+-- ∪-commutativity ("ordering of variables")
 reduce (Union e1 (Union e2 e3))
     | Just x1 <- applicee e1, Just x2 <- applicee e2, x2 < x1
         = return (Union e2 (Union e1 e3))
@@ -181,28 +182,33 @@ etaExpand env (Var x)
     = do etaExpand' x (fromJust $ lookup x env)
 etaExpand env (Abs x s e)
     = do e' <- etaExpand ((x,s) : env) e
-         return $ Abs x s e'
+         return (Abs x s e')
 etaExpand env (App e1 e2)
     = do e1' <- etaExpand env e1
          e2' <- etaExpand env e2
-         return $ App e1' e2'
+         return (App e1' e2')
 etaExpand env (Union e1 e2)
     = do e1' <- etaExpand env e1
          e2' <- etaExpand env e2
-         return $ Union e1' e2'
+         return (Union e1' e2')
 etaExpand env (Empty)
-    = do return $ Empty
+    = do return (Empty)
 
 etaExpand' :: Name -> Sort -> Fresh Tm
-etaExpand' x C           = do return $ Var x
-etaExpand' x (s1 :=> s2) = do y <- fresh
-                              e <- etaExpand' x s2
-                              return (Abs y s1 (App e (Var y)))
-                              
+etaExpand' x C
+    = do return (Var x)
+etaExpand' x (s1 :=> s2)
+    = do y <- fresh
+         e <- etaExpand' x s2
+         return (Abs y s1 (App e (Var y)))
+
 -- * Semantic equality
+
+-- TODO: infer sorts of free variables?
+-- NOTE: in this case the environments for e1 and e2 should be equal in a REGULAR theory
 
 semanticallyEqual :: Env -> Tm -> Tm -> Bool
 semanticallyEqual env e1 e2 =
-    let e1' = evalFresh (etaExpand env e1) (maxName e1 + 1)
-        e2' = evalFresh (etaExpand env e2) (maxName e2 + 1)
+    let e1'  = evalFresh (etaExpand env e1) (maxName e1 + 1)
+        e2'  = evalFresh (etaExpand env e2) (maxName e2 + 1)
      in synEqAlpha (normalize e1') (normalize e2')

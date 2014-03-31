@@ -50,7 +50,11 @@ reconstruct env (Abs x ty tm)
          let env' = (x, (t1', ExnVar exn)) : env
          (t2', exn2, c1) <- reconstruct env' tm
          let v = [exn] ++ map fst env1 ++ fev env
-         let exn2' = solve c1 v exn2
+         -- FIXME: is this the correct environment we are passing here? this
+         --        environments contains exactly the variables over which we
+         --        do NOT generalize. this would seem to correspond to the
+         --        variables that are FREE in c1... which could be okay.
+         let exn2' = solve env1 c1 v exn2
          let t' = ExnForall exn EXN (C.forallFromEnv env1 (
                     ExnArr t1' (ExnVar exn) t2' exn2'
                   ))
@@ -77,8 +81,6 @@ instantiate t
     
 -- * Merge / match
 
-type KindEnv = [(Name, Kind)]
-
 merge :: KindEnv -> ExnTy -> ExnTy -> Subst
 merge env (ExnForall e k t) (ExnForall e' k' t')
     | k == k'   = merge ((e,k) : env) t (substExnTy e' e t')
@@ -86,10 +88,10 @@ merge env (ExnForall e k t) (ExnForall e' k' t')
 merge env (ExnBool) (ExnBool)
     = []
 merge env (ExnList t (ExnVar exn)) (ExnList t' (ExnVar exn'))
-    | t == t', exn == exn' = []
+    | exnTyEq env t t', exn == exn' = []
     | otherwise            = error "merge: lists"
 merge env (ExnArr t1 (ExnVar exn1) t2 exn2) (ExnArr t1' (ExnVar exn1') t2' exn2')
-    | t1 == t1', exn1 == exn1'
+    | exnTyEq env t1 t1', exn1 == exn1'
         = let (e, es) = deapply exn2'
            in [(e, reapply env es exn2)] <.> merge env t2 t2'
     | otherwise = error "merge: function space"
@@ -112,8 +114,8 @@ reapply env es exn
     
 -- * Constraint solving
 
-solve :: [Constr] -> [Name] -> Name -> Exn
-solve cs xs e =
+solve :: KindEnv -> [Constr] -> [Name] -> Name -> Exn
+solve env cs xs e =
     let dependencies :: M.Map Name [Constr]
         dependencies = foldr f M.empty cs
             where f c@(exn :<: _) d
@@ -132,16 +134,17 @@ solve cs xs e =
                 -- FIXME: need a whole lot more βη∪-normalization here
                 = let exn1 = interpret analysis exn
                       exn2 = analysis M.! e
-                   in if exn1 `isIncludedIn` exn2
+                   in -- FIXME: is this environment sufficient? the call to solve
+                      --        in reconstruct suggests perhaps not!
+                      if isIncludedIn env exn1 exn2
                       then ([], analysis)
                       else (dependencies M.! e
                            ,M.insert e (ExnUnion exn1 exn2) analysis)      
      in worklist f cs analysis M.! e
 
 -- TODO: move to LambdaUnion
--- FIXME: need to do βη∪-normalization here or make sure (==) does it for us
-isIncludedIn :: Exn -> Exn -> Bool
-isIncludedIn exn1 exn2 = ExnUnion exn1 exn2 == exn2
+isIncludedIn :: KindEnv -> Exn -> Exn -> Bool
+isIncludedIn env exn1 exn2 = exnEq env (ExnUnion exn1 exn2) (exn2)
 
 -- TODO: move to LambdaUnion?
 interpret :: M.Map Name Exn -> Exn -> Exn

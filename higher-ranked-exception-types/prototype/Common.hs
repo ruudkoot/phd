@@ -17,6 +17,8 @@ data Ty
 
 data Kind = EXN | Kind :=> Kind
     deriving (Eq, Show)
+
+type KindEnv = [(Name, Kind)]
     
 kind2sort :: Kind -> LU.Sort
 kind2sort EXN         = LU.C
@@ -49,9 +51,9 @@ lu2exn (LU.Var   n    ) = ExnVar n
 lu2exn (LU.App   e1 e2) = ExnApp (lu2exn e1) (lu2exn e2)
 lu2exn (LU.Abs   n s e) = ExnAbs n (sort2kind s) (lu2exn e)
 
--- FIXME: βη∪-normalization goes here!
-instance Eq Exn where
-    e1 == e2 = LU.synEqAlpha (LU.normalize (exn2lu e1)) (LU.normalize (exn2lu e2))
+exnEq :: KindEnv -> Exn -> Exn -> Bool
+exnEq env e1 e2
+    = LU.semanticallyEqual (map (\(x,k) -> (x, kind2sort k)) env) (exn2lu e1) (exn2lu e2)
 
 instance Show Exn where
     show (ExnEmpty)       = "∅"
@@ -66,18 +68,18 @@ data ExnTy
     | ExnList ExnTy Exn
     | ExnArr  ExnTy Exn ExnTy Exn
     
--- FIXME: relies on a correct Eq instance for Exn
-instance Eq ExnTy where
-    ExnForall e k t == ExnForall e' k' t'
-        = k == k' && t == substExnTy e' e t'
-    ExnBool == ExnBool
-        = True
-    ExnList t exn == ExnList t' exn'
-        = t == t' && exn == exn'
-    ExnArr t1 exn1 t2 exn2 == ExnArr t1' exn1' t2' exn2'
-        = t1 == t1' && exn1 == exn1' && t2 == t2' && exn2 == exn2'
-    _ == _
-        = False
+exnTyEq :: KindEnv -> ExnTy -> ExnTy -> Bool
+exnTyEq env (ExnForall e k t) (ExnForall e' k' t')
+    = k == k' && exnTyEq env t (substExnTy e' e t')
+exnTyEq env ExnBool ExnBool
+    = True
+exnTyEq env (ExnList t exn) (ExnList t' exn')
+    = exnTyEq env t t' && exnEq env exn exn'
+exnTyEq env (ExnArr t1 exn1 t2 exn2) (ExnArr t1' exn1' t2' exn2')
+    = exnTyEq env t1 t1' && exnEq env exn1 exn1'
+        && exnTyEq env t2 t2' && exnEq env exn2 exn2'
+exnTyEq env _ _
+    = False
 
 instance Show ExnTy where
     show (ExnForall e k t)
