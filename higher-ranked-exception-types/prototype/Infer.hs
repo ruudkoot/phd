@@ -1,4 +1,4 @@
-module Main where
+module Infer where
 
 -- TODO: reconstruct derivation tree
 
@@ -51,7 +51,7 @@ reconstruct env (Abs x ty tm)
          (t2', exn2, c1) <- reconstruct env' tm
          let v = [exn] ++ map fst env1 ++ fev env
          -- FIXME: is this the correct environment we are passing here? this
-         --        environments contains exactly the variables over which we
+         --        environment contains exactly the variables over which we
          --        do NOT generalize. this would seem to correspond to the
          --        variables that are FREE in c1... which could be okay.
          let exn2' = solve env1 c1 v exn2
