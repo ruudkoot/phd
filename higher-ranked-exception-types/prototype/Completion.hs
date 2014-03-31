@@ -6,6 +6,7 @@
 
 module Completion where
 
+import Names
 import Common
 
 type Env = [(Name, Kind)]

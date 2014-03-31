@@ -2,6 +2,7 @@ module Main where
 
 -- TODO: reconstruct derivation tree
 
+import           Names
 import           Common
 import qualified LambdaUnion as LU
 import qualified Completion  as C

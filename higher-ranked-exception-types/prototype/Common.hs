@@ -2,25 +2,10 @@ module Common where
 
 -- TODO: put annotations back on type constructor arguments?
 
+import           Names
 import qualified LambdaUnion as LU
 
-import Control.Monad
-import Control.Monad.State
 import Data.List (delete)
-
--- | Names
-
-type Name = Int
-
-type Fresh a = State Name a
-
-fresh :: Fresh Name
-fresh = do
-    name <- get
-    modify (+1)
-    return name
-    
-evalFresh = evalState
 
 -- | Types
 
