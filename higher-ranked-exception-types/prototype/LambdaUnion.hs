@@ -10,7 +10,6 @@ module LambdaUnion where
 
 import Names
 
-import Data.Maybe (fromJust)
 import Data.Set
 import GHC.Exts   (sortWith)
 
@@ -90,9 +89,11 @@ subst x e (Union e1 e2)
 
 -- * Reduction (1-step, top-level)
 
+-- TODO: do dynamic type checking (needs a completely type-annotated syntax tree)
+
 reduce :: Tm -> Maybe Tm
 -- β-reduction
-reduce (App (Abs x k e1)  e2)
+reduce (App (Abs x k e1) e2)
     = return (subst x e2 e1)
 -- FIXME: "∅-reduction": a semi-hack that should be done elsewhere
 reduce (App Empty e2)
@@ -172,14 +173,15 @@ normalize Empty
             
 -- * η-expansion
 
--- TODO: we also need to do "∅-expansion", but we cannot always do this without
---       knowing its sort; instead there currently is a small hack in reduce
+-- TODO: we also need to do "∅-expansion" (or better: generate correct terms in
+--       the solver), but we cannot always do this without knowing its sort;
+--       instead there currently is a small hack in reduce
 
 type Env = [(Name, Sort)]
 
 etaExpand :: Env -> Tm -> Fresh Tm
 etaExpand env (Var x)
-    = do etaExpand' x (fromJust $ lookup x env)
+    = do etaExpand' x (lookup' "etaExpand" x env)
 etaExpand env (Abs x s e)
     = do e' <- etaExpand ((x,s) : env) e
          return (Abs x s e')
@@ -207,8 +209,8 @@ etaExpand' x (s1 :=> s2)
 -- TODO: infer sorts of free variables?
 -- NOTE: in this case the environments for e1 and e2 should be equal in a REGULAR theory
 
-semanticallyEqual :: Env -> Tm -> Tm -> Bool
-semanticallyEqual env e1 e2 =
-    let e1'  = evalFresh (etaExpand env e1) (maxName e1 + 1)
-        e2'  = evalFresh (etaExpand env e2) (maxName e2 + 1)
-     in synEqAlpha (normalize e1') (normalize e2')
+semanticallyEqual :: Env -> Tm -> Tm -> Fresh Bool
+semanticallyEqual env e1 e2 = do
+    e1' <- etaExpand env e1
+    e2' <- etaExpand env e2
+    return (synEqAlpha (normalize e1') (normalize e2'))
