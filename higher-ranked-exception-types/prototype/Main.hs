@@ -15,15 +15,18 @@ main   = mapM_ (putStrLn . show . run) exs
 run ex = evalFresh (reconstruct [] [] ex) 1
 
 
-exs  = [ex01,ex02,ex03,ex04,ex05,ex06,ex07,ex08,ex09,ex10,ex11]
+exs  = [ex01,ex02,ex03,ex04,ex05,ex06,ex07,ex08,ex09,ex10
+       ,ex11,ex12,ex13,ex14,ex15,ex16,ex17
+       ]
 
--- abstraction
+
+-- * abstraction
 ex01 = Abs 1 Bool $ Var 1
 ex02 = Abs 1 Bool $ Abs 2 Bool $ Var 1
 ex03 = Abs 1 Bool $ Abs 2 Bool $ Var 2
--- application
+-- * application
 ex04 = Abs 1 (Bool :-> Bool) $ Abs 2 Bool $ App (Var 1) (Var 2)
--- crash
+-- * crash
 ex05 = Crash "foo" Bool
 ex06 = Crash "foo" (Bool :-> Bool)
 ex07 = App (Crash "foo" (Bool :-> Bool)) (Crash "bar" Bool)
@@ -42,5 +45,11 @@ ex10 = Abs 1 Bool $ App (Crash "foo" (Bool :-> Bool)) (Var 1)
 --       intuitively/according to the analysis only "foo" can be raised here,
 --       but the imprecise exception semantics would also allow for "bar".
 ex11 = Abs 1 Bool $ App (Crash "foo" (Bool :-> Bool)) (Crash "bar" Bool)
-
-
+-- * seq
+ex12 = Seq (Crash "foo" Bool) (Crash "bar" Bool)
+ex13 = Seq (Crash "foo" (Bool :-> Bool)) (Abs 1 Bool $ Var 1)
+ex14 = Abs 1 Bool $ Seq (Var 1) (Crash "foo" Bool)
+ex15 = Abs 1 Bool $ Seq (Crash "foo" Bool) (Crash "bar" Bool)
+ex16 = Abs 1 Bool $ Seq (Crash "bar" (Bool :-> Bool)) (Abs 2 Bool $ Var 2)
+ex17 = Abs 1 Bool $ Seq (Var 1) (Abs 2 Bool $ Var 1)
+-- * high-order functions

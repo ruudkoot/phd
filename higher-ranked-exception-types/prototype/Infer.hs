@@ -16,12 +16,14 @@ data Expr
     | Abs Name Ty Expr
     | App Expr Expr
     | Crash Lbl Ty
+    | Seq Expr Expr
     
 instance Show Expr where
     show (Var x    ) = "x" ++ show x
     show (Abs x t e) = "(λx" ++ show x ++ ":" ++ show t ++ "." ++ show e ++ ")"
     show (App e1 e2) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
     show (Crash l t) = "(⚡" ++ l ++ ":" ++ show t ++ ")"
+    show (Seq e1 e2) = "(" ++ show e1 ++ " seq " ++ show e2 ++ ")"
     
 -- | Exception type reconstruction
 
@@ -70,13 +72,18 @@ reconstruct env kenv (App e1 e2)
          ExnArr t2' (ExnVar exn2') t' exn' <- instantiate t1
          let subst = [(exn2', ExnVar exn2)] <.> merge [] t2 t2'
          e <- fresh
-         let c = c1 ++ c2 ++ [substExn' subst exn' :<: e, ExnVar exn1 :<: e]
+         let c = [substExn' subst exn' :<: e, ExnVar exn1 :<: e] ++ c1 ++ c2
          return (substExnTy' subst  t', e, c)
 reconstruct env kenv (Crash lbl ty)
     = do (ty', exn1, kenv1) <- C.complete [] ty
          e <- fresh
          -- let ty'' = C.forallFromEnv kenv1 ty'
          return (ty', e, [exn1 :<: e, ExnCon lbl :<: e])
+reconstruct env kenv (Seq e1 e2)
+    = do (t1, exn1, c1) <- reconstruct env kenv e1
+         (t2, exn2, c2) <- reconstruct env kenv e2
+         e <- fresh
+         return (t2, e, [ExnVar exn1 :<: e, ExnVar exn2 :<: e] ++ c1 ++ c2)
 
 -- * Instantiation
 
