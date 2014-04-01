@@ -85,7 +85,7 @@ instantiate t
     
 -- * Merge / match
 
-merge :: KindEnv -> ExnTy -> ExnTy -> Fresh Subst
+merge :: KindEnv -> ExnTy -> ExnTy -> Subst
 merge env (ExnForall e k t) (ExnForall e' k' t')
     | k == k'   = merge ((e,k) : env) t (substExnTy e' e t')
     | otherwise = error "merge: kind mismatch"

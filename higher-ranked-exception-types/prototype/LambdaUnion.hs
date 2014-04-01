@@ -209,8 +209,8 @@ etaExpand' x (s1 :=> s2)
 -- TODO: infer sorts of free variables?
 -- NOTE: in this case the environments for e1 and e2 should be equal in a REGULAR theory
 
-semanticallyEqual :: Env -> Tm -> Tm -> Fresh Bool
-semanticallyEqual env e1 e2 = do
-    e1' <- etaExpand env e1
-    e2' <- etaExpand env e2
-    return (synEqAlpha (normalize e1') (normalize e2'))
+semanticallyEqual :: Env -> Tm -> Tm -> Bool
+semanticallyEqual env e1 e2 =
+    let e1'  = evalFresh (etaExpand env e1) (maxName e1 + 1)
+        e2'  = evalFresh (etaExpand env e2) (maxName e2 + 1)
+     in synEqAlpha (normalize e1') (normalize e2')
