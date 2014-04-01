@@ -67,6 +67,7 @@ maxName (Var   x    ) = x
 maxName (Abs   x k e) = maxName e
 maxName (App   e1 e2) = max (maxName e1) (maxName e2)
 maxName (Union e1 e2) = max (maxName e1) (maxName e2)
+maxName (Empty      ) = 0
 
 -- * Substitution
 
