@@ -48,7 +48,7 @@ reconstruct env kenv (Abs x ty tm)
     = do (t1', exn1, kenv1) <- C.complete [] ty
          exn <- fresh
          let env' = (x, (t1', ExnVar exn)) : env
-         (t2', exn2, c1) <- reconstruct env' (kenv1 ++ kenv) tm
+         (t2', exn2, c1) <- reconstruct env' (kenv1 ++ [(exn,EXN)] ++ kenv) tm
          let v = [exn] ++ map fst kenv1 ++ fev env
          -- FIXME: is this the correct environment we are passing here? this
          --        environment contains exactly the variables over which we
@@ -145,9 +145,7 @@ solve env cs xs e =
                       else ( M.findWithDefault [] e dependencies
                            -- FIXME: should the above lookup ever be allowed to fail?
                            --        (it does!)
-                           , M.insert e (ExnUnion exn1 exn2) analysis )      
-                           -- FIXME: need to normalize the expression when updating
-                           --        the analysis result above
+                           , M.insert e (exnNormalize (ExnUnion exn1 exn2)) analysis )
      in mapLookup "solve result" (worklist f cs analysis) e
 
 -- TODO: move to LambdaUnion
