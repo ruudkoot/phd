@@ -141,13 +141,13 @@ solve env cs xs e =
                    in -- FIXME: is this environment sufficient? the call to solve
                       --        in reconstruct suggests perhaps not!
                       if isIncludedIn env exn1 exn2
-                      then ([], analysis)
-                      else (M.findWithDefault [] e dependencies
+                      then ( [], analysis )
+                      else ( M.findWithDefault [] e dependencies
                            -- FIXME: should the above lookup ever be allowed to fail?
                            --        (it does!)
-                           ,M.insert e (ExnUnion exn1 exn2) analysis)      
+                           , M.insert e (ExnUnion exn1 exn2) analysis )      
                            -- FIXME: need to normalize the expression when updating
-                           --        the analysis result
+                           --        the analysis result above
      in mapLookup "solve result" (worklist f cs analysis) e
 
 -- TODO: move to LambdaUnion

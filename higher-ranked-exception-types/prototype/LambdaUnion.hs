@@ -11,7 +11,7 @@ module LambdaUnion where
 import Names
 
 import Data.Set
-import GHC.Exts   (sortWith)
+import GHC.Exts (sortWith)
 
 -- | Expressions
 
@@ -208,9 +208,11 @@ etaExpand' x (s1 :=> s2)
 
 -- TODO: infer sorts of free variables?
 -- NOTE: in this case the environments for e1 and e2 should be equal in a REGULAR theory
+-- NOTE: the effects (generating fresh variables) can never escape and are masked;
+--       alternatively: move η-expansion out of this function
 
 semanticallyEqual :: Env -> Tm -> Tm -> Bool
 semanticallyEqual env e1 e2 =
-    let e1'  = evalFresh (etaExpand env e1) (maxName e1 + 1)
-        e2'  = evalFresh (etaExpand env e2) (maxName e2 + 1)
+    let e1'  = evalFresh (etaExpand env e1) (maxName e1 + 1001)
+        e2'  = evalFresh (etaExpand env e2) (maxName e2 + 1001)
      in synEqAlpha (normalize e1') (normalize e2')
