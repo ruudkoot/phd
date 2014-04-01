@@ -15,12 +15,13 @@ data Expr
     = Var Name
     | Abs Name Ty Expr
     | App Expr Expr
-    -- TODO: Crash Ty
+    | Crash Lbl Ty
     
 instance Show Expr where
     show (Var x    ) = "x" ++ show x
     show (Abs x t e) = "(λx" ++ show x ++ ":" ++ show t ++ "." ++ show e ++ ")"
     show (App e1 e2) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
+    show (Crash l t) = "(⚡" ++ l ++ ":" ++ show t ++ ")"
     
 -- | Exception type reconstruction
 
@@ -57,6 +58,7 @@ reconstruct env kenv (Abs x ty tm)
          --
          --        however, we do seem to be missing at least fev env!!!
          let exn2' = solve (kenv1 ++ [(exn,EXN)] ++ kenv) c1 v exn2
+         -- FIXME: swap the outher ExnForall and the inner forallFromEnv?
          let t' = ExnForall exn EXN (C.forallFromEnv kenv1 (
                     ExnArr t1' (ExnVar exn) t2' exn2'
                   ))
@@ -70,6 +72,11 @@ reconstruct env kenv (App e1 e2)
          e <- fresh
          let c = c1 ++ c2 ++ [substExn' subst exn' :<: e, ExnVar exn1 :<: e]
          return (substExnTy' subst  t', e, c)
+reconstruct env kenv (Crash lbl ty)
+    = do (ty', exn1, kenv1) <- C.complete [] ty
+         e <- fresh
+         -- let ty'' = C.forallFromEnv kenv1 ty'
+         return (ty', e, [exn1 :<: e, ExnCon lbl :<: e])
 
 -- * Instantiation
 
@@ -99,8 +106,8 @@ merge env (ExnArr t1 (ExnVar exn1) t2 exn2) (ExnArr t1' (ExnVar exn1') t2' exn2'
         = let (e, es) = deapply exn2'
            in [(e, reapply env es exn2)] <.> merge env t2 t2'
     | otherwise = error "merge: function space"
-merge _ _ _
-    = error "merge: fail"
+merge env t t'
+    = error $ "merge: t = " ++ show t ++ "; t' = " ++ show t' ++ "; env = " ++ show env
     
 -- NOTE: here the fully-appliedness and left-to-rightness comes into play
 -- TODO: check this restriction in never violated
@@ -158,8 +165,11 @@ interpret env (ExnEmpty)
     = ExnEmpty
 interpret env (ExnUnion e1 e2)
     = ExnUnion (interpret env e1) (interpret env e2)
+interpret env (ExnCon lbl)
+    = ExnCon lbl
 interpret env (ExnVar e)
-    = mapLookup "interpret" env e
+    -- FIXME: should this lookup ever fail? it does!
+    = M.findWithDefault ExnEmpty e env
 interpret env (ExnApp e1 e2)
     = ExnApp (interpret env e1) (interpret env e2)
 interpret env (ExnAbs x k e)

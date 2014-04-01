@@ -18,18 +18,19 @@ import GHC.Exts (sortWith)
 data Sort = C | Sort :=> Sort
     deriving (Eq, Show)
 
--- TODO: parameterize over a type of constants (single-sorted)
 -- TODO: (future work) can we do multi-sorted algebras elegantly with type families?
 -- TODO: (future work) generalize over the underlying first-order algebra
-data Tm
+data Tm a
     = Var Name
-    | Abs Name Sort Tm
-    | App Tm Tm
-    | Union Tm Tm
+    | Con a
+    | Abs Name Sort (Tm a)
+    | App (Tm a) (Tm a)
+    | Union (Tm a) (Tm a)
     | Empty
 
-instance Show Tm where
+instance Show a => Show (Tm a) where
     show (Var   x    ) = "x" ++ show x
+    show (Con   c    ) = "{" ++ show c ++ "}"
     show (Abs   x s e) = "(λx" ++ show x ++ ":" ++ show s ++ "." ++ show e ++ ")"
     show (App   e1 e2) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
     show (Union e1 e2) = "(" ++ show e1 ++ "∪" ++ show e2 ++ ")"
@@ -37,9 +38,11 @@ instance Show Tm where
 
 -- * Syntactic equality up to alpha-renaming
 
-synEqAlpha :: Tm -> Tm -> Bool
+synEqAlpha :: Eq a => Tm a -> Tm a -> Bool
 synEqAlpha (Var x) (Var x')
     = x == x'
+synEqAlpha (Con c) (Con c')
+    = c == c'
 synEqAlpha (Abs x s e) (Abs x' s' e')
     | s == s'   = synEqAlpha e (subst x' (Var x) e')
     -- We can expect that the terms to be compared are of the same sort,
@@ -56,14 +59,17 @@ synEqAlpha _ _
     
 -- * Free variables
 
-fv :: Tm -> Set Name
+fv :: Tm a -> Set Name
 fv (Var   x    ) = singleton x
+fv (Con   c    ) = empty
 fv (Abs   x k e) = delete x (fv e)
 fv (App   e1 e2) = union (fv e1) (fv e2)
 fv (Union e1 e2) = union (fv e1) (fv e2)
 
-maxName :: Tm -> Name
+-- FIXME: 0 might not be the least element of Name
+maxName :: Tm a -> Name
 maxName (Var   x    ) = x
+maxName (Con   c    ) = 0
 maxName (Abs   x k e) = maxName e
 maxName (App   e1 e2) = max (maxName e1) (maxName e2)
 maxName (Union e1 e2) = max (maxName e1) (maxName e2)
@@ -74,10 +80,12 @@ maxName (Empty      ) = 0
 -- FIXME: the ∪-distributivity case in reduce does a tricky substitution which
 --        may require α-renaming in order to succeed.
     
-subst :: Name -> Tm -> Tm -> Tm
+subst :: Name -> Tm a -> Tm a -> Tm a
 subst x e (Var y)
     | x == y    = e
     | otherwise = Var y
+subst x e (Con c)
+    = Con c
 subst x e (Abs y k e')
     | x == y          = Abs y k e'
     -- FIXME: does this catch all captures?
@@ -91,8 +99,9 @@ subst x e (Union e1 e2)
 -- * Reduction (1-step, top-level)
 
 -- TODO: do dynamic type checking (needs a completely type-annotated syntax tree)
+-- TODO: do any rules rely on the order of matching?
 
-reduce :: Tm -> Maybe Tm
+reduce :: Ord a => Tm a -> Maybe (Tm a)
 -- β-reduction
 reduce (App (Abs x k e1) e2)
     = return (subst x e2 e1)
@@ -114,8 +123,12 @@ reduce (Union (Abs x s e) (Abs x' s' e'))
 -- ∪-idempotence
 reduce (Union (Var x) (Var x'))
     | x == x' = return (Var x)
-reduce (Union (Var x) (Union (Var x') e2))
-    | x == x' = return (Union (Var x) e2)
+reduce (Union (Con c) (Con c'))
+    | c == c' = return (Con c)
+reduce (Union (Var x) (Union (Var x') e))
+    | x == x' = return (Union (Var x) e)
+reduce (Union (Con c) (Union (Con c') e))
+    | c == c' = return (Union (Con c) e)
 -- ∪-congruence(?)
 reduce (Union e1 e2)
     | Just x1 <- applicee e1, Just x2 <- applicee e2, x1 == x2
@@ -126,22 +139,33 @@ reduce (Union e1 (Union e2 e3))
 -- ∪-associativity
 reduce (Union (Union e1 e2) e3)
     = return (Union e1 (Union e2 e3))
--- ∪-commutativity ("ordering of variables")
+-- ∪-commutativity ("ordering of variables and constants")
 reduce (Union e1 (Union e2 e3))
     | Just x1 <- applicee e1, Just x2 <- applicee e2, x2 < x1
         = return (Union e2 (Union e1 e3))
 reduce (Union e1 e2)
     | Just x1 <- applicee e1, Just x2 <- applicee e2, x2 < x1
         = return (Union e2 e1)
+reduce (Union (Con c1) (Union (Con c2) e3))
+    | c2 < c1 = return (Union (Con c2) (Union (Con c1) e3))
+reduce (Union (Con c1) (Con c2))
+    | c2 < c1 = return (Union (Con c2) (Con c1))
+reduce (Union e1 (Union (Con c2) e3))
+    | Just x1 <- applicee e1
+        = return (Union (Con c2) (Union e1 e3))
+reduce (Union e1 (Con c2))
+    | Just x1 <- applicee e1
+        = return (Union (Con c2) e1)
+-- no rules where applicable..
 reduce _
     = Nothing
     
-applicee :: Tm -> Maybe Name
+applicee :: Tm a -> Maybe Name
 applicee (Var x)     = Just x
 applicee (App e1 e2) = applicee e1
 applicee _           = Nothing
 
-congrue :: Tm -> Tm -> Tm
+congrue :: Tm a -> Tm a -> Tm a
 congrue (Var x) (Var x')
     | x == x'   = Var x
     | otherwise = error "congrue: variables do not match"
@@ -152,9 +176,11 @@ congrue _ _
 
 -- * Normalization (full β-reduction)
 
-normalize :: Tm -> Tm
+normalize :: Ord a => Tm a -> Tm a
 normalize (Var x)
     = Var x
+normalize (Con c)
+    = Con c
 normalize (Abs x k e)
     = Abs x k (normalize e)
 normalize (App e1 e2)
@@ -180,9 +206,11 @@ normalize Empty
 
 type Env = [(Name, Sort)]
 
-etaExpand :: Env -> Tm -> Fresh Tm
+etaExpand :: Env -> Tm a -> Fresh (Tm a)
 etaExpand env (Var x)
     = do etaExpand' x (lookup' "etaExpand" x env)
+etaExpand env (Con c)
+    = do return (Con c)
 etaExpand env (Abs x s e)
     = do e' <- etaExpand ((x,s) : env) e
          return (Abs x s e')
@@ -197,7 +225,7 @@ etaExpand env (Union e1 e2)
 etaExpand env (Empty)
     = do return (Empty)
 
-etaExpand' :: Name -> Sort -> Fresh Tm
+etaExpand' :: Name -> Sort -> Fresh (Tm a)
 etaExpand' x C
     = do return (Var x)
 etaExpand' x (s1 :=> s2)
@@ -212,7 +240,7 @@ etaExpand' x (s1 :=> s2)
 -- NOTE: the effects (generating fresh variables) can never escape and are masked;
 --       alternatively: move η-expansion out of this function
 
-semanticallyEqual :: Env -> Tm -> Tm -> Bool
+semanticallyEqual :: Ord a => Env -> Tm a -> Tm a -> Bool
 semanticallyEqual env e1 e2 =
     let e1'  = evalFresh (etaExpand env e1) (maxName e1 + 1001)
         e2'  = evalFresh (etaExpand env e2) (maxName e2 + 1001)

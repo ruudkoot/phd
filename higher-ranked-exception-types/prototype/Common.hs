@@ -28,24 +28,28 @@ sort2kind :: LU.Sort -> Kind
 sort2kind LU.C           = EXN
 sort2kind (s1 LU.:=> s2) = sort2kind s1 :=> sort2kind s2
 
+type Lbl = String
+
 -- TODO: replace this with module LambdaUnion
 data Exn
     = ExnEmpty
     | ExnUnion Exn Exn
-    -- TODO: ExnCon
+    | ExnCon Lbl
     | ExnVar Name
     | ExnApp Exn Exn
     | ExnAbs Name Kind Exn
 
-exn2lu :: Exn -> LU.Tm
+exn2lu :: Exn -> LU.Tm Lbl
 exn2lu (ExnEmpty      ) = LU.Empty
 exn2lu (ExnUnion e1 e2) = LU.Union (exn2lu e1) (exn2lu e2)
+exn2lu (ExnCon   lbl  ) = LU.Con lbl
 exn2lu (ExnVar   n    ) = LU.Var n
 exn2lu (ExnApp   e1 e2) = LU.App (exn2lu e1) (exn2lu e2)
 exn2lu (ExnAbs   n k e) = LU.Abs n (kind2sort k) (exn2lu e)
 
-lu2exn :: LU.Tm -> Exn
+lu2exn :: LU.Tm Lbl -> Exn
 lu2exn (LU.Empty      ) = ExnEmpty
+lu2exn (LU.Con   lbl  ) = ExnCon lbl
 lu2exn (LU.Union e1 e2) = ExnUnion (lu2exn e1) (lu2exn e2)
 lu2exn (LU.Var   n    ) = ExnVar n
 lu2exn (LU.App   e1 e2) = ExnApp (lu2exn e1) (lu2exn e2)
@@ -61,6 +65,7 @@ exnNormalize = lu2exn . LU.normalize . exn2lu
 instance Show Exn where
     show (ExnEmpty)       = "∅"
     show (ExnUnion e1 e2) = "(" ++ show e1 ++ "∪" ++ show e2 ++ ")"
+    show (ExnCon lbl)     = "{" ++ lbl ++ "}"
     show (ExnVar n)       = "e" ++ show n
     show (ExnApp e1 e2)   = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
     show (ExnAbs n k e)   = "(λe" ++ show n ++ ":" ++ show k ++ "." ++ show e ++ ")"
@@ -100,6 +105,7 @@ instance Show ExnTy where
 
 fevExn :: Exn -> [Name]
 fevExn (ExnVar e)     = [e]
+fevExn (ExnCon c)     = []
 fevExn (ExnApp e1 e2) = fevExn e1 ++ fevExn e2
 
 fevExnTy :: ExnTy -> [Name]
