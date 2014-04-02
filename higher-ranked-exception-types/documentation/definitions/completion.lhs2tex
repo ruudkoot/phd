@@ -1,0 +1,38 @@
+\newcommand{\ClassEnv}{\mathbf{Env}}
+%format Env       = "\ClassEnv"
+\newcommand{\ClassTy}{\mathbf{Ty}}
+%format Ty        = "\ClassTy"
+\newcommand{\ClassExnTy}{\mathbf{ExnTy}}
+%format ExnTy     = "\ClassExnTy"
+\newcommand{\ClassExn}{\mathbf{Exn}}
+%format Exn       = "\ClassExn"
+\newcommand{\ClassKind}{\mathbf{Kind}}
+%format Kind      = "\ClassKind"
+
+
+\newcommand{\Ty}{\tau}
+\newcommand{\TyBool}{\mathrm{bool}}
+\newcommand{\TyList}[1]{\left[#1\right]}
+\newcommand{\TyArr}[2]{#1 \to #2}
+
+\newcommand{\Throws}[2]{#1\ \mathbf{throws}\ #2}
+\newcommand{\ExnTy}{\widehat\tau}
+%\newcommand{\ExnTyBool}{\widehat{\mathrm{bool}}}
+\newcommand{\ExnTyBool}{\mathrm{b\widehat{oo}l}}
+\newcommand{\ExnTyList}[2]{\left[\Throws{#1}{#2}\right]}
+\newcommand{\ExnTyArr}[4]{\Throws{#1}{#2} \to \Throws{#3}{#4}}
+\newcommand{\ExnForall}[1]{\forall {#1}.}
+
+\newcommand{\Exn}{\chi}
+\newcommand{\ExnVar}{e}
+\newcommand{\ExnAbs}[3]{\lambda #1 : #2 . #3}
+
+\newcommand{\Kind}{\kappa}
+\newcommand{\KindEXN}{\textsc{exn}}
+\newcommand{\KindArr}{\Rightarrow}
+
+\newcommand{\KindENV}{\Gamma}
+\newcommand{\KindEnv}[1]{{\overline{\ExnVar_{#1} :: \Kind_{#1}}}}
+
+% Judgements
+\newcommand{\JudgeComplete}[5]{{#1 \vdash #2 : #3\ \&\ #4 \triangleright #5}}

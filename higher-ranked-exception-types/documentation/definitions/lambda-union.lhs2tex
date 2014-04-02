@@ -1,0 +1,3 @@
+\newcommand{\LambdaUnion}{\lambda^\cup}
+
+\newcommand{\Reduce}[2]{{#1 \longrightarrow #2}}

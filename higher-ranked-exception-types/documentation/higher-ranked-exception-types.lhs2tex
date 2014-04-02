@@ -1,29 +1,32 @@
 \documentclass[a4paper]{article}
+%\documentclass[serif,professionalfont]{beamer}
+
+%\usepackage{fullpage}
+
+\usepackage[sc,osf]{mathpazo}			% Palatino (text + math)
+%\usepackage{eulervm}					% Euler (math)
+%\usepackage{newtxtext,newtxmath}		% Times New Roman (text + math)
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
 
 %include polycode.fmt
 %include forall.fmt
 
-\usepackage{mathpazo}
+%include include/theorems.lhs2tex
+%include include/inference.lhs2tex
+
+%include definitions/lambda-union.lhs2tex
+%include definitions/completion.lhs2tex
 
 \begin{document}
 
 \title{Higher-Ranked Exception Types}
+\author{Ruud Koot}
 \maketitle
 
-\section{Completion}
-
-Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-
-\[ P = \sum_P^P P \]
-
-Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-
-\begin{code}
-map :: (a -> b) -> a -> b
-map _  []      = []
-map f  (x:xs)  = f x : map f xs
-\end{code}
-
-Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+%include section/lambda-union.lhs2tex
+%include section/completion.lhs2tex
 
 \end{document}

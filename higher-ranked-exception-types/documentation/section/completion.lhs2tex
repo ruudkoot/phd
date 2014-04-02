@@ -1,0 +1,87 @@
+\section{Completion}
+
+\begin{align}
+    \Kind \in \ClassKind &&::= \quad &\KindEXN \tag{exception} \\
+                &&||  \quad &\Kind_1 \KindArr \Kind_2 \tag{exception operator}
+\end{align}
+\begin{align}
+    \Exn \in \ClassExn &&::= \quad &\ExnVar \tag{exception variables} \\
+                 &&||  \quad &\ExnAbs{\ExnVar}{\Kind}{\Exn} \tag{exception abstraction}\end{align}
+\begin{align}
+    \ExnTy \in \ClassExnTy &&::= \quad &\ExnForall{\ExnVar :: \Kind}\ExnTy \tag{exception quantification} \\
+                 &&||  \quad &\ExnTyBool \tag{boolean type} \\
+                 &&||  \quad &\ExnTyList{\ExnTy}{\Exn} \tag{list type} \\
+                 &&||  \quad &\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2} \tag{function type}
+\end{align}
+
+The completion procedure as a set of inference rules:
+
+\begin{figure}[h]
+    \begin{gather*}
+        \Rule{C-Bool}
+             {}
+             {\JudgeComplete{\KindEnv{i}}
+                            {\TyBool}
+                            {\ExnTyBool}
+                            {\ExnVar\ \overline{\ExnVar_i}}
+                            {\ExnVar :: \overline{\Kind_i\KindArr}\KindEXN}
+             }
+        \\\\
+        \Rule{C-List}
+             {\JudgeComplete{\KindEnv{i}}
+                            {\Ty}
+                            {\ExnTy}
+                            {\Exn}
+                            {\KindEnv{j}}
+             }
+             {\JudgeComplete{\KindEnv{i}}
+                            {\TyList{\Ty}}
+                            {\ExnTyList{\ExnTy}{\Exn}}
+                            {\ExnVar\ \overline{\ExnVar_i}}
+                            {\ExnVar :: \overline{\Kind_i\KindArr}%
+                                \KindEXN, \KindEnv{j}}
+             }
+        \\\\
+        \Rule{C-Arr}
+             {\JudgeComplete{}
+                            {\Ty_1}
+                            {\ExnTy_1}
+                            {\Exn_1}
+                            {\KindEnv{j}}
+              \quad
+              \JudgeComplete{\KindEnv{i},\KindEnv{j}}
+                            {\Ty_2}
+                            {\ExnTy_2}
+                            {\Exn_2}
+                            {\KindEnv{j}}
+             }
+             {\JudgeComplete{\KindEnv{i}}
+                            {\TyArr{\Ty_1}{\Ty_2}}
+                            {\ExnForall{\overline{\ExnVar_j :: \Kind_j}}\left(\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}\right)}
+                            {\ExnVar\ \overline{\ExnVar_i}}
+                            {\ExnVar :: \overline{\Kind_j\KindArr}%
+                                \KindEXN, \KindEnv{k}}
+             }
+    \end{gather*}
+    \caption{Type completion ($\JudgeComplete{\KindENV}{\Ty}{\ExnTy}{\Exn}{\KindENV'}$)}
+\end{figure}
+
+The completion procedure as an algorithm:
+
+%format :*:       = "\times"
+%format Tuple3 (x) (y) (z) = "\left<" x "; " y "; " z "\right>"
+
+%format kindEnv_i = "\KindEnv{i}"
+%format TyBool    = "\TyBool"
+%format ExnTyBool = "\ExnTyBool"
+%format e         = "\ExnVar"
+%format eis       = "\overline{\ExnVar_i}"
+%format kis       = "\overline{\Kind_i \KindArr}"
+%format EXN       = "\KindEXN"
+
+\begin{code}
+    complete :: Env :*: Ty -> ExnTy :*: Exn :*: Env
+    complete kindEnv_i TyBool =
+        let  e be fresh
+        in   Tuple3 ExnTyBool (e eis) (e :: kis EXN)
+\end{code}

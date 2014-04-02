@@ -239,6 +239,9 @@ etaExpand' x (s1 :=> s2)
 -- NOTE: in this case the environments for e1 and e2 should be equal in a REGULAR theory
 -- NOTE: the effects (generating fresh variables) can never escape and are masked;
 --       alternatively: move η-expansion out of this function
+-- NOTE: η-expansion is very aggressive, but β-reduction undoes the damage;
+--       alternatively, we could 1) do η-expansion on-the-fly as a reduction rule, or
+--       2) alter the syntax to keep all expressions in fully applied form
 
 semanticallyEqual :: Ord a => Env -> Tm a -> Tm a -> Bool
 semanticallyEqual env e1 e2 =

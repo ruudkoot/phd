@@ -1,0 +1,19 @@
+\section{The $\LambdaUnion$-calculus}
+
+
+
+\begin{conjecture}
+    The reduction relation $\Reduce{}{}$ is confluent.
+\end{conjecture}
+
+\begin{conjecture}
+    The reduction relation $\Reduce{}{}$ is strongly normalizing.
+\end{conjecture}
+
+\begin{corollary}
+    The $\LambdaUnion$-calculus has unique normal forms.
+\end{corollary}
+
+\begin{corollary}
+    Equality of $\LambdaUnion$-terms can be decided by normalization.
+\end{corollary}
