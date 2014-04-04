@@ -1,14 +1,109 @@
 \section{The $\LambdaUnion$-calculus}
 
+\paragraph{Types}
 
+\begin{align}
+    \LuTy \in \ClassLuTy &&::= \quad &\LuBase                     \tag{base type} \\
+                         &&||  \quad &\LuArr{\LuTy_1}{\LuTy_2}    \tag{function type}
+\end{align}
+
+\paragraph{Terms}
+
+\begin{align}
+    \LuTm \in \ClassLuTm &&::= \quad &\LuVar \tag{variable} \\
+                         &&||  \quad &\LuAbs{\LuVar}{\LuTy}{\LuTm} \tag{abstraction} \\
+                         &&||  \quad &\LuApp{\LuTm_1}{\LuTm_2} \tag{application} \\
+                         &&||  \quad &\LuEmpty \tag{empty} \\
+                         &&||  \quad &\LuCon \tag{singleton} \\
+                         &&||  \quad &\LuUnion{\LuTm_1}{\LuTm_2} \tag{union}
+\end{align}
+
+\paragraph{Environments}
+
+\begin{align*}
+    \LuEnv \in \ClassLuEnv ::= \quad \EmptyEnv \quad || \quad \LuEnv, \LuVar : \LuTy
+\end{align*}
+
+\subsection{Typing relation}
+
+\begin{gather*}
+    \Rule{T-Var}
+         {}
+         {\JudgeLuTy[\LuEnv, \LuVar : \LuTy]{\LuVar}{\LuTy}}
+    \quad
+    \Rule{T-Abs}
+         {\JudgeLuTy[\LuEnv, \LuVar : \LuTy_1]{\LuTm}{\LuTy_2}}
+         {\JudgeLuTy{\LuAbs{\LuVar}{\LuTy_1}{\LuTm}}{\LuArr{\LuTy_1}{\LuTy_2}}}
+    \quad
+    \Rule{T-App}
+         {\JudgeLuTy{\LuTm_1}{\LuArr{\LuTy_1}{\LuTy_2}} \quad \JudgeLuTy{\LuTm_2}{\LuTy_1}}
+         {\JudgeLuTy{\LuApp{\LuTm_1}{\LuTm_2}}{\LuTy_2}}
+    \\\\
+    \Rule{T-Empty}
+         {}
+         {\JudgeLuTy{\LuEmpty}{\LuBase}}
+    \quad
+    \Rule{T-Con}
+         {}
+         {\JudgeLuTy{\LuCon}{\LuBase}}
+    \quad
+    \Rule{T-Union}
+         {\JudgeLuTy{\LuTm_1}{\LuTy} \quad \JudgeLuTy{\LuTm_2}{\LuTy}}
+         {\JudgeLuTy{\LuUnion{\LuTm_1}{\LuTm_2}}{\LuTy}}
+\end{gather*}
+
+\subsection{Semantics}
+
+\subsection{Reduction relation}
+
+\begin{definition}
+    Let $\LuOrder{}{}$ be a strict total order on $\ClassLuCon + \ClassLuVar$, with $\LuOrder{\LuCON}{\LuVar}$ for all $\LuCON \in \ClassLuCon$ and $\LuVar \in \ClassLuVar$.
+\end{definition}
+
+\begin{align}
+    {\LuApp{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_1}\right)}{\LuTm_2}} &\REDUCE {\Subst{\LuTm_2}{\LuVar}{\LuTm_1}} \tag{$\beta$-reduction} \\
+    \begin{split}
+    {\LuApp{\left(\LuUnion{\LuTm_1}{\LuTm_2}\right)}{\LuTm_3}} &\REDUCE {\LuUnion{\LuApp{\LuTm_1}{\LuTm_3}}{\LuApp{\LuTm_2}{\LuTm_3}}} \\
+    {\LuUnion{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_1}\right)}{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_2}\right)}}
+        &\REDUCE {\LuAbs{\LuVar}{\LuTy}{\left(\LuUnion{\LuTm_1}{\LuTm_2}\right)}} \\
+    {\LuUnion{\LuAPPLIED}{\LuAPPLIED[']}}
+        &\REDUCE {\LuVar\ \left(\LuUnion{\LuTm_1}{\LuTm_1'}\right) \cdots \left(\LuUnion{\LuTm_n}{\LuTm_n'}\right)}
+    \end{split} \tag{congruences} \\
+    {\LuUnion{\left(\LuUnion{\LuTm_1}{\LuTm_2}\right)}{\LuTm_3}}
+        &\REDUCE {\LuUnion{\LuTm_1}{\left(\LuUnion{\LuTm_2}{\LuTm_3}\right)}} \tag{associativity} \\
+    \begin{split}
+    {\LuUnion{\LuEmpty}{\LuTm}} &\REDUCE {\LuTm} \\
+    {\LuUnion{\LuTm}{\LuEmpty}} &\REDUCE {\LuTm}
+    \end{split} \tag{unit} \\
+    \begin{split}
+    {\LuUnion{\LuVar}{\LuVar}} &\REDUCE {\LuVar} \\
+    {\LuUnion{\LuVar}{\left(\LuUnion{\LuVar}{\LuTm}}\right)} &\REDUCE {\LuUnion{\LuVar}{\LuTm}} \\
+    {\LuUnion{\LuCon}{\LuCon}} &\REDUCE {\LuCon} \\
+    {\LuUnion{\LuCon}{\left(\LuUnion{\LuCon}{\LuTm}\right)}} &\REDUCE {\LuUnion{\LuCon}{\LuTm}}
+    \end{split} \tag{idempotence} \\
+    \begin{split}
+    {} &\REDUCE {}
+    \end{split} \tag{commutativity}
+\end{align}
 
 \begin{conjecture}
-    The reduction relation $\Reduce{}{}$ is confluent.
+    The reduction relation $\Reduce{}{}$ preserves meaning.
 \end{conjecture}
 
 \begin{conjecture}
     The reduction relation $\Reduce{}{}$ is strongly normalizing.
 \end{conjecture}
+
+\begin{conjecture}
+    The reduction relation $\Reduce{}{}$ is locally confluent.
+\end{conjecture}
+
+\begin{corollary}
+    The reduction relation $\Reduce{}{}$ is confluent.
+\end{corollary}
+\begin{proof}
+    Follows from SN, LC and Newman's Lemma.
+\end{proof}
 
 \begin{corollary}
     The $\LambdaUnion$-calculus has unique normal forms.

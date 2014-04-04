@@ -51,3 +51,5 @@ rank2Seq x = x `seq` error "b"
 
 flipConstSeq :: a -> b -> a
 flipConstSeq = \x -> x `seq` (\y -> x)
+
+-- | Existential types

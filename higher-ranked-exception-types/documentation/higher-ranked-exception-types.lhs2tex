@@ -1,7 +1,7 @@
 \documentclass[a4paper]{article}
 %\documentclass[serif,professionalfont]{beamer}
 
-%\usepackage{fullpage}
+\usepackage{fullpage}
 
 \usepackage[sc,osf]{mathpazo}			% Palatino (text + math)
 %\usepackage{eulervm}					% Euler (math)
@@ -10,6 +10,7 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsthm}
+\usepackage{mathtools}
 
 %include polycode.fmt
 %include forall.fmt

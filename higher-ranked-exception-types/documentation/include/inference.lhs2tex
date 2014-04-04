@@ -1,2 +1,9 @@
+% Inference rules
 \newcommand{\Rule}[3]{\frac{#2}{#3}\mbox{\ [\textsc{#1}]}}
 \newcommand{\CiteRule}[1]{\mbox{[\textsc{#1}]}}
+
+% Environments
+\newcommand{\EmptyEnv}{\cdot}
+
+% Substitutions
+\newcommand{\Subst}[3]{\left[#1/#2\right]#3}

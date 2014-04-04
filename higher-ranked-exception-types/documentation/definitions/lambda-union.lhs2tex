@@ -1,3 +1,28 @@
 \newcommand{\LambdaUnion}{\lambda^\cup}
 
-\newcommand{\Reduce}[2]{{#1 \longrightarrow #2}}
+\newcommand{\ClassLuCon}{\mathbf{Con}}
+\newcommand{\ClassLuEnv}{\mathbf{Env}}
+\newcommand{\ClassLuTm}{\mathbf{Tm}}
+\newcommand{\ClassLuTy}{\mathbf{Ty}}
+\newcommand{\ClassLuVar}{\mathbf{Var}}
+
+\newcommand{\LuAbs}[3]{\lambda #1 : #2. #3}
+\newcommand{\LuApp}[2]{#1\ #2}
+\newcommand{\LuArr}[2]{{#1 \to #2}}
+\newcommand{\LuBase}{\mathcal{P}}
+\newcommand{\LuCON}{c}
+\newcommand{\LuCon}[1][\LuCON]{\left\{#1\right\}}
+\newcommand{\LuEmpty}{\emptyset}
+\newcommand{\LuEnv}{\Gamma}
+\newcommand{\LuOrder}[2]{#1 \prec #2}
+\newcommand{\LuTm}{t}
+\newcommand{\LuTy}{\tau}
+\newcommand{\LuUnion}[2]{#1 \cup #2}
+\newcommand{\LuVar}{x}
+
+\newcommand{\LuAPPLIED}[1][]{\LuVar#1\ \LuTm_1#1 \cdots \LuTm_n#1}
+
+\newcommand{\JudgeLuTy}[3][\LuEnv]{#1 \vdash #2 : #3}
+
+\newcommand{\REDUCE}{\longrightarrow}
+\newcommand{\Reduce}[2]{{#1 \REDUCE #2}}
