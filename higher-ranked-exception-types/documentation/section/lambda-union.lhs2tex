@@ -10,13 +10,18 @@
 \paragraph{Terms}
 
 \begin{align}
-    \LuTm \in \ClassLuTm &&::= \quad &\LuVar \tag{variable} \\
+    \LuTm \in \ClassLuTm &&::= \quad &\LuVar, \LuVarY, ... \tag{variable} \\
                          &&||  \quad &\LuAbs{\LuVar}{\LuTy}{\LuTm} \tag{abstraction} \\
                          &&||  \quad &\LuApp{\LuTm_1}{\LuTm_2} \tag{application} \\
                          &&||  \quad &\LuEmpty \tag{empty} \\
                          &&||  \quad &\LuCon \tag{singleton} \\
                          &&||  \quad &\LuUnion{\LuTm_1}{\LuTm_2} \tag{union}
 \end{align}
+
+\paragraph{Values}
+
+Values $\LuVal$ are terms of the form \[ \LuAbs{\LuVar_1}{\LuTy_1}{\cdots\LuAbs{\LuVar_i}{\LuTy_i}{\LuUnion{\LuCon[\LuCON_1]}{(
+\LuUnion{\cdots}{(\LuUnion{\LuCon[\LuCON_j]}{(\LuUnion{\LuApp{\LuVar_1}{\LuVal_{11}\cdots\LuVal_{1m}}}{(\LuUnion{\cdots}{\LuApp{x_k}{v_{k1} \cdots v_{kn}}})})})})}}} \]
 
 \paragraph{Environments}
 
@@ -57,7 +62,7 @@
 \subsection{Reduction relation}
 
 \begin{definition}
-    Let $\LuOrder{}{}$ be a strict total order on $\ClassLuCon + \ClassLuVar$, with $\LuOrder{\LuCON}{\LuVar}$ for all $\LuCON \in \ClassLuCon$ and $\LuVar \in \ClassLuVar$.
+    Let $\LuOrder{}{}$ be a strict total order on $\ClassLuCon \cup \ClassLuVar$, with $\LuOrder{\LuCON}{\LuVar}$ for all $\LuCON \in \ClassLuCon$ and $\LuVar \in \ClassLuVar$.
 \end{definition}
 
 \begin{align}
@@ -81,9 +86,14 @@
     {\LuUnion{\LuCon}{\LuCon}} &\REDUCE {\LuCon} \\
     {\LuUnion{\LuCon}{\left(\LuUnion{\LuCon}{\LuTm}\right)}} &\REDUCE {\LuUnion{\LuCon}{\LuTm}}
     \end{split} \tag{idempotence} \\
-    \begin{split}
-    {} &\REDUCE {}
-    \end{split} \tag{commutativity}
+    %\begin{split}
+    {\LuUnion{\LuAPPLIED}{\LuCon}} &\REDUCE {\LuUnion{\LuCon}{\LuAPPLIED}} \\
+    {\LuUnion{\LuAPPLIED}{\left(\LuUnion{\LuCon}{\LuTm}\right)}} &\REDUCE {\LuUnion{\LuCon}{\left(\LuUnion{\LuAPPLIED}{\LuTm}\right)}} \\
+    {\LuUnion{\LuAPPLIED}{\LuAPPLIED[']}} &\REDUCE {\LuUnion{\LuAPPLIED[']}{\LuAPPLIED}} &&\text{if $\LuOrder{\LuVar'}{\LuVar}$}\quad\quad\quad\quad \\
+    {\LuUnion{\LuAPPLIED}{\left(\LuUnion{\LuAPPLIED[']}{\LuTm}\right)}} &\REDUCE {\LuUnion{\LuAPPLIED[']}{\left(\LuUnion{\LuAPPLIED}{\LuTm}\right)}} &&\text{if $\LuOrder{\LuVar'}{\LuVar}$} \\
+    {\LuUnion{\LuCon}{\LuCon[\LuCON']}} &\REDUCE {\LuUnion{\LuCon[\LuCON']}{\LuCon}} &&\text{if $\LuOrder{\LuCON'}{\LuCON}$} \\
+    {\LuUnion{\LuCon}{\left(\LuUnion{\LuCon[\LuCON']}{\LuTm}\right)}} &\REDUCE {\LuUnion{\LuCon[\LuCON']}{\left(\LuUnion{\LuCon}{\LuTm}\right)}} &&\text{if $\LuOrder{\LuCON'}{\LuCON}$}
+    %\end{split} \tag{commutativity}
 \end{align}
 
 \begin{conjecture}
