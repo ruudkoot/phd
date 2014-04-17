@@ -129,6 +129,8 @@ substExn e e' (ExnVar e'')
     | otherwise = ExnVar e''
 substExn e e' (ExnApp exn1 exn2)
     = ExnApp (substExn e e' exn1) (substExn e e' exn2)
+substExn e e' (ExnUnion exn1 exn2)
+    = ExnUnion (substExn e e' exn1) (substExn e e' exn2)
 
 -- TODO: somewhat redundant with substExnTy'
 substExnTy :: Name -> Name -> ExnTy -> ExnTy

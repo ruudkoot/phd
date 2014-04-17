@@ -17,6 +17,7 @@ data Expr
     | App Expr Expr
     | Crash Lbl Ty
     | Seq Expr Expr
+    | Fix Expr
     
 instance Show Expr where
     show (Var x    ) = "x" ++ show x
@@ -24,6 +25,7 @@ instance Show Expr where
     show (App e1 e2) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
     show (Crash l t) = "(⚡" ++ l ++ ":" ++ show t ++ ")"
     show (Seq e1 e2) = "(" ++ show e1 ++ " seq " ++ show e2 ++ ")"
+    show (Fix e    ) = "(fix " ++ show e ++ ")"
     
 -- | Exception type reconstruction
 
@@ -49,7 +51,7 @@ reconstruct env kenv (Var x)
          return (t, e, [exn :<: e])
 reconstruct env kenv (Abs x ty tm)
     = do (t1', exn1, kenv1) <- C.complete [] ty
-         exn <- fresh
+         exn <- fresh  -- FIXME: reuse exn1 instead!
          let env' = (x, (t1', ExnVar exn)) : env
          (t2', exn2, c1) <- reconstruct env' (kenv1 ++ [(exn,EXN)] ++ kenv) tm
          let v = [exn] ++ map fst kenv1 ++ fev env
@@ -76,7 +78,7 @@ reconstruct env kenv (App e1 e2)
          return (substExnTy' subst  t', e, c)
 reconstruct env kenv (Crash lbl ty)
     = do (ty', exn1, kenv1) <- C.complete [] ty
-         e <- fresh
+         e <- fresh  -- FIXME: reuse exn1 instead!
          -- let ty'' = C.forallFromEnv kenv1 ty'
          return (ty', e, [exn1 :<: e, ExnCon lbl :<: e])
 reconstruct env kenv (Seq e1 e2)
@@ -84,6 +86,14 @@ reconstruct env kenv (Seq e1 e2)
          (t2, exn2, c2) <- reconstruct env kenv e2
          e <- fresh
          return (t2, e, [ExnVar exn1 :<: e, ExnVar exn2 :<: e] ++ c1 ++ c2)
+reconstruct env kenv (Fix e1)
+    = do (t1, exn1, c1) <- reconstruct env kenv e1
+         ExnArr t' (ExnVar exn') t'' exn'' <- instantiate t1
+         let subst1 = merge [] t'' t'
+         let subst2 = [(exn', substExn' subst1 exn'')]
+         e <- fresh
+         let c = [substExn' (subst2 <.> subst1) exn'' :<: e] ++ c1
+         return (substExnTy' (subst2 <.> subst1) t', e, c)
 
 -- * Instantiation
 
