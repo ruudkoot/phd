@@ -95,6 +95,8 @@ subst x e (App e1 e2)
     = App (subst x e e1) (subst x e e2)
 subst x e (Union e1 e2)
     = Union (subst x e e1) (subst x e e2)
+subst x e Empty
+    = Empty
 
 -- * Reduction (1-step, top-level)
 
