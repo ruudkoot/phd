@@ -50,22 +50,19 @@ reconstruct env kenv (Var x)
          e <- fresh
          return (t, e, [exn :<: e])
 reconstruct env kenv (Abs x ty tm)
-    = do (t1', exn1, kenv1) <- C.complete [] ty
-         exn <- fresh  -- FIXME: reuse exn1 instead!
-         let env' = (x, (t1', ExnVar exn)) : env
-         (t2', exn2, c1) <- reconstruct env' (kenv1 ++ [(exn,EXN)] ++ kenv) tm
-         let v = [exn] ++ map fst kenv1 ++ fev env
+    = do (t1', ExnVar exn1, kenv1) <- C.complete [] ty
+         let env' = (x, (t1', ExnVar exn1)) : env
+         (t2', exn2, c1) <- reconstruct env' (kenv1 ++ [(exn1,EXN)] ++ kenv) tm
+         let v = [exn1] ++ map fst kenv1 ++ fev env
          -- FIXME: is this the correct environment we are passing here? this
          --        environment contains exactly the variables over which we
          --        do NOT generalize. this would seem to correspond to the
          --        variables that are FREE in c1... which could be okay.
          --
          --        however, we do seem to be missing at least fev env!!!
-         let exn2' = solve (kenv1 ++ [(exn,EXN)] ++ kenv) c1 v exn2
+         let exn2' = solve (kenv1 ++ [(exn1,EXN)] ++ kenv) c1 v exn2
          -- FIXME: swap the outher ExnForall and the inner forallFromEnv?
-         let t' = ExnForall exn EXN (C.forallFromEnv kenv1 (
-                    ExnArr t1' (ExnVar exn) t2' exn2'
-                  ))
+         let t' = C.forallFromEnv kenv1 (ExnArr t1' (ExnVar exn1) t2' exn2')
          e <- fresh
          return (t', e, [])
 reconstruct env kenv (App e1 e2)
@@ -77,10 +74,9 @@ reconstruct env kenv (App e1 e2)
          let c = [substExn' subst exn' :<: e, ExnVar exn1 :<: e] ++ c1 ++ c2
          return (substExnTy' subst  t', e, c)
 reconstruct env kenv (Crash lbl ty)
-    = do (ty', exn1, kenv1) <- C.complete [] ty
-         e <- fresh  -- FIXME: reuse exn1 instead!
+    = do (ty', ExnVar exn1, kenv1) <- C.complete [] ty
          -- let ty'' = C.forallFromEnv kenv1 ty'
-         return (ty', e, [exn1 :<: e, ExnCon lbl :<: e])
+         return (ty', exn1, [ExnCon lbl :<: exn1])
 reconstruct env kenv (Seq e1 e2)
     = do (t1, exn1, c1) <- reconstruct env kenv e1
          (t2, exn2, c2) <- reconstruct env kenv e2
@@ -110,19 +106,20 @@ instantiate t
 -- * Merge / match
 
 merge :: KindEnv -> ExnTy -> ExnTy -> Subst
+merge env (ExnBool) (ExnBool)
+    = []
 merge env (ExnForall e k t) (ExnForall e' k' t')
     | k == k'   = merge ((e,k) : env) t (substExnTy e' e t')
     | otherwise = error "merge: kind mismatch"
-merge env (ExnBool) (ExnBool)
-    = []
 merge env (ExnList t (ExnVar exn)) (ExnList t' (ExnVar exn'))
     | exnTyEq env t t', exn == exn' = []
     | otherwise                     = error "merge: lists"
-merge env (ExnArr t1 (ExnVar exn1) t2 exn2) (ExnArr t1' (ExnVar exn1') t2' exn2')
+merge env t@(ExnArr t1 (ExnVar exn1) t2 exn2) t'@(ExnArr t1' (ExnVar exn1') t2' exn2')
     | exnTyEq env t1 t1', exn1 == exn1'
         = let (e, es) = deapply exn2'
            in [(e, reapply env es exn2)] <.> merge env t2 t2'
-    | otherwise = error "merge: function space"
+    | otherwise = error $ "merge: function space (t = "   ++ show t
+                          ++ "; t' = "  ++ show t' ++ "; env = " ++ show env
 merge env t t'
     = error $ "merge: t = " ++ show t ++ "; t' = " ++ show t' ++ "; env = " ++ show env
     

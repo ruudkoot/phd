@@ -14,11 +14,9 @@ e2   = App (Abs 2 C (Abs 1 (C:=>C) (App (Var 1) (Var 2)))) (App (Abs 3 C (Var 3)
 main   = mapM_ (putStrLn . show . run) exs
 run ex = evalFresh (reconstruct [] [] ex) 1
 
-
 exs  = [ex01,ex02,ex03,ex04,ex05,ex06,ex07,ex08,ex09,ex10
        ,ex11,ex12,ex13,ex14,ex15,ex16,ex17,ex18
        ]
-
 
 -- * abstraction
 ex01 = Abs 1 Bool $ Var 1
@@ -53,5 +51,5 @@ ex15 = Abs 1 Bool $ Seq (Crash "foo" Bool) (Crash "bar" Bool)
 ex16 = Abs 1 Bool $ Seq (Crash "bar" (Bool :-> Bool)) (Abs 2 Bool $ Var 2)
 ex17 = Abs 1 Bool $ Seq (Var 1) (Abs 2 Bool $ Var 1)
 -- * recursive functions
-ex18 = (Abs 1 (Bool :-> Bool) (Abs 2 Bool (App (Var 1) (Var 2))))
+ex18 = Fix (Abs 1 (Bool :-> Bool) (Abs 2 Bool (App (Var 1) (Var 2))))
 -- * high-order functions

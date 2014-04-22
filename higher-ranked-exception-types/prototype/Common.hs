@@ -1,6 +1,6 @@
 module Common where
 
--- TODO: put annotations back on type constructor arguments?
+-- FIXME: make all functions total (and remove dead errors)
 
 import           Names
 import qualified LambdaUnion as LU
@@ -129,8 +129,13 @@ substExn e e' (ExnVar e'')
     | otherwise = ExnVar e''
 substExn e e' (ExnApp exn1 exn2)
     = ExnApp (substExn e e' exn1) (substExn e e' exn2)
+substExn e e' ExnEmpty
+    = ExnEmpty
 substExn e e' (ExnUnion exn1 exn2)
     = ExnUnion (substExn e e' exn1) (substExn e e' exn2)
+substExn e e' e''
+    = error $ "substExn: e'' = " ++ show e''
+                    ++ "; e = " ++ show e ++ "; e' = " ++ show e'
 
 -- TODO: somewhat redundant with substExnTy'
 substExnTy :: Name -> Name -> ExnTy -> ExnTy
@@ -151,11 +156,19 @@ substExnTy e e' (ExnArr t1 exn1 t2 exn2)
 subst1 <.> subst2 = subst1 ++ map (\(x,exn) -> (x, substExn' subst1 exn)) subst2
 
 substExn' :: Subst -> Exn -> Exn
-substExn' subst exn@(ExnVar e)
-    | Just exn' <- lookup e subst = exn'
+substExn' subst exn@(ExnVar x)
+    | Just exn' <- lookup x subst = exn'
     | otherwise                   = exn
+substExn' subst (ExnAbs x k e)
+    = ExnAbs x k (substExn' (deleteKey x subst) e)
 substExn' subst (ExnApp e1 e2)
     = ExnApp (substExn' subst e1) (substExn' subst e2)
+substExn' subst ExnEmpty
+    = ExnEmpty
+substExn' subst (ExnUnion e1 e2)
+    = ExnUnion (substExn' subst e1) (substExn' subst e2)
+substExn' subst e
+    = error $ "substExn': e = " ++ show e ++ "; subst = " ++ show subst
 
 substExnTy' :: Subst -> ExnTy -> ExnTy
 substExnTy' subst (ExnForall e k t)
