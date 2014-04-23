@@ -11,11 +11,12 @@ e1   = Abs 1 (C :=> C) (App (Var 1) (Var 0))
 e2   = App (Abs 2 C (Abs 1 (C:=>C) (App (Var 1) (Var 2)))) (App (Abs 3 C (Var 3)) (Var 0))
 -} 
 
-main   = mapM_ (putStrLn . show . run) exs
+main   = mapM_ (\ex -> do { putStrLn ""; putStrLn (show ex); putStrLn (show (run ex))}) exs
 run ex = evalFresh (reconstruct [] [] ex) 1
 
 exs  = [ex01,ex02,ex03,ex04,ex05,ex06,ex07,ex08,ex09,ex10
-       ,ex11,ex12,ex13,ex14,ex15,ex16,ex17,ex18
+       ,ex11,ex12,ex13,ex14,ex15,ex16,ex17,ex18,ex19,ex20
+       ,ex21,ex22,ex23,ex24,ex25
        ]
 
 -- * abstraction
@@ -52,4 +53,12 @@ ex16 = Abs 1 Bool $ Seq (Crash "bar" (Bool :-> Bool)) (Abs 2 Bool $ Var 2)
 ex17 = Abs 1 Bool $ Seq (Var 1) (Abs 2 Bool $ Var 1)
 -- * recursive functions
 ex18 = Fix (Abs 1 (Bool :-> Bool) (Abs 2 Bool (App (Var 1) (Var 2))))
+-- * lists
+ex19 = Nil Bool
+ex20 = Nil (Bool :-> Bool)
+ex21 = Cons (Crash "foo" Bool) (Nil Bool)
+ex22 = Cons (Abs 1 Bool (Var 1)) (Nil (Bool :-> Bool))
+ex23 = Cons (Abs 1 Bool (Crash "foo" Bool)) (Nil (Bool :-> Bool))
+ex24 = Cons (Abs 1 Bool (Var 1)) (Cons (Abs 1 Bool (Var 1)) (Nil (Bool :-> Bool)))
+ex25 = Cons (Abs 1 Bool (Var 1)) (Cons (Abs 1 Bool (Crash "foo" Bool)) (Nil (Bool :-> Bool)))
 -- * high-order functions

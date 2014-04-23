@@ -18,14 +18,22 @@ data Expr
     | Crash Lbl Ty
     | Seq Expr Expr
     | Fix Expr
+    | Nil Ty
+    | Cons Expr Expr
+    | Case Expr Expr Name Name Expr
     
 instance Show Expr where
-    show (Var x    ) = "x" ++ show x
-    show (Abs x t e) = "(λx" ++ show x ++ ":" ++ show t ++ "." ++ show e ++ ")"
-    show (App e1 e2) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
-    show (Crash l t) = "(⚡" ++ l ++ ":" ++ show t ++ ")"
-    show (Seq e1 e2) = "(" ++ show e1 ++ " seq " ++ show e2 ++ ")"
-    show (Fix e    ) = "(fix " ++ show e ++ ")"
+    show (Var x     ) = "x" ++ show x
+    show (Abs x t e ) = "(λx" ++ show x ++ ":" ++ show t ++ "." ++ show e ++ ")"
+    show (App e1 e2 ) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
+    show (Crash l t ) = "(⚡" ++ l ++ ":" ++ show t ++ ")"
+    show (Seq e1 e2 ) = "(" ++ show e1 ++ " seq " ++ show e2 ++ ")"
+    show (Fix e     ) = "(fix " ++ show e ++ ")"
+    show (Nil t     ) = "(ε:" ++ show t ++ ")"
+    show (Cons e1 e2) = "(" ++ show e1 ++ "⸪" ++ show e2 ++ ")"
+    show (Case e1 e2 x1 x2 e3)
+        = "(case " ++ show e1 ++ " of { ε ↦ " ++ show e2 ++ "; e"
+                        ++ show x1 ++ "⸪e" ++ show x2 ++ " ↦ " ++ show e3 ++ "})"
     
 -- | Exception type reconstruction
 
@@ -82,7 +90,7 @@ reconstruct env kenv (Seq e1 e2)
          (t2, exn2, c2) <- reconstruct env kenv e2
          e <- fresh
          return (t2, e, [ExnVar exn1 :<: e, ExnVar exn2 :<: e] ++ c1 ++ c2)
-reconstruct env kenv (Fix e1)
+reconstruct env kenv (Fix e1)   -- FIXME: unknown to be sound (see notes)
     = do (t1, exn1, c1) <- reconstruct env kenv e1
          ExnArr t' (ExnVar exn') t'' exn'' <- instantiate t1
          let subst1 = merge [] t'' t'
@@ -90,6 +98,19 @@ reconstruct env kenv (Fix e1)
          e <- fresh
          let c = [substExn' (subst2 <.> subst1) exn'' :<: e] ++ c1
          return (substExnTy' (subst2 <.> subst1) t', e, c)
+reconstruct env kenv (Nil ty)
+    = do (ty', ExnVar exn1, kenv1) <- C.complete [] ty
+         exn2 <- fresh
+         return (ExnList ty' (ExnVar exn1), exn2, [])
+reconstruct env kenv (Cons e1 e2)
+    = do (t1              , exn1, c1) <- reconstruct env kenv e1
+         (ExnList t2 exn2', exn2, c2) <- reconstruct env kenv e2
+         let t = join t1 t2
+         ex1 <- fresh
+         ex2 <- fresh
+         return (ExnList t (ExnVar ex1), ex2,
+            [ExnVar exn1 :<: ex1, exn2' :<: ex1, ExnVar exn2 :<: ex2] ++ c1 ++ c2)         
+
 
 -- * Instantiation
 
@@ -102,7 +123,21 @@ instantiate (ExnForall e k t)
          return (substExnTy e e' t')
 instantiate t
     = do return t
-    
+
+-- * Join / subtyping
+
+join :: ExnTy -> ExnTy -> ExnTy
+join ExnBool ExnBool
+    = ExnBool
+join (ExnForall x k t) (ExnForall x' k' t')
+    | k == k'   = ExnForall x k (join t (substExnTy x' x t'))
+    | otherwise = error "join: kind mismatch"
+join (ExnArr t1 (ExnVar exn1) t2 exn2) (ExnArr t1' (ExnVar exn1') t2' exn2')
+    | exnTyEq (error "don't use me") t1 t1', exn1 == exn1'
+        -- TODO: are we sure no alpha-renaming is needed?
+        = ExnArr t1 (ExnVar exn1) (join t2 t2') (ExnUnion exn2 exn2')
+    | otherwise = error $ "join: function space"
+
 -- * Merge / match
 
 merge :: KindEnv -> ExnTy -> ExnTy -> Subst

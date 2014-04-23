@@ -133,6 +133,8 @@ substExn e e' ExnEmpty
     = ExnEmpty
 substExn e e' (ExnUnion exn1 exn2)
     = ExnUnion (substExn e e' exn1) (substExn e e' exn2)
+substExn e e' (ExnCon c)
+    = ExnCon c
 substExn e e' e''
     = error $ "substExn: e'' = " ++ show e''
                     ++ "; e = " ++ show e ++ "; e' = " ++ show e'
