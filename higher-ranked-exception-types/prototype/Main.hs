@@ -16,7 +16,7 @@ run ex = evalFresh (reconstruct [] [] ex) 1
 
 exs  = [ex01,ex02,ex03,ex04,ex05,ex06,ex07,ex08,ex09,ex10
        ,ex11,ex12,ex13,ex14,ex15,ex16,ex17,ex18,ex19,ex20
-       ,ex21,ex22,ex23,ex24,ex25
+       ,ex21,ex22,ex23,ex24,ex25,ex26,ex27,ex28,ex29,ex30
        ]
 
 -- * abstraction
@@ -61,4 +61,14 @@ ex22 = Cons (Abs 1 Bool (Var 1)) (Nil (Bool :-> Bool))
 ex23 = Cons (Abs 1 Bool (Crash "foo" Bool)) (Nil (Bool :-> Bool))
 ex24 = Cons (Abs 1 Bool (Var 1)) (Cons (Abs 1 Bool (Var 1)) (Nil (Bool :-> Bool)))
 ex25 = Cons (Abs 1 Bool (Var 1)) (Cons (Abs 1 Bool (Crash "foo" Bool)) (Nil (Bool :-> Bool)))
+-- * non-recursive functions on lists
+ex26 = Abs 1 (List Bool) (Case (Var 1) (Con True) 2 3 (Con False))
+ex27 = Abs 1 (List Bool) (Case (Var 1) (Crash "head" Bool) 2 3 (Var 2))
+ex28 = Abs 1 (List Bool) (Case (Var 1) (Crash "tail" (List Bool)) 2 3 (Var 3))
+-- * recursive functions on lists
+ex29 = Abs 1 ((Bool :-> Bool) :-> (List Bool :-> List Bool)) $
+        Abs 2 (Bool :-> Bool) $ Abs 3 (List Bool) $
+            Case (Var 3) (Nil Bool) 4 5
+                 (Cons (App (Var 2) (Var 4)) (App (App (Var 1) (Var 2)) (Var 5)))
+ex30 = Fix ex29
 -- * high-order functions
