@@ -107,6 +107,7 @@ fevExn :: Exn -> [Name]
 fevExn (ExnVar e)     = [e]
 fevExn (ExnCon c)     = []
 fevExn (ExnApp e1 e2) = fevExn e1 ++ fevExn e2
+fevExn (ExnAbs n k e) = delete n (fevExn e)
 
 fevExnTy :: ExnTy -> [Name]
 fevExnTy (ExnForall e k t)
@@ -127,6 +128,9 @@ substExn :: Name -> Name -> Exn -> Exn
 substExn e e' (ExnVar e'')
     | e == e''  = ExnVar e'
     | otherwise = ExnVar e''
+substExn e e' (ExnAbs n k e'')
+    | e == n    = ExnAbs n k e''
+    | otherwise = ExnAbs n k (substExn e e' e'')
 substExn e e' (ExnApp exn1 exn2)
     = ExnApp (substExn e e' exn1) (substExn e e' exn2)
 substExn e e' ExnEmpty

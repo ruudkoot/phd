@@ -54,90 +54,100 @@ data Constr = Exn :<: Name
 
 -- * Reconstruction
 
--- TODO: env1, ... are kind environments, rename?
-reconstruct :: Env -> KindEnv -> Expr -> Fresh (ExnTy, Name, [Constr])
+-- TODO: store KindEnv, Env in the monad
+reconstruct :: Env -> KindEnv -> Expr -> Fresh (ExnTy, Name, [Constr], KindEnv)
 reconstruct env kenv (Var x)
     = do let Just (t, exn) = lookup x env
          e <- fresh
-         return (t, e, [exn :<: e])
+         return (t, e, [exn :<: e], [(e, kindOf kenv exn)])
 reconstruct env kenv (Abs x ty tm)
     = do (t1', ExnVar exn1, kenv1) <- C.complete [] ty
          let env' = (x, (t1', ExnVar exn1)) : env
-         (t2', exn2, c1) <- reconstruct env' (kenv1 ++ [(exn1,EXN)] ++ kenv) tm
+         (t2', exn2, c1, kenv2) <- reconstruct env' (kenv1 ++ kenv) tm
          let v = [exn1] ++ map fst kenv1 ++ fev env
-         -- FIXME: is this the correct environment we are passing here? this
-         --        environment contains exactly the variables over which we
-         --        do NOT generalize. this would seem to correspond to the
-         --        variables that are FREE in c1... which could be okay.
-         --
-         --        however, we do seem to be missing at least fev env!!!
+         -- FIXME: is this the correct environment we are passing here?
          let exn2' = solve (kenv1 ++ [(exn1,EXN)] ++ kenv) c1 v exn2
-         -- FIXME: swap the outher ExnForall and the inner forallFromEnv?
+         -- FIXME: swap the outer ExnForall and the inner forallFromEnv?
          let t' = C.forallFromEnv kenv1 (ExnArr t1' (ExnVar exn1) t2' exn2')
          e <- fresh
-         return (t', e, [])
+         return (t', e, [], [(e,EXN)])
 reconstruct env kenv (App e1 e2)
-    = do (t1, exn1, c1) <- reconstruct env kenv e1
-         (t2, exn2, c2) <- reconstruct env kenv e2
-         ExnArr t2' (ExnVar exn2') t' exn' <- instantiate t1
+    = do (t1, exn1, c1, kenv1) <- reconstruct env kenv e1
+         (t2, exn2, c2, kenv2) <- reconstruct env kenv e2
+         (ExnArr t2' (ExnVar exn2') t' exn', kenv') <- instantiate t1
          let subst = [(exn2', ExnVar exn2)] <.> merge [] t2 t2'
          e <- fresh
          let c = [substExn' subst exn' :<: e, ExnVar exn1 :<: e] ++ c1 ++ c2
-         return (substExnTy' subst  t', e, c)
+         return (substExnTy' subst  t', e, c
+                ,[(e, kindOf (kenv1 ++ kenv) (ExnVar exn1))] ++ kenv' ++ kenv2 ++ kenv1)
 reconstruct env kenv (Con b)
     = do e <- fresh
-         return (ExnBool, e, [])
+         return (ExnBool, e, [], [(e,EXN)])
 reconstruct env kenv (Crash lbl ty)
     = do (ty', ExnVar exn1, kenv1) <- C.complete [] ty
-         -- let ty'' = C.forallFromEnv kenv1 ty'
-         return (ty', exn1, [ExnCon lbl :<: exn1])
+         return (ty', exn1, [ExnCon lbl :<: exn1], kenv1)
 reconstruct env kenv (Seq e1 e2)
-    = do (t1, exn1, c1) <- reconstruct env kenv e1
-         (t2, exn2, c2) <- reconstruct env kenv e2
+    = do (t1, exn1, c1, kenv1) <- reconstruct env kenv e1
+         (t2, exn2, c2, kenv2) <- reconstruct env kenv e2
          e <- fresh
-         return (t2, e, [ExnVar exn1 :<: e, ExnVar exn2 :<: e] ++ c1 ++ c2)
+         return (t2, e, [ExnVar exn1 :<: e, ExnVar exn2 :<: e] ++ c1 ++ c2
+                ,[(e,kindOf (kenv1 ++ kenv) (ExnVar exn1))] ++ kenv2 ++ kenv1)
 reconstruct env kenv (Fix e1)   -- FIXME: unknown to be sound (see notes)
-    = do (t1, exn1, c1) <- reconstruct env kenv e1
-         ExnArr t' (ExnVar exn') t'' exn'' <- instantiate t1
+    = do (t1, exn1, c1, kenv1) <- reconstruct env kenv e1
+         (ExnArr t' (ExnVar exn') t'' exn'', kenv') <- instantiate t1
          let subst1 = merge [] t'' t'
          let subst2 = [(exn', substExn' subst1 exn'')]
          e <- fresh
          let c = [substExn' (subst2 <.> subst1) exn'' :<: e] ++ c1
-         return (substExnTy' (subst2 <.> subst1) t', e, c)
+         return (substExnTy' (subst2 <.> subst1) t', e, c
+                ,[(e,EXN)] ++ kenv' ++ kenv1)
 reconstruct env kenv (Nil ty)
     = do (ty', ExnVar exn1, kenv1) <- C.complete [] ty
          exn2 <- fresh
-         return (ExnList ty' (ExnVar exn1), exn2, [])
+         -- FIXME: not completely sure about the kind of exn2 (should be ∅)
+         return (ExnList ty' (ExnVar exn1), exn2, [], [(exn2, EXN)] ++ kenv1)
 reconstruct env kenv (Cons e1 e2)
-    = do (t1              , exn1, c1) <- reconstruct env kenv e1
-         (ExnList t2 exn2', exn2, c2) <- reconstruct env kenv e2
+    = do (t1              , exn1, c1, kenv1) <- reconstruct env kenv e1
+         (ExnList t2 exn2', exn2, c2, kenv2) <- reconstruct env kenv e2
          let t = join t1 t2
          ex1 <- fresh
          ex2 <- fresh
-         return (ExnList t (ExnVar ex1), ex2,
-            [ExnVar exn1 :<: ex1, exn2' :<: ex1, ExnVar exn2 :<: ex2] ++ c1 ++ c2)
+         -- FIXME: not completely sure about the kind of ex1 and ex2 (should be ∅)
+         return (ExnList t (ExnVar ex1), ex2
+            ,[ExnVar exn1 :<: ex1, exn2' :<: ex1, ExnVar exn2 :<: ex2] ++ c1 ++ c2
+            ,[(ex1, kindOf (kenv1 ++ kenv) (ExnVar exn1))
+             ,(ex2, kindOf (kenv2 ++ kenv) (ExnVar exn2))] ++ kenv2 ++ kenv1)
 reconstruct env kenv (Case e1 e2 x1 x2 e3)
-    = do (ExnList t1 exn1', exn1, c1) <- reconstruct env kenv e1
-         (t2, exn2, c2) <- reconstruct env kenv e2
+    = do (ExnList t1 exn1', exn1, c1, kenv1) <- reconstruct env kenv e1
+         (t2, exn2, c2, kenv2) <- reconstruct env kenv e2
          let env' = (x1, (t1, exn1')) : (x2, (ExnList t1 exn1', ExnVar exn1)) : env
-         (t3, exn3, c3) <- reconstruct env' kenv e3
+         (t3, exn3, c3, kenv3) <- reconstruct env' (kenv1 ++ kenv) e3
          let t = join t2 t3
          exn <- fresh
          let c = [ExnVar exn1 :<: exn, ExnVar exn2 :<: exn, ExnVar exn3 :<: exn]
                     ++ c1 ++ c2 ++ c3
-         return (t, exn, c)
+         return (t, exn, c
+                ,[(exn, kindOf (kenv1 ++ kenv) (ExnVar exn1))]
+                    ++ kenv3 ++ kenv2 ++ kenv1)
+         
+-- * Kind reconstruction
+
+kindOf :: KindEnv -> Exn -> Kind
+kindOf kenv (ExnVar e)
+    | Just k <- lookup e kenv = k
+    | otherwise               = error "kindOf: not in scope"
+kindOf kenv _
+    = error "kindOf: not a variable"
 
 -- * Instantiation
 
--- TODO: ExnTy -> Fresh (ExnTy, KindEnv)
-
-instantiate :: ExnTy -> Fresh ExnTy
+instantiate :: ExnTy -> Fresh (ExnTy, KindEnv)
 instantiate (ExnForall e k t)
     = do e' <- fresh
-         t' <- instantiate t
-         return (substExnTy e e' t')
+         (t', kenv) <- instantiate t
+         return (substExnTy e e' t', [(e', k)] ++ kenv)
 instantiate t
-    = do return t
+    = do return (t, [])
 
 -- * Join / subtyping
 
@@ -165,9 +175,10 @@ merge env (ExnBool) (ExnBool)
 merge env (ExnForall e k t) (ExnForall e' k' t')
     | k == k'   = merge ((e,k) : env) t (substExnTy e' e t')
     | otherwise = error "merge: kind mismatch"
-merge env (ExnList t (ExnVar exn)) (ExnList t' (ExnVar exn'))
-    | exnTyEq env t t', exn == exn' = []
-    | otherwise                     = error "merge: lists"
+-- FIXME: correct definition for lists?
+merge env (ExnList t exn) (ExnList t' exn')
+    = let (e, es) = deapply exn'
+       in [(e, reapply env es exn)] <.> merge env t t'
 merge env t@(ExnArr t1 (ExnVar exn1) t2 exn2) t'@(ExnArr t1' (ExnVar exn1') t2' exn2')
     | exnTyEq env t1 t1', exn1 == exn1'
         = let (e, es) = deapply exn2'
