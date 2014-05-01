@@ -1,0 +1,89 @@
+complete' [] Bool
+
+bool
+
+e1
+
+[(1,EXN)]
+
+-------------------------------------------------------------------------------------
+
+*Completion> complete' [] (List Bool)
+
+[bool{e2}]
+
+e1
+
+[(2,EXN),(1,EXN)]
+
+-------------------------------------------------------------------------------------
+
+complete' [] (Bool :-> Bool)
+
+∀e1::EXN. bool{e1} -> bool{e3 e1}
+
+e2
+
+[(3,EXN :=> EXN),(2,EXN)]
+
+-------------------------------------------------------------------------------------
+
+*Completion> complete' [] (List Bool :-> Bool)
+
+∀e1::EXN. ∀e2::EXN. [bool{e2}]{e1} -> bool{e4 e1 e2}
+
+e3
+
+[(4,EXN :=> EXN :=> EXN),(3,EXN)]
+
+-------------------------------------------------------------------------------------
+
+*Completion> complete' [] (Bool :-> List Bool)
+
+∀e1::EXN. bool{e1} -> [bool{e4 e1}]{e3 e1}
+
+e2
+
+[(4,EXN :=> EXN),(3,EXN :=> EXN),(2,EXN)]
+
+-------------------------------------------------------------------------------------
+
+*Completion> complete' [] (List Bool :-> List Bool)
+
+∀e1::EXN. ∀e2::EXN. [bool{e2}]{e1} -> [bool{e5 e1 e2}]{e4 e1 e2}
+
+e3
+
+[(5,EXN :=> EXN :=> EXN),(4,EXN :=> EXN :=> EXN),(3,EXN)]
+
+-------------------------------------------------------------------------------------
+
+*Completion> complete' [] (List (Bool :-> Bool))
+
+[(∀e2::EXN. bool{e2} -> bool{e4 e2}){e3}]
+
+e1
+
+[(4,EXN :=> EXN),(3,EXN),(1,EXN)]
+
+-------------------------------------------------------------------------------------
+
+*Completion> complete' [] (List (Bool :-> Bool) :-> Bool)
+
+∀e1::EXN. ∀e3::EXN. ∀e4::EXN :=> EXN.
+    [(∀e2::EXN. bool{e2} -> bool{e4 e2}){e3}]{e1} -> bool{e6 e1 e3 e4}
+
+e5
+
+[(6,EXN :=> EXN :=> (EXN :=> EXN) :=> EXN),(5,EXN)]
+
+-------------------------------------------------------------------------------------
+
+*Completion> complete' [] (Bool :-> List (Bool :-> Bool))
+
+∀e1::EXN. bool{e1} -> [(∀e4::EXN. bool{e4} -> bool{e6 e1 e4}){e5 e1}]{e3 e1}
+
+e2
+
+[(6,EXN :=> EXN :=> EXN),(5,EXN :=> EXN),(3,EXN :=> EXN),(2,EXN)]
+

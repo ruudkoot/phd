@@ -1,0 +1,96 @@
+λx1:List Bool.(case x1 of { ε ↦ (⚡tail:List Bool); x2⸪x3 ↦ x3})
+
+
+∀e1::EXN. ∀e2::EXN. [bool{e2}]{e1} -> [bool{(e5∪e2)}]{({tail}∪e1)}
+
+8
+
+[]
+
+
+-------------------------------------------------------------------------------------
+
+
+NOTE: [bool{e9∪e17}] is weird
+
+λx1:List Bool :-> List Bool. λx2:List Bool.
+    case x2 of { ε ↦ (ε:Bool); x3⸪x4 ↦ x3⸪(x1 x4)}
+
+∀e3::EXN. ∀e4::EXN :=> (EXN :=> EXN). ∀e5::EXN :=> (EXN :=> EXN).
+        (∀e1::EXN. ∀e2::EXN. [bool{e2}]{e1} -> [bool{e5 e1 e2}]{e4 e1 e2}){e3}
+    ->
+        (∀e6::EXN. ∀e7::EXN. [bool{e7}]{e6} -> [bool{e9∪e17}]{e3∪(e4 e6 e7)∪e6}){∅}
+
+21
+
+[]
+
+
+-------------------------------------------------------------------------------------
+
+
+fix (λx1:List Bool :-> List Bool. λx2:List Bool.
+    case x2 of { ε ↦ (ε:Bool); x3⸪x4 ↦ x3⸪(x1 x4)}
+)
+
+
+
+∀e1::EXN. ∀e2::EXN.
+        [bool{e2}]{e1}
+    ->
+        [bool{(λe6:EXN. λe7:EXN. e9∪e17) e1 e2}]
+            {(λe6:EXN. λe7:EXN. ∅∪(e23 e6 e7)∪e6) e1 e2}
+            
+    ~!!~>
+    
+∀e1::EXN. ∀e2::EXN.
+        [bool{e2}]{e1}
+    ->
+        [bool{(λe6:EXN. λe7:EXN. e9∪e17) e1 e2}]
+            {(λe6:EXN. λe7:EXN. ∅∪(e23 e6 e7)∪e6) e1 e2}
+            
+            
+    ~??~>
+    
+∀e1::EXN. ∀e2::EXN.
+        [bool{e2}]{e1}
+    ->
+        [bool{e1∪e2}]
+            {(e23 e1 e2)∪e1}
+
+25
+
+[∅ :<: 25]
+
+
+
+
+======================================================================================
+
+NOTE: [bool{e16∪e31}] is most certainly wrong
+
+
+
+(λx1:(Bool :-> Bool) :-> (List Bool :-> List Bool).
+    (λx2:Bool :-> Bool. (λx3:List Bool.
+        (case x3 of { ε ↦ (ε:Bool); x4⸪x5 ↦ ((x2 x4)⸪((x1 x2) x5))})
+    ))
+)
+
+
+∀e4::E. ∀e7::E=>((E=>E)=>E). ∀e8::E=>((E=>E)=>(E=>(E=>E))). ∀e9::E=>((E=>E)=>(E=>(E=>E))).
+        (∀e2::E. ∀e3::E=>E.
+                (∀e1::E.(bool{e1} -> bool{e3 e1})){e2}
+            ->
+                (∀e5::E.(∀e6::E.([bool{e6}]{e5}
+                    -> [bool{e9 e2 e3 e5 e6}]{e8 e2 e3 e5 e6}))){e7 e2 e3}){e4}
+    ->
+        (∀e11::E.(∀e12::E=>E.
+                (∀e10::E.(bool{e10} -> bool{e12 e10})){e11}
+            ->
+                (∀e13::E.(∀e14::E.([bool{e14}]{e13}
+                    -> [bool{e16∪e31}]{(e4∪(((e7 e11) (λe10:E.(e12 ∅)))∪(((((e8 e11) (λe10:E.(e12 ∅))) e13) e14)∪e13)))}))){∅})){∅}
+
+36
+
+[]
