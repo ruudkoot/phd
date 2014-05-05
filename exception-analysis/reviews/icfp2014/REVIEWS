@@ -1,0 +1,183 @@
+----------------------- REVIEW 1 ---------------------
+PAPER: 67
+TITLE: Type-based Exception Analysis for Non-strict Higher-order Functional Languages with Imprecise Exception Semantics
+AUTHORS: Ruud Koot and Jurriaan Hage
+
+
+----------- REVIEW -----------
+This paper presents a type-based exception analysis for a higher-order
+call-by-name functional language.  To improve the precision of analysis,
+the proposed method infers and exploits program invariants expressed
+in terms of annotated types, parametric polymorphism with conditional
+constraints, and polymorphic recursion.  The soundness of the
+underlying type system is proved with respect to an imprecise
+exception semantics, and a prototype implementation is available.
+
+The paper is easy to follow but the advantage of the proposed method
+over previous ones is not clear from the paper, which is a serious
+problem, and I argue for rejection.
+
+Detailed comparison is listed below.
+
+(1)  Expressivity. The method proposed by Freeman and
+Pfenning (1991) can express some program invariants which are
+not expressible by the proposed method, which uses only tree-automata
+based refinement types along with intersection and union types.  For
+example, Freeman and Pfenning's method can express the invariant that a
+list has an even length, but it seems impossible for the proposed method
+to express it, even with the extension discussed in Section 6.2.
+Furthermore, it seems to me that polymorphic annotated types with conditional
+constraints can be represented in terms of intersection and union types
+if the annotation lattice has a finite height (which seems to be an
+implicit assumption of the paper, necessary for the termination of
+constraint solving).  By contrast, higher-rank (i.e., nested)
+intersection and union types supported by Freeman and Pfenning's
+method cannot be represented within the proposed type system because
+it does not support arbitrarily high-rank polymorphism.
+
+(2) Performance. A possible advantage of the proposed method is the
+efficiency of type inference due to the limited expressiveness.
+Unfortunately, however, neither computational complexity analysis
+or performance measurements of the proposed method is given in this
+paper.  Though this paper claims that "the use of intersection types
+leads to a superexponential blowup of the size of types", and the
+worst-case complexity of intersection type inference is in fact
+super-exponential, recent advances in intersection type inference
+(based on property-guided inference instead of forward inference)
+have made it possible to do efficient type inference for non-trivial
+programs including the "risers" function.
+
+Please try, for example, the following tools, if you have not done it:
+
+* TravMC (http://mjolnir.cs.ox.ac.uk/cgi-bin/horsc/recheck-horsc/input)
+* MoCHi (http://www-kb.is.s.u-tokyo.ac.jp/~ryosuke/mochi/)
+* Preface (http://mjolnir.cs.ox.ac.uk/web/preface/)
+
+Minor comments:
+
+* In p.3, Section 3.2:
+  "The intention of our analysis it to track ..." ->
+  "The intention of our analysis is to track ..."
+
+* In p.8, Section 5.2:
+  "The constraint solver S relies on the a function dv ..." ->
+  "The constraint solver S relies on the function dv ..."
+
+* In p.11, Section 6.2:
+  "The updated typing rules rules involving ... " ->
+  "The updated typing rules involving ..."
+
+
+----------------------- REVIEW 2 ---------------------
+PAPER: 67
+TITLE: Type-based Exception Analysis for Non-strict Higher-order Functional Languages with Imprecise Exception Semantics
+AUTHORS: Ruud Koot and Jurriaan Hage
+
+
+----------- REVIEW -----------
+The paper describes a type system for detecting incomplete pattern matches by
+tracking in the type the possible top-level constructors of a value.
+
+Incomplete pattern warnings are an invaluable tool during program development,
+when data types are being shifted around. Improving the precision of these
+warnings is a worthwhile goal. The type system presented in the paper, although
+limited to a simple monomorphic language with lists, looks like it could
+plausibly be extended to deal with more realistic languages. I am slightly
+worried about the handling of recursion, however. The description of the
+fixed-point rule (5.3) gives a possibly non-terminating iteration scheme and
+explains how to make it terminating by introducing some approximations. There is
+no discussion, however, on how this approximation affects the precision of the
+algorithm in practice.
+
+Section 1
+
+  ... so we are [left only] with the possibility of accepting them ...
+
+  [Getting] results of usable accuracy ...
+
+Section 3
+
+  In 3.2
+
+    I'm confused by the type of head. You say that γ is empty if the list is
+    guaranteed to not be nil and otherwise contains pattern-match-failure. I
+    would have expected γ = {pattern-match-failure} in this case. Is it
+    important that you can give head the type
+      head : [a]^C -> a^{pattern-match-failure, div-by-zero}
+
+    ... express that head [can] only raise a pattern-match-failure if it [is]
+    possible for the argument ...
+
+Section 4
+
+  Section 4.2 (and 4.3) feels out of place. You introduce annotated types and
+  then move promptly to the operational semantics, which doesn't need the types
+  at all. It would make more sense to move these sections after 4.4.
+
+  In 4.4
+
+    In the reduction rule [E-CaseExn-[2]] we still need ...
+
+  In 4.5
+
+    I'm missing a definition of the lattice Λ_ι.
+
+    As none of the constraint expression[s] in this paper ...
+
+  In 4.6
+
+    ... if it is possible for the function [] to evaluate ...
+
+    ... less precise information about the head of [] the list.
+
+  In 4.7
+
+    You say that you can get rid of spurious zeroes by extending constraints to
+    allow conjunctions of the left-hand side of conditionals (and you use this
+    extension in the constraints for division). Is it easy to extend the
+    constraints in this way? If so, why haven't you done it?
+
+Section 5
+
+  In 5.3
+
+    As mentioned above I'd like to see some discussion on the impact of the
+    additional approximations. Also, is it straight-forward to extend the
+    constraint language to nested implications?
+
+    The last paragraph reads like wild speculation. Have you tried it? Is there
+    reason to believe you can pick variables in a consistent way? What would be
+    the impact on precision.
+
+
+----------------------- REVIEW 3 ---------------------
+PAPER: 67
+TITLE: Type-based Exception Analysis for Non-strict Higher-order Functional Languages with Imprecise Exception Semantics
+AUTHORS: Ruud Koot and Jurriaan Hage
+
+
+----------- REVIEW -----------
+The core idea of this paper is to apply static anaylsis (in the form of a type
+and effect system) to show that some warnings for inexhaustive pattern matches
+are spurious -- since the unmatched cases never occur during program execution.
+As suggested by the authors, "pattern-match analysis" seems to be a more
+accurate description.
+
+The bulk of the paper is a formalization of the analysis itself.
+
+I'm uncomfortable accepting this paper for several reasons:
+
+ 1. There is no characterization of the complexity of the analysis.
+
+ 2. There is no intuition of precision for the provided analysis: how often is
+    it able to discharge false warnings?  Under what circumstances or program
+    patterns will it fail?  Under what circumstances will it do well?
+
+ 3. There are no benchmarks of any kind to characterize the practical
+    performance or accuracy of the analysis.
+
+
+**
+
+Page 1: "local let-bound function" -- do you mean non-escaping let-bound
+function?  Surely, local let-bound functions can be passed as parameters.
