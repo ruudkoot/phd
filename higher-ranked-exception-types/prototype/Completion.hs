@@ -14,9 +14,9 @@ type Env = [(Name, Kind)]
 -- | Completion
 
 complete' :: Env -> Ty -> (ExnTy, Exn, Env)
-complete' env ty = evalFresh (complete env ty) 1
+complete' env ty = evalFreshLog (complete env ty) 1
 
-complete :: Env -> Ty -> Fresh (ExnTy, Exn, Env)
+complete :: Env -> Ty -> FreshLog Log (ExnTy, Exn, Env)
 complete env0 Bool = do
     e <- fresh
     return (ExnBool

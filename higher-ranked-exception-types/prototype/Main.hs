@@ -12,7 +12,7 @@ e2   = App (Abs 2 C (Abs 1 (C:=>C) (App (Var 1) (Var 2)))) (App (Abs 3 C (Var 3)
 -} 
 
 main   = mapM_ (\ex -> do { putStrLn ""; putStrLn (show ex); putStrLn (show (run ex))}) exs
-run ex = evalFresh (reconstruct [] [] ex) 1
+run ex = evalFreshLog (reconstruct [] [] ex) 1
 
 exs  = [ex01,ex02,ex03,ex04,ex05,ex06,ex07,ex08,ex09,ex10
        ,ex11,ex12,ex13,ex14,ex15,ex16,ex17,ex18,ex19,ex20

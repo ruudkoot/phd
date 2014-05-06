@@ -55,7 +55,7 @@ data Constr = Exn :<: Name
 -- * Reconstruction
 
 -- TODO: store KindEnv, Env in the monad
-reconstruct :: Env -> KindEnv -> Expr -> Fresh (ExnTy, Name, [Constr], KindEnv)
+reconstruct :: Env -> KindEnv -> Expr -> FreshLog Log (ExnTy, Name, [Constr], KindEnv)
 reconstruct env kenv (Var x)
     = do let Just (t, exn) = lookup x env
          e <- fresh
@@ -141,7 +141,7 @@ kindOf kenv _
 
 -- * Instantiation
 
-instantiate :: ExnTy -> Fresh (ExnTy, KindEnv)
+instantiate :: ExnTy -> FreshLog Log (ExnTy, KindEnv)
 instantiate (ExnForall e k t)
     = do e' <- fresh
          (t', kenv) <- instantiate t

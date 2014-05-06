@@ -7,6 +7,10 @@ import qualified LambdaUnion as LU
 
 import Data.List (delete)
 
+-- | Logging
+
+type Log = [String]
+
 -- | Types
 
 data Ty
@@ -189,7 +193,7 @@ substExnTy' subst (ExnArr t1 exn1 t2 exn2)
              (substExnTy' subst t2) (substExn' subst exn2)
 
 -- | Miscellaneous
-    
+
 deleteKey :: Eq a => a -> [(a,b)] -> [(a,b)]
 deleteKey k []
     = []
