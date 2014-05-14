@@ -1,15 +1,65 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ViewPatterns      #-}
+
 module Common where
 
 -- FIXME: make all functions total (and remove dead errors)
 
 import           Names
 import qualified LambdaUnion as LU
+import           Latex
 
 import Data.List (delete)
 
 -- | Logging
 
 type Log = [String]
+
+-- | Expressions
+
+-- FIXME: move to Common (or Ty to here?)
+
+data Expr
+    = Var Name
+    | Abs Name Ty Expr
+    | App Expr Expr
+    | Con Bool
+    | Crash Lbl Ty
+    | Seq Expr Expr
+    | Fix Expr
+    | Nil Ty
+    | Cons Expr Expr
+    | Case Expr Expr Name Name Expr
+    
+instance Show Expr where
+    show (Var x     ) = "x" ++ show x
+    show (Abs x t e ) = "(λx" ++ show x ++ ":" ++ show t ++ "." ++ show e ++ ")"
+    show (App e1 e2 ) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
+    show (Con True  ) = "true"
+    show (Con False ) = "false"
+    show (Crash l t ) = "(⚡" ++ l ++ ":" ++ show t ++ ")"
+    show (Seq e1 e2 ) = "(" ++ show e1 ++ " seq " ++ show e2 ++ ")"
+    show (Fix e     ) = "(fix " ++ show e ++ ")"
+    show (Nil t     ) = "(ε:" ++ show t ++ ")"
+    show (Cons e1 e2) = "(" ++ show e1 ++ "⸪" ++ show e2 ++ ")"
+    show (Case e1 e2 x1 x2 e3)
+        = "(case " ++ show e1 ++ " of { ε ↦ " ++ show e2 ++ "; x"
+                        ++ show x1 ++ "⸪x" ++ show x2 ++ " ↦ " ++ show e3 ++ "})"
+                        
+instance Latex Expr where
+    latex (Var x     ) = "x_{" ++ show x ++ "}"
+    latex (Abs x t e ) = "(\\lambda x_{" ++ show x ++ "}:" ++ latex t ++ "." ++ latex e ++ ")"
+    latex (App e1 e2 ) = "(" ++ latex e1 ++ " " ++ latex e2 ++ ")"
+    latex (Con True  ) = "true"
+    latex (Con False ) = "false"
+    latex (Crash l t ) = "(⚡" ++ l ++ ":" ++ latex t ++ ")"
+    latex (Seq e1 e2 ) = "(" ++ latex e1 ++ " seq " ++ latex e2 ++ ")"
+    latex (Fix e     ) = "(fix " ++ latex e ++ ")"
+    latex (Nil t     ) = "(ε:" ++ latex t ++ ")"
+    latex (Cons e1 e2) = "(" ++ latex e1 ++ "⸪" ++ latex e2 ++ ")"
+    latex (Case e1 e2 x1 x2 e3)
+        = "(case " ++ latex e1 ++ " of { \\epsilon \\mapsto " ++ latex e2 ++ "; x_{"
+                        ++ show x1 ++ "}⸪x_{" ++ show x2 ++ "} \\mapsto " ++ latex e3 ++ "})"
 
 -- | Types
 
@@ -18,12 +68,32 @@ data Ty
     | Ty :-> Ty
     | List Ty
     deriving Show
+    
+instance Latex Ty where
+    latex Bool        = "bool"
+    latex (t1 :-> t2) = "(" ++ latex t1 ++ " \\to " ++ latex t2 ++ ")"
+    latex (List t)    = "\\left[" ++ latex t ++ "\\right]"
+    
+    lhs2tex Bool        = "Bool"
+    lhs2tex (t1 :-> t2) = "(" ++ lhs2tex t1 ++ " -> " ++ lhs2tex t2 ++ ")"
+    lhs2tex (List t)    = "[" ++ lhs2tex t ++ "]"
 
 data Kind = EXN | Kind :=> Kind
     deriving (Eq, Show)
+    
+instance Latex Kind where
+    latex EXN         = "EXN"
+    latex (k1 :=> k2) = latex k1 ++ " \\Rightarrow " ++ latex k2
+    
+    lhs2tex EXN         = "EXN"
+    lhs2tex (k1 :=> k2) = "KindArr (" ++ lhs2tex k1 ++ ") (" ++ lhs2tex k2 ++ ")"
 
 type KindEnv = [(Name, Kind)]
-    
+
+instance Latex (Name, Kind) where
+    lhs2tex (show -> e, lhs2tex -> k)
+        = "e_" ++ e ++ " : " ++ k
+
 kind2sort :: Kind -> LU.Sort
 kind2sort EXN         = LU.C
 kind2sort (k1 :=> k2) = kind2sort k1 LU.:=> kind2sort k2
@@ -73,6 +143,21 @@ instance Show Exn where
     show (ExnVar n)       = "e" ++ show n
     show (ExnApp e1 e2)   = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
     show (ExnAbs n k e)   = "(λe" ++ show n ++ ":" ++ show k ++ "." ++ show e ++ ")"
+    
+instance Latex Exn where
+    latex (ExnEmpty)       = "\\emptyset"
+    latex (ExnUnion e1 e2) = "(" ++ latex e1 ++ " \\cup " ++ latex e2 ++ ")"
+    latex (ExnCon lbl)     = "\\{" ++ lbl ++ "\\}"
+    latex (ExnVar n)       = "e_{" ++ show n ++ "}"
+    latex (ExnApp e1 e2)   = "(" ++ latex e1 ++ "\\ " ++ latex e2 ++ ")"
+    latex (ExnAbs n k e)   = "(\\lambda e_{" ++ show n ++ "}:" ++ latex k ++ "." ++ latex e ++ ")"
+    
+    lhs2tex (ExnEmpty)       = "ExnEmpty"
+    lhs2tex (ExnUnion e1 e2) = "ExnUnion (" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2 ++ ")"
+    lhs2tex (ExnCon lbl)     = "ExnCon (" ++ show lbl ++ ")"
+    lhs2tex (ExnVar n)       = "ExnVar (" ++ show n ++ ")"
+    lhs2tex (ExnApp e1 e2)   = "ExnApp (" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2 ++ ")"
+    lhs2tex (ExnAbs n k e)   = "ExnAbs (" ++ show n ++ ") (" ++ lhs2tex k ++ ") (" ++ lhs2tex e ++ ")"
 
 data ExnTy
     = ExnForall Name Kind ExnTy
@@ -104,6 +189,30 @@ instance Show ExnTy where
     show (ExnArr t1 exn1 t2 exn2)
         = "(" ++ show t1 ++ "{" ++ show exn1 ++ "} -> "
               ++ show t2 ++ "{" ++ show exn2 ++ "})"
+
+instance Latex ExnTy where
+    latex (ExnForall e k t)
+        = "(\\forall e_{" ++ show e ++ "}::" ++ latex k ++ "." ++ latex t ++ ")"
+    latex (ExnBool)
+        = "bool"
+    latex (ExnList t exn)
+        = "[" ++ latex t ++ "{" ++ latex exn ++ "}]"
+    -- TODO: print top-level annotation on the arrow for readability
+    latex (ExnArr t1 exn1 t2 exn2)
+        = "(" ++ latex t1 ++ "{" ++ latex exn1 ++ "} \\to "
+              ++ latex t2 ++ "{" ++ latex exn2 ++ "})"
+
+    lhs2tex (ExnForall e k t)
+        = "ExnForall (" ++ show e ++ ") (" ++ lhs2tex k ++ ") (" ++ lhs2tex t ++ ")"
+    lhs2tex (ExnBool)
+        = "ExnBool"
+    lhs2tex (ExnList t exn)
+        = "ExnList (" ++ lhs2tex t ++ ") (" ++ lhs2tex exn ++ ")"
+    -- TODO: print top-level annotation on the arrow for readability
+    lhs2tex (ExnArr t1 exn1 t2 exn2)
+        = "ExnArr (" ++ lhs2tex t1 ++ ") (" ++ lhs2tex exn1 ++ ") ("
+              ++ lhs2tex t2 ++ ") (" ++ lhs2tex exn2 ++ ")"
+
 
 -- | Free exception variables
 

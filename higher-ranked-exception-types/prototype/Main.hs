@@ -4,6 +4,7 @@ import           Names
 import           Common      as C
 import           Infer       as Inf
 import qualified LambdaUnion as LU
+import           Latex
 
 {- LambdaUnion
 env1 = [(0,C)]
@@ -11,8 +12,40 @@ e1   = Abs 1 (C :=> C) (App (Var 1) (Var 0))
 e2   = App (Abs 2 C (Abs 1 (C:=>C) (App (Var 1) (Var 2)))) (App (Abs 3 C (Var 3)) (Var 0))
 -} 
 
-main   = mapM_ (\ex -> do { putStrLn ""; putStrLn (show ex); putStrLn (show (run ex))}) exs
-run ex = evalFreshLog (reconstruct [] [] ex) 1
+-- | Main
+
+main :: IO ()
+main = do
+    putStrLn $ unlines [
+            "\\documentclass[fullpage]{article}",
+            "\\usepackage[a4paper,landscape,margin=0pt]{geometry}",
+            "%include polycode.fmt",
+            "%include forall.fmt",
+            "%include ../documentation/include/inference.lhs2tex",
+            "%include ../documentation/definitions/lambda-union.lhs2tex",
+            "%include ../documentation/definitions/completion.lhs2tex",
+            "%include ../documentation/definitions/algorithm.lhs2tex",
+            "\\begin{document}"
+        ]
+    mapM_ (putStrLn . run) exs
+    putStrLn $ unlines [
+            "\\end{document}"
+        ]
+
+run :: Expr -> String
+run ex =
+    let ((ty, e, cs, kenv), l) = runFreshLog (reconstruct [] [] ex) 1
+     in unlines [
+            "\\paragraph{Expression} \\[" ++ latex ex      ++ "\\]",
+            "\\paragraph{Type}       \\[" ++ latex ty      ++ "\\]",
+            "\\paragraph{Algorithm}",
+            "sd",
+            concatMap f l,
+            "\\newpage"            
+         ]
+            where f x = unlines [x]
+
+-- | Examples
 
 exs  = [ex01,ex02,ex03,ex04,ex05,ex06,ex07,ex08,ex09,ex10
        ,ex11,ex12,ex13,ex14,ex15,ex16,ex17,ex18,ex19,ex20

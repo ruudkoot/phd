@@ -43,8 +43,8 @@ instance MonadFresh (FreshLog s) where
 msg :: Monoid s => s -> FreshLog s ()
 msg s = modify (\(name, st) -> (name, s <> st))
 
-evalFreshLog :: Monoid s => FreshLog s a -> Name -> a
-evalFreshLog m n = evalState m (n, mempty)
+runFreshLog :: Monoid s => FreshLog s a -> Name -> (a, s)
+runFreshLog m n = let (x, (_, s)) = runState m (n, mempty) in (x, s)
 
 -- | Miscellaneous
 

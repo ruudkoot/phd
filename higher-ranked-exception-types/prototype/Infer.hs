@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ViewPatterns      #-}
+
 module Infer where
 
 -- TODO: reconstruct derivation tree
@@ -6,43 +9,19 @@ import           Names
 import           Common
 import qualified LambdaUnion as LU
 import qualified Completion  as C
+import           Latex
 
 import qualified Data.Map    as M
 
--- | Expressions
-
-data Expr
-    = Var Name
-    | Abs Name Ty Expr
-    | App Expr Expr
-    | Con Bool
-    | Crash Lbl Ty
-    | Seq Expr Expr
-    | Fix Expr
-    | Nil Ty
-    | Cons Expr Expr
-    | Case Expr Expr Name Name Expr
-    
-instance Show Expr where
-    show (Var x     ) = "x" ++ show x
-    show (Abs x t e ) = "(λx" ++ show x ++ ":" ++ show t ++ "." ++ show e ++ ")"
-    show (App e1 e2 ) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
-    show (Con True  ) = "true"
-    show (Con False ) = "false"
-    show (Crash l t ) = "(⚡" ++ l ++ ":" ++ show t ++ ")"
-    show (Seq e1 e2 ) = "(" ++ show e1 ++ " seq " ++ show e2 ++ ")"
-    show (Fix e     ) = "(fix " ++ show e ++ ")"
-    show (Nil t     ) = "(ε:" ++ show t ++ ")"
-    show (Cons e1 e2) = "(" ++ show e1 ++ "⸪" ++ show e2 ++ ")"
-    show (Case e1 e2 x1 x2 e3)
-        = "(case " ++ show e1 ++ " of { ε ↦ " ++ show e2 ++ "; x"
-                        ++ show x1 ++ "⸪x" ++ show x2 ++ " ↦ " ++ show e3 ++ "})"
-    
 -- | Exception type reconstruction
 
 -- * Environments
 
 type Env = [(Name, (ExnTy, Exn))]
+
+instance Latex (Name, (ExnTy, Exn)) where
+    lhs2tex (show -> e, (lhs2tex -> ty, lhs2tex -> exn))
+        = "e_" ++ e ++ " : " ++ ty ++ " & " ++ exn
 
 fev :: Env -> [Name]
 fev = concatMap (\(_, (ty, exn)) -> fevExnTy ty ++ fevExn exn)
@@ -54,11 +33,22 @@ data Constr = Exn :<: Name
 
 -- * Reconstruction
 
+debug cs fs = msg [ unlines (map f fs ++ ["\\begin{code}"] ++ cs ++ ["\\end{code}"])
+    ] where f x = "%format " ++ x
+
 -- TODO: store KindEnv, Env in the monad
 reconstruct :: Env -> KindEnv -> Expr -> FreshLog Log (ExnTy, Name, [Constr], KindEnv)
 reconstruct env kenv (Var x)
     = do let Just (t, exn) = lookup x env
          e <- fresh
+         
+         debug [ -- FIXME
+            "reconstruct " ++ show env ++ " kenv (Var x) =",
+            "    let  (ty, exn) = env(x) = (" ++ show t ++ ", " ++ show exn ++ ")",
+            "         e_" ++ show e ++ " be fresh",
+            "    in   (ty, e_" ++ show e ++ ", exn :< e_" ++ show e ++ ")"
+          ] ["e_" ++ show e]
+
          return (t, e, [exn :<: e], [(e, kindOf kenv exn)])
 reconstruct env kenv (Abs x ty tm)
     = do (t1', ExnVar exn1, kenv1) <- C.complete [] ty
@@ -67,9 +57,30 @@ reconstruct env kenv (Abs x ty tm)
          let v = [exn1] ++ map fst kenv1 ++ fev env
          -- FIXME: is this the correct environment we are passing here?
          let exn2' = solve (kenv1 ++ [(exn1,EXN)] ++ kenv) c1 v exn2
-         -- FIXME: swap the outer ExnForall and the inner forallFromEnv?
          let t' = C.forallFromEnv kenv1 (ExnArr t1' (ExnVar exn1) t2' exn2')
          e <- fresh
+
+         debug [ -- FIXME
+            "reconstruct env kenv (Abs x ty tm) =",
+            "    let  (ty'_1, exn_1, kenv_1)  = complete [] ty",
+            "                                 = (" ++ lhs2tex t1' ++ ", " ++ show exn1
+                ++ ", " ++ show kenv1 ++ ")",
+            "         (ty'_2, exn_2, C_1, kenv_2)  = reconstruct (env, " ++ show x
+                ++ " : " ++ lhs2tex t1' ++ " & " ++ show exn1
+                ++ ") (kenv1 ++ kenv) (tm)",
+            "                                      = (" ++ lhs2tex t2' ++ ", "
+                ++ show exn2 ++ ", " ++ show c1 ++ ", " ++ show kenv2 ++ ")",
+            "         v  = [exn1] ++ map fst kenv1 ++ fev env",
+            "         exn'_2  = solve (kenv1 ++ [(exn1,EXN)] ++ kenv) c1 v exn2",
+            "                 = ...",
+            "         ty'     = ...",
+            "         e be fresh",
+            "    in (,,,)"
+          ] ["ty'_1", "exn_1", "kenv_1"
+            ,"ty'_2", "exn_2", "C_1", "kenv_2"
+            , "exn'_2"
+            ]
+
          return (t', e, [], [(e,EXN)])
 reconstruct env kenv (App e1 e2)
     = do (t1, exn1, c1, kenv1) <- reconstruct env kenv e1
@@ -78,18 +89,38 @@ reconstruct env kenv (App e1 e2)
          let subst = [(exn2', ExnVar exn2)] <.> merge [] t2 t2'
          e <- fresh
          let c = [substExn' subst exn' :<: e, ExnVar exn1 :<: e] ++ c1 ++ c2
+
+         debug [ -- FIXME
+            "R-App"
+            ] []
+
          return (substExnTy' subst  t', e, c
                 ,[(e, kindOf (kenv1 ++ kenv) (ExnVar exn1))] ++ kenv' ++ kenv2 ++ kenv1)
 reconstruct env kenv (Con b)
     = do e <- fresh
+    
+         debug [ -- FIXME
+            "R-Con"
+            ] []
+    
          return (ExnBool, e, [], [(e,EXN)])
 reconstruct env kenv (Crash lbl ty)
     = do (ty', ExnVar exn1, kenv1) <- C.complete [] ty
+
+         debug [ -- FIXME
+            "R-Crash"
+            ] []
+
          return (ty', exn1, [ExnCon lbl :<: exn1], kenv1)
 reconstruct env kenv (Seq e1 e2)
     = do (t1, exn1, c1, kenv1) <- reconstruct env kenv e1
          (t2, exn2, c2, kenv2) <- reconstruct env kenv e2
          e <- fresh
+         
+         debug [ -- FIXME
+            "R-Seq"
+            ] []
+                  
          return (t2, e, [ExnVar exn1 :<: e, ExnVar exn2 :<: e] ++ c1 ++ c2
                 ,[(e,kindOf (kenv1 ++ kenv) (ExnVar exn1))] ++ kenv2 ++ kenv1)
 reconstruct env kenv (Fix e1)   -- FIXME: unknown to be sound (see notes)
@@ -99,11 +130,27 @@ reconstruct env kenv (Fix e1)   -- FIXME: unknown to be sound (see notes)
          let subst2 = [(exn', substExn' subst1 exn'')]
          e <- fresh
          let c = [substExn' (subst2 <.> subst1) exn'' :<: e] ++ c1
+
+         debug [ -- FIXME
+            "R-Fix"
+            ] []
+
          return (substExnTy' (subst2 <.> subst1) t', e, c
                 ,[(e,EXN)] ++ kenv' ++ kenv1)
 reconstruct env kenv (Nil ty)
     = do (ty', ExnVar exn1, kenv1) <- C.complete [] ty
          exn2 <- fresh
+
+         debug [ -- FIXME
+            "reconstruct  " ++ lhs2tex env,
+            "             " ++ lhs2tex kenv,
+            "             (Nil (" ++ lhs2tex ty ++ ")) =",
+            "    let  (ty', exn_1, kenv_1)  = complete [] (" ++ show ty ++ ")",
+            "                               = (" ++ lhs2tex ty' ++ ", " ++ show exn1 ++ ", " ++ lhs2tex kenv1 ++ ")",
+            "         e_" ++ show exn2 ++ " be fresh",
+            "    in   (" ++ lhs2tex (ExnList ty' (ExnVar exn1)) ++ ", e_" ++ show exn2 ++ "[], " ++ lhs2tex ([(exn2, EXN)] ++ kenv1) ++ ")"
+          ] ["exn_1", "kenv_1", "e_" ++ show exn2]
+
          -- FIXME: not completely sure about the kind of exn2 (should be ∅)
          return (ExnList ty' (ExnVar exn1), exn2, [], [(exn2, EXN)] ++ kenv1)
 reconstruct env kenv (Cons e1 e2)
@@ -112,6 +159,11 @@ reconstruct env kenv (Cons e1 e2)
          let t = join t1 t2
          ex1 <- fresh
          ex2 <- fresh
+
+         debug [ -- FIXME
+            "R-Cons"
+            ] []
+
          -- FIXME: not completely sure about the kind of ex1 and ex2 (should be ∅)
          return (ExnList t (ExnVar ex1), ex2
             ,[ExnVar exn1 :<: ex1, exn2' :<: ex1, ExnVar exn2 :<: ex2] ++ c1 ++ c2
@@ -126,6 +178,11 @@ reconstruct env kenv (Case e1 e2 x1 x2 e3)
          exn <- fresh
          let c = [ExnVar exn1 :<: exn, ExnVar exn2 :<: exn, ExnVar exn3 :<: exn]
                     ++ c1 ++ c2 ++ c3
+
+         debug [ -- FIXME
+            "R-Case"
+            ] []
+
          return (t, exn, c
                 ,[(exn, kindOf (kenv1 ++ kenv) (ExnVar exn1))]
                     ++ kenv3 ++ kenv2 ++ kenv1)
