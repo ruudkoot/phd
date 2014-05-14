@@ -1,0 +1,40 @@
+\documentclass[serif,professionalfont]{beamer}
+
+\usepackage[sc,osf]{mathpazo}			% Palatino (text + math)
+%\usepackage{eulervm}					% Euler (math)
+%\usepackage{newtxtext,newtxmath}		% Times New Roman (text + math)
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{xspace}
+
+%\usepackage{natbib}                % officially not compatible with beamer
+%\usepackage{hyperref}
+
+%include polycode.fmt
+%include forall.fmt
+
+%include ../include/inference.lhs2tex
+%include ../include/code.lhs2tex
+
+%include ../definitions/lambda-union.lhs2tex
+%include ../definitions/completion.lhs2tex
+
+\setbeamersize{description width=-\labelsep}
+
+\begin{document}
+
+\title{Higher-Ranked Exception Types}
+\author{Ruud Koot}
+\institute[UU]{Utrecht University}
+\maketitle
+
+%include section/motivation.lhs2tex
+%include section/technicalities.lhs2tex
+
+\bibliographystyle{amsalpha}
+\bibliography{../higher-ranked-exception-types}
+
+\end{document}

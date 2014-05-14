@@ -1,0 +1,22 @@
+\section{Technicalities}
+
+\begin{frame}{Technicalities}
+
+    \begin{itemize}
+    
+        \item Due to their syntactic weight, higher-ranked exception type only seem useful if they can be infered automatically.
+    
+        \item Unlike for HM type inference is undecidable in $F_\omega$.
+        
+        \item However, the exception types are annotations piggybacking on top of an underlying type system.
+        
+        \item Holdermans and Hage \cite{Holdermans:2010:PFA:1863543.1863554} showed type inference is decidable for a higher-ranked annotated type system with type operators performing control-flow analysis.
+    
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Technicalities}
+
+
+\end{frame}
