@@ -1,0 +1,31 @@
+%format EXN = "\textsc{exn}"
+
+%format LAMBDA (x) (e) = "\lambda" x "." e
+%format -|> = "\mapsto"
+%format -\> = "\mapsto"
+
+%format bottom     = "\bot"
+%format bottom_chi = "\bot_\chi"
+%format bottom_E   = "\bot_\mathbf{E}"
+%format e_E        = "\{\mathbf{E}\}"
+
+%format alpha = "\alpha"
+%format beta  = "\beta"
+%format tau   = "\tau"
+
+%format e_0
+%format e_1
+%format e_2
+%format e_3
+%format e_4
+%format e_5
+%format e_6
+%format e_7
+%format e_8
+%format e_9
+
+%format throws                  = "\mathbf{throws}\xspace"
+%format #                       = "\ \cup\ "
+%format Throws (t) (e)          = t "^{" e "}"
+%format ThrowsArr (t1) (t2) (e) = t1 "\xrightarrow{" e "}" t2
+%format noexn                   = "\emptyset"

@@ -11,7 +11,7 @@
 
 
 \newcommand{\Ty}{\tau}
-\newcommand{\TyBool}{\mathrm{bool}}
+\newcommand{\TyBool}{\mathbf{bool}}
 \newcommand{\TyList}[1]{\left[#1\right]}
 \newcommand{\TyArr}[2]{#1 \to #2}
 
@@ -26,6 +26,7 @@
 \newcommand{\Exn}{\chi}
 \newcommand{\ExnVar}{e}
 \newcommand{\ExnAbs}[3]{\lambda #1 : #2 . #3}
+\newcommand{\ExnUnion}[2]{#1 \cup #2}
 
 \newcommand{\Kind}{\kappa}
 \newcommand{\KindEXN}{\textsc{exn}}

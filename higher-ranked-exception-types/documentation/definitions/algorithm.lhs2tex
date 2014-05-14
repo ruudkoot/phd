@@ -1,0 +1,35 @@
+%format EXN               = "\KindEXN"
+%format KindArr (k1) (k2) = "(" k1 " \KindArr " k2 ")"
+
+%format ExnVar (e)                     = "e_{" e "}"
+%format ExnApp (t1) (t2)               = "(" t1 "\ " t2 ")"
+%format ExnForall (e) (k) (t)          = "(\ExnForall{e_{" e "} :: " k "} " t ")"
+%format ExnBool                        = "\ExnTyBool"
+%format ExnList (t) (exn)              = "\ExnTyList{" t "}{" exn "}"
+%format ExnArr (t1) (exn1) (t2) (exn2) = "(\ExnTyArr{" t1 "}{" exn1 "}{" t2 "}{" exn2 "})"
+
+
+%format ExnUnion (e1) (e2)             = "(\ExnUnion{" e1 "}{" e2 "})"
+
+
+\newcommand{\Complete}{\mathbb{C}}
+%format complete = "\Complete"
+\newcommand{\Reconstruct}{\mathbb{R}}
+%format reconstruct = "\Reconstruct"
+\newcommand{\Solve}{\mathbb{S}}
+%format solve = "\Solve"
+
+%format env  = "\Gamma"
+%format kenv = "\Delta"
+
+%format ty   = "\ExnTy"
+%format ty'  = "\ExnTy^{\prime}"
+%format exn  = "\Exn"
+%format exn' = "\Exn^{\prime}"
+
+
+%format Bool = "\TyBool"
+
+
+\newcommand{\ListNil}{\left[\right]}
+%format Nil (ty) = "\ListNil_{" ty "}"

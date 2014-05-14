@@ -1,7 +1,7 @@
 \documentclass[a4paper]{article}
 %\documentclass[serif,professionalfont]{beamer}
 
-\usepackage{fullpage}
+\usepackage{fullpage}                   % FIXME: geometry
 
 \usepackage[sc,osf]{mathpazo}			% Palatino (text + math)
 %\usepackage{eulervm}					% Euler (math)
