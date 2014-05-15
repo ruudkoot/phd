@@ -18,5 +18,199 @@
 
 \begin{frame}{Technicalities}
 
+    \begin{enumerate}
+    
+        \item Perform Hindley--Milner type inference to reconstruct the underlying types.
+        
+        \item Run a second inference pass to reconstruct the exception types.
+        
+            \begin{enumerate}
+            
+                \item Collect a set of subtyping constraints.
+                
+                \item In case of a $\lambda$-abstraction $\lambda x : \tau. e$, we \emph{complete} the type $\tau$ to an exception type.
+                
+                \item In case of an application we \emph{match} the types of the formal and actual parameter.
+            
+            \end{enumerate}
+            
+        \item Solve the generated subtyping constraints.
+    
+    \end{enumerate}
+
+\end{frame}
+
+\begin{frame}{Technicalities: Completion}
+
+    \begin{itemize}
+    
+        \item The completion procedure adds as many quantifiers and type operators as possible to a type.
+        
+            \begin{figure}[h]
+                \tiny
+                \begin{gather*}
+                \Rule{C-Bool}
+                     {}
+                     {\JudgeComplete{\KindEnv{i}}
+                                    {\TyBool}
+                                    {\ExnTyBool}
+                                    {\ExnVar\ \overline{\ExnVar_i}}
+                                    {\ExnVar :: \overline{\Kind_i\KindArr}\KindEXN}
+                     }
+                \\\\
+                \Rule{C-List}
+                     {\JudgeComplete{\KindEnv{i}}
+                                    {\Ty}
+                                    {\ExnTy}
+                                    {\Exn}
+                                    {\KindEnv{j}}
+                     }
+                     {\JudgeComplete{\KindEnv{i}}
+                                    {\TyList{\Ty}}
+                                    {\ExnTyList{\ExnTy}{\Exn}}
+                                    {\ExnVar\ \overline{\ExnVar_i}}
+                                    {\ExnVar :: \overline{\Kind_i\KindArr}%
+                                        \KindEXN, \KindEnv{j}}
+                     }
+                \\\\
+                \Rule{C-Arr}
+                     {\JudgeComplete{}
+                                    {\Ty_1}
+                                    {\ExnTy_1}
+                                    {\Exn_1}
+                                    {\KindEnv{j}}
+                      \quad
+                      \JudgeComplete{\KindEnv{i},\KindEnv{j}}
+                                    {\Ty_2}
+                                    {\ExnTy_2}
+                                    {\Exn_2}
+                                    {\KindEnv{j}}
+                     }
+                     {\JudgeComplete{\KindEnv{i}}
+                                    {\TyArr{\Ty_1}{\Ty_2}}
+                                    {\ExnForall{\overline{\ExnVar_j :: \Kind_j}}\left(\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}\right)}
+                                    {\ExnVar\ \overline{\ExnVar_i}}
+                                    {\ExnVar :: \overline{\Kind_j\KindArr}%
+                                        \KindEXN, \KindEnv{k}}
+                     }
+            \end{gather*}
+            \caption{Type completion ($\JudgeComplete{\KindENV}{\Ty}{\ExnTy}{\Exn}{\KindENV'}$)}
+        \end{figure}    
+    
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Technicalities: Constraint solving}
+
+    \begin{itemize}
+    
+        \item Solving subtyping constraints can be done using a fixed-point iteration.
+        
+        \item To decide we have reached a fixed point we need an equality on types.
+        
+        \item But types are now a simply typed $\lambda$-calculus.
+    
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Technicalities: $\lambda^\cup$}
+
+    \begin{description}
+
+    \item[Types]
+
+        \begin{align}
+            \LuTy \in \ClassLuTy &&::= \quad &\LuBase                     \tag{base type} \\
+                                 &&||  \quad &\LuArr{\LuTy_1}{\LuTy_2}    \tag{function type}
+        \end{align}
+
+    \item[Terms]
+
+        \begin{align}
+            \LuTm \in \ClassLuTm &&::= \quad &\LuVar, \LuVarY, ... \tag{variable} \\
+                                 &&||  \quad &\LuAbs{\LuVar}{\LuTy}{\LuTm} \tag{abstraction} \\
+                                 &&||  \quad &\LuApp{\LuTm_1}{\LuTm_2} \tag{application} \\
+                                 &&||  \quad &\LuEmpty \tag{empty} \\
+                                 &&||  \quad &\LuCon \tag{singleton} \\
+                                 &&||  \quad &\LuUnion{\LuTm_1}{\LuTm_2} \tag{union}
+        \end{align}
+
+    \item[Values]
+
+        Values $\LuVal$ are terms of the form \[ _{\LuAbs{\LuVar_1}{\LuTy_1}{\cdots\LuAbs{\LuVar_i}{\LuTy_i}{\LuUnion{\LuCon[\LuCON_1]}{(
+    \LuUnion{\cdots}{(\LuUnion{\LuCon[\LuCON_j]}{(\LuUnion{\LuApp{\LuVar_1}{\LuVal_{11}\cdots\LuVal_{1m}}}{(\LuUnion{\cdots}{\LuApp{x_k}{v_{k1} \cdots v_{kn}}})})})})}}}} \]
+
+    \end{description}
+
+\end{frame}
+
+\begin{frame}{Technicalities: $\lambda^\cup$}
+
+\begin{figure}\scriptsize
+\begin{align}
+    {\LuApp{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_1}\right)}{\LuTm_2}} &\REDUCE {\Subst{\LuTm_2}{\LuVar}{\LuTm_1}} \tag{$\beta$-reduction} \\
+    \begin{split}
+    {\LuApp{\left(\LuUnion{\LuTm_1}{\LuTm_2}\right)}{\LuTm_3}} &\REDUCE {\LuUnion{\LuApp{\LuTm_1}{\LuTm_3}}{\LuApp{\LuTm_2}{\LuTm_3}}} \\
+    {\LuUnion{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_1}\right)}{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_2}\right)}}
+        &\REDUCE {\LuAbs{\LuVar}{\LuTy}{\left(\LuUnion{\LuTm_1}{\LuTm_2}\right)}} \\
+    {\LuUnion{\LuAPPLIED}{\LuAPPLIED[']}}
+        &\REDUCE {\LuVar\ \left(\LuUnion{\LuTm_1}{\LuTm_1'}\right) \cdots \left(\LuUnion{\LuTm_n}{\LuTm_n'}\right)}
+    \end{split} \tag{congruences} \\
+    {\LuUnion{\left(\LuUnion{\LuTm_1}{\LuTm_2}\right)}{\LuTm_3}}
+        &\REDUCE {\LuUnion{\LuTm_1}{\left(\LuUnion{\LuTm_2}{\LuTm_3}\right)}} \tag{associativity} \\
+    \begin{split}
+    {\LuUnion{\LuEmpty}{\LuTm}} &\REDUCE {\LuTm} \\
+    {\LuUnion{\LuTm}{\LuEmpty}} &\REDUCE {\LuTm}
+    \end{split} \tag{unit} \\
+    \begin{split}
+    {\LuUnion{\LuVar}{\LuVar}} &\REDUCE {\LuVar} \\
+    {\LuUnion{\LuVar}{\left(\LuUnion{\LuVar}{\LuTm}}\right)} &\REDUCE {\LuUnion{\LuVar}{\LuTm}} \\
+    {\LuUnion{\LuCon}{\LuCon}} &\REDUCE {\LuCon} \\
+    {\LuUnion{\LuCon}{\left(\LuUnion{\LuCon}{\LuTm}\right)}} &\REDUCE {\LuUnion{\LuCon}{\LuTm}}
+    \end{split} \tag{idempotence} \\
+    %\begin{split}
+    {\LuUnion{\LuAPPLIED}{\LuCon}} &\REDUCE {\LuUnion{\LuCon}{\LuAPPLIED}} \\
+    {\LuUnion{\LuAPPLIED}{\left(\LuUnion{\LuCon}{\LuTm}\right)}} &\REDUCE {\LuUnion{\LuCon}{\left(\LuUnion{\LuAPPLIED}{\LuTm}\right)}} \\
+    {\LuUnion{\LuAPPLIED}{\LuAPPLIED[']}} &\REDUCE {\LuUnion{\LuAPPLIED[']}{\LuAPPLIED}} &&\text{if $\LuOrder{\LuVar'}{\LuVar}$}\quad\quad\quad\quad \\
+    {\LuUnion{\LuAPPLIED}{\left(\LuUnion{\LuAPPLIED[']}{\LuTm}\right)}} &\REDUCE {\LuUnion{\LuAPPLIED[']}{\left(\LuUnion{\LuAPPLIED}{\LuTm}\right)}} &&\text{if $\LuOrder{\LuVar'}{\LuVar}$} \\
+    {\LuUnion{\LuCon}{\LuCon[\LuCON']}} &\REDUCE {\LuUnion{\LuCon[\LuCON']}{\LuCon}} &&\text{if $\LuOrder{\LuCON'}{\LuCON}$} \\
+    {\LuUnion{\LuCon}{\left(\LuUnion{\LuCon[\LuCON']}{\LuTm}\right)}} &\REDUCE {\LuUnion{\LuCon[\LuCON']}{\left(\LuUnion{\LuCon}{\LuTm}\right)}} &&\text{if $\LuOrder{\LuCON'}{\LuCON}$}
+    %\end{split} \tag{commutativity}
+\end{align}
+\end{figure}
+
+\end{frame}
+
+
+\begin{frame}{Technicalities: $\lambda^\cup$}
+
+\begin{conjecture}
+    The reduction relation $\Reduce{}{}$ preserves meaning.
+\end{conjecture}
+
+\begin{conjecture}
+    The reduction relation $\Reduce{}{}$ is strongly normalizing.
+\end{conjecture}
+
+\begin{conjecture}
+    The reduction relation $\Reduce{}{}$ is locally confluent.
+\end{conjecture}
+
+\begin{corollary}
+    The reduction relation $\Reduce{}{}$ is confluent.
+\end{corollary}
+%\begin{proof}
+%    Follows from SN, LC and Newman's Lemma.
+%\end{proof}
+
+\begin{corollary}
+    The $\LambdaUnion$-calculus has unique normal forms.
+\end{corollary}
+
+\begin{corollary}
+    Equality of $\LambdaUnion$-terms can be decided by normalization.
+\end{corollary}
 
 \end{frame}

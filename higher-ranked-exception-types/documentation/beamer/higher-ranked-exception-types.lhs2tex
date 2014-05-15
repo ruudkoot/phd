@@ -19,6 +19,8 @@
 %include ../include/inference.lhs2tex
 %include ../include/code.lhs2tex
 
+\newtheorem{conjecture}{Conjecture}
+
 %include ../definitions/lambda-union.lhs2tex
 %include ../definitions/completion.lhs2tex
 
@@ -33,8 +35,13 @@
 
 %include section/motivation.lhs2tex
 %include section/technicalities.lhs2tex
+%include section/problems.lhs2tex
 
-\bibliographystyle{amsalpha}
-\bibliography{../higher-ranked-exception-types}
+\begin{frame}[t]{References}
+
+    \bibliographystyle{amsalpha}
+    \bibliography{../higher-ranked-exception-types}
+
+\end{frame}
 
 \end{document}
