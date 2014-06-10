@@ -1,0 +1,58 @@
+\documentclass{beamer}
+
+\usepackage{amsfonts}
+\usepackage{amssymb}
+
+\usetheme{Darmstadt}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\Rule}[3]{\frac{#2}{#3}\mbox{\ [#1]}}
+\newcommand{\JudgeT}[3][\Gamma]{#1 \vdash #2 : #3}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{Type-based program analysis}
+\subtitle{IPA Spring Days 2013}
+\author{Ruud Koot\\Utrecht University\\\texttt{r.koot@uu.nl}}
+\date{May 13, 2012}
+\maketitle
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Type systems and type inference} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Aap}
+\begin{align*}
+\Lambda \quad ::= \quad x
+        \quad  |  \quad \lambda x.\ \Lambda
+        \quad  |  \quad \Lambda\ \Lambda
+\end{align*}
+\begin{align*}
+\Rule{T-App}
+     {\JudgeT{e_1}{\tau_2 \to \tau_1} \quad \JudgeT{e_2}{\tau_2}}
+     {a}
+\end{align*}
+\end{frame}
+
+\section{Type-based program analysis}
+
+\begin{frame}{Aap}
+Aap
+\end{frame}
+
+\section{Type-based exception analysis}
+
+\begin{frame}{Aap}
+Aap
+\end{frame}
+
+\section{Higher-ranked polyvariance}
+
+\begin{frame}{Aap}
+Aap
+\end{frame}
+
+\end{document}

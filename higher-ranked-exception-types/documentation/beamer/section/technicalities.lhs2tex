@@ -101,6 +101,16 @@
 
 \end{frame}
 
+\begin{frame}{Technicalities: Completion}
+
+    \begin{itemize}
+    
+        \item $\JudgeComplete{a}{b}{c}{d}{e}$
+    
+    \end{itemize}
+
+\end{frame}
+
 \begin{frame}{Technicalities: Constraint solving}
 
     \begin{itemize}

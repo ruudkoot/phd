@@ -1,0 +1,21 @@
+\begin{frame}{Problems}
+
+    \begin{itemize}
+
+        \item Not sound w.r.t. \emph{imprecise exception semantics}.
+        
+        \item Making it sound negates the precision gained by higher-ranked types.
+        
+        \item Need to move to a more powerful constraint language.
+        
+            \begin{itemize}
+            
+                \item In previous work we used conditionals/implications and a somewhat ad hoc non-emptyness guard.
+                
+                \item Now I want to look at \emph{Boolean rings}, which look more well-behaved. 
+
+            \end{itemize}
+    
+    \end{itemize}
+
+\end{frame}

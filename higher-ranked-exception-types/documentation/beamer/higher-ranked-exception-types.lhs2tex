@@ -39,6 +39,7 @@
 
 \begin{frame}[t]{References}
 
+    \nocite{LIX-RR-96-09}
     \bibliographystyle{amsalpha}
     \bibliography{../higher-ranked-exception-types}
 
