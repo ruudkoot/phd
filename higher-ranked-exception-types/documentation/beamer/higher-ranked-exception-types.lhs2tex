@@ -1,6 +1,6 @@
 \documentclass[serif,professionalfont]{beamer}
 
-%\setbeamercolor{alerted text}{fg=black,bg=}
+%\setbeamercolor{alerted text}{fg=green,bg=red}
 
 \usepackage[sc,osf]{mathpazo}			% Palatino (text + math)
 %\usepackage{eulervm}					% Euler (math)
@@ -34,9 +34,9 @@
 \begin{document}
 
 \title{Higher-Ranked Exception Types}
-\subtitle{\textsc{(Work-in-Progress)}}
+\subtitle{\textsc{\alert{Work-in-Progress}}}
 \author{Ruud Koot}
-\institute[UU]{Utrecht University}
+\institute[UU]{Department of Information and Computing Sciences\\Utrecht University}
 \date{June 12, 2014}
 \maketitle
 

@@ -190,16 +190,36 @@
         \item[Types]
 
             \begin{align}
-                \LuTy \in \ClassLuTy &&::= \quad &B                          \tag{base type} \\
-                                     &&||  \quad &\LuArr{\LuTy_1}{\LuTy_2}    \tag{function type}
+                \LuTy \in \ClassLuTy &&::= \quad &\alert{\LuTyVar}                          \tag{type variable} \\
+                                     &&||  \quad &\LuArr{\LuTy_1}{\LuTy_2}    \tag{function type} \\
+                                     &&||  \quad &\alert{\LuForall{\LuTyVar}{\LuKind}{\LuTy}} \tag{universal type} \\
+                                     &&||  \quad &\alert{\lambda\alpha::\kappa. \tau} \tag{operator abstraction}\\
+                                     &&||  \quad &\alert{\tau_1\ \tau_2} \tag{operator application}
             \end{align}
+            
+        \item[Kinds]
+        
+            \begin{align}
+                \kappa \in \ClassLuKind &&::= \quad &*                          \tag{base kind} \\
+                                     &&||  \quad &\LuARR{\LuKind_1}{\LuKind_2}    \tag{operator kind}
+            \end{align}
+
+    \end{description}
+
+\end{frame}
+
+\begin{frame}{Intermezzo: System $F_\omega$}
+
+    \begin{description}
 
         \item[Terms]
 
             \begin{align}
                 \LuTm \in \ClassLuTm &&::= \quad &\LuVar, \LuVarY, ... \tag{variable} \\
                                      &&||  \quad &\LuAbs{\LuVar}{\LuTy}{\LuTm} \tag{abstraction} \\
-                                     &&||  \quad &\LuApp{\LuTm_1}{\LuTm_2} \tag{application}
+                                     &&||  \quad &\LuApp{\LuTm_1}{\LuTm_2} \tag{application}\\
+                                     &&||  \quad &\alert{\Lambda\alpha :: \kappa. t} \tag{type abstraction}\\
+                                     &&||  \quad &\alert{t\ \left<\tau\right>} \tag{type application}
             \end{align}
 
         \item[Values]

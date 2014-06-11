@@ -12,10 +12,51 @@
             
                 \item In previous work we used conditionals/implications and a somewhat ad hoc non-emptyness guard.
                 
-                \item Now I want to look at \emph{Boolean rings}, which look more well-behaved. 
+                \item Now I want to look at \emph{Boolean rings}, which look more well-behaved.
+                
+                \item May make more sense to use \emph{equational unification} instead of constraints.
 
             \end{itemize}
     
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Problems: Imprecise exception semantics}
+
+    \begin{itemize}
+    
+        \item In an optimizing compiler we want the following equality, called the \emph{case-switching transformation}, to hold:
+
+            %format e_i
+            \begin{code}
+            forall e_i.  if e_1 then
+                             if  e_2  then  e_3  else  e_4
+                         else
+                             if  e_2  then  e_5  else  e_6 ==  if e_2 then
+                                                                   if e_1  then  e_3  else  e_5
+                                                               else
+                                                                   if e_1  then  e_4  else  e_6
+            \end{code}
+    
+        \item This does not hold if we have observable exceptions and track them precisely.
+        
+            \begin{itemize}
+            
+                \item Counterexample: Take $e_1 = \bot_\mathbf{E_1}$ and $e_2 = \bot_\mathbf{E_2}$.
+            
+            \end{itemize}
+        
+        \only<1>{
+            \item Introduce some ``imprecision'': If the guard can reduce to an exceptional value, then pretend both branches get executed.
+        }
+        
+        \pause
+
+        \only<2>{
+            \item Introduce some ``imprecision'': \alert{If} the guard can reduce to an exceptional value, \alert{then} pretend both branches get executed.
+        }
+
     \end{itemize}
 
 \end{frame}
