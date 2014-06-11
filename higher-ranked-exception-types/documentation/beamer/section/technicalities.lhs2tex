@@ -105,7 +105,53 @@
 
     \begin{itemize}
     
-        \item $\JudgeComplete{a}{b}{c}{d}{e}$
+        \item $\JudgeComplete{\cdot}{\TyBool}{\ExnTyBool}{e_1}{e_1 :: \KindEXN}$
+        
+        \pause
+        
+        \item $\JudgeComplete{e_1 :: \KindEXN}{\TyBool}{\ExnTyBool}{e_2\ e_1}{e_2 :: \KindEXN \Rightarrow \KindEXN}$
+    
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Technicalities: Completion}
+
+    \begin{itemize}
+    
+        \item $\TyBool\to\TyBool$
+        \item $\forall e_1 :: \KindEXN.\ \ExnTyBool^{e_1} \to \ExnTyBool^{(e_2\ e_1)}\ \&\ e_3$
+        \item $e_2 :: \KindEXN \Rightarrow \KindEXN, e_3 :: \KindEXN$
+    
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Technicalities: Completion}
+
+    \begin{itemize}
+    
+        \item $\TyBool\to\TyBool\to\TyBool$
+        \item
+            \begin{multline*}
+                \forall e_1 :: \KindEXN.\ \ExnTyBool^{e_1} \to\\ (\forall e_4 :: \KindEXN.\ \ExnTyBool^{e_4} \xrightarrow{e_2\ e_1} \ExnTyBool^{(e_5\ e_1\ e_4)})\ \&\ e_3
+            \end{multline*}
+        \item $e_2 :: \KindEXN \Rightarrow \KindEXN, e_3 :: \KindEXN, e_5 :: \KindEXN \Rightarrow \KindEXN \Rightarrow \KindEXN$
+    
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Technicalities: Completion}
+
+    \begin{itemize}
+    
+        \item $(\TyBool\to\TyBool)\to\TyBool$
+        \item
+            \begin{multline*}
+                \forall e_2 :: \KindEXN \Rightarrow \KindEXN.\ \forall e_3 :: \KindEXN.\\ \left(\forall e_1 :: \KindEXN.\ \ExnTyBool^{e_1} \xrightarrow{e_3} \ExnTyBool^{(e_2\ e_1)}\right) \to \ExnTyBool^{(e_4\ e_2\ e_3)}\ \&\ e_5
+            \end{multline*}
+        \item $e_4 :: (\KindEXN \Rightarrow \KindEXN) \Rightarrow \KindEXN \Rightarrow \KindEXN, e_5 :: \KindEXN$
     
     \end{itemize}
 
