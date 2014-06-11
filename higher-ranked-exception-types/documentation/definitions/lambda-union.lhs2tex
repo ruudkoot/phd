@@ -28,3 +28,4 @@
 
 \newcommand{\REDUCE}{\longrightarrow}
 \newcommand{\Reduce}[2]{{#1 \REDUCE #2}}
+\newcommand{\ReduceMulti}[2]{{#1 \REDUCE^{*} #2}}

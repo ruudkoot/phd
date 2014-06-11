@@ -75,7 +75,7 @@
             }{
                 \begin{code}
                     map  ::  forall alpha beta e_1 e_2 e_3 e_4.
-                        ThrowsArr ((ThrowsArr (Throws alpha e_1) (Throws beta (e_1 # e_2)) e_3))) (ThrowsArr (Throws ([Throws alpha e_1]) e_4) (Throws ([Throws beta ((e_1 # e_2 # e_3))]) e_4) noexn) noexn
+                        ThrowsArr ((ThrowsArr (Throws alpha e_1) (Throws beta ((e_1 # e_2))) e_3)) (ThrowsArr (Throws ([Throws alpha e_1]) e_4) (Throws ([Throws beta ((e_1 # e_2 # e_3))]) e_4) noexn) noexn
                 \end{code}
             }
 

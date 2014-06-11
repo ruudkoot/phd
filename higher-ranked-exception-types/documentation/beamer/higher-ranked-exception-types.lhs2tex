@@ -1,5 +1,7 @@
 \documentclass[serif,professionalfont]{beamer}
 
+%\setbeamercolor{alerted text}{fg=black,bg=}
+
 \usepackage[sc,osf]{mathpazo}			% Palatino (text + math)
 %\usepackage{eulervm}					% Euler (math)
 %\usepackage{newtxtext,newtxmath}		% Times New Roman (text + math)
@@ -9,6 +11,8 @@
 \usepackage{amsthm}
 \usepackage{mathtools}
 \usepackage{xspace}
+
+\usepackage[all]{xy}
 
 %\usepackage{natbib}                % officially not compatible with beamer
 %\usepackage{hyperref}
@@ -21,6 +25,7 @@
 
 \newtheorem{conjecture}{Conjecture}
 
+%include ../definitions/intermezzo.lhs2tex
 %include ../definitions/lambda-union.lhs2tex
 %include ../definitions/completion.lhs2tex
 
@@ -29,11 +34,14 @@
 \begin{document}
 
 \title{Higher-Ranked Exception Types}
+\subtitle{\textsc{(Work-in-Progress)}}
 \author{Ruud Koot}
 \institute[UU]{Utrecht University}
+\date{June 12, 2014}
 \maketitle
 
 %include section/motivation.lhs2tex
+%include section/intermezzo.lhs2tex
 %include section/technicalities.lhs2tex
 %include section/problems.lhs2tex
 

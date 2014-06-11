@@ -1,0 +1,214 @@
+\section{Intermezzo}
+
+\begin{frame}{Intermezzo: Simply-typed $\lambda$-calculus}
+
+    \begin{description}
+
+        \item[Types]
+
+            \begin{align}
+                \LuTy \in \ClassLuTy &&::= \quad &B                          \tag{base type} \\
+                                     &&||  \quad &\LuArr{\LuTy_1}{\LuTy_2}    \tag{function type}
+            \end{align}
+
+        \item[Terms]
+
+            \begin{align}
+                \LuTm \in \ClassLuTm &&::= \quad &\LuVar, \LuVarY, ... \tag{variable} \\
+                                     &&||  \quad &\LuAbs{\LuVar}{\LuTy}{\LuTm} \tag{abstraction} \\
+                                     &&||  \quad &\LuApp{\LuTm_1}{\LuTm_2} \tag{application}
+            \end{align}
+
+        \item[Values]
+
+            \begin{align}
+                v \in \ClassVal &&::= \quad &\LuVar, \LuVarY, ... \tag{free variable} \\
+                                &&||  \quad &\LuAbs{\LuVar}{\LuTy}{v} \tag{abstraction value}
+            \end{align}
+
+    \end{description}
+
+\end{frame}
+
+\begin{frame}{Intermezzo: Simply-typed $\lambda$-calculus}
+
+    \begin{description}
+
+    \item[Typing]
+
+        \begin{gather*}
+            \Rule{T-Var}
+                 {}
+                 {\JudgeLuTy[\LuEnv, \LuVar : \LuTy]{\LuVar}{\LuTy}}
+            \quad\quad
+            \Rule{T-Abs}
+                 {\JudgeLuTy[\LuEnv, \LuVar : \LuTy_1]{\LuTm}{\LuTy_2}}
+                 {\JudgeLuTy{\LuAbs{\LuVar}{\LuTy_1}{\LuTm}}{\LuArr{\LuTy_1}{\LuTy_2}}}
+            \\\\
+            \Rule{T-App}
+                 {\JudgeLuTy{\LuTm_1}{\LuArr{\LuTy_1}{\LuTy_2}} \quad \JudgeLuTy{\LuTm_2}{\LuTy_1}}
+                 {\JudgeLuTy{\LuApp{\LuTm_1}{\LuTm_2}}{\LuTy_2}}
+        \end{gather*}
+        
+    \end{description}
+
+\end{frame}
+
+\begin{frame}{Intermezzo: Simply-typed $\lambda$-calculus}
+
+    \begin{description}
+
+    \item[Evaluation]
+
+        We perform \emph{full $\beta$-reduction}, i.e. we also evaluate under binders.
+
+        \begin{gather*}
+                \Rule{E-Abs}
+                     {\Reduce{t}{t'}}
+                     {\Reduce{\LuAbs{\LuVar}{\LuTy}{t}}{\LuAbs{\LuVar}{\LuTy}{t'}}}
+                \\\\
+                \Rule{E-App$_1$}
+                     {\Reduce{t_1}{t_1'}}
+                     {\Reduce{\LuApp{t_1}{t_2}}{\LuApp{t_1'}{t_2}}}
+                \quad\quad
+                \Rule{E-App$_2$}
+                     {\Reduce{t_2}{t_2'}}
+                     {\Reduce{\LuApp{t_1}{t_2}}{\LuApp{t_1}{t_2'}}}
+                \\\\
+                \Rule{E-Beta}
+                     {}
+                     {\Reduce{\LuApp{(\LuAbs{\LuVar}{\LuTy}{\LuTm_1})}{\LuTm_2}}
+                             {\Subst{\LuTm_2}{\LuVar}{\LuTm_1}}
+                     }
+        \end{gather*}
+        
+    \end{description}
+
+\end{frame}
+
+\begin{frame}{Intermezzo: Simply-typed $\lambda$-calculus}
+
+    \begin{theorem}[Progress]
+        A term $t$ is either a value $v$, or we can reduce $\Reduce{t}{t'}$.
+    \end{theorem}
+    
+    \begin{theorem}[Preservation]
+        If $\JudgeLuTy{\LuTm}{\LuTy}$ and $\Reduce{\LuTm}{\LuTm'}$, then $\JudgeLuTy{\LuTm'}{\LuTy}$.
+    \end{theorem}
+    
+    \begin{theorem}[Confluence]
+        If $\Reduce{t}{t_1}$ and $\Reduce{t}{t_2}$, then exists a term $t'$ such that $\ReduceMulti{t_1}{t'}$ and $\ReduceMulti{t_2}{t'}$.
+    \end{theorem}
+    
+    \begin{theorem}[Normalization]
+        For any term $t$ we have that $\ReduceMulti{t}{v}$ (in a finite number of steps).
+    \end{theorem}
+    
+    \begin{corollary}[Uniqueness of normal forms]
+        If $\ReduceMulti{t}{v_1}$ and $\ReduceMulti{t}{v_2}$, then $v_1 \equiv v_2$.
+    \end{corollary}
+
+\end{frame}
+
+\begin{frame}{Intermezzo: The lambda ``cube''}
+
+    \begin{itemize}
+
+        \item The simply-typed $\lambda$-calculus can be extended with \emph{parametric polymorphism}, or \emph{type operators}, or both.
+
+            \vspace{0.5em}
+
+            \begin{figure}[!h]
+                \hfill
+                \xymatrix{
+                    F \ar[r] & F_\omega \\
+                    \lambda \ar[u] \ar[r] & \lambda_\omega \ar[u]
+                }
+                \hfill{}
+            \end{figure}
+
+            \vspace{-1em}
+
+            \begin{tabular}{p{0.35\textwidth}p{0.45\textwidth}}
+            
+                \begin{itemize}
+                
+                    \item
+
+                        \begin{code}
+                            id  :  B -> B
+                            id  =  LAMBDA (x : B) x
+                        \end{code}
+                    
+                    \item
+                    
+                        \begin{code}
+                            Id  ::  * => *
+                            Id  =   LAMBDA (alpha :: *) alpha
+                            
+                            id  :  B -> Id B
+                            id  =  LAMBDA (x : B) x
+                        \end{code}
+                        
+                \end{itemize} &
+                    
+                \begin{itemize}
+
+                    \item
+                    
+                        \begin{code}
+                            id  :  forall alpha :: *. alpha -> alpha
+                            id  =  TYLAMBDA alpha (*) (LAMBDA (x : alpha) x)
+                        \end{code}
+                
+                    \item
+                    
+                        \begin{code}
+                            Id  ::  * => *
+                            Id  =   LAMBDA (alpha :: *) alpha
+                            
+                            id  :  forall alpha :: *. alpha -> Id alpha
+                            id  =  TYLAMBDA alpha (*) (LAMBDA (x : alpha) x)
+                        \end{code}
+                
+                \end{itemize}
+            
+            \end{tabular}
+
+        \vspace{-1em}
+        
+        \item Omitted: the axis for dependent types.
+        
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Intermezzo: System $F_\omega$}
+
+    \begin{description}
+
+        \item[Types]
+
+            \begin{align}
+                \LuTy \in \ClassLuTy &&::= \quad &B                          \tag{base type} \\
+                                     &&||  \quad &\LuArr{\LuTy_1}{\LuTy_2}    \tag{function type}
+            \end{align}
+
+        \item[Terms]
+
+            \begin{align}
+                \LuTm \in \ClassLuTm &&::= \quad &\LuVar, \LuVarY, ... \tag{variable} \\
+                                     &&||  \quad &\LuAbs{\LuVar}{\LuTy}{\LuTm} \tag{abstraction} \\
+                                     &&||  \quad &\LuApp{\LuTm_1}{\LuTm_2} \tag{application}
+            \end{align}
+
+        \item[Values]
+
+            \begin{align}
+                v \in \ClassVal &&::= \quad &\LuVar, \LuVarY, ... \tag{free variable} \\
+                                &&||  \quad &\LuAbs{\LuVar}{\LuTy}{v} \tag{abstraction value}
+            \end{align}
+
+    \end{description}
+
+\end{frame}

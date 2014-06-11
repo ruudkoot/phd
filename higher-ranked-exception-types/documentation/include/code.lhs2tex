@@ -1,6 +1,7 @@
 %format EXN = "\textsc{exn}"
 
 %format LAMBDA (x) (e) = "\lambda" x "." e
+%format TYLAMBDA (x) (t) (e) = "\Lambda" x ":" t "." e
 %format -|> = "\mapsto"
 %format -\> = "\mapsto"
 
