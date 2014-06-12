@@ -8,7 +8,9 @@
 \newcommand{\ClassLuVar}{\mathbf{Var}}
 
 \newcommand{\LuAbs}[3]{\lambda #1 : #2. #3}
+\newcommand{\LuTyAbs}[3]{\Lambda #1 : #2. #3}       %% Lu?
 \newcommand{\LuApp}[2]{#1\ #2}
+\newcommand{\LuTyApp}[2]{#1\ \left<#2\right>}       %% Lu?
 \newcommand{\LuArr}[2]{{#1 \to #2}}
 \newcommand{\LuARR}[2]{{#1 \Rightarrow #2}}         %% Lu?
 \newcommand{\LuBase}{\mathcal{P}}

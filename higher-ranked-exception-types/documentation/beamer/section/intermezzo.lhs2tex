@@ -226,9 +226,160 @@
 
             \begin{align}
                 v \in \ClassVal &&::= \quad &\LuVar, \LuVarY, ... \tag{free variable} \\
-                                &&||  \quad &\LuAbs{\LuVar}{\LuTy}{v} \tag{abstraction value}
+                                &&||  \quad &\LuAbs{\LuVar}{\LuTy}{v} \tag{abstraction value} \\
+                                &&||  \quad &\alert{\LuTyAbs{\LuTyVar}{\LuKind}{v}} \tag{type abstraction value}
             \end{align}
 
+    \end{description}
+
+\end{frame}
+
+\begin{frame}{Intermezzo: System $F_\omega$}
+
+    \begin{description}
+
+    \item[Kinding] Note the similarity between the \emph{type} system of the simply typed $\lambda$-calculus.
+
+        \begin{gather*}
+            \Rule{K-Var}
+                 {}
+                 {\Gamma,\alpha::\kappa\vdash\alpha::\kappa}
+            \quad\quad
+            \Rule{K-Abs}
+                 {\Gamma,\alpha::\kappa_1\vdash\tau_2::\kappa_2}
+                 {\Gamma\vdash\lambda\alpha::\kappa_1.\tau_2::\kappa_1\Rightarrow\kappa_2}
+            \\\\
+            \Rule{K-App}
+                 {\Gamma\vdash\tau_1::\kappa_1\Rightarrow\kappa_2 \quad \Gamma\vdash \tau_2::\kappa_1}
+                 {\Gamma\vdash \tau_1\ \tau_2 :: \kappa_2}
+            \\\\
+            \Rule{K-Arrow}
+                 {\Gamma\vdash\tau_1::* \quad \Gamma\vdash\tau_2::*}
+                 {\Gamma\vdash\tau_1\to\tau_2::*}
+            \quad\quad
+            \Rule{K-Forall}
+                 {\Gamma,\alpha::\kappa\vdash\tau :: *}
+                 {\Gamma\vdash\forall\alpha::\kappa.\tau :: *}
+        \end{gather*}
+        
+    \end{description}
+
+\end{frame}
+
+\begin{frame}{Intermezzo: System $F_\omega$}
+
+    \begin{description}
+
+    \item[Type equivalence]
+
+        \begin{gather*}
+            \Rule{Q-Refl}
+                 {}
+                 {\tau\equiv\tau}
+            \quad\quad
+            \Rule{Q-Symm}
+                 {\tau_1\equiv\tau_2}
+                 {\tau_2\equiv\tau_1}
+            \\\\
+            \Rule{Q-Trans}
+                 {\tau_1\equiv\tau_2 \quad \tau_2 \equiv \tau_3}
+                 {\tau_1\equiv\tau_3}
+            \quad\quad
+            \Rule{Q-Arrow}
+                 {\tau_1\equiv\tau_1^\prime \quad \tau_2\equiv\tau_2^\prime}
+                 {\tau_1\to\tau_2 \equiv \tau_1^\prime \to \tau_2^\prime}
+            \\\\
+            \Rule{Q-Forall}
+                 {\tau_1\equiv\tau_2}
+                 {\forall\alpha::\kappa.\tau_1\equiv\forall\alpha::\kappa.\tau_2}
+            \\\\
+            \Rule{Q-Abs}
+                 {\tau_1\equiv\tau_2}
+                 {\lambda\alpha::\kappa.\tau_1\equiv\lambda\alpha::\kappa.\tau_2}
+            \quad\quad
+            \Rule{Q-App}
+                 {\tau_1\equiv\tau_1^\prime \quad \tau_2\equiv\tau_2^\prime}
+                 {\tau_1\ \tau_2 \equiv \tau_1^\prime \ \tau_2^\prime}
+            \\\\
+            \Rule{\alert{Q-Beta}}
+                 {}
+                 {(\lambda\alpha::\kappa.\tau_1)\ \tau_2 \equiv \left[\alpha\mapsto\tau_2\right]\tau_1}
+        \end{gather*}
+        
+    \end{description}
+
+\end{frame}
+
+\begin{frame}{Intermezzo: System $F_\omega$}
+
+    \begin{description}
+
+    \item[Typing] In addition to the rules for the simply typed $\lambda$-calculus:
+
+        \begin{gather*}
+            \Rule{T-Abs}
+                 {\alert{\Gamma\vdash \LuTy_1 :: *} \quad \JudgeLuTy[\LuEnv, \LuVar : \LuTy_1]{\LuTm}{\LuTy_2}}
+                 {\JudgeLuTy{\LuAbs{\LuVar}{\LuTy_1}{\LuTm}}{\LuArr{\LuTy_1}{\LuTy_2}}}
+            \\\\
+            \Rule{T-TyAbs}
+                 {\Gamma,\alpha::\kappa_1\vdash t_2 : \tau_2}
+                 {\Gamma\vdash \Lambda\alpha :: \kappa_1. t_2 : \forall \alpha::\kappa_1.\tau_2}
+            \\\\
+            \Rule{T-TyApp}
+                 {\Gamma\vdash t_1 : \forall\alpha::\kappa_1.\tau_1 \quad \Gamma\vdash \tau_2 :: \kappa_1}
+                 {\Gamma\vdash t_1 \left<\tau_2\right> : \left[\alpha\mapsto\tau_2\right]\tau_1}
+            \\\\
+            \Rule{T-Eq}
+                 {\Gamma\vdash t : \tau_1 \quad \tau_1 \equiv \tau_2 \quad \Gamma\vdash \tau_2 :: *}
+                 {\Gamma \vdash t : \tau_2}
+        \end{gather*}
+        
+    \end{description}
+
+\end{frame}
+
+\begin{frame}{Intermezzo: System $F_\omega$}
+
+    \begin{description}
+
+    \item[Evaluation]
+    
+        In addition to the rules for the simply typed $\lambda$-calculus:
+
+        \begin{gather*}
+                \Rule{E-TyAbs}
+                     {\Reduce{t}{t'}}
+                     {\Reduce{\LuTyAbs{\LuTyVar}{\LuKind}{t}}{\LuTyAbs{\LuTyVar}{\LuKind}{t'}}}
+                \quad\quad
+                \Rule{E-TyApp}
+                     {\Reduce{t}{t'}}
+                     {\Reduce{\LuTyApp{t}{\tau}}{\LuTyApp{t'}{\tau}}}
+                \\\\
+                \Rule{E-TyBeta}
+                     {}
+                     {\Reduce{\LuTyApp{(\LuTyAbs{\LuTyVar}{\LuKind}{\LuTm})}{\LuTy}}
+                             {\Subst{\LuTy}{\LuTyVar}{\LuTm}}
+                     }
+        \end{gather*}
+        
+    \end{description}
+
+\end{frame}
+
+\begin{frame}{Intermezzo: System $F_\omega$}
+
+    \begin{description}
+
+        \item[Metatheory]\hfill
+    
+            \begin{itemize}
+            
+                \item We still have \emph{progress}, \emph{preservation} and \emph{decidability} (of type checking).
+                
+                \item Proofs rely on the structure of the types and type equivalence relation and thus the properties (especially \emph{normalization} and \emph{uniqueness of normal forms}) of the simply typed $\lambda$-calculus.
+            
+            \end{itemize}
+        
     \end{description}
 
 \end{frame}
