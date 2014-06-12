@@ -40,6 +40,58 @@
 
 \end{frame}
 
+%format e_2p = "e_2^\prime"
+%format gamma = "\widehat\Gamma"
+%format chi   = "\chi"
+%format chi_2
+%format tauhat = "\widehat\tau"
+%format tauhat_1
+%format tauhat_1p = "\widehat\tau_1^\prime"
+%format tauhat_2
+%format tauhat_2prime = "\widehat\tau_2^\prime"
+%format theta = "\theta"
+%format C_1
+%format C_2
+%format t_1
+%format t_2
+%format Subst (k) (v) = "\left[" k " \mapsto " v "\right]"
+%format MapsTo (k) (v) = k "\mapsto " v
+%format KindEnv (i) = "\overline{e_{" i "} :: \kappa_{" i "}}"
+%format EmptyEnv = "\emptyset"
+%format EmptySet = "\emptyset"
+%format Set (a) = "\{" a "\}"
+%format Sub (a) (b) = a "\subseteq " b
+
+\begin{frame}{Technicalities: Reconstruction (variables)}
+
+    \begin{code}
+        reconstruct gamma x =
+            let  (tauhat, chi) = gamma(x)
+                 e be fresh
+            in   (tauhat, e, Set (Sub chi e))
+    \end{code}
+
+\end{frame}
+
+%format UNTOUCHABLES  = "\{e_1\} \cup \{\overline{e_i}\} \cup fv\ \widehat\Gamma"
+%format RESULTINGTYPE = "\forall e_1 :: \KindEXN.\overline{\forall e_i :: \kappa_i}.\ \widehat\tau_1^{e_1} \to \widehat\tau_2^{\chi_2}"
+
+\begin{frame}{Technicalities: Reconstruction (abstractions)}
+
+    \begin{code}
+        reconstruct gamma (LAMBDA (x : tau) t) =
+            let  (tauhat_1, KindEnv i)  = complete tau EmptyEnv
+                 e_1 be fresh
+                 (tauhat_2, e_2, C_1)   = reconstruct (gamma, MapsTo x ((tauhat_1, e_1))) t
+                 X       = UNTOUCHABLES
+                 chi_2   = solve C_1 X e_2
+                 tauhat  = RESULTINGTYPE
+                 e be fresh
+            in   (tauhat, e, EmptySet)
+    \end{code}
+
+\end{frame}
+
 \begin{frame}{Technicalities: Completion}
 
     \begin{itemize}
@@ -152,6 +204,72 @@
                 \forall e_2 :: \KindEXN \Rightarrow \KindEXN.\ \forall e_3 :: \KindEXN.\\ \left(\forall e_1 :: \KindEXN.\ \ExnTyBool^{e_1} \xrightarrow{e_3} \ExnTyBool^{(e_2\ e_1)}\right) \to \ExnTyBool^{(e_4\ e_2\ e_3)}\ \&\ e_5
             \end{multline*}
         \item $e_4 :: (\KindEXN \Rightarrow \KindEXN) \Rightarrow \KindEXN \Rightarrow \KindEXN, e_5 :: \KindEXN$
+    
+    \end{itemize}
+
+\end{frame}
+
+%format INSTMATCH = "\widehat\tau_2^{\prime e_2^\prime} \to \widehat\tau^{\prime \chi^\prime}"
+
+\begin{frame}{Technicalities: Reconstruction (applications)}
+
+    \begin{code}
+        reconstruct gamma (t_1 t_2) =
+            let  (tauhat_1, e_1, C_1)  = reconstruct gamma t_1
+                 (tauhat_2, e_2, C_2)  = reconstruct gamma t_2
+                 INSTMATCH             = instantiate tauhat_1
+                 theta = Subst e_2p e_2 . match EmptyEnv tauhat_2 tauhat_2prime
+                 e be fresh
+                 C = Set (...)
+            in (tauhat, e, C)
+    \end{code}
+
+\end{frame}
+
+%format sigma = "\Sigma"
+%format kappa = "\kappa"
+%format Bool  = "\ExnTyBool"
+%format fail = "\mathbf{fail}"
+%format SUBST = "\mathbf{Subst}"
+%format Forall1 = "\forall e :: \kappa. \widehat\tau_1"
+%format Forall2 = "\forall e :: \kappa. \widehat\tau_1^\prime"
+%format Fun1 = "\widehat\tau_1^{e_1}\to \widehat\tau_2^{\chi_2}"
+%format Fun2 = "\widehat\tau_1^{e_1}\to \widehat\tau_2^{\prime (e_0\ \overline{e_j})}"
+%format MATCHRESULT = "(\overline{\lambda e_j :: \Sigma(e_j).}\ \chi_2)"
+
+\begin{frame}{Technicalities: Matching}
+
+    \begin{code}
+        match :: Env -> Ty -> Ty -> SUBST
+        match  sigma  Bool       Bool       =  Id
+        match  sigma  (Forall1)  (Forall2)  =  match (sigma, MapsTo e kappa) tauhat_1 tauhat_1p
+        match  sigma  (Fun1)     (Fun2)     =
+            Subst e_0 MATCHRESULT . match sigma tauhat_2 tauhat_2prime
+        match  sigma  _          _          =  fail
+    \end{code}
+
+\end{frame}
+
+%format Union (s) (t) = s "\cup " t
+%format Example1 = "\ExnTyBool^{e_1} \to \ExnTyBool^{(e_2\ e_1\ \cup\ e_3)}"
+%format Example2 = "\ExnTyBool^{e_1} \to \ExnTyBool^{(e_0\ e_1\ e_2\ e_3)}"
+
+\begin{frame}{Technicalities: Matching --- Example}
+
+    \begin{itemize}
+    
+         \item
+            \begin{code}
+                match [e_1::EXN, e_2::EXN=>EXN, e_3 :: EXN]
+                    (Example1) (Example2)
+            \end{code}
+            
+        \pause
+        
+        \item
+            \begin{code}
+                Subst e_0 (LAMBDA (e_1 :: EXN) (LAMBDA (e_2 :: EXN => EXN) (LAMBDA (e_3 :: EXN) (Union (e_2 e_1) (e_3))))))
+            \end{code}
     
     \end{itemize}
 
