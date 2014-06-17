@@ -38,18 +38,26 @@ debug cs fs = msg [ unlines (map f fs ++ ["\\begin{code}"] ++ cs ++ ["\\end{code
 
 -- TODO: store KindEnv, Env in the monad
 reconstruct :: Env -> KindEnv -> Expr -> FreshLog Log (ExnTy, Name, [Constr], KindEnv)
+
 reconstruct env kenv (Var x)
     = do let Just (t, exn) = lookup x env
          e <- fresh
          
-         debug [ -- FIXME
-            "reconstruct " ++ show env ++ " kenv (Var x) =",
-            "    let  (ty, exn) = env(x) = (" ++ show t ++ ", " ++ show exn ++ ")",
-            "         e_" ++ show e ++ " be fresh",
-            "    in   (ty, e_" ++ show e ++ ", exn :< e_" ++ show e ++ ")"
+         debug [
+            "reconstruct  env@" ++ lhs2tex env,
+            "             kenv@" ++ lhs2tex kenv,
+            "             e_" ++ show x,
+            "    =  let  ty & exn = env x ~> " ++ lhs2tex t ++ " & " ++ lhs2tex exn,
+            "            e_" ++ show e ++ " be fresh",
+            "       in   (ty, e_" ++ show e ++ ", Set (exn :<: e_" ++ show e ++ "),"
+                ++ "[e_" ++ show e ++ " : DenoteEnv exn kenv])",
+            "            ~> (" ++ lhs2tex t ++ ", " ++ "e_" ++ show e
+                ++ ", Set (" ++ lhs2tex exn ++ " :<: e_" ++ show e ++ "), "
+                ++ lhs2tex [(e, kindOf kenv exn)] ++ ")"
           ] ["e_" ++ show e]
 
          return (t, e, [exn :<: e], [(e, kindOf kenv exn)])
+
 reconstruct env kenv (Abs x ty tm)
     = do (t1', ExnVar exn1, kenv1) <- C.complete [] ty
          let env' = (x, (t1', ExnVar exn1)) : env
@@ -82,6 +90,7 @@ reconstruct env kenv (Abs x ty tm)
             ]
 
          return (t', e, [], [(e,EXN)])
+
 reconstruct env kenv (App e1 e2)
     = do (t1, exn1, c1, kenv1) <- reconstruct env kenv e1
          (t2, exn2, c2, kenv2) <- reconstruct env kenv e2
@@ -96,22 +105,38 @@ reconstruct env kenv (App e1 e2)
 
          return (substExnTy' subst  t', e, c
                 ,[(e, kindOf (kenv1 ++ kenv) (ExnVar exn1))] ++ kenv' ++ kenv2 ++ kenv1)
+
 reconstruct env kenv (Con b)
     = do e <- fresh
     
-         debug [ -- FIXME
-            "R-Con"
-            ] []
+         debug [
+            "reconstruct  env@" ++ lhs2tex env,
+            "             kenv@" ++ lhs2tex kenv,
+            "             " ++ show b,
+            "    =  let  e_" ++ show e ++ " be fresh",
+            "       in   (ExnBool, e_" ++ show e ++ ", EmptySet, "
+                ++ lhs2tex [(e,EXN)] ++ ")"
+          ] ["e_" ++ show e]
     
          return (ExnBool, e, [], [(e,EXN)])
+
 reconstruct env kenv (Crash lbl ty)
     = do (ty', ExnVar exn1, kenv1) <- C.complete [] ty
 
          debug [ -- FIXME
-            "R-Crash"
-            ] []
+            "reconstruct  env@" ++ lhs2tex env,
+            "             kenv@" ++ lhs2tex kenv,
+            "             bottom_" ++ lbl ++ " : " ++ lhs2tex ty,
+            "    =  let  (ty, e, kenv_1) = complete [] " ++ lhs2tex ty
+                ++ " ~> (" ++ lhs2tex ty' ++ ", e_" ++ show exn1 ++ ", "
+                ++ lhs2tex kenv1 ++ ")",
+            "       in   (ty, e, Set (Set " ++ lbl ++ " :<: e), kenv_1) ~> ("
+                ++ lhs2tex ty' ++ ", e_" ++ show exn1 ++ ", Set (Set " ++ lbl
+                ++ " :<: e_" ++ show exn1 ++ ", ), " ++ lhs2tex kenv1 ++ ")"
+          ] ["bottom_" ++ lbl]
 
          return (ty', exn1, [ExnCon lbl :<: exn1], kenv1)
+
 reconstruct env kenv (Seq e1 e2)
     = do (t1, exn1, c1, kenv1) <- reconstruct env kenv e1
          (t2, exn2, c2, kenv2) <- reconstruct env kenv e2
@@ -123,6 +148,7 @@ reconstruct env kenv (Seq e1 e2)
                   
          return (t2, e, [ExnVar exn1 :<: e, ExnVar exn2 :<: e] ++ c1 ++ c2
                 ,[(e,kindOf (kenv1 ++ kenv) (ExnVar exn1))] ++ kenv2 ++ kenv1)
+
 reconstruct env kenv (Fix e1)   -- FIXME: unknown to be sound (see notes)
     = do (t1, exn1, c1, kenv1) <- reconstruct env kenv e1
          (ExnArr t' (ExnVar exn') t'' exn'', kenv') <- instantiate t1
@@ -137,6 +163,7 @@ reconstruct env kenv (Fix e1)   -- FIXME: unknown to be sound (see notes)
 
          return (substExnTy' (subst2 <.> subst1) t', e, c
                 ,[(e,EXN)] ++ kenv' ++ kenv1)
+
 reconstruct env kenv (Nil ty)
     = do (ty', ExnVar exn1, kenv1) <- C.complete [] ty
          exn2 <- fresh
@@ -153,6 +180,7 @@ reconstruct env kenv (Nil ty)
 
          -- FIXME: not completely sure about the kind of exn2 (should be ∅)
          return (ExnList ty' (ExnVar exn1), exn2, [], [(exn2, EXN)] ++ kenv1)
+
 reconstruct env kenv (Cons e1 e2)
     = do (t1              , exn1, c1, kenv1) <- reconstruct env kenv e1
          (ExnList t2 exn2', exn2, c2, kenv2) <- reconstruct env kenv e2
@@ -169,6 +197,7 @@ reconstruct env kenv (Cons e1 e2)
             ,[ExnVar exn1 :<: ex1, exn2' :<: ex1, ExnVar exn2 :<: ex2] ++ c1 ++ c2
             ,[(ex1, kindOf (kenv1 ++ kenv) (ExnVar exn1))
              ,(ex2, kindOf (kenv2 ++ kenv) (ExnVar exn2))] ++ kenv2 ++ kenv1)
+
 reconstruct env kenv (Case e1 e2 x1 x2 e3)
     = do (ExnList t1 exn1', exn1, c1, kenv1) <- reconstruct env kenv e1
          (t2, exn2, c2, kenv2) <- reconstruct env kenv e2

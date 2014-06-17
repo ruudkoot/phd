@@ -33,3 +33,5 @@
 
 \newcommand{\ListNil}{\left[\right]}
 %format Nil (ty) = "\ListNil_{" ty "}"
+
+%format :<: = "\sqsubseteq"

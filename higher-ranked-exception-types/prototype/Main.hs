@@ -21,6 +21,7 @@ main = do
             "\\usepackage[a4paper,landscape,margin=0pt]{geometry}",
             "%include polycode.fmt",
             "%include forall.fmt",
+            "%include ../documentation/include/code.lhs2tex",
             "%include ../documentation/include/inference.lhs2tex",
             "%include ../documentation/definitions/lambda-union.lhs2tex",
             "%include ../documentation/definitions/completion.lhs2tex",
@@ -47,11 +48,14 @@ run ex =
 
 -- | Examples
 
-exs  = [ex01,ex02,ex03,ex04,ex05,ex06,ex07,ex08,ex09,ex10
+exs  = [ex00
+       ,ex01,ex02,ex03,ex04,ex05,ex06,ex07,ex08,ex09,ex10
        ,ex11,ex12,ex13,ex14,ex15,ex16,ex17,ex18,ex19,ex20
        ,ex21,ex22,ex23,ex24,ex25,ex26,ex27,ex28,ex29,ex30
        ]
 
+-- * constants
+ex00 = Con True
 -- * abstraction
 ex01 = Abs 1 Bool $ Var 1
 ex02 = Abs 1 Bool $ Abs 2 Bool $ Var 1

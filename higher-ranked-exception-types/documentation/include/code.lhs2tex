@@ -1,9 +1,16 @@
+%%%% GENERIC FORMATTING FOR LHS2TEX CODE
+
 %format EXN = "\textsc{exn}"
 
 %format LAMBDA (x) (e) = "\lambda" x "." e
 %format TYLAMBDA (x) (t) (e) = "\Lambda" x ":" t "." e
 %format -|> = "\mapsto"
 %format -\> = "\mapsto"
+
+%format ~> = "\leadsto"
+
+%format True = "\mathbf{true}"
+%format False = "\mathbf{false}"
 
 %format bottom     = "\bot"
 %format bottom_chi = "\bot_\chi"
@@ -30,3 +37,8 @@
 %format Throws (t) (e)          = t "^{" e "}"
 %format ThrowsArr (t1) (t2) (e) = t1 "\xrightarrow{" e "}" t2
 %format noexn                   = "\emptyset"
+
+%format Set (a) = "\left\{" a "\right\}"
+%format EmptySet = "\emptyset"
+
+%format DenoteEnv (t) (e) = "\llbracket " t "\rrbracket_{" e "}"
