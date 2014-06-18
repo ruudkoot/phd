@@ -4,6 +4,7 @@
 %format KindArr (k1) (k2) = "(" k1 " \KindArr " k2 ")"
 
 %format ExnVar (e)                     = "e_{" e "}"
+%format ExnCon (l)                     = l
 %format ExnApp (t1) (t2)               = "(" t1 "\ " t2 ")"
 %format ExnForall (e) (k) (t)          = "(\ExnForall{e_{" e "} :: " k "} " t ")"
 %format ExnBool                        = "\ExnTyBool"

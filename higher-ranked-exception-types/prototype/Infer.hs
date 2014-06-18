@@ -31,6 +31,9 @@ fev = concatMap (\(_, (ty, exn)) -> fevExnTy ty ++ fevExn exn)
 data Constr = Exn :<: Name
     deriving Show
 
+instance Latex Constr where
+    lhs2tex (exn :<: e) = lhs2tex exn ++ " :<: e_" ++ show e
+
 -- * Reconstruction
 
 debug cs fs = msg [ unlines (map f fs ++ ["\\begin{code}"] ++ cs ++ ["\\end{code}"])
@@ -190,18 +193,34 @@ reconstruct env kenv (Cons e1 e2)
          ex1 <- fresh
          ex2 <- fresh
 
-         debug [ -- FIXME
+         debug [
             "reconstruct  env@" ++ lhs2tex env,
             "             kenv@" ++ lhs2tex kenv,
             "             (Cons (" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2 ++ "))",
-            "    =  let  (ty_1, e_1, C_1, kenv_1)  =   reconstruct env kenv ("
+            "    =  let  (ty_1,               e_1, C_1, kenv_1)  =   reconstruct env kenv ("
                 ++ lhs2tex e1 ++ ")",
-            "                                      ~>  ...",
-            "            (ExnList ty_2 e'_2, e_2, C_2, kenv_2)  = reconstruct env kenv tm_2 ~> ",
-            "            ty = join ty_1 ty_2",
-            "            e_1 be fresh",
-            "            e_2 be fresh",
-            "       in   Y"
+            "                                                    ~>  ("
+                ++ lhs2tex t1 ++ ", e_" ++ show exn1 ++ "," ++ lhs2tex c1 ++ ","
+                ++ lhs2tex kenv1 ++ ")",
+            "            (ExnList ty_2 e'_2,  e_2, C_2, kenv_2)  =   reconstruct env kenv ("
+                ++ lhs2tex e2 ++ ")",
+            "                                                    ~>  ("
+                ++ lhs2tex t2 ++ ", e_" ++ show exn2 ++ "," ++ lhs2tex c2 ++ ","
+                ++ lhs2tex kenv2 ++ ")",
+            "            ty = join " ++ lhs2tex t1 ++ " " ++ lhs2tex t2
+                ++ " ~> " ++ lhs2tex t,
+            "            e_" ++ show ex1 ++ " be fresh",
+            "            e_" ++ show ex2 ++ " be fresh",
+            "       in   (ExnList " ++ lhs2tex t ++ " (ExnVar " ++ show ex1
+                ++ "), e_" ++ show ex2
+                ++ ", [ExnVar " ++ show exn1 ++ " :<: e_" ++ show ex1 ++ ","
+                ++ "" ++ lhs2tex exn2' ++ " :<: e_" ++ show ex1 ++ ","
+                ++ "ExnVar " ++ show exn2 ++ " :<: e_" ++ show ex2 ++ "] ++ "
+                ++ lhs2tex c1 ++ " ++ " ++ lhs2tex c2 ++ ","
+                ++ lhs2tex ([(ex1, kindOf (kenv1 ++ kenv) (ExnVar exn1))
+                            ,(ex2, kindOf (kenv2 ++ kenv) (ExnVar exn2))]
+                            ++ kenv2 ++ kenv1)
+                ++ ")"
           ] ["ty_1", "ty_2", "e_1", "e_2", "C_1", "C_2", "kenv_1", "kenv_2"]
 
          -- FIXME: not completely sure about the kind of ex1 and ex2 (should be ∅)
