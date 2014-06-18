@@ -40,7 +40,7 @@ run ex =
             "\\paragraph{Expression} \\[" ++ latex ex      ++ "\\]",
             "\\paragraph{Type}       \\[" ++ latex ty      ++ "\\]",
             "\\paragraph{Algorithm}",
-            "sd",
+            "...",
             concatMap f l,
             "\\newpage"            
          ]

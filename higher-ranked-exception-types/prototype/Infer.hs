@@ -103,7 +103,11 @@ reconstruct env kenv (App e1 e2)
          let c = [substExn' subst exn' :<: e, ExnVar exn1 :<: e] ++ c1 ++ c2
 
          debug [ -- FIXME
-            "R-App"
+            "reconstruct  env@" ++ lhs2tex env,
+            "             kenv@" ++ lhs2tex kenv,
+            "             ((" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2 ++ "))",
+            "    =  let  X",
+            "       in   Y"
             ] []
 
          return (substExnTy' subst  t', e, c
@@ -146,8 +150,20 @@ reconstruct env kenv (Seq e1 e2)
          e <- fresh
          
          debug [ -- FIXME
-            "R-Seq"
-            ] []
+            "reconstruct  env@" ++ lhs2tex env,
+            "             kenv@" ++ lhs2tex kenv,
+            "             (Seq ((" ++ lhs2tex e1 ++ ")) ((" ++ lhs2tex e2 ++ ")))",
+            "    =  let  (ty_1, e_1, C_1, kenv_1)  =   reconstruct env kenv ("
+                ++ lhs2tex e1 ++ ")",
+            "                                        ~>  (" ++ lhs2tex t1 ++ ", e_"
+                ++ show exn1 ++ "," ++ lhs2tex c1 ++ "," ++ lhs2tex kenv1 ++ ")",
+            "            (ty_2, e_2, C_2, kenv_2)  =   reconstruct env kenv ("
+                ++ lhs2tex e2 ++ ")",
+            "                                        ~>  (" ++ lhs2tex t2 ++ ", e_"
+                ++ show exn2 ++ "," ++ lhs2tex c2 ++ "," ++ lhs2tex kenv2 ++ ")",
+            "            e_" ++ show e ++ " be fresh",
+            "       in   Y"
+            ] ["ty_1", "exn_1", "C_1", "kenv_1", "ty_2", "exn_2", "C_2", "kenv_2"]
                   
          return (t2, e, [ExnVar exn1 :<: e, ExnVar exn2 :<: e] ++ c1 ++ c2
                 ,[(e,kindOf (kenv1 ++ kenv) (ExnVar exn1))] ++ kenv2 ++ kenv1)
@@ -161,7 +177,12 @@ reconstruct env kenv (Fix e1)   -- FIXME: unknown to be sound (see notes)
          let c = [substExn' (subst2 <.> subst1) exn'' :<: e] ++ c1
 
          debug [ -- FIXME
-            "R-Fix"
+            "reconstruct  env@" ++ lhs2tex env,
+            "             kenv@" ++ lhs2tex kenv,
+            "             (Fix (" ++ lhs2tex e1 ++ "))",
+            "    =  let  X",
+            "       in   Y"
+
             ] []
 
          return (substExnTy' (subst2 <.> subst1) t', e, c
@@ -240,7 +261,12 @@ reconstruct env kenv (Case e1 e2 x1 x2 e3)
                     ++ c1 ++ c2 ++ c3
 
          debug [ -- FIXME
-            "R-Case"
+            "reconstruct  env@" ++ lhs2tex env,
+            "             kenv@" ++ lhs2tex kenv,
+            "             (Case{" ++ lhs2tex e1 ++ "}{" ++ lhs2tex e2
+                ++ "}{" ++ show x1 ++ "}{" ++ show x2 ++ "}{" ++ lhs2tex e3 ++ "}",
+            "    =  let  X",
+            "       in   Y"
             ] []
 
          return (t, exn, c
