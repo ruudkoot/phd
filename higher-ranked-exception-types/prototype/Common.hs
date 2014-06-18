@@ -56,10 +56,34 @@ instance Latex Expr where
     latex (Seq e1 e2 ) = "(" ++ latex e1 ++ " seq " ++ latex e2 ++ ")"
     latex (Fix e     ) = "(fix " ++ latex e ++ ")"
     latex (Nil t     ) = "(ε:" ++ latex t ++ ")"
-    latex (Cons e1 e2) = "(" ++ latex e1 ++ "⸪" ++ latex e2 ++ ")"
+    latex (Cons e1 e2) = "(" ++ latex e1 ++ "::" ++ latex e2 ++ ")"
     latex (Case e1 e2 x1 x2 e3)
         = "(case " ++ latex e1 ++ " of { \\epsilon \\mapsto " ++ latex e2 ++ "; x_{"
-                        ++ show x1 ++ "}⸪x_{" ++ show x2 ++ "} \\mapsto " ++ latex e3 ++ "})"
+                        ++ show x1 ++ "}::x_{" ++ show x2 ++ "} \\mapsto " ++ latex e3 ++ "})"
+
+    lhs2tex (Var x     )
+        = "Var " ++ show x
+    lhs2tex (Abs x t e )
+        = "LAMBDA (t_" ++ show x ++ ") (" ++ lhs2tex t ++ ") (" ++ lhs2tex e ++ ")"
+    lhs2tex (App e1 e2 )
+        = "(" ++ lhs2tex e1 ++ " " ++ lhs2tex e2 ++ ")"
+    lhs2tex (Con True  )
+        = "True"
+    lhs2tex (Con False )
+        = "False"
+    lhs2tex (Crash l t )
+        = "Bottom (" ++ l ++ ") (" ++ lhs2tex t ++ ")"
+    lhs2tex (Seq e1 e2 )
+        = "Seq (" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2 ++ ")"
+    lhs2tex (Fix e     )
+        = "Fix (" ++ lhs2tex e ++ ")"
+    lhs2tex (Nil t     )
+        = "Nil (" ++ lhs2tex t ++ ")"
+    lhs2tex (Cons e1 e2)
+        = "Cons (" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2 ++ ")"
+    lhs2tex (Case e1 e2 x1 x2 e3)
+        = "Case (" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2 ++ ") ("
+            ++ show x1 ++ ") (" ++ show x2 ++ ") (" ++ lhs2tex e3 ++ ")"
 
 -- | Types
 

@@ -17,6 +17,11 @@
 %format bottom_E   = "\bot_\mathbf{E}"
 %format e_E        = "\{\mathbf{E}\}"
 
+%format Var (n) = "t_" n
+%format Bottom (l) (t) = "\bot^{" l "}_{" t "}"
+%format Seq (e1) (e1) = "(" e1 "\ \mathbf{seq}\ " e2 ")"
+%format Fix (e) = "(\mathbf{fix}\ " e ")"
+
 %format alpha = "\alpha"
 %format beta  = "\beta"
 %format tau   = "\tau"
@@ -31,6 +36,8 @@
 %format e_7
 %format e_8
 %format e_9
+%format e'_1 = "e^{\prime}_{1}"
+%format e'_2 = "e^{\prime}_{2}"
 
 %format throws                  = "\mathbf{throws}\xspace"
 %format #                       = "\ \cup\ "

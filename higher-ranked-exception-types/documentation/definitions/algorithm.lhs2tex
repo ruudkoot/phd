@@ -1,3 +1,5 @@
+%%%% LHS2TEX COMMANDS FOR TYPESETTING THE ALGORITHMS
+
 %format EXN               = "\KindEXN"
 %format KindArr (k1) (k2) = "(" k1 " \KindArr " k2 ")"
 
@@ -18,6 +20,12 @@
 %format reconstruct = "\Reconstruct"
 \newcommand{\Solve}{\mathbb{S}}
 %format solve = "\Solve"
+\newcommand{\Match}{\mathbb{M}}
+%format match = "\Match"
+\newcommand{\Instantiate}{\mathbb{I}}
+%format instantiate = "\Instantiate"
+\newcommand{\JOIN}{\mathbb{J}}
+%format join = "\JOIN"
 
 %format env  = "\Gamma"
 %format kenv = "\Delta"
@@ -30,8 +38,11 @@
 
 %format Bool = "\TyBool"
 
-
 \newcommand{\ListNil}{\left[\right]}
 %format Nil (ty) = "\ListNil_{" ty "}"
+\newcommand{\ListCons}[2]{#1 :: #2}
+%format Cons (e1) (e2) = "\ListCons{" e1 "}{" e2 "}"
+\newcommand{\ListCase}[5]{\mathbf{case}\ #1\ \mathbf{of}\ \left\{ \ListNil \mapsto #2; \ListCons{#3}{#4} \mapsto #5 \right\}}
+%format Case (e1) (e2) (x1) (x2) (e3) = "\ListCase{" e1 "}{" e2 "}{" x1 "}{" x2 "}{" e3 "}"
 
 %format :<: = "\sqsubseteq"

@@ -123,16 +123,16 @@ reconstruct env kenv (Con b)
 reconstruct env kenv (Crash lbl ty)
     = do (ty', ExnVar exn1, kenv1) <- C.complete [] ty
 
-         debug [ -- FIXME
+         debug [
             "reconstruct  env@" ++ lhs2tex env,
             "             kenv@" ++ lhs2tex kenv,
             "             bottom_" ++ lbl ++ " : " ++ lhs2tex ty,
-            "    =  let  (ty, e, kenv_1) = complete [] " ++ lhs2tex ty
+            "    =  let  (ty, e, kenv_1) = complete [] (" ++ lhs2tex ty ++ ")"
                 ++ " ~> (" ++ lhs2tex ty' ++ ", e_" ++ show exn1 ++ ", "
                 ++ lhs2tex kenv1 ++ ")",
             "       in   (ty, e, Set (Set " ++ lbl ++ " :<: e), kenv_1) ~> ("
                 ++ lhs2tex ty' ++ ", e_" ++ show exn1 ++ ", Set (Set " ++ lbl
-                ++ " :<: e_" ++ show exn1 ++ ", ), " ++ lhs2tex kenv1 ++ ")"
+                ++ " :<: e_" ++ show exn1 ++ "), " ++ lhs2tex kenv1 ++ ")"
           ] ["bottom_" ++ lbl]
 
          return (ty', exn1, [ExnCon lbl :<: exn1], kenv1)
@@ -167,15 +167,17 @@ reconstruct env kenv (Fix e1)   -- FIXME: unknown to be sound (see notes)
 reconstruct env kenv (Nil ty)
     = do (ty', ExnVar exn1, kenv1) <- C.complete [] ty
          exn2 <- fresh
-
-         debug [ -- FIXME
-            "reconstruct  " ++ lhs2tex env,
-            "             " ++ lhs2tex kenv,
-            "             (Nil (" ++ lhs2tex ty ++ ")) =",
-            "    let  (ty', exn_1, kenv_1)  = complete [] (" ++ show ty ++ ")",
-            "                               = (" ++ lhs2tex ty' ++ ", " ++ show exn1 ++ ", " ++ lhs2tex kenv1 ++ ")",
-            "         e_" ++ show exn2 ++ " be fresh",
-            "    in   (" ++ lhs2tex (ExnList ty' (ExnVar exn1)) ++ ", e_" ++ show exn2 ++ "[], " ++ lhs2tex ([(exn2, EXN)] ++ kenv1) ++ ")"
+         
+         debug [
+            "reconstruct  env@" ++ lhs2tex env,
+            "             kenv@" ++ lhs2tex kenv,
+            "             (Nil (" ++ lhs2tex ty ++ "))",
+            "    =  let  (ty, e, kenv_1) = complete [] (" ++ lhs2tex ty ++ ")"
+                ++ " ~> (" ++ lhs2tex ty' ++ ", e_" ++ show exn1 ++ ", "
+                ++ lhs2tex kenv1 ++ ")",
+            "            e_" ++ show exn2 ++ " be fresh",
+            "       in   (" ++ lhs2tex (ExnList ty' (ExnVar exn1)) ++ ", e_"
+                ++ show exn2 ++ ", EmptySet, " ++ lhs2tex ([(exn2, EXN)] ++ kenv1) ++ ")"
           ] ["exn_1", "kenv_1", "e_" ++ show exn2]
 
          -- FIXME: not completely sure about the kind of exn2 (should be ∅)
@@ -189,8 +191,18 @@ reconstruct env kenv (Cons e1 e2)
          ex2 <- fresh
 
          debug [ -- FIXME
-            "R-Cons"
-            ] []
+            "reconstruct  env@" ++ lhs2tex env,
+            "             kenv@" ++ lhs2tex kenv,
+            "             (Cons (" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2 ++ "))",
+            "    =  let  (ty_1, e_1, C_1, kenv_1)  =   reconstruct env kenv ("
+                ++ lhs2tex e1 ++ ")",
+            "                                      ~>  ...",
+            "            (ExnList ty_2 e'_2, e_2, C_2, kenv_2)  = reconstruct env kenv tm_2 ~> ",
+            "            ty = join ty_1 ty_2",
+            "            e_1 be fresh",
+            "            e_2 be fresh",
+            "       in   Y"
+          ] ["ty_1", "ty_2", "e_1", "e_2", "C_1", "C_2", "kenv_1", "kenv_2"]
 
          -- FIXME: not completely sure about the kind of ex1 and ex2 (should be ∅)
          return (ExnList t (ExnVar ex1), ex2
