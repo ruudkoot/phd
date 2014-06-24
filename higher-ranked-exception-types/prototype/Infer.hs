@@ -77,25 +77,35 @@ reconstruct env kenv (Abs x ty tm)
          let t' = C.forallFromEnv kenv1 (ExnArr t1' (ExnVar exn1) t2' exn2')
          e <- fresh
 
-         debug [ -- FIXME
-            "reconstruct env kenv (Abs x ty tm) =",
-            "    let  (ty'_1, exn_1, kenv_1)  = complete [] ty",
-            "                                 = (" ++ lhs2tex t1' ++ ", " ++ show exn1
-                ++ ", " ++ show kenv1 ++ ")",
-            "         (ty'_2, exn_2, C_1, kenv_2)  = reconstruct (env, " ++ show x
-                ++ " : " ++ lhs2tex t1' ++ " & " ++ show exn1
-                ++ ") (kenv1 ++ kenv) (tm)",
-            "                                      = (" ++ lhs2tex t2' ++ ", "
-                ++ show exn2 ++ ", " ++ show c1 ++ ", " ++ show kenv2 ++ ")",
-            "         v  = [exn1] ++ map fst kenv1 ++ fev env",
-            "         exn'_2  = solve (kenv1 ++ [(exn1,EXN)] ++ kenv) c1 v exn2",
-            "                 = ...",
-            "         ty'     = ...",
-            "         e be fresh",
-            "    in (,,,)"
+         debug [
+            "reconstruct  env@" ++ lhs2tex env,
+            "             kenv@" ++ lhs2tex kenv,
+            "             (LAMBDA (x_" ++ show x ++ " : " ++ lhs2tex ty ++ ") ("
+                ++ lhs2tex tm ++ "))",
+            "    =  let  (ty'_1,  e_1,       kenv_1)  =   complete [] (" ++ lhs2tex ty ++ ")"
+                ++ " ~> (" ++ lhs2tex t1' ++ ", e_" ++ show exn1 ++ ", "
+                ++ lhs2tex kenv1 ++ ")",
+            "            (ty'_2,  e_2, C_1,  kenv_2)  =   reconstruct ("
+                ++ lhs2tex [(x, (t1', ExnVar exn1))] ++ " ++ env) (kenv_1 ++ kenv) ("
+                ++ lhs2tex tm ++ ")",
+            "                                         ~>  (" ++ lhs2tex t2' ++ ", e_"
+                ++ show exn2 ++ "," ++ lhs2tex c1 ++ "," ++ lhs2tex kenv2 ++ ")",
+            "            X  =   e_" ++ show exn1 ++ ",kenv_1,fev env",
+            "               ~>  " ++ lhs2tex (map ExnVar ([exn1] ++ map fst kenv1 ++ fev env)),
+            "            chi'_2  =   solve (kenv_1 ++ " ++ lhs2tex [(exn1,EXN)]
+                ++ " ++ kenv) C_1 X e_" ++ show exn2,
+            "                    ~>  solve " ++ lhs2tex (kenv1 ++ [(exn1,EXN)] ++ kenv)
+                ++ " " ++ lhs2tex c1 ++ " " ++ lhs2tex (map ExnVar v)
+                ++ " e_" ++ show exn2,
+            "                    ~>  " ++ lhs2tex exn2',
+            "            ty'     =   " ++ lhs2tex t',
+            "            e_" ++ show e ++ " be fresh",
+            "       in   (" ++ lhs2tex t' ++ ", e_" ++ show e ++ ", [], "
+                ++ lhs2tex [(e,EXN)] ++ ")"
           ] ["ty'_1", "exn_1", "kenv_1"
             ,"ty'_2", "exn_2", "C_1", "kenv_2"
             , "exn'_2"
+            , "x_" ++ show x
             ]
 
          return (t', e, [], [(e,EXN)])
@@ -108,7 +118,7 @@ reconstruct env kenv (App e1 e2)
          e <- fresh
          let c = [substExn' subst exn' :<: e, ExnVar exn1 :<: e] ++ c1 ++ c2
 
-         debug [ -- FIXME
+         debug [
             "reconstruct  env@" ++ lhs2tex env,
             "             kenv@" ++ lhs2tex kenv,
             "             ((" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2 ++ "))",
@@ -130,7 +140,14 @@ reconstruct env kenv (App e1 e2)
             "            e_" ++ show e ++ " be fresh",
             "            C = " ++ lhs2tex [substExn' subst exn' :<: e, ExnVar exn1 :<: e]
                 ++ " ++ C_1 ++ C_2",
-            "       in   (,,,)"
+            "       in   (ApplySubst " ++ lhs2tex subst ++ " " ++ lhs2tex t' ++ ", "
+                ++ "e_" ++ show e ++ ", C, "
+                ++ "[(e, kindOf (kenv_1 ++ kenv) (ExnVar exn1))] ++ kenv' ++ kenv_2 ++ kenv_1)",
+            "                   ~>  (" ++ lhs2tex (substExnTy' subst  t') ++ ", "
+                ++ "e_" ++ show e ++ ", " ++ lhs2tex c ++ ", "
+                ++ lhs2tex ([(e, kindOf (kenv1 ++ kenv) (ExnVar exn1))]
+                    ++ kenv' ++ kenv2 ++ kenv1)
+                ++ ")"
             ] ["ty_1", "e_1", "C_1", "kenv_1", "ty_2", "e_2", "C_2", "kenv_2"
               ,"kenv'"]
 

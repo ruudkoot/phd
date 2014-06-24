@@ -24,6 +24,7 @@
 
 %format alpha = "\alpha"
 %format beta  = "\beta"
+%format chi   = "\chi"
 %format tau   = "\tau"
 %format theta = "\theta"
 
@@ -40,6 +41,8 @@
 %format e'_1 = "e^{\prime}_{1}"
 %format e'_2 = "e^{\prime}_{2}"
 
+%format chi'_2 = "\chi^\prime_{2}"
+
 %format throws                  = "\mathbf{throws}\xspace"
 %format #                       = "\ \cup\ "
 %format Throws (t) (e)          = t "^{" e "}"
@@ -50,3 +53,5 @@
 %format EmptySet = "\emptyset"
 
 %format DenoteEnv (t) (e) = "\llbracket " t "\rrbracket_{" e "}"
+
+%format ApplySubst (s) (t) = s "{}" t

@@ -13,6 +13,7 @@
 
 
 %format ExnUnion (e1) (e2)             = "(\ExnUnion{" e1 "}{" e2 "})"
+%format ExnEmpty                       = "\ExnEmpty "
 
 
 \newcommand{\Complete}{\mathbb{C}}

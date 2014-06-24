@@ -65,8 +65,8 @@ instance Latex Expr where
         = "Var " ++ show x
     lhs2tex (Abs x t e )
         = "LAMBDA (x_" ++ show x ++ ") (" ++ lhs2tex t ++ ") (" ++ lhs2tex e ++ ")"
-    lhs2tex (App e1 e2 )
-        = "(" ++ lhs2tex e1 ++ " " ++ lhs2tex e2 ++ ")"
+    lhs2tex (App e1 e2 )    -- FIXME: Use App constructor?
+        = "((" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2 ++ "))"
     lhs2tex (Con True  )
         = "True"
     lhs2tex (Con False )

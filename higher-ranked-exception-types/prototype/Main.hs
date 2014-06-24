@@ -37,8 +37,16 @@ run :: Expr -> String
 run ex =
     let ((ty, e, cs, kenv), l) = runFreshLog (reconstruct [] [] ex) 1
      in unlines [
-            "\\paragraph{Expression} \\[" ++ latex ex      ++ "\\]",
-            "\\paragraph{Type}       \\[" ++ latex ty      ++ "\\]",
+            "\\paragraph{Expression}",
+            "...",
+            "\\begin{code}",
+            lhs2tex ex,
+            "\\end{code}",
+            "\\paragraph{Type}",
+            "...",
+            "\\begin{code}",
+            lhs2tex ty,
+            "\\end{code}",
             "\\paragraph{Algorithm}",
             "...",
             concatMap f l,
