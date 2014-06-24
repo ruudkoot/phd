@@ -47,20 +47,6 @@ instance Show Expr where
                         ++ show x1 ++ "⸪x" ++ show x2 ++ " ↦ " ++ show e3 ++ "})"
                         
 instance Latex Expr where
-    latex (Var x     ) = "x_{" ++ show x ++ "}"
-    latex (Abs x t e ) = "(\\lambda x_{" ++ show x ++ "}:" ++ latex t ++ "." ++ latex e ++ ")"
-    latex (App e1 e2 ) = "(" ++ latex e1 ++ " " ++ latex e2 ++ ")"
-    latex (Con True  ) = "true"
-    latex (Con False ) = "false"
-    latex (Crash l t ) = "(⚡" ++ l ++ ":" ++ latex t ++ ")"
-    latex (Seq e1 e2 ) = "(" ++ latex e1 ++ " seq " ++ latex e2 ++ ")"
-    latex (Fix e     ) = "(fix " ++ latex e ++ ")"
-    latex (Nil t     ) = "(ε:" ++ latex t ++ ")"
-    latex (Cons e1 e2) = "(" ++ latex e1 ++ "::" ++ latex e2 ++ ")"
-    latex (Case e1 e2 x1 x2 e3)
-        = "(case " ++ latex e1 ++ " of { \\epsilon \\mapsto " ++ latex e2 ++ "; x_{"
-                        ++ show x1 ++ "}::x_{" ++ show x2 ++ "} \\mapsto " ++ latex e3 ++ "})"
-
     lhs2tex (Var x     )
         = "Var " ++ show x
     lhs2tex (Abs x t e )
@@ -94,10 +80,6 @@ data Ty
     deriving Show
     
 instance Latex Ty where
-    latex Bool        = "bool"
-    latex (t1 :-> t2) = "(" ++ latex t1 ++ " \\to " ++ latex t2 ++ ")"
-    latex (List t)    = "\\left[" ++ latex t ++ "\\right]"
-    
     lhs2tex Bool        = "Bool"
     lhs2tex (t1 :-> t2) = "(" ++ lhs2tex t1 ++ " -> " ++ lhs2tex t2 ++ ")"
     lhs2tex (List t)    = "[" ++ lhs2tex t ++ "]"
@@ -106,9 +88,6 @@ data Kind = EXN | Kind :=> Kind
     deriving (Eq, Show)
     
 instance Latex Kind where
-    latex EXN         = "EXN"
-    latex (k1 :=> k2) = latex k1 ++ " \\Rightarrow " ++ latex k2
-    
     lhs2tex EXN         = "EXN"
     lhs2tex (k1 :=> k2) = "KindArr (" ++ lhs2tex k1 ++ ") (" ++ lhs2tex k2 ++ ")"
 
@@ -169,13 +148,6 @@ instance Show Exn where
     show (ExnAbs n k e)   = "(λe" ++ show n ++ ":" ++ show k ++ "." ++ show e ++ ")"
     
 instance Latex Exn where
-    latex (ExnEmpty)       = "\\emptyset"
-    latex (ExnUnion e1 e2) = "(" ++ latex e1 ++ " \\cup " ++ latex e2 ++ ")"
-    latex (ExnCon lbl)     = "\\{" ++ lbl ++ "\\}"
-    latex (ExnVar n)       = "e_{" ++ show n ++ "}"
-    latex (ExnApp e1 e2)   = "(" ++ latex e1 ++ "\\ " ++ latex e2 ++ ")"
-    latex (ExnAbs n k e)   = "(\\lambda e_{" ++ show n ++ "}:" ++ latex k ++ "." ++ latex e ++ ")"
-    
     lhs2tex (ExnEmpty)       = "ExnEmpty"
     lhs2tex (ExnUnion e1 e2) = "ExnUnion (" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2 ++ ")"
     lhs2tex (ExnCon lbl)     = "ExnCon (" ++ show lbl ++ ")"
@@ -215,17 +187,6 @@ instance Show ExnTy where
               ++ show t2 ++ "{" ++ show exn2 ++ "})"
 
 instance Latex ExnTy where
-    latex (ExnForall e k t)
-        = "(\\forall e_{" ++ show e ++ "}::" ++ latex k ++ "." ++ latex t ++ ")"
-    latex (ExnBool)
-        = "bool"
-    latex (ExnList t exn)
-        = "[" ++ latex t ++ "{" ++ latex exn ++ "}]"
-    -- TODO: print top-level annotation on the arrow for readability
-    latex (ExnArr t1 exn1 t2 exn2)
-        = "(" ++ latex t1 ++ "{" ++ latex exn1 ++ "} \\to "
-              ++ latex t2 ++ "{" ++ latex exn2 ++ "})"
-
     lhs2tex (ExnForall e k t)
         = "(ExnForall (" ++ show e ++ ") (" ++ lhs2tex k ++ ") (" ++ lhs2tex t ++ "))"
     lhs2tex (ExnBool)

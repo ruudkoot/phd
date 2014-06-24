@@ -3,7 +3,6 @@ module Latex where
 import Data.List
 
 class Latex a where
-    latex   :: a -> String
     lhs2tex :: a -> String
 
 instance Latex a => Latex [a] where
