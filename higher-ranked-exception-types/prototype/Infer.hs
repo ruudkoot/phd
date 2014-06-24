@@ -224,10 +224,30 @@ reconstruct env kenv (Fix e1)   -- FIXME: unknown to be sound (see notes)
             "reconstruct  env@" ++ lhs2tex env,
             "             kenv@" ++ lhs2tex kenv,
             "             (Fix (" ++ lhs2tex e1 ++ "))",
-            "    =  let  X",
-            "       in   Y"
-
-            ] []
+            "    =  let  (ty_1, e_1, C_1, kenv_1)  =   reconstruct env kenv ("
+                ++ lhs2tex e1 ++ ")",
+            "                                      ~>  (" ++ lhs2tex t1 ++ ", e_"
+                ++ show exn1 ++ "," ++ lhs2tex c1 ++ "," ++ lhs2tex kenv1 ++ ")",
+            "            (ExnArr ty' e' ty'' e'', kenv')  <-  instantiate ty_1",
+            "                                             ~>  ("
+                ++ lhs2tex (ExnArr t' (ExnVar exn') t'' exn'') ++ ", "
+                ++ lhs2tex kenv' ++ ")",
+            "            theta_1  =   match [] " ++ lhs2tex t'' ++ " " ++ lhs2tex t',
+            "                     ~>  " ++ lhs2tex subst1,
+            "            theta_2  =   [(exn', substExn' subst1 exn'')]",
+            "                     ~>  " ++ lhs2tex [(exn', substExn' subst1 exn'')],
+            "            e_" ++ show e ++ " be fresh",
+            "            C = " ++ lhs2tex [substExn' (subst2 <.> subst1) exn'' :<: e]
+                ++ " ++ C_1",
+            "       in   (ApplySubst ((theta_2 <.> theta_1)) ty'), e_" ++ show e
+                ++ ", C, [(e_" ++ show e ++ ",EXN)] ++ kenv' ++ kenv_1)",
+            "            ~> (ApplySubst (" ++ lhs2tex (subst2 <.> subst1) ++ ") ("
+                ++ lhs2tex t' ++ "), e_" ++ show e ++ "," ++ lhs2tex c ++ ","
+                ++ lhs2tex ([(e,EXN)] ++ kenv' ++ kenv1) ++ ")",
+            "            ~> (" ++ lhs2tex (substExnTy' (subst2 <.> subst1) t')
+                ++ ", e_" ++ show e ++ "," ++ lhs2tex c ++ ","
+                ++ lhs2tex ([(e,EXN)] ++ kenv' ++ kenv1) ++ ")"
+            ] ["theta_1", "theta_2"]
 
          return (substExnTy' (subst2 <.> subst1) t', e, c
                 ,[(e,EXN)] ++ kenv' ++ kenv1)

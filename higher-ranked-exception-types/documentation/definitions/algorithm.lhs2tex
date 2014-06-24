@@ -6,6 +6,7 @@
 %format ExnVar (e)                     = "e_{" e "}"
 %format ExnCon (l)                     = l
 %format ExnApp (t1) (t2)               = "(" t1 "\ " t2 ")"
+%format ExnAbs (e) (k) (t)             = "(\lambda e_" e " :: " k "." t ")"
 %format ExnForall (e) (k) (t)          = "(\ExnForall{e_{" e "} :: " k "} " t ")"
 %format ExnBool                        = "\ExnTyBool"
 %format ExnList (t) (exn)              = "\ExnTyList{" t "}{" exn "}"
@@ -34,6 +35,7 @@
 
 %format ty   = "\ExnTy"
 %format ty'  = "\ExnTy^{\prime}"
+%format ty'' = "\ExnTy^{\prime\prime}"
 %format exn  = "\Exn"
 %format exn' = "\Exn^{\prime}"
 

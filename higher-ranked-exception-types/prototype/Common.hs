@@ -227,15 +227,15 @@ instance Latex ExnTy where
               ++ latex t2 ++ "{" ++ latex exn2 ++ "})"
 
     lhs2tex (ExnForall e k t)
-        = "ExnForall (" ++ show e ++ ") (" ++ lhs2tex k ++ ") (" ++ lhs2tex t ++ ")"
+        = "(ExnForall (" ++ show e ++ ") (" ++ lhs2tex k ++ ") (" ++ lhs2tex t ++ "))"
     lhs2tex (ExnBool)
         = "ExnBool"
     lhs2tex (ExnList t exn)
-        = "ExnList (" ++ lhs2tex t ++ ") (" ++ lhs2tex exn ++ ")"
+        = "(ExnList (" ++ lhs2tex t ++ ") (" ++ lhs2tex exn ++ "))"
     -- TODO: print top-level annotation on the arrow for readability
     lhs2tex (ExnArr t1 exn1 t2 exn2)
-        = "ExnArr (" ++ lhs2tex t1 ++ ") (" ++ lhs2tex exn1 ++ ") ("
-              ++ lhs2tex t2 ++ ") (" ++ lhs2tex exn2 ++ ")"
+        = "(ExnArr (" ++ lhs2tex t1 ++ ") (" ++ lhs2tex exn1 ++ ") ("
+              ++ lhs2tex t2 ++ ") (" ++ lhs2tex exn2 ++ "))"
 
 
 -- | Free exception variables

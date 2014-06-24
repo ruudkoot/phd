@@ -38,6 +38,16 @@
 %format e_7
 %format e_8
 %format e_9
+%format e_10
+%format e_11
+%format e_12
+%format e_13
+%format e_14
+%format e_15
+%format e_16
+%format e_17
+%format e_18
+%format e_19
 %format e'_1 = "e^{\prime}_{1}"
 %format e'_2 = "e^{\prime}_{2}"
 

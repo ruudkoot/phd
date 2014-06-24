@@ -15,7 +15,7 @@
 \newcommand{\TyList}[1]{\left[#1\right]}
 \newcommand{\TyArr}[2]{#1 \to #2}
 
-\newcommand{\Throws}[2]{#1\ \mathbf{throws}\ #2}
+\newcommand{\Throws}[2]{#1\ \mathbf{tw}\ #2}    %%%%%%%%%%%%% WHICH TO USE?
 \newcommand{\ExnTy}{\widehat\tau}
 %\newcommand{\ExnTyBool}{\widehat{\mathrm{bool}}}
 \newcommand{\ExnTyBool}{\mathrm{b\widehat{oo}l}}
@@ -38,3 +38,4 @@
 
 % Judgements
 \newcommand{\JudgeComplete}[5]{{#1 \vdash #2 : #3\ \&\ #4 \triangleright #5}}
+
