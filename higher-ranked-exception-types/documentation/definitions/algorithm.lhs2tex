@@ -36,7 +36,6 @@
 %format exn  = "\Exn"
 %format exn' = "\Exn^{\prime}"
 
-
 %format Bool = "\TyBool"
 
 \newcommand{\ListNil}{\left[\right]}
@@ -46,4 +45,5 @@
 \newcommand{\ListCase}[5]{\mathbf{case}\ #1\ \mathbf{of}\ \left\{ \ListNil \mapsto #2; \ListCons{#3}{#4} \mapsto #5 \right\}}
 %format Case (e1) (e2) (x1) (x2) (e3) = "\ListCase{" e1 "}{" e2 "}{" x1 "}{" x2 "}{" e3 "}"
 
+%format <.> = " \circ "
 %format :<: = "\sqsubseteq"

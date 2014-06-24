@@ -64,7 +64,7 @@ instance Latex Expr where
     lhs2tex (Var x     )
         = "Var " ++ show x
     lhs2tex (Abs x t e )
-        = "LAMBDA (t_" ++ show x ++ ") (" ++ lhs2tex t ++ ") (" ++ lhs2tex e ++ ")"
+        = "LAMBDA (x_" ++ show x ++ ") (" ++ lhs2tex t ++ ") (" ++ lhs2tex e ++ ")"
     lhs2tex (App e1 e2 )
         = "(" ++ lhs2tex e1 ++ " " ++ lhs2tex e2 ++ ")"
     lhs2tex (Con True  )
@@ -82,8 +82,8 @@ instance Latex Expr where
     lhs2tex (Cons e1 e2)
         = "Cons (" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2 ++ ")"
     lhs2tex (Case e1 e2 x1 x2 e3)
-        = "Case (" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2 ++ ") ("
-            ++ show x1 ++ ") (" ++ show x2 ++ ") (" ++ lhs2tex e3 ++ ")"
+        = "Case (" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2 ++ ") (x_"
+            ++ show x1 ++ ") (x_" ++ show x2 ++ ") (" ++ lhs2tex e3 ++ ")"
 
 -- | Types
 

@@ -4,10 +4,10 @@
 
 %format LAMBDA (x) (e) = "\lambda" x "." e
 %format TYLAMBDA (x) (t) (e) = "\Lambda" x ":" t "." e
-%format -|> = "\mapsto"
-%format -\> = "\mapsto"
+%format -|> = "\mapsto "
+%format -\> = "\mapsto "
 
-%format ~> = "\leadsto"
+%format ~> = "\leadsto "
 
 %format True = "\mathbf{true}"
 %format False = "\mathbf{false}"
@@ -17,7 +17,7 @@
 %format bottom_E   = "\bot_\mathbf{E}"
 %format e_E        = "\{\mathbf{E}\}"
 
-%format Var (n) = "t_" n
+%format Var (n) = "x_" n
 %format Bottom (l) (t) = "\bot^{" l "}_{" t "}"
 %format Seq (e1) (e1) = "(" e1 "\ \mathbf{seq}\ " e2 ")"
 %format Fix (e) = "(\mathbf{fix}\ " e ")"
@@ -25,6 +25,7 @@
 %format alpha = "\alpha"
 %format beta  = "\beta"
 %format tau   = "\tau"
+%format theta = "\theta"
 
 %format e_0
 %format e_1

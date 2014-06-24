@@ -34,6 +34,12 @@ data Constr = Exn :<: Name
 instance Latex Constr where
     lhs2tex (exn :<: e) = lhs2tex exn ++ " :<: e_" ++ show e
 
+-- * Substitutions
+
+instance Latex (Name, Exn) where
+    lhs2tex (show -> e, lhs2tex -> exn)
+        = "e_" ++ e ++ " -|> " ++ exn
+
 -- * Reconstruction
 
 debug cs fs = msg [ unlines (map f fs ++ ["\\begin{code}"] ++ cs ++ ["\\end{code}"])
@@ -98,7 +104,7 @@ reconstruct env kenv (App e1 e2)
     = do (t1, exn1, c1, kenv1) <- reconstruct env kenv e1
          (t2, exn2, c2, kenv2) <- reconstruct env kenv e2
          (ExnArr t2' (ExnVar exn2') t' exn', kenv') <- instantiate t1
-         let subst = [(exn2', ExnVar exn2)] <.> merge [] t2 t2'
+         let subst = [(exn2', ExnVar exn2)] <.> match [] t2 t2'
          e <- fresh
          let c = [substExn' subst exn' :<: e, ExnVar exn1 :<: e] ++ c1 ++ c2
 
@@ -106,9 +112,27 @@ reconstruct env kenv (App e1 e2)
             "reconstruct  env@" ++ lhs2tex env,
             "             kenv@" ++ lhs2tex kenv,
             "             ((" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2 ++ "))",
-            "    =  let  X",
-            "       in   Y"
-            ] []
+            "    =  let  (ty_1, e_1, C_1, kenv_1)  =   reconstruct env kenv ("
+                ++ lhs2tex e1 ++ ")",
+            "                                        ~>  (" ++ lhs2tex t1 ++ ", e_"
+                ++ show exn1 ++ "," ++ lhs2tex c1 ++ "," ++ lhs2tex kenv1 ++ ")",
+            "            (ty_2, e_2, C_2, kenv_2)  =   reconstruct env kenv ("
+                ++ lhs2tex e2 ++ ")",
+            "                                        ~>  (" ++ lhs2tex t2 ++ ", e_"
+                ++ show exn2 ++ "," ++ lhs2tex c2 ++ "," ++ lhs2tex kenv2 ++ ")",
+            "            (ExnArr ty'_2 e'_2 ty' e', kenv')  <- instantiate ty_1",
+            "                                                        ~> ("
+                ++ lhs2tex (ExnArr t2' (ExnVar exn2') t' exn') ++ ", "
+                ++ lhs2tex kenv' ++ ")",
+            "            theta  =   " ++ lhs2tex [(exn2', ExnVar exn2)]
+                ++ " <.> match [] " ++ lhs2tex t2 ++ " " ++ lhs2tex t2',
+            "                   ~>  " ++ lhs2tex subst,
+            "            e_" ++ show e ++ " be fresh",
+            "            C = " ++ lhs2tex [substExn' subst exn' :<: e, ExnVar exn1 :<: e]
+                ++ " ++ C_1 ++ C_2",
+            "       in   (,,,)"
+            ] ["ty_1", "e_1", "C_1", "kenv_1", "ty_2", "e_2", "C_2", "kenv_2"
+              ,"kenv'"]
 
          return (substExnTy' subst  t', e, c
                 ,[(e, kindOf (kenv1 ++ kenv) (ExnVar exn1))] ++ kenv' ++ kenv2 ++ kenv1)
@@ -149,7 +173,7 @@ reconstruct env kenv (Seq e1 e2)
          (t2, exn2, c2, kenv2) <- reconstruct env kenv e2
          e <- fresh
          
-         debug [ -- FIXME
+         debug [
             "reconstruct  env@" ++ lhs2tex env,
             "             kenv@" ++ lhs2tex kenv,
             "             (Seq ((" ++ lhs2tex e1 ++ ")) ((" ++ lhs2tex e2 ++ ")))",
@@ -162,7 +186,10 @@ reconstruct env kenv (Seq e1 e2)
             "                                        ~>  (" ++ lhs2tex t2 ++ ", e_"
                 ++ show exn2 ++ "," ++ lhs2tex c2 ++ "," ++ lhs2tex kenv2 ++ ")",
             "            e_" ++ show e ++ " be fresh",
-            "       in   Y"
+            "       in   ~> (" ++ lhs2tex t2 ++ ", e_" ++ show e ++ ", "
+                ++ lhs2tex [ExnVar exn1 :<: e, ExnVar exn2 :<: e] ++ " ++ C_1 ++ C_2, "
+                ++ lhs2tex ([(e,kindOf (kenv1 ++ kenv) (ExnVar exn1))] ++ kenv2 ++ kenv1)
+                ++ ")"
             ] ["ty_1", "exn_1", "C_1", "kenv_1", "ty_2", "exn_2", "C_2", "kenv_2"]
                   
          return (t2, e, [ExnVar exn1 :<: e, ExnVar exn2 :<: e] ++ c1 ++ c2
@@ -171,7 +198,7 @@ reconstruct env kenv (Seq e1 e2)
 reconstruct env kenv (Fix e1)   -- FIXME: unknown to be sound (see notes)
     = do (t1, exn1, c1, kenv1) <- reconstruct env kenv e1
          (ExnArr t' (ExnVar exn') t'' exn'', kenv') <- instantiate t1
-         let subst1 = merge [] t'' t'
+         let subst1 = match [] t'' t'
          let subst2 = [(exn', substExn' subst1 exn'')]
          e <- fresh
          let c = [substExn' (subst2 <.> subst1) exn'' :<: e] ++ c1
@@ -226,8 +253,8 @@ reconstruct env kenv (Cons e1 e2)
             "            (ExnList ty_2 e'_2,  e_2, C_2, kenv_2)  =   reconstruct env kenv ("
                 ++ lhs2tex e2 ++ ")",
             "                                                    ~>  ("
-                ++ lhs2tex t2 ++ ", e_" ++ show exn2 ++ "," ++ lhs2tex c2 ++ ","
-                ++ lhs2tex kenv2 ++ ")",
+                ++ lhs2tex (ExnList t2 exn2') ++ ", e_" ++ show exn2 ++ ","
+                ++ lhs2tex c2 ++ "," ++ lhs2tex kenv2 ++ ")",
             "            ty = join " ++ lhs2tex t1 ++ " " ++ lhs2tex t2
                 ++ " ~> " ++ lhs2tex t,
             "            e_" ++ show ex1 ++ " be fresh",
@@ -260,14 +287,35 @@ reconstruct env kenv (Case e1 e2 x1 x2 e3)
          let c = [ExnVar exn1 :<: exn, ExnVar exn2 :<: exn, ExnVar exn3 :<: exn]
                     ++ c1 ++ c2 ++ c3
 
-         debug [ -- FIXME
+         debug [
             "reconstruct  env@" ++ lhs2tex env,
             "             kenv@" ++ lhs2tex kenv,
-            "             (Case{" ++ lhs2tex e1 ++ "}{" ++ lhs2tex e2
-                ++ "}{" ++ show x1 ++ "}{" ++ show x2 ++ "}{" ++ lhs2tex e3 ++ "}",
-            "    =  let  X",
-            "       in   Y"
-            ] []
+            "             (Case (" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2
+                ++ ") (x_" ++ show x1 ++ ") (x_" ++ show x2 ++ ") (" ++ lhs2tex e3 ++ "))",
+            "    =  let  (ExnList ty_1 e'_1,  e_1, C_1, kenv_1)  =   reconstruct env kenv ("
+                ++ lhs2tex e1 ++ ")",
+            "                                                    ~>  ("
+                ++ lhs2tex (ExnList t1 exn1') ++ ", e_" ++ show exn1 ++ ","
+                ++ lhs2tex c1 ++ "," ++ lhs2tex kenv1 ++ ")",
+            "            (ty_2,               e_2, C_2, kenv_2)  =   reconstruct env kenv ("
+                ++ lhs2tex e2 ++ ")",
+            "                                                    ~>  ("
+                ++ lhs2tex t2 ++ ", e_" ++ show exn2 ++ "," ++ lhs2tex c2 ++ ","
+                ++ lhs2tex kenv2 ++ ")",
+            "            (ty_3,               e_3, C_3, kenv_3)  =   reconstruct "
+                ++ lhs2tex ((x1, (t1, exn1')) : (x2, (ExnList t1 exn1', ExnVar exn1)) : env) ++ " " ++ lhs2tex (kenv1 ++ kenv) ++ lhs2tex e3,
+            "                                                    ~> ("
+                ++ lhs2tex t3 ++ ", e_" ++ show exn3 ++ ", " ++lhs2tex c3 ++ ","
+                ++ lhs2tex kenv3 ++ ")",
+            "            ty  = join ty_2 ty_3 ~> " ++ lhs2tex t,
+            "            e_" ++ show exn ++ "  be fresh",
+            "            C   = " ++ lhs2tex [ExnVar exn1 :<: exn, ExnVar exn2 :<: exn, ExnVar exn3 :<: exn] ++ " ++ C_1 ++ C_2 ++ C_3",
+            "       in   (" ++ lhs2tex t ++ ", e_" ++ show exn ++ "," ++ lhs2tex c
+                ++ ", " ++ lhs2tex ([(exn, kindOf (kenv1 ++ kenv) (ExnVar exn1))]
+                ++ kenv3 ++ kenv2 ++ kenv1) ++ ")"
+            ] ["x_" ++ show x1, "x_" ++ show x2
+              ,"ty_3", "e_3", "C_3", "kenv_3"
+              ]
 
          return (t, exn, c
                 ,[(exn, kindOf (kenv1 ++ kenv) (ExnVar exn1))]
@@ -310,26 +358,26 @@ join (ExnArr t1 (ExnVar exn1) t2 exn2) (ExnArr t1' (ExnVar exn1') t2' exn2')
 join t t'
     = error $ "join: t = " ++ show t ++ "; t' = " ++ show t'
 
--- * Merge / match
+-- * Match (merge, meet)
 
-merge :: KindEnv -> ExnTy -> ExnTy -> Subst
-merge env (ExnBool) (ExnBool)
+match :: KindEnv -> ExnTy -> ExnTy -> Subst
+match env (ExnBool) (ExnBool)
     = []
-merge env (ExnForall e k t) (ExnForall e' k' t')
-    | k == k'   = merge ((e,k) : env) t (substExnTy e' e t')
-    | otherwise = error "merge: kind mismatch"
+match env (ExnForall e k t) (ExnForall e' k' t')
+    | k == k'   = match ((e,k) : env) t (substExnTy e' e t')
+    | otherwise = error "match: kind mismatch"
 -- FIXME: correct definition for lists?
-merge env (ExnList t exn) (ExnList t' exn')
+match env (ExnList t exn) (ExnList t' exn')
     = let (e, es) = deapply exn'
-       in [(e, reapply env es exn)] <.> merge env t t'
-merge env t@(ExnArr t1 (ExnVar exn1) t2 exn2) t'@(ExnArr t1' (ExnVar exn1') t2' exn2')
+       in [(e, reapply env es exn)] <.> match env t t'
+match env t@(ExnArr t1 (ExnVar exn1) t2 exn2) t'@(ExnArr t1' (ExnVar exn1') t2' exn2')
     | exnTyEq env t1 t1', exn1 == exn1'
         = let (e, es) = deapply exn2'
-           in [(e, reapply env es exn2)] <.> merge env t2 t2'
-    | otherwise = error $ "merge: function space (t = "   ++ show t
+           in [(e, reapply env es exn2)] <.> match env t2 t2'
+    | otherwise = error $ "match: function space (t = "   ++ show t
                           ++ "; t' = "  ++ show t' ++ "; env = " ++ show env
-merge env t t'
-    = error $ "merge: t = " ++ show t ++ "; t' = " ++ show t' ++ "; env = " ++ show env
+match env t t'
+    = error $ "match: t = " ++ show t ++ "; t' = " ++ show t' ++ "; env = " ++ show env
     
 -- NOTE: here the fully-appliedness and left-to-rightness comes into play
 -- TODO: check this restriction in never violated
