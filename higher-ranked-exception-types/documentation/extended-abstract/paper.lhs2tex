@@ -1,0 +1,48 @@
+\documentclass[authoryear,nocopyrightspace]{sigplanconf}
+
+% FIXME: postal address; research advisor's name; ACM student member number (1602867); category (undergraduate or graduate); research title;
+
+\usepackage{newtxtext,newtxmath}        % Times New Roman (text + math)
+%\usepackage{mathpazo}                  % Palatino        (text + math)
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+
+\begin{document}
+
+\conferenceinfo{ICFP '14 SRC}{September 1--3, 2014, Gothenburg, Sweden.}
+\copyrightyear{2014}
+\copyrightdata{[to be supplied]} 
+
+\titlebanner{DRAFT---Do not distribute}
+\preprintfooter{Submitted to ICFP '14}
+
+\title{Higher-Ranked Exception Types}
+\subtitle{(Extended abstract of work-in-progress)}
+
+\authorinfo{Ruud Koot\thanks{This material is based upon work supported by the Netherlands Organisation for Scientific Research (NWO).}}
+{Department of Computing and Information Sciences\\Utrecht University}
+{r.koot@@uu.nl}
+
+\maketitle
+
+\section{Motivation}
+
+\section{Related Work}
+
+\section{Approach}
+
+\section{Results}
+
+%%% Bibliography
+
+\nocite{Holdermans:2010:PFA:1863543.1863554}
+\nocite{LIX-RR-96-09}
+\nocite{Tannen}
+\nocite{Wright}
+
+\bibliographystyle{abbrvnat}
+\bibliography{../higher-ranked-exception-types}
+
+\end{document}
