@@ -18,7 +18,7 @@ main :: IO ()
 main = do
     putStrLn $ unlines [
             "\\documentclass[fullpage]{article}",
-            "\\usepackage[a4paper,landscape,margin=0pt]{geometry}",
+            "\\usepackage[a4paper,landscape,margin=12pt]{geometry}",
             "%include polycode.fmt",
             "%include forall.fmt",
             "%include ../documentation/include/code.lhs2tex",

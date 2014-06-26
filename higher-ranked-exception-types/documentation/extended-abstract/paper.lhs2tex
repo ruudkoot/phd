@@ -1,13 +1,24 @@
 \documentclass[authoryear,nocopyrightspace]{sigplanconf}
 
-% FIXME: postal address; research advisor's name; ACM student member number (1602867); category (undergraduate or graduate); research title;
+% FIXME: research advisor's name; ACM student member number (1602867); category (undergraduate or graduate);
 
 \usepackage{newtxtext,newtxmath}        % Times New Roman (text + math)
 %\usepackage{mathpazo}                  % Palatino        (text + math)
 
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{mathtools}
 \usepackage{graphicx}
+\usepackage{xspace}
+
+%include polycode.fmt
+%include forall.fmt
+
+%include ../include/inference.lhs2tex
+%include ../include/code.lhs2tex
+%include ../definitions/intermezzo.lhs2tex
+%include ../definitions/lambda-union.lhs2tex
+%include ../definitions/completion.lhs2tex
 
 \begin{document}
 
@@ -22,12 +33,12 @@
 \subtitle{(Extended abstract of work-in-progress)}
 
 \authorinfo{Ruud Koot\thanks{This material is based upon work supported by the Netherlands Organisation for Scientific Research (NWO).}}
-{Department of Computing and Information Sciences\\Utrecht University}
+{Department of Computing and Information Sciences\\Princetonplein 5, 3584 CC, Utrecht\\ Utrecht University}
 {r.koot@@uu.nl}
 
 \maketitle
 
-\section{Motivation}
+%include section/motivation.lhs2tex
 
 \section{Related Work}
 
