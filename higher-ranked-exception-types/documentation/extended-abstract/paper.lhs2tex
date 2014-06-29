@@ -1,7 +1,5 @@
 \documentclass[authoryear,nocopyrightspace]{sigplanconf}
 
-% FIXME: research advisor's name; ACM student member number (1602867); category (undergraduate or graduate);
-
 \usepackage{newtxtext,newtxmath}        % Times New Roman (text + math)
 %\usepackage{mathpazo}                  % Palatino        (text + math)
 
@@ -39,12 +37,11 @@
 \maketitle
 
 %include section/motivation.lhs2tex
+%include section/approach.lhs2tex
 
-\section{Related Work}
+% \section{Results}
 
-\section{Approach}
-
-\section{Results}
+\newpage
 
 %%% Bibliography
 
@@ -55,5 +52,19 @@
 
 \bibliographystyle{abbrvnat}
 \bibliography{../higher-ranked-exception-types}
+
+\appendix
+
+\section{Requested Information}
+
+    \begin{description}
+    
+        \item[Research advisor] Jurriaan Hage (\texttt{j.hage@@uu.nl})
+    
+        \item[ACM member number] 1602867
+        
+        \item[Category] Graduate
+    
+    \end{description}
 
 \end{document}

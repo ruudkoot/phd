@@ -1,0 +1,44 @@
+\section{Approach and Related Work}
+
+Due to their syntactic weight, higher-ranked exception types only seem useful if they can be inferred automatically. Unlike for Hindley--Milner, type inference is undecidable in System $F_\omega$. However, the exception types are annotations piggybacking on top an underlying type system. \citet{Holdermans:2010:PFA:1863543.1863554} show that type inference is decidable for a higher-ranked annotated type system with type operators performing control-flow analysis.
+
+Their analysis proceeds in three stages:
+
+    \begin{enumerate}
+    
+        \item Hindley--Milner type inference is used to generate a fully type-annotated syntax tree.
+        
+        \item An Algorithm $\mathcal{W}$-derived method is used to infer the control-flow types. The infered types are ``completions'' of the underlying types: they have the same (type contructor) shape as the underlying types, but have a maximal number of quantifiers and type operators with a maximal number of arguments placed where possible; together with a set of set-inclusion constraints between type variables expressing the control-flow.
+        
+        \item The generated constraints are solved using a fixed-point iteration.
+    
+    \end{enumerate}
+
+To adapt their approach for our purposes a number of problems needs to be overcome:
+
+    \begin{enumerate}
+
+        \item During the constraint-solving phase of the algorithm equality between types needs to be decided to determine whether a fixed-point has been reached or not. As types in System $F_\omega$ are terms in the simply typed $\lambda$-calculus, a number of $\beta$-reduction steps may need to be performed to bring them into normal form. Additionally, the set-inclusion constraints introduce ACI1 equalities between the terms. The authors have axiomatized these equalities, but do not give a concrete procedure for deciding equality. We wish to use a general result by \citet{Tannen} to show the combination of these two systems gives rise to a normalizing and confluent rewrite system that can indeed be used to decide equality.
+        
+        \item Haskell has an \emph{imprecise exception semantics} that is necessary to validate a number of program transformations applied by optimizing compilers, such as the case-switching transformation:
+        
+                %format e_i
+                \begin{code}
+                forall e_i.  if e_1 then
+                                 if  e_2  then  e_3  else  e_4
+                             else
+                                 if  e_2  then  e_5  else  e_6 ==  if e_2 then
+                                                                       if e_1  then  e_3  else  e_5
+                                                                   else
+                                                                       if e_1  then  e_4  else  e_6
+                \end{code}
+    
+            (Note that this transformation does not hold if we have observable exceptions and track them precisely: as a counterexample, take $e_1 = \bot_\mathbf{E_1}$ and $e_2 = \bot_\mathbf{E_2}$.)
+            
+            The imprecise exception semantics states that if evaluating the condition of a |case|- or |if-then-else|-expression raises an exception, then it is also admissible to raise an exception that would have been been raised by evaluating any of the consequents. A similar rule applies when applying an argument to an exceptional function value.
+            
+            While it would be sound to assume any conditional can always raise an exception when evaluated, this assumption would negate any additional precision gained by the higher-ranked types and more. Set-inclusion constraints do not allow us to adequately express the imprecise exception semantics. In an earlier approach we tried extending the set-inclusion constraints with conditionals, but the procedure deciding constraint entailment turned out to be rather \emph{ad hoc} and unsatisfactory and introduced an additional level of approximation in order to retain termination.
+            
+            Instead we propose moving from a constraint-based inference algorithm to one employing equational unification. In particular the equational theory of Boolean rings \cite{Wright,LIX-RR-96-09} seems sufficiently expressive and has many desirable properties: unification is decidable and a most general unifier exists; there are confluent and normalizing rewrite systems to reduce terms into a normal form.
+            
+    \end{enumerate}
