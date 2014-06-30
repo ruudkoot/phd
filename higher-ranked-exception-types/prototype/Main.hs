@@ -45,7 +45,18 @@ run ex =
             "\\paragraph{Type}",
             "...",
             "\\begin{code}",
-            lhs2tex ty,
+            lhs2tex ty ++ " & e_" ++ show e,
+            -- TODO: also show solved type and effect
+            "\\end{code}",
+            "\\paragraph{Constraints}",
+            "...",
+            "\\begin{code}",
+            lhs2tex cs,
+            "\\end{code}",
+            "\\paragraph{Exception kinds}",
+            "...",
+            "\\begin{code}",
+            lhs2tex kenv,
             "\\end{code}",
             "\\paragraph{Algorithm}",
             "...",
@@ -57,7 +68,7 @@ run ex =
 -- | Examples
 
 exs  = [ex00
-       ,ex01,ex02,ex03,ex04,ex05,ex06,ex07,ex08,ex09,ex10
+       ,ex01,ex02,ex03,ex04,ex05,ex06,     ex08,ex09,ex10
        ,ex11,ex12,ex13,ex14,ex15,ex16,ex17,ex18,ex19,ex20
        ,ex21,ex22,ex23,ex24,ex25,ex26,ex27,ex28,ex29,ex30
        ]
@@ -73,7 +84,7 @@ ex04 = Abs 1 (Bool :-> Bool) $ Abs 2 Bool $ App (Var 1) (Var 2)
 -- * crash
 ex05 = Crash "foo" Bool
 ex06 = Crash "foo" (Bool :-> Bool)
-ex07 = App (Crash "foo" (Bool :-> Bool)) (Crash "bar" Bool)
+-- ex07 = -- was a duplicate of ex09
 ex08 = App (Abs 1 Bool (Var 1)) (Crash "foo" Bool)
 -- ex09: (bool,8,[e2 :<: 4,{foo} :<: 4,e5 :<: 6,{bar} :<: 6,(e3 e6) :<: 8,e4 :<: 8])
 --       not that e3 is by default set to {}, so we lose e6 = {bar}. also see ex11.

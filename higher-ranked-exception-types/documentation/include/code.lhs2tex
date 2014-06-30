@@ -19,7 +19,7 @@
 
 %format Var (n) = "x_" n
 %format Bottom (l) (t) = "\bot^{" l "}_{" t "}"
-%format Seq (e1) (e1) = "(" e1 "\ \mathbf{seq}\ " e2 ")"
+%format Seq (e1) (e2) = "(" e1 "\ \mathbf{seq}\ " e2 ")"
 %format Fix (e) = "(\mathbf{fix}\ " e ")"
 
 %format alpha = "\alpha"
@@ -50,6 +50,17 @@
 %format e_19
 %format e'_1 = "e^{\prime}_{1}"
 %format e'_2 = "e^{\prime}_{2}"
+
+%format x_0
+%format x_1
+%format x_2
+%format x_3
+%format x_4
+%format x_5
+%format x_6
+%format x_7
+%format x_8
+%format x_9
 
 %format chi'_2 = "\chi^\prime_{2}"
 
