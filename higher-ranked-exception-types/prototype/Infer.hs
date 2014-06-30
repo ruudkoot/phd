@@ -124,11 +124,11 @@ reconstruct env kenv (App e1 e2)
             "             ((" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2 ++ "))",
             "    =  let  (ty_1, e_1, C_1, kenv_1)  =   reconstruct env kenv ("
                 ++ lhs2tex e1 ++ ")",
-            "                                        ~>  (" ++ lhs2tex t1 ++ ", e_"
+            "                                      ~>  (" ++ lhs2tex t1 ++ ", e_"
                 ++ show exn1 ++ "," ++ lhs2tex c1 ++ "," ++ lhs2tex kenv1 ++ ")",
             "            (ty_2, e_2, C_2, kenv_2)  =   reconstruct env kenv ("
                 ++ lhs2tex e2 ++ ")",
-            "                                        ~>  (" ++ lhs2tex t2 ++ ", e_"
+            "                                      ~>  (" ++ lhs2tex t2 ++ ", e_"
                 ++ show exn2 ++ "," ++ lhs2tex c2 ++ "," ++ lhs2tex kenv2 ++ ")",
             "            (ExnArr ty'_2 e'_2 ty' e', kenv')  <- instantiate ty_1",
             "                                                        ~> ("

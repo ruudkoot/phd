@@ -36,6 +36,7 @@ main = do
 run :: Expr -> String
 run ex =
     let ((ty, e, cs, kenv), l) = runFreshLog (reconstruct [] [] ex) 1
+        exn                    = solve kenv cs [] e 
      in unlines [
             "\\paragraph{Expression}",
             "...",
@@ -45,8 +46,8 @@ run ex =
             "\\paragraph{Type}",
             "...",
             "\\begin{code}",
-            lhs2tex ty ++ " & e_" ++ show e,
-            -- TODO: also show solved type and effect
+            lhs2tex ty ++ " & e_" ++ show e ++ " ~> " ++ lhs2tex exn,
+            -- FIXME: is the type already completely solved and reduced?
             "\\end{code}",
             "\\paragraph{Constraints}",
             "...",
