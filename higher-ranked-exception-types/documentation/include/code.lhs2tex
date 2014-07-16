@@ -1,18 +1,32 @@
+%%%% GENERIC FORMATTING FOR LHS2TEX CODE
+
 %format EXN = "\textsc{exn}"
 
 %format LAMBDA (x) (e) = "\lambda" x "." e
 %format TYLAMBDA (x) (t) (e) = "\Lambda" x ":" t "." e
-%format -|> = "\mapsto"
-%format -\> = "\mapsto"
+%format -|> = "\mapsto "
+%format -\> = "\mapsto "
+
+%format ~> = "\leadsto "
+
+%format True = "\mathbf{true}"
+%format False = "\mathbf{false}"
 
 %format bottom     = "\bot"
 %format bottom_chi = "\bot_\chi"
 %format bottom_E   = "\bot_\mathbf{E}"
 %format e_E        = "\{\mathbf{E}\}"
 
+%format Var (n) = "x_" n
+%format Bottom (l) (t) = "\bot^{" l "}_{" t "}"
+%format Seq (e1) (e2) = "(" e1 "\ \mathbf{seq}\ " e2 ")"
+%format Fix (e) = "(\mathbf{fix}\ " e ")"
+
 %format alpha = "\alpha"
 %format beta  = "\beta"
+%format chi   = "\chi"
 %format tau   = "\tau"
+%format theta = "\theta"
 
 %format e_0
 %format e_1
@@ -24,9 +38,41 @@
 %format e_7
 %format e_8
 %format e_9
+%format e_10
+%format e_11
+%format e_12
+%format e_13
+%format e_14
+%format e_15
+%format e_16
+%format e_17
+%format e_18
+%format e_19
+%format e'_1 = "e^{\prime}_{1}"
+%format e'_2 = "e^{\prime}_{2}"
+
+%format x_0
+%format x_1
+%format x_2
+%format x_3
+%format x_4
+%format x_5
+%format x_6
+%format x_7
+%format x_8
+%format x_9
+
+%format chi'_2 = "\chi^\prime_{2}"
 
 %format throws                  = "\mathbf{throws}\xspace"
 %format #                       = "\ \cup\ "
 %format Throws (t) (e)          = t "^{" e "}"
 %format ThrowsArr (t1) (t2) (e) = t1 "\xrightarrow{" e "}" t2
 %format noexn                   = "\emptyset"
+
+%format Set (a) = "\left\{" a "\right\}"
+%format EmptySet = "\emptyset"
+
+%format DenoteEnv (t) (e) = "\llbracket " t "\rrbracket_{" e "}"
+
+%format ApplySubst (s) (t) = s "{}" t

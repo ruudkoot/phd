@@ -1,0 +1,79 @@
+\section{Motivation}
+
+An important design decision underlying the Haskell programming languages is that ``types should not lie'': functions should behave as if they where mathematical functions on the domain and range stated by their type; any side-effects the function wishes to perform must be made explicit by giving it an appropriate monadic type. Surprisingly to some, then, Haskell does not feature \emph{checked exceptions}. Any exception that may be raised---whether explicitly by a call to the the |error| function, or implicitly by a pattern match failure---is completely invisible in the type. This is unfortunate as during program verification such a type would give the programmer an explicit list of proof obligations he must fulfill: for each exception it must be shown that either the exception can never be raised or only be raised in truly exceptional circumstances.
+
+While some programming languages with more mundane type systems do state the exceptions functions may raise in their type signatures, assigning accurate exception types to functions in a Haskell program is complicated by:
+        
+    \begin{description}
+    
+        \item[Higher-order functions] Exceptions raised by higher-order functions depend on the exceptions raised by functional arguments.
+
+        \item[Non-strict evaluation] Exceptions are not a form of control flow, but are values that can be embedded inside other values.
+       
+    \end{description}
+
+Writing the set of exceptions that may be raised when evaluating an expression to weak head normal form as a superscript on its type, a fully annotated exception type for |map| would be:
+
+    \begin{code}
+        map  :  forall alpha beta e_1 e_2 e_3 e_4.
+            ThrowsArr ((ThrowsArr (Throws alpha e_1) (Throws beta ((e_1 # e_2))) e_3)) (ThrowsArr (Throws ([Throws alpha e_1]) e_4) (Throws ([Throws beta ((e_1 # e_2 # e_3))]) e_4) noexn) noexn
+        map  =   LAMBDA f (LAMBDA xs (case xs of
+                                   []      -|> []
+                                   (y:ys)  -|> f y : map f ys))
+    \end{code}
+
+However, this exception type is not as accurate as we would like it to be. Consider the applications:
+        
+    \begin{code}
+
+        map id                : Throws ([Throws alpha e_1]) e_4 -> Throws ([Throws alpha (e_1)]) e_4
+        
+        map (const bottom_E)  : Throws ([Throws alpha e_1]) e_4 -> Throws ([Throws beta ((e_1 # e_E))]) e_4
+
+    \end{code}
+            
+While the exception type for |map id| is as expected, a more appropriate type for |map (const bottom_E)| would be
+        
+    \begin{code}
+        map (const bottom_E)  : Throws ([Throws alpha e_1]) e_4 -> Throws ([Throws beta (e_E)]) e_4
+    \end{code}
+            
+as it cannot possibly propagate any exceptional elements inside the input list to the output list.
+
+The problem is that we have already committed the first argument of |map| to be of type
+            
+    \begin{code}
+        ThrowsArr (Throws alpha e_1) (Throws beta ((e_1 # e_2))) (e_3),
+    \end{code}
+            
+i.e. it propagates exceptional values from the its input to the output while possibly adding some additional exceptional values. This is a worst-case scenario: it is sound but inaccurate.
+
+   
+The solution is to move from Hindley--Milner to System $F_\omega$, introducing \emph{higher-ranked exception types} and \emph{exception operators}.
+This gives us the expressiveness to state the exception type of |map| as:
+        
+    \begin{code}
+        forall e_2 e_3. (forall e_1. ThrowsArr (Throws alpha e_1) (Throws beta ((e_2 e_1))) (e_3))
+            -> (forall e_4 e_5. Throws ([Throws alpha e_4]) e_5 -> Throws ([Throws beta ((e_2 e_4 # e_3))]) e_5)
+    \end{code}
+
+Note that $e_2$ has kind |EXN -> EXN|.
+Given the following functions:
+        
+    \begin{code}
+        map             : forall e_2 e_3. (forall e_1. ThrowsArr (Throws alpha e_1) (Throws beta ((e_2 e_1))) (e_3))
+                               -> (forall e_4 e_5. Throws ([Throws alpha e_4]) e_5 -> Throws ([Throws beta ((e_2 e_4 # e_3))]) e_5)
+        id              : forall e. ThrowsArr (Throws alpha e) (Throws alpha e) noexn
+        const bottom_E  : forall e. ThrowsArr (Throws alpha e) (Throws beta e_E) noexn
+    \end{code}
+            
+Applying |map| to |id| or |const bottom_E| will give rise the the instantiations |e_2 -\> LAMBDA e e|, respectively |e_2 -\> LAMBDA e e_E|.
+This gives us the exception types:
+        
+            \begin{code}
+                map id                : forall e_4 e_5. Throws ([Throws alpha e_4]) e_5 -> Throws ([Throws alpha (e_4)]) e_5
+                
+                map (const bottom_E)  : forall e_4 e_5. Throws ([Throws alpha e_4]) e_5 -> Throws ([Throws beta (e_E)]) e_5
+            \end{code}
+            
+            as desired.

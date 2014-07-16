@@ -18,9 +18,10 @@ main :: IO ()
 main = do
     putStrLn $ unlines [
             "\\documentclass[fullpage]{article}",
-            "\\usepackage[a4paper,landscape,margin=0pt]{geometry}",
+            "\\usepackage[a4paper,landscape,margin=12pt]{geometry}",
             "%include polycode.fmt",
             "%include forall.fmt",
+            "%include ../documentation/include/code.lhs2tex",
             "%include ../documentation/include/inference.lhs2tex",
             "%include ../documentation/definitions/lambda-union.lhs2tex",
             "%include ../documentation/definitions/completion.lhs2tex",
@@ -35,11 +36,31 @@ main = do
 run :: Expr -> String
 run ex =
     let ((ty, e, cs, kenv), l) = runFreshLog (reconstruct [] [] ex) 1
+        exn                    = solve kenv cs [] e 
      in unlines [
-            "\\paragraph{Expression} \\[" ++ latex ex      ++ "\\]",
-            "\\paragraph{Type}       \\[" ++ latex ty      ++ "\\]",
+            "\\paragraph{Expression}",
+            "...",
+            "\\begin{code}",
+            lhs2tex ex,
+            "\\end{code}",
+            "\\paragraph{Type}",
+            "...",
+            "\\begin{code}",
+            lhs2tex ty ++ " & e_" ++ show e ++ " ~> " ++ lhs2tex exn,
+            -- FIXME: is the type already completely solved and reduced?
+            "\\end{code}",
+            "\\paragraph{Constraints}",
+            "...",
+            "\\begin{code}",
+            lhs2tex cs,
+            "\\end{code}",
+            "\\paragraph{Exception kinds}",
+            "...",
+            "\\begin{code}",
+            lhs2tex kenv,
+            "\\end{code}",
             "\\paragraph{Algorithm}",
-            "sd",
+            "...",
             concatMap f l,
             "\\newpage"            
          ]
@@ -47,11 +68,14 @@ run ex =
 
 -- | Examples
 
-exs  = [ex01,ex02,ex03,ex04,ex05,ex06,ex07,ex08,ex09,ex10
+exs  = [ex00
+       ,ex01,ex02,ex03,ex04,ex05,ex06,     ex08,ex09,ex10
        ,ex11,ex12,ex13,ex14,ex15,ex16,ex17,ex18,ex19,ex20
        ,ex21,ex22,ex23,ex24,ex25,ex26,ex27,ex28,ex29,ex30
        ]
 
+-- * constants
+ex00 = Con True
 -- * abstraction
 ex01 = Abs 1 Bool $ Var 1
 ex02 = Abs 1 Bool $ Abs 2 Bool $ Var 1
@@ -61,7 +85,7 @@ ex04 = Abs 1 (Bool :-> Bool) $ Abs 2 Bool $ App (Var 1) (Var 2)
 -- * crash
 ex05 = Crash "foo" Bool
 ex06 = Crash "foo" (Bool :-> Bool)
-ex07 = App (Crash "foo" (Bool :-> Bool)) (Crash "bar" Bool)
+-- ex07 = -- was a duplicate of ex09
 ex08 = App (Abs 1 Bool (Var 1)) (Crash "foo" Bool)
 -- ex09: (bool,8,[e2 :<: 4,{foo} :<: 4,e5 :<: 6,{bar} :<: 6,(e3 e6) :<: 8,e4 :<: 8])
 --       not that e3 is by default set to {}, so we lose e6 = {bar}. also see ex11.
