@@ -46,7 +46,7 @@ The problem is that we have already committed the first argument of |map| to be 
         ThrowsArr (Throws alpha e_1) (Throws beta ((e_1 # e_2))) (e_3),
     \end{code}
             
-i.e. it propagates exceptional values from the its input to the output while possibly adding some additional exceptional values. This is a worst-case scenario: it is sound but inaccurate.
+i.e. it propagates exceptional values from the input to the output while possibly adding some additional exceptional values. This is a worst-case scenario: it is sound but inaccurate.
 
    
 The solution is to move from Hindley--Milner to System $F_\omega$, introducing \emph{higher-ranked exception types} and \emph{exception operators}.

@@ -19,77 +19,138 @@
 
 \usepackage[english]{babel}
 \usepackage[latin1]{inputenc}
-\usepackage[orientation=portrait,size=a0,scale=1.4,debug]{beamerposter}
+\usepackage[orientation=portrait,size=a0,scale=2.0,debug]{beamerposter}
 
 \graphicspath{{figures/}}
 
+%include polycode.fmt
+%include forall.fmt
+
+%include ../include/inference.lhs2tex
+%include ../include/code.lhs2tex
+%include ../definitions/intermezzo.lhs2tex
+%include ../definitions/lambda-union.lhs2tex
+%include ../definitions/completion.lhs2tex
+
 \title{Higher-Ranked Exception Types}
+%\subtitle{ICFP '14 SRC}
 \author[Koot]{Ruud Koot}
 \institute[Utrecht University]{Department of Computing and Information Sciences, Utrecht University}
 
 \newcommand{\footlinetext}{Voetnoot}
-%\date{Jul. 31th, 2007}
+\date{September 2014}
 
 \begin{document}
   \begin{frame}{}
     \maketitle
     \vfill
-    \vfill
-    \begin{block}{Header 1}
-      Lorum ipsum dolor sit amet.
-    \end{block}
-    \vfill
-    \vfill
-    \begin{block}{Header 2}
-      Lorum ipsum dolor sit amet.
-    \end{block}
-    \vfill
     \begin{columns}[t]
       \begin{column}{.48\linewidth}
-        \begin{block}{Introduction}
-
+      
+        \begin{block}{Exception Types} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
           \begin{itemize}
-          \item[]
-            \begin{enumerate}
-            \item some items
-            \item some items
-            \item some items
-            \item some items
-            \end{enumerate}    
+            \item In Haskell ``types do not lie'':
+                \begin{itemize}
+                    \item Functions behave as mathematical function on the domain and range given by their type
+                    \item Side-effects are made explicit by monadic types
+                \end{itemize}
+            \item Exceptions that may be raised are \emph{not} captured in the type
+                \begin{itemize}
+                    \item We would like them to be during program verification
+                    \item Adding exception types in Haskell are more complicated than in a strict first-order language
+                \end{itemize}
           \end{itemize}
         \end{block}
+        \vspace{2em}
+        \begin{block}{Exception Types in Haskell} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            \begin{itemize}
+                \item Exception types in Haskell can get complicated because:
+                    \begin{description}
+                        \item[Higher-order functions] Exceptions raised by higher-order functions depend on the exceptions raised by functional arguments.
+
+                        \item[Non-strict evaluation] Exceptions are not a form of control flow, but are values that can be embedded inside other values.
+                    \end{description}
+                \item An exception-annotated type for |map| would be:
+                        \begin{code}
+                            map  :  forall alpha beta e_1 e_2 e_3 e_4.
+                                ThrowsArr ((ThrowsArr (Throws alpha e_1) (Throws beta ((e_1 # e_2))) e_3)) (ThrowsArr (Throws ([Throws alpha e_1]) e_4) (Throws ([Throws beta ((e_1 # e_2 # e_3))]) e_4) noexn) noexn
+                            map  =   LAMBDA f (LAMBDA xs (case xs of
+                                                       []      -|> []
+                                                       (y:ys)  -|> f y : map f ys))
+                        \end{code}
+
+            \end{itemize}
+        \end{block}
+        \vspace{2em}
+        \begin{block}{Precise Exception Types} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            \begin{itemize}
+                \item The exception type above is not a precise as we would like
+                    \begin{code}
+
+                        map id                : Throws ([Throws alpha e_1]) e_4 -> Throws ([Throws alpha (e_1)]) e_4
+                        
+                        map (const bottom_E)  : Throws ([Throws alpha e_1]) e_4 -> Throws ([Throws beta ((e_1 # e_E))]) e_4
+
+                    \end{code}
+                \item A more appropriate type for |map (const bottom_E)| would be:
+                        
+                    \begin{code}
+                        map (const bottom_E)  : Throws ([Throws alpha e_1]) e_4 -> Throws ([Throws beta (e_E)]) e_4
+                    \end{code}
+                    
+                \item Exceptional elements in the input list cannot be propagated to the output.
+            \end{itemize}
+        \end{block}
+
       \end{column}
       \begin{column}{.48\linewidth}
-        \begin{block}{Introduction}
+        \begin{block}{Higher-Ranked Exception Types}
           \begin{itemize}
-          \item some items and $\alpha=\gamma, \sum_{i}$
-          \item some items
-          \item some items
-          \item some items
+            \item The problem is that we have already committed the first argument of |map| to be of type
+                        
+                \begin{code}
+                    ThrowsArr (Throws alpha e_1) (Throws beta ((e_1 # e_2))) (e_3)
+                \end{code}
+                
+            \item It always propagates exceptional values from the input to the output
+            \item The solution is to move from Hindley--Milner to System $F_\omega$, introducing \emph{higher-ranked exception types} and \emph{exception operators}
+                \begin{code}
+                    map             : forall e_2 e_3. (forall e_1. ThrowsArr (Throws alpha e_1) (Throws beta ((e_2 e_1))) (e_3))
+                                           -> (forall e_4 e_5. Throws ([Throws alpha e_4]) e_5 -> Throws ([Throws beta ((e_2 e_4 # e_3))]) e_5)
+                    id              : forall e. ThrowsArr (Throws alpha e) (Throws alpha e) noexn
+                    const bottom_E  : forall e. ThrowsArr (Throws alpha e) (Throws beta e_E) noexn
+                \end{code}
+                
+            \item This gives us the desired exception types:
+            
+                \begin{code}
+                    map id                : forall e_4 e_5. Throws ([Throws alpha e_4]) e_5 -> Throws ([Throws alpha (e_4)]) e_5
+                    
+                    map (const bottom_E)  : forall e_4 e_5. Throws ([Throws alpha e_4]) e_5 -> Throws ([Throws beta (e_E)]) e_5
+                \end{code}
+
           \end{itemize}
-          $$\alpha=\gamma, \sum_{i}$$
+        \end{block}
+        
+        \vspace{2em}
+        
+        \begin{block}{Exception Type Inference}
+        
+            \begin{itemize}
+            
+                \item Higher-ranked exception types are syntactically heave; we need type inference
+
+                \item Type inference is undecidable in System $F_\omega$, but exception types piggyback on an underlying type
+                
+                \item Holdermans and Hage (2010) show that type inference is decidable for a similar higher-ranked annotated type system with type operators
+            
+            \end{itemize}
+        
         \end{block}
 
-        \begin{block}{Introduction}
-          \begin{itemize}
-          \item some items
-          \item some items
-          \item some items
-          \item some items
-          \end{itemize}
-        \end{block}
-
-        \begin{block}{Introduction}
-          \begin{itemize}
-          \item some items and $\alpha=\gamma, \sum_{i}$
-          \item some items
-          \item some items
-          \item some items
-          \end{itemize}
-          $$\alpha=\gamma, \sum_{i}$$
-        \end{block}
       \end{column}
     \end{columns}
+    \vfill
   \end{frame}
 
 \end{document}
