@@ -36,8 +36,7 @@
 %\subtitle{ICFP '14 SRC}
 \author[Koot]{Ruud Koot}
 \institute[Utrecht University]{Department of Computing and Information Sciences, Utrecht University}
-
-\newcommand{\footlinetext}{Voetnoot}
+%\newcommand{\footlinetext}{Voetnoot}
 \date{September 2014}
 
 \begin{document}
@@ -132,13 +131,13 @@
           \end{itemize}
         \end{block}
         
-        \vspace{2em}
+        \vspace{1em}
         
-        \begin{block}{Exception Type Inference}
+        \begin{block}{Exception Type Inference} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
             \begin{itemize}
             
-                \item Higher-ranked exception types are syntactically heave; we need type inference
+                \item Higher-ranked exception types are syntactically heavy; we need type inference
 
                 \item Type inference is undecidable in System $F_\omega$, but exception types piggyback on an underlying type
                 
@@ -147,6 +146,37 @@
             \end{itemize}
         
         \end{block}
+        
+        \vspace{1em}
+        
+        \begin{block}{Work-in-Progress}
+        
+            \begin{description}
+            
+                \item[Imprecise exception semantics] Haskell has an \emph{imprecise exception semantics}
+                
+                    \begin{itemize}
+                    
+                        \item Needed for soundness of various program transformations in an optimizing compiler
+                        
+                        \item Not adequately captured by ACI1 constraints; attempt to unification in Boolean rings
+                    
+                    \end{itemize}
+            
+                \item[Metatheory] Is the combined rewrite system of STLC and BR still confluent and normalizing?
+                
+                    \begin{itemize}
+                    
+                        \item Needed for decidable exception type equality
+                        
+                        \item Hope to use a general result by Breazu-Tannen
+                        
+                    \end{itemize}
+            
+            \end{description}
+        
+        \end{block}
+        
 
       \end{column}
     \end{columns}
