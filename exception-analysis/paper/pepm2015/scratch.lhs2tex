@@ -1,0 +1,343 @@
+\documentclass[authoryear,preprint]{sigplanconf}
+
+%% FIXME: Rule [T-Abs] still introduces a bit of poisoning. A rule with more
+%%        fresh variables would likely result in a nicer proof (as for [T-Fst]).
+%% FIXME: mathtimes
+%% FIXME: consistent terminology:
+%%        - "our" vs. "the"
+%%        - "arm" vs. "branch" vs. ?
+%%        - product vs. pair vs. tuple
+%%        - statement vs. expression
+
+%% \rotatebox[origin=c]{180}{$\bigstar$}
+
+\newenvironment{WORKINPROGRESS}{\color{BrickRed}}{\ignorespacesafterend}
+\newcommand{\LORUMIPSUM}{\begin{WORKINPROGRESS}
+Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+\end{WORKINPROGRESS}}
+\newcommand{\BLAHBLAHBLAH}{\textcolor{BrickRed}{blah, blah, blah...}}
+
+%include polycode.fmt
+%include forall.fmt
+
+%format do = "\textbf{do}"
+%format return = "\textbf{return}"
+%format case = "\textbf{case}"
+%format of = "\textbf{of}"
+%format if = "\textbf{if}"
+%format then = "\textbf{then}"
+%format else = "\textbf{else}"
+%format type = "\textbf{type}"
+%format where = "\textbf{where}"
+
+%format ^ = "\!"
+
+%format % = "\div"
+
+%format ~~> = "\leadsto"
+%format ~~~> = "\longrightarrow^{*}"
+% format Ord = "\mathbf{Ord}"
+%format alpha = "\alpha"
+%format beta = "\beta"
+%format beta_1 = "\beta_1"
+%format beta_2 = "\beta_2"
+%format tau = "\tau"
+%format alphabeta = "\alpha\beta"
+%format taualpha = "\tau\alpha"
+%format bot = "\bot"
+%format : = "\bm{::}"
+%format :: = ":"
+%format [ = "\bm{\left[}"
+%format ] = "\bm{\right]}"
+%format x_1
+%format x_2
+%format e_1
+%format e_2
+%format e_3
+%format e_4
+%format risers_1
+%format risers_2
+%format risers_3
+%format N (a) = "\bm{[}" a "\bm{]}^{\SingletonNil}"
+%format CL (a) = "\bm{[}" a "\bm{]}^{\SingletonCons}"
+%format NC (a) = "\bm{[}" a "\bm{]}^{\SingletonNil \sqcup \SingletonCons}"
+%format POLYV (a) (b) = "\bm{[}" a "\bm{]}^{" b "}"
+%format LABELLEDLIST (a) (b) = "\bm{[}" a "\bm{]}^{" b "}"
+
+%format rectype = "\textbf{rectype}"
+%format /\ = "\land"
+%format \/ = "\lor"
+%format FPNil (a) = "\bm{\left[}\alpha\bm{\right]}^{\textbf{0}}"
+%format FPSingleton (a) = "\bm{\left[}\alpha\bm{\right]}^{\textbf{1}}"
+%format FPList (a) = "\bm{\left[}\alpha\bm{\right]}"
+%format case_List = "\textbf{case}_{\bm{\left[\cdot\right]}}"
+
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+
+\usepackage{graphicx}
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage{tikz}
+\usepackage{hyperref}
+\usepackage{doi}
+
+\usepackage[utf8]{inputenc}
+
+\usepackage{xspace}
+
+\usepackage{stmaryrd}
+\usepackage{bm}
+%\usepackage{bbm}
+
+\usepackage{adjustbox}
+
+%% Double-blind peer-review
+\newcommand{\ANONYMOUS}[2]{#1}
+
+%% Generic formatting stuff
+\newcommand{\BigBreak}{\\[0.5\baselineskip]}
+\newcommand{\MaybeBigBreak}{\\}
+
+%% Generic text stuff
+\newcommand{\ala}{\emph{\`a la}\xspace}
+
+%% Generic math stuff
+\newcommand{\isdef}{\stackrel{\text{def}}{=}}
+\newcommand{\IndCase}[1]{\emph{Case} \CiteRule{#1}:}
+
+%% Types
+\newcommand{\Var}{\textbf{Var}}
+\newcommand{\AnnVar}{\textbf{AnnVar}}
+\newcommand{\Shape}{\textbf{Ty}}
+\newcommand{\ShapeScheme}{\textbf{TySch}}
+
+%% Syntax
+\newcommand{\Crash}[1]{\lightning^{#1}}
+\newcommand{\BTrue}{\textbf{true}}
+\newcommand{\BFalse}{\textbf{false}}
+
+\newcommand{\Abs}[2]{\lambda #1.#2}
+\newcommand{\App}[2]{#1\ #2}
+\newcommand{\Op}[2]{#1 \oplus #2}
+\newcommand{\Let}[3]{\textbf{let}\ #1 = #2\ \textbf{in}\ #3}
+\newcommand{\Fix}[2]{\textbf{fix}\ #1.\ #2}
+\newcommand{\IfThenElse}[3]{\textbf{if}\ #1\ \textbf{then}\ #2\ \textbf{else}\ #3}
+\newcommand{\Pair}[2]{\bm{\left(}#1\bm{,} #2\bm{\right)}}
+\newcommand{\Fst}[1]{\textbf{fst}\ #1}
+\newcommand{\Snd}[1]{\textbf{snd}\ #1}
+\newcommand{\LNil}{\bm{\left[\right]}}
+\newcommand{\LCons}[2]{#1 \bm{::} #2}
+\newcommand{\Case}[5]{\textbf{case}\ #1\ \textbf{of} \left\{ \LNil \mapsto #2; #3 \bm{::} #4 \mapsto #5 \right\}}
+\newcommand{\CaseBREAK}[5]{\textbf{case}\ #1\ \textbf{of}\\\left\{ \LNil \mapsto #2; #3 \bm{::} #4 \mapsto #5 \right\}}
+\newcommand{\Bind}[2]{\textbf{bind}\ #1\ \textbf{in}\ #2}
+\newcommand{\Close}[2]{\textbf{close}\ #1\ \textbf{in}\ #2}
+\newcommand{\CloseEMPH}[2]{\emph{\textbf{close}}\ #1\ \emph{\textbf{in}}\ #2}
+
+\newcommand{\PMF}{\textbf{pmf}\xspace}
+
+%% Semantics
+\newcommand{\Eval}[4]{\left<#1; #2\right> \Downarrow \left<#3;#4\right>}
+\newcommand{\Transform}[1]{\widehat{#1}}
+
+\newcommand{\Reduce}[3][\rho]{#1~\vdash~#2 \longrightarrow~#3}
+\newcommand{\InterpretOp}[1]{\llbracket #1 \rrbracket}
+
+%% Typing
+\newcommand{\Rule}[3]{\frac{#2}{#3}\mbox{\ [\textsc{#1}]}}
+\newcommand{\CiteRule}[1]{\mbox{[\textsc{#1}]}}
+\newcommand{\Judge}[3][C; \Gamma]{{#1 \vdash #2 : #3}}              %declarative
+\newcommand{\JudgeUL}[3][C; \Gamma]{{#1 \vdash_{\mathrm{UL}} #2 : #3}}   %underlying
+\newcommand{\Centail}[2][C]{{#1 \Vdash #2}}
+\newcommand{\CM}[2][\theta]{{#1 \vDash #2}}
+\newcommand{\Ref}{\delta}
+\newcommand{\Exn}{\chi}
+\newcommand{\Judgement}[5][\Gamma]{#1 \vdash #2 : #3 \leadsto #4\ \&\ #5} %algo
+\newcommand{\PmSch}{\sigma}
+\newcommand{\PmTy}{\varsigma}
+\newcommand{\Sh}{\tau}
+\newcommand{\ShSch}{\sigma}
+\newcommand{\TopLevel}[1]{\lceil #1\rceil}
+\newcommand{\Fresh}{\ \mathrm{fresh}}
+\newcommand{\SUBST}[1]{#1\!\left[\overline{\beta}/\overline{\alpha}\right]}
+\newcommand{\TyBool}{\mathbb{B}}
+\newcommand{\TyInt}{\mathbb{Z}}
+\newcommand{\TyFun}[3]{#1 \xrightarrow{#3} #2}
+\newcommand{\TyPair}[3]{#1 \bm{\times}^{#3} #2}
+\newcommand{\TyList}[2]{\bm{\left[}#1\bm{\right]}^{#2}}
+\newcommand{\TyForall}[3]{\forall\overline{#1}.\ #2\ \textbf{with}\ #3}
+\newcommand{\TyForallNOOVERLINE}[3]{\forall #1.\ #2\ \textbf{with}\ #3}
+\newcommand{\E}{\textbf{Nil}}
+\newcommand{\NE}{\textbf{Cons}}
+
+\newcommand{\EC}[3][C]{{#1 \vdash #2 \bowtie #3}}
+
+\newcommand{\SingletonTrue}{\textbf{T}}
+\newcommand{\SingletonFalse}{\textbf{F}}
+\newcommand{\SingletonNeg}{\textbf{-}}
+\newcommand{\SingletonZero}{\textbf{0}}
+\newcommand{\SingletonPos}{\textbf{+}}
+\newcommand{\SingletonNil}{\textbf{N}}
+\newcommand{\SingletonCons}{\textbf{C}}
+
+%% Constraints
+\newcommand{\AnnLat}{\Lambda}
+\newcommand{\CC}[5][]{#2 \sqsubseteq_\Ref #3 \Rightarrow #4 \leq_{#1} #5}
+\newcommand{\CCS}[5][]{#2 \sqsubseteq_\Ref #3 \Rightarrow #4 \sqsubseteq_{#1} #5}
+\newcommand{\CCD}[6][]{#2 \sqsubseteq_\Ref #3 \lor #4 \Rightarrow #5 \leq_{#1} #6}
+
+%% Extensions
+\newcommand{\MP}[2]{#1~\star~#2}
+
+%% Theorems
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{conjecture}{Conjecture}
+\newtheorem{lemma}{Lemma}
+\newtheorem{conjectured-lemma}{Lemma}
+\theoremstyle{definition}
+\newtheorem{mydef}{Definition}
+
+\begin{document}
+
+\conferenceinfo{POPL '14}{January 22--24, 2014, San Diego, California, USA.}
+\copyrightyear{2014}
+\copyrightdata{[to be supplied]} 
+
+\titlebanner{DRAFT---Do not distribute}
+\preprintfooter{Submitted to POPL'14}
+
+\title{Type-based Exception Analysis for\\Non-strict Higher-order Functional Languages\\with Imprecise Exception Semantics}
+
+\authorinfo{\ANONYMOUS{Ruud Koot}{Robb Stark}\thanks{This material is based upon work supported by the \ANONYMOUS{Netherlands Organisation for Scientific Research (NWO)}{Night's Watch}.}\and \ANONYMOUS{Jurriaan Hage}{Daenerys Targaryen}}
+{Department of Computing and Information Sciences\\Utrecht University}
+{\ANONYMOUS{\{r.koot,j.hage\}@@uu.nl}{\{r.stark,d.targaryen\}@@winterfell.no}}
+%\authorinfo{Robb Stark\thanks{This material is based upon work supported by the \ANONYMOUS{Netherlands Organisation for Scientific Research (NWO)}{Night's Watch}.}}
+%{Winterfell University\\Westeros}{r.stark@@winterfell.no}
+%\authorinfo{Daenerys Targaryen}{Astapor Academy\\Essos}{d.targaryen@@astapor.es}
+
+\maketitle
+
+%format (V (x) (y)) = "\left<" x ", " y "\right>"
+%format (setOf (a)) = "\left\{\begin{gathered}" a "\end{gathered}\right\}"
+%format /// = "\\"
+
+%format w = "\mathcal{W}"
+%format w' = "\!\!\!\!\!\!\!\!\mathcal{W}"
+%format env = "\Gamma"
+%format env'
+%format (lookup (a) (b)) = a "_" b
+%format (topLevel (a)) = "\TopLevel{" a "}"
+%format (ulTy (a)) = "\lfloor " a "\rfloor"
+%format :*: = "\times"
+%format Env = "\textbf{Env}"
+%format Expr = "\textbf{Expr}"
+%format Ty = "\textbf{Ty}"
+%format Constr = "\textbf{Constr}"
+%format Set (a) = "\mathcal{P}\ " a
+%format kappa = "\kappa"
+%format # = "\cup"
+%format |#| = "\sqcup"
+
+%format Crash = "\Crash{\ell}"
+%format Abs (a) (b) = "\lambda " a "." b
+%format App (a) (b) = a "\ " b
+%format Let (x) (e1) (e2) = "\Let{" x "}{" e1 "}{" e2 "}"
+%format Fix (x) (e) = "\Fix{" x "}{" e "}"
+%format If (e1) (e2) (e3) = "\IfThenElse{" e1 "}{" e2 "}{" e3 "}"
+%format Op (e1) (e2) = "\Op{" e1 "}{" e2 "}"
+%format (Pair (e1) (e2)) = "\Pair{" e1 "}{" e2 "}"
+%format Fst (e) = "\Fst{" e "}"
+%format Snd (e) = "\Snd{" e "}"
+%format Case (e_1) (e_2) (x_1) (x_2) (e_3) = "\Case{" e_1 "}{" e_2 "}{" x_1 "}{" x_2 "}{" e_3 "}"
+
+%format ShFun (a) (b) (c) = a "\xrightarrow{" c "}" b
+%format ShPair (e1) (e2) (a) = "\TyPair{" e1 "}{" e2 "}{" a "}"
+%format (ShList (t) (a)) = "\TyList{" t  "}{" a "}"
+
+%format T = "\SingletonTrue"
+%format F = "\SingletonFalse"
+%format NIL = "\SingletonNil"
+%format CONS = "\SingletonCons"
+
+%format e_0
+%format e_1
+%format e_2
+%format alpha_1 = "\alpha_1"
+%format alpha_2 = "\alpha_2"
+%format tau   = "\tau"
+%format tau_0 = "\tau_0"
+%format tau_1 = "\tau_1"
+%format tau_2 = "\tau_2"
+%format tau_3 = "\tau_3"
+%format sigma_1 = "\sigma_1"
+%format C_0
+%format C_1
+%format C_2
+%format C_3
+%format C_4
+
+%% Constraints (constructors)
+%format <|#  = "\sqsubseteq_{\Ref}"
+%format <|&  = "\sqsubseteq_{\Exn}"
+%format <<#  = "\leq_{\Ref}"
+%format <<&  = "\leq_{\Exn}"
+%format <<#& = "\leq_{\Ref\Exn}"
+%format exists_exn = "\exists_\Exn"
+
+%format wop a1 a2 a = "\omega_\oplus(" a1 "," a2 "," a ")"
+
+%format Map (a) (b) = a "\hookrightarrow" b
+
+%format empty = "\emptyset"
+%format foreach = "\textbf{for each}"
+%format while = "\textbf{while}"
+%format repeat = "\textbf{repeat}"
+%format until = "\textbf{until}"
+%format |-> = "\mapsto"
+
+%format Var = "\textbf{Var}"
+%format Subst = "\textbf{Subst}"
+%format solve = "\!\!\!\!\mathcal{S}"
+%format dep = "\mathcal{D}"
+%format dep' = "\!\!\!\!\mathcal{D}"
+%format gr = "\left\{g \Rightarrow r\right\}"
+%format subst_ref       = "\theta_\Ref"
+%format subst_ref_alpha = "\theta_\Ref[\alpha]"
+%format subst_exn       = "\theta_\Exn"
+%format subst_exn_alpha = "\theta_\Exn[\alpha]"
+%format |= = "\vDash"
+%format somecon = "\Lambda_\iota"
+%format <|? = "\sqsubseteq_\iota"
+%format exists_i_a = "\exists_\iota \alpha"
+
+%format theta_i_a = "\theta_\iota[\alpha]"
+%format theta_i_a1 = "\theta_\iota[\alpha_1]"
+%format theta_i_a2 = "\theta_\iota[\alpha_2]"
+
+%format thetao_i_a = "\theta^{\circ}_\iota[\alpha]"
+%format thetao_i_a1 = "\theta^{\circ}_\iota[\alpha_1]"
+%format thetao_i_a2 = "\theta^{\circ}_\iota[\alpha_2]"
+%format solve = "\mathcal{S}"
+%format theta = "\theta"
+%format thetao = "\theta^{\circ}"
+%format theta'
+%format sq = "\!\sq\!"
+
+%format sigma = "\sigma"
+%format sigma'
+
+%format D_a = " D[\alpha]"
+%format D_a1 = " D[\alpha_1]"
+%format D_a2 = " D[\alpha_2]"
+%format g_1
+%format g_2
+%format worklist = " W"
+
+%format entails = "\Vdash"
+
+%include algorithmproperties.lhs2tex
+
+\end{document}
+
