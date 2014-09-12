@@ -1,0 +1,1 @@
+* The presentation of W Nil and W Cons is unintuitive/not completely consistent with the other cases. (E.g., the underlying type of the Nil constructor is that of the elements of the list, not of the nul-constructor.)
