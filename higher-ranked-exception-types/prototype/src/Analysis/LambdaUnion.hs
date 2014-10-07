@@ -1,4 +1,4 @@
-module LambdaUnion where
+module Analysis.LambdaUnion where
 
 -- TODO: make use of the fact that terms are always fully applied
 -- TODO: non-deterministic full β-reduction
@@ -8,7 +8,7 @@ module LambdaUnion where
 -- TODO: test confluence, type preservation, uniqueness of normal forms, etc.
 -- TODO: dynamic type checking
 
-import Names
+import Analysis.Names
 
 import Data.Set
 import GHC.Exts (sortWith)

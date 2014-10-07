@@ -1,15 +1,15 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ViewPatterns      #-}
 
-module Infer where
+module Analysis.Infer where
 
 -- TODO: reconstruct derivation tree
 
-import           Names
-import           Common
-import qualified LambdaUnion as LU
-import qualified Completion  as C
-import           Latex
+import           Analysis.Names
+import           Analysis.Common
+import qualified Analysis.LambdaUnion as LU
+import qualified Analysis.Completion  as C
+import           Analysis.Latex
 
 import qualified Data.Map    as M
 

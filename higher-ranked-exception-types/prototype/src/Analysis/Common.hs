@@ -1,13 +1,13 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ViewPatterns      #-}
 
-module Common where
+module Analysis.Common where
 
 -- FIXME: make all functions total (and remove dead errors)
 
-import           Names
-import qualified LambdaUnion as LU
-import           Latex
+import           Analysis.Names
+import qualified Analysis.LambdaUnion as LU
+import           Analysis.Latex
 
 import Data.List (delete)
 

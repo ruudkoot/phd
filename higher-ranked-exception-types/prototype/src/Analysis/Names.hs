@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
-module Names where
+module Analysis.Names where
 
 import Control.Monad
 import Control.Monad.State

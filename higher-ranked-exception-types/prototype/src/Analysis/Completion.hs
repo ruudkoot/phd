@@ -4,10 +4,10 @@
 -- TODO: pretty print types
 -- NOTE: fresh variable are generated in an order that results in nice types
 
-module Completion where
+module Analysis.Completion where
 
-import Names
-import Common
+import Analysis.Names
+import Analysis.Common
 
 type Env = [(Name, Kind)]
 

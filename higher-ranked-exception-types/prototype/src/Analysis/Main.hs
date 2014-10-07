@@ -1,10 +1,10 @@
-module Main where
+module Analysis.Main where
 
-import           Names
-import           Common      as C
-import           Infer       as Inf
-import qualified LambdaUnion as LU
-import           Latex
+import           Analysis.Names
+import           Analysis.Common      as C
+import           Analysis.Infer       as Inf
+import qualified Analysis.LambdaUnion as LU
+import           Analysis.Latex
 
 {- LambdaUnion
 env1 = [(0,C)]

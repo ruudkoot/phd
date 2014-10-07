@@ -1,4 +1,4 @@
-module Latex where
+module Analysis.Latex where
 
 import Data.List
 
