@@ -93,14 +93,23 @@ main = withSocketsDo $ do
 
 -- | Renderers
 
-mkResponse :: IORef state -> Maybe (Page state) -> RequestType -> Page.Parameters -> Page.Parameters -> IO Response
-mkResponse state (Just (Page {getRequest, postRequest, stateLens})) reqType getParam postParam = do
-    st <- readIORef state
-    (response, st') <- case reqType of {
-        GET  -> pureRequest getRequest (Page.get stateLens st) getParam;
-        POST -> postRequest            (Page.get stateLens st) postParam;
-    }
-    writeIORef state (Page.set stateLens st st')
-    return response
-mkResponse _ Nothing _ _ _ = do
-    return respond404
+mkResponse :: IORef state
+           -> Maybe (Page state)
+           -> RequestType
+           -> Page.Parameters
+           -> Page.Parameters
+           -> IO Response
+mkResponse state
+           (Just (Page {getRequest, postRequest, stateLens}))
+           reqType
+           getParam
+           postParam
+  = do st <- readIORef state
+       (response, st') <- case reqType of {
+            GET  -> pureRequest getRequest (Page.get stateLens st) getParam;
+            POST -> postRequest            (Page.get stateLens st) postParam;
+        }
+        writeIORef state (Page.set stateLens st st')
+        return response
+mkResponse _ Nothing _ _ _
+    = return respond404
