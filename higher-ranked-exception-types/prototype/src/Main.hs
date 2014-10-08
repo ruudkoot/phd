@@ -1,4 +1,4 @@
-{-# LANGUAGE TupleSections, NamedFieldPuns #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module Main where
 
@@ -92,9 +92,6 @@ main = withSocketsDo $ do
   where
 
 -- | Renderers
-
-pureRequest :: GetRequest s -> PostRequest s
-pureRequest getRequest state param = (,state) <$> getRequest state param
 
 mkResponse :: IORef state -> Maybe (Page state) -> RequestType -> Page.Parameters -> Page.Parameters -> IO Response
 mkResponse state (Just (Page {getRequest, postRequest, stateLens})) reqType getParam postParam = do

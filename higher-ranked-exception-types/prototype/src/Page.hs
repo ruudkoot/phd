@@ -1,4 +1,4 @@
-{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE ExistentialQuantification, TupleSections #-}
 
 module Page (
     Page(..),
@@ -6,12 +6,17 @@ module Page (
     GetRequest,
     PostRequest,
     Lens(..),
+    pureRequest,
+    noGet,
+    noPut,
     stateless
 ) where
 
+import Control.Applicative
 import Data.Map
 
 import HTTP
+import Lens
 
 -- | Page
 
@@ -21,18 +26,25 @@ data Page a = forall b. Page {
     stateLens   :: Lens a b
 }
 
--- | GET and POST requests
+-- | Parameters
 
 type Parameters = Map String String
+
+-- | GET and POST requests
 
 type GetRequest  state = state -> Parameters -> IO Response
 type PostRequest state = state -> Parameters -> IO (Response, state)
 
--- | Lenses
+pureRequest :: GetRequest s -> PostRequest s
+pureRequest getRequest state param = (,state) <$> getRequest state param
 
-data Lens a b = Lens { get :: a -> b, set :: a -> b -> a }
+-- | Bottoms
 
--- * Stateless requests
+noGet :: GetRequest state
+noGet _ _ = return respond404
+
+noPut :: PostRequest state
+noPut     = pureRequest noGet
 
 stateless :: Lens a ()
 stateless = Lens { get = const (), set = const }
