@@ -7,7 +7,8 @@
 %format ExnCon (l)                     = l
 %format ExnApp (t1) (t2)               = "(" t1 "\ " t2 ")"
 %format ExnAbs (e) (k) (t)             = "(\lambda e_" e " :: " k "." t ")"
-%format ExnForall (e) (k) (t)          = "(\ExnForall{e_{" e "} :: " k "} " t ")"
+%%ormat ExnForall (e) (k) (t)          = "(\ExnForall{e_{" e "} :: " k "} " t ")"
+%format ExnForall (e) (k) (t)          = "(\ExnForall{e_{" e "}} " t ")"
 %format ExnBool                        = "\ExnTyBool"
 %format ExnList (t) (exn)              = "\ExnTyList{" t "}{" exn "}"
 %format ExnArr (t1) (exn1) (t2) (exn2) = "(\ExnTyArr{" t1 "}{" exn1 "}{" t2 "}{" exn2 "})"
