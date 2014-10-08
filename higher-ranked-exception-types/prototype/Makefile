@@ -1,2 +1,2 @@
 all:
-	ghc -O2 --make Main.hs
+	cabal install

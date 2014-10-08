@@ -35,7 +35,7 @@ parseParameters xs = map (splitOn' '=') (splitOn "&" xs)
 
 parseResource :: String -> (ResourcePath, Parameters)
 parseResource xs = let (resource, parameters) = splitOn' '?' xs
-                    in ( splitOn "/" (tail resource)
+                    in ( takeWhile (not . null) (splitOn "/" (tail resource))
                        , parseParameters parameters  )
 
 parseHost :: String -> HostPath

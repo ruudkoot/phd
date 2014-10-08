@@ -15,7 +15,9 @@ module HTTP (
     respond500
 ) where
 
+import Control.Arrow
 import Data.Char
+import Network.HTTP.Base (urlDecode)
 
 -- | Request
 
@@ -25,17 +27,27 @@ data RequestType = GET | POST
 type URL     = String
 type Version = String
 
-data Request = Request RequestType URL Version [(String,String)]
+data Request = Request RequestType URL Version [(String,String)] [(String,String)]
     deriving (Show)
 
 parseRequest :: String -> Request
 parseRequest (lines . filter (/= '\r') ->
               (words -> [read -> reqType, url, version])
-              : (map separate . takeWhile (not . null) -> keyVals)
-          ) = Request reqType url version keyVals
+                :
+              (splitOnNull ->
+                (map separateHead -> keyVals , map separateBody -> messageBody)
+              )
+          ) = Request reqType url version keyVals messageBody
 
-separate :: String -> (String, String)
-separate (break isSpace -> (init -> key, dropWhile isSpace -> value))
+splitOnNull :: [[a]] -> ([[a]], [[a]])
+splitOnNull = fmap tail . break null
+
+separateHead :: String -> (String, String)
+separateHead (break isSpace -> (init -> key, dropWhile isSpace -> value))
+    = (key, value)
+    
+separateBody :: String -> (String, String)
+separateBody (break (== '=') -> (key, tail >>> urlDecode -> value))
     = (key, value)
     
 -- | Response
