@@ -1,4 +1,4 @@
-module URL (
+module Web.URL (
     HostPath,
     ResourcePath,
     Parameters,

@@ -1,6 +1,6 @@
 {-# LANGUAGE ViewPatterns #-}
 
-module HTTP (
+module Web.HTTP (
     RequestType(..),
     URL,
     Version,
@@ -11,6 +11,7 @@ module HTTP (
     MessageBody,
     Response(..),
     respond200,
+    respond303,
     respond404,
     respond500
 ) where
@@ -54,23 +55,29 @@ separateBody (break (== '=') -> (key, tail >>> urlDecode -> value))
 
 type StatusCode   = Int
 type ReasonPhrase = String
+type Headers      = String
 type MessageBody  = String
 
 data Response
-    = Response Version StatusCode ReasonPhrase {- headers -} MessageBody
+    = Response Version StatusCode ReasonPhrase Headers MessageBody
 
 instance Show Response where
-    show (Response version statusCode reasonPhrase messageBody)
-        = version ++ " " ++ show statusCode ++ " " ++ reasonPhrase ++ "\r\n\r\n"
-          ++ messageBody
+    show (Response version statusCode reasonPhrase headers messageBody)
+        = version ++ " " ++ show statusCode ++ " " ++ reasonPhrase
+          ++ "\r\n" ++ headers ++ "\r\n\r\n" ++ messageBody
           
 respond200 :: MessageBody -> Response
-respond200 = Response "HTTP/1.1" 200 "OK"
+respond200 = Response "HTTP/1.1" 200 "OK" []
+
+respond303 :: String -> Response
+respond303 location = Response "HTTP/1.1" 303 "See other"
+                      ("Location: " ++ location)
+                      "REDIRECT"
 
 respond404 :: Response
-respond404 = Response "HTTP/1.1" 404 "Page Not Found"
+respond404 = Response "HTTP/1.1" 404 "Page Not Found" []
                       "The requested page does not exist."
 
 respond500 :: Response
-respond500 = Response "HTTP/1.1" 500 "Internal Server Error"
+respond500 = Response "HTTP/1.1" 500 "Internal Server Error" []
                       "An internal server error occurred."

@@ -1,5 +1,5 @@
-module Logging (
-    module LogClass,
+module Web.Logging (
+    module Web.LogClass,
     message,
     message',
     messageProcess
@@ -11,8 +11,8 @@ import Control.Monad.Reader
 import Data.Time
 import System.Console.ANSI
 
-import Handler
-import LogClass
+import Web.Handler
+import Web.LogClass
 
 logColor :: LogClass -> Color
 logColor Info    = Blue

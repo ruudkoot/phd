@@ -5,7 +5,7 @@ module Page.Static (
 import Data.List
 import System.IO
 
-import URL
+import Web.URL
 
 render :: ResourcePath -> IO String
 render path = do

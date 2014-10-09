@@ -1,6 +1,6 @@
 {-# LANGUAGE ExistentialQuantification, TupleSections #-}
 
-module Page (
+module Web.Page (
     Page(..),
     Parameters,
     GetRequest,
@@ -15,7 +15,7 @@ module Page (
 import Control.Applicative
 import Data.Map
 
-import HTTP
+import Web.HTTP
 import Lens
 
 -- | Page

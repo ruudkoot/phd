@@ -1,9 +1,9 @@
-module Handler where
+module Web.Handler where
 
 import Control.Concurrent
 import Control.Monad.Reader
 
-import LogClass
+import Web.LogClass
 
 type Handler a = ReaderT (Chan (LogClass, String)) IO a
 

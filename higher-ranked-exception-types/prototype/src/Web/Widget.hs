@@ -1,4 +1,4 @@
-module Widget where
+module Web.Widget where
 
 class Widget w where
     serialize :: w -> String
