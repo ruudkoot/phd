@@ -1,4 +1,4 @@
-{-# LANGUAGE ExistentialQuantification, TupleSections #-}
+{-# LANGUAGE ExistentialQuantification, TupleSections, OverloadedStrings #-}
 
 module Web.Page (
     Page(..),
@@ -15,8 +15,10 @@ module Web.Page (
 import Control.Applicative
 import Data.Map
 
-import Web.HTTP
-import Lens
+import Control.Lens
+
+import Network.Wai        (Response, responseLBS)
+import Network.HTTP.Types (status200)
 
 -- | Page
 
@@ -41,7 +43,7 @@ pureRequest getRequest state param = (,state) <$> getRequest state param
 -- | Bottoms
 
 noGet :: GetRequest state
-noGet _ _ = return respond404
+noGet _ _ = return $ responseLBS status200 [] "OK"
 
 noPut :: PostRequest state
 noPut     = pureRequest noGet

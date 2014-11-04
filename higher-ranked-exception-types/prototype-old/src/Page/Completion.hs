@@ -1,12 +1,15 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Page.Completion (
     page
 ) where
 
+import Data.ByteString.Lazy
 import Data.Map
 
+import Control.Lens
 import Web.HTTP
 import Web.Page
-import Lens
 import State
 
 page :: Page State
@@ -18,7 +21,7 @@ page = Page { getRequest  = getR,
             }
 
 getR :: GetRequest String
-getR state _ = return $ respond200 $ unlines [
+getR state _ = return $ responseLBS status200 [] $ pack $ unlines [
 
     "<html lang=\"en\">",
         "<body>",
@@ -28,7 +31,7 @@ getR state _ = return $ respond200 $ unlines [
                 "<input type=submit>",
             "</form>",
             "<h1>Current expression</h1>",
-            "<p>" ++ state ++ "</p>",
+            "<pre>" ++ state ++ "</pre>",
         "</body>",
     "</html>"
 
@@ -36,4 +39,4 @@ getR state _ = return $ respond200 $ unlines [
 
 postR :: PostRequest String
 postR state param = do
-    return (respond303 "/completion", findWithDefault "" "eval" param)
+    return (status303 "/completion", findWithDefault "" "expr" param)

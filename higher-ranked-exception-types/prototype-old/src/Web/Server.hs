@@ -10,13 +10,20 @@ import Control.Exception hiding (Handler)
 import Control.Monad
 import Control.Monad.Reader
 import Data.IORef
+import Data.Map (fromList)
 import Data.Maybe
 import System.IO
 import Network
 
+import Network.Wai (responseLBS, Application)
+import Network.Wai.Handler.Warp (run)
+import Network.HTTP.Types (status200)
+import Network.HTTP.Types.Header (hContentType)
+
+import Web.Encoding
 import Web.Handler
-import Web.Logging
 import Web.HTTP
+import Web.Logging
 import Web.URL
 import Web.Page as Page
 
@@ -45,10 +52,13 @@ run port = withSocketsDo $ do
             
         handleRequest :: Handle -> Handler ()
         handleRequest handle = do
+            threadId <- liftIO myThreadId
+            message' Info $ "handleRequest" ++ show handle ++ "{threadId = " ++ show threadId ++ "}"
             contents <- liftIO $ hGetContents handle
             let request@(Request reqType url' _ headers messageBody)
                     = parseRequest contents
-            -- message' Info request
+            message' Info $ "--- handleRequest"
+            message' Info request
             let url@(URL _ resourcePath _)
                     = parseURL (fromJust $ lookup "Host" headers) url'
             message' Info url
@@ -65,9 +75,13 @@ run port = withSocketsDo $ do
 
             -- Rendering
             liftIO $ do
-                response <- mkResponse state renderer reqType undefined undefined
+                response <- mkResponse state renderer reqType
+                                (fromList headers)
+                                (fromList . decode . WWWFormURLEncoded $ messageBody)
                 hPutStr handle (show response)
                 hClose handle
+                
+            message' Info $ ">>> handleRequest:" ++ show handle
 
         handleException :: Show a => Handle -> Either SomeException a -> Handler ()
         handleException handle (Left someException) = do
@@ -102,10 +116,16 @@ mkResponse state
            postParam
   = do st <- readIORef state
        (response, st') <- case reqType of {
-           GET  -> pureRequest getRequest (Page.get stateLens st) getParam;
-           POST -> postRequest            (Page.get stateLens st) postParam;
+         GET  -> pureRequest getRequest (Page.get stateLens st) getParam;
+         POST -> postRequest            (Page.get stateLens st) postParam;
        }
        writeIORef state (Page.set stateLens st st')
        return response
 mkResponse _ Nothing _ _ _
     = return respond404
+    
+parseGet :: String -> Page.Parameters
+parseGet = undefined
+
+parsePost :: String -> Page.Parameters
+parsePost = undefined

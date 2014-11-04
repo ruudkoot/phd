@@ -1,4 +1,4 @@
-module Lens (
+module Control.Lens (
     Lens(..)
 ) where
 

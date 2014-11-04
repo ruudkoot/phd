@@ -60,7 +60,7 @@ executable higher-ranked-exception-types
   other-extensions:    TupleSections, ViewPatterns
   
   -- Other library packages from which modules are imported.
-  build-depends:       base >=4.7 && <4.8, containers, mtl >=2.2 && <2.3, time >=1.4 && <1.5, ansi-terminal >=0.6 && <0.7, network >=2.5 && <2.6, split, HTTP
+  build-depends:       base >=4.7 && <4.8, containers, mtl >=2.2 && <2.3, time >=1.4 && <1.5, ansi-terminal >=0.6 && <0.7, network >=2.5 && <2.6, split, MissingH, HTTP, wai, warp, http-types, bytestring
   
   -- Directories containing source files.
   hs-source-dirs:      src
