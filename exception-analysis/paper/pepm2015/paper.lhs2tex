@@ -1,4 +1,4 @@
-\documentclass[authoryear,preprint]{sigplanconf}
+\documentclass[authoryear]{sigplanconf}
 
 %% FIXME: Rule [T-Abs] still introduces a bit of poisoning. A rule with more
 %%        fresh variables would likely result in a nicer proof (as for [T-Fst]).
@@ -202,21 +202,20 @@ Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor 
 
 \begin{document}
 
-\conferenceinfo{ICFP '14}{September 1--3, 2014, Gothenburg, Sweden.}
-\copyrightyear{2014}
-\copyrightdata{[to be supplied]} 
+\exclusivelicense
+\conferenceinfo{PEPM~'15}{January 13--14, 2015, Mumbai, India}
+\copyrightyear{2015}
+\copyrightdata{978-1-4503-3297-2/15/01}
+\copyrightdoi{2678015.2682542}
 
-\titlebanner{DRAFT---Do not distribute}
-\preprintfooter{Submitted to ICFP '14}
+%\titlebanner{DRAFT---Do not distribute}
+%\preprintfooter{Submitted to PEPM '15}
 
 \title{Type-based Exception Analysis for\\Non-strict Higher-order Functional Languages\\with Imprecise Exception Semantics}
 
-\authorinfo{\ANONYMOUS{Ruud Koot}{Robb Stark}\thanks{This material is based upon work supported by the \ANONYMOUS{Netherlands Organisation for Scientific Research (NWO)}{Night's Watch}.}\and \ANONYMOUS{Jurriaan Hage}{Daenerys Targaryen}}
+\authorinfo{\ANONYMOUS{Ruud Koot}{Robb Stark}\thanks{This material is based upon work supported by the \ANONYMOUS{Netherlands Organisation for Scientific Research (NWO)}{Night's Watch} under grant number 612.001.120.}\and \ANONYMOUS{Jurriaan Hage}{Daenerys Targaryen}}
 {Department of Computing and Information Sciences\\Utrecht University}
-{\ANONYMOUS{\{r.koot,j.hage\}@@uu.nl}{\{r.stark,d.targaryen\}@@winterfell.no}}
-%\authorinfo{Robb Stark\thanks{This material is based upon work supported by the \ANONYMOUS{Netherlands Organisation for Scientific Research (NWO)}{Night's Watch}.}}
-%{Winterfell University\\Westeros}{r.stark@@winterfell.no}
-%\authorinfo{Daenerys Targaryen}{Astapor Academy\\Essos}{d.targaryen@@astapor.es}
+{\{r.koot,j.hage\}@@uu.nl}
 
 \maketitle
 
@@ -246,7 +245,7 @@ Languages, Theory, Verification
 
 % FIXME: add/remove keywords
 \keywords
-type-based program analysis, exception analysis, imprecise exceptions, pattern-matching, polymorphic recursion, static contract checking
+type-based program analysis, exception analysis, imprecise exceptions, pattern-matching%, polymorphic recursion, static contract checking
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}\label{sec-introduction} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -262,7 +261,7 @@ Still, we would like to warn the programmer when we accept a program as correctl
 Unlike other exception analyses that have appeared in the literature---%FIXME: list 'em
 which primarily attempt to track uncaught user-thrown or environment-induced exceptions, such as those that could be encountered when reading invalid data from disk---we are first and foremost concerned with accurately tracking the exceptions raised by failed pattern-matches. Therefore, our analysis might equally well be called a \emph{pattern-match analysis}, although it is certainly not strictly limited to one as such. Getting results of usable accuracy---eliminating as many false positives as possible---requires carefully keeping track of the data-flow through the program. This additionally improves the accuracy of reporting potential exceptions not related to pattern matching and opens the way for employing the analysis to perform static contract checking.
 
-\subsection{Contributions}
+\subsection{Contributions}\label{sec-contributions}
 
 Our contributions include the following:
 \begin{itemize}
@@ -717,6 +716,12 @@ The rules \CiteRule{E-Pair} and \CiteRule{E-Cons} wrap the syntactic pair and co
 \CiteRule{E-Fst} evaluates the argument passed to $\Fst$to a normal form. If it is an exceptional value, \CiteRule{E-FstExn} will propagate it; if it is a closed pair constructor, \CiteRule{E-FstPair} will project the first argument and bind its free variables in the environment it has been closed over. Accordingly for \CiteRule{E-Snd}, \CiteRule{E-SndExn} and \CiteRule{E-SndPair}.
 \CiteRule{E-Case} will evaluate the scrutinee of a \textbf{case}-expression to a normal form. If it evaluates to a nil-constructor, \CiteRule{E-CaseNil} will select the first arm. If it evaluates to a closed cons-constructor, \CiteRule{E-CaseCons} will select the second arm, binding $x_1$ and $x_2$ to respectively the first and second component of the constructor in the environment the constructor was closed over. In case the scrutinee evaluates to an exceptional value \CiteRule{E-CaseExn1}, \mbox{\CiteRule{E-CaseExn2}} and \CiteRule{E-CaseExn3} will continue evaluating both arms and gather and propagate all exception labels encountered. In the reduction rule \CiteRule{E-CaseExn2} we still need to bind $x_1$ and $x_2$ to some expression in $\rho$. As this expression we take $\Crash{\emptyset}$ in both cases, as it is the least committing value in our system: it is associated with both an empty set of exceptional values, as well as with an empty set of non-exceptional values.
 \CiteRule{E-Bind1} and \CiteRule{E-Bind2} will continue evaluating any expression $e$ in the given environment $\rho_1$ until it has been fully reduced to a value, which either contains no free variables, or has them explicitly closed over by a \textbf{close}-construct.
+
+%% Termination %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\paragraph{Diverging expressions}
+
+Note that diverging expressions, such as $\Crash{}\ (\Fix{f}{f})$ will not raise an exception in this operational semantics. This is not consistent with Haskell's imprecise exception semantics, where this is possible. Resolving this discrepancy without sacrificing precision would involve adding a termination analysis (\emph{cf}. \citealt{Vazou:2014:RTH:2628136.2628161}). While we believe this can be accommodated with minor changes to the analysis, we shall not further address this issue in remainder of the paper.
 
 %% Constraints %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1426,6 +1431,8 @@ by instead of generating a fresh variable that will end up in the left-hand side
 \section{Extensions}\label{sec-extensions} %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+To handle the motivating examples from Section~\ref{sec-motivation} a number of extensions to the language and analysis are necessary. (These are not supported by the prototype mentioned in Section~\ref{sec-contributions}, but are being implemented in an improved prototype.)
+
 \subsection{Polymorphism} \label{sec-polymorphism}
 
 Consider the polymorphic function |apply|:
@@ -1521,7 +1528,7 @@ Some additional issues need to be resolved to generalize to arbitrary algebraic 
 
 \subsection{Static contract checking} Our analysis can also be used for static contract checking. A contract can be desugared into a Findler--Felleisen wrapper \cite{Findler:2002:CHF:581478.581484}, raising a contract violation exception (together with some additional information on who to blame for the violation) when a contract violation is detected. The data flow-dependence of the analysis should be able to statically determine some contract can never be violated and prevent the contract violation exception from being propagated.
 
-\subsection{Code optimization} While designed as a validating analysis, the analysis can also be used to improve the performance of compiled code. Currently, the Glasgow Haskell Compiler generates inefficient code for |risers|: it will emit code that still contains a \textbf{case}-expression with a branch testing the result in the recursive call as being a nil-constructor and raising an exception if so. Based on the results of our analysis this test can be elided. A small subtlety is that the polyvariance of our analysis should be reduced, as only a single instance of the code will be generated for all polyvariant instantiations; more ambitiously we might want to let the compiler generate specialized instances of the code for different polyvariant instances.
+%\subsection{Code optimization} While designed as a validating analysis, the analysis can also be used to improve the performance of compiled code. Currently, the Glasgow Haskell Compiler generates inefficient code for |risers|: it will emit code that still contains a \textbf{case}-expression with a branch testing the result in the recursive call as being a nil-constructor and raising an exception if so. Based on the results of our analysis this test can be elided. A small subtlety is that the polyvariance of our analysis should be reduced, as only a single instance of the code will be generated for all polyvariant instantiations; more ambitiously we might want to let the compiler generate specialized instances of the code for different polyvariant instances.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\section{Implementation}\label{sec-implementation} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1633,7 +1640,7 @@ Compared to our analysis the inference of intersection types would make this a \
 %\clearpage
 
 \acks
-We would like to thank \ANONYMOUS{Stefan Holdermans}{Tyrion Lannister} for his contributions in the earlier stages of this research and Neil Mitchell for answering several questions related to Catch.
+We would like to thank Stefan Holdermans for his contributions in the earlier stages of this research, Matthijs Steen for implementing an improved version of the prototype, and Neil Mitchell for answering several questions related to Catch. Lastly we would like to thank the anonymous reviewers for providing valuable feedback and criticisms over various iterations of this paper.
 
 %\clearpage
 
