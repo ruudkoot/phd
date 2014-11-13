@@ -1616,7 +1616,7 @@ forall alpha  beta_1 beta_2.  FPNil alpha        -> beta_1  -> (alpha  -> FPList
 \end{code}
 \end{center}
 
-Compared to our analysis the inference of intersection types would make this a \emph{relational analysis}, while our use of subtyping and conditional constraints only define a \emph{functional} relation between input and output variables. This would seem to imply our analysis is less precise. As the system by Freeman put some restrictions on recursive definitions of recursive types, it is unclear to us if |risers| could be given a suitable refinement type that precludes the occurrence of pattern-match failures. Additionally, the use of intersection types leads to a superexponential blowup of the size of types in the number of |rectype|-definitions.
+Compared to our analysis the inference of intersection types would make this a \emph{relational analysis}, while our use of subtyping and conditional constraints only define a \emph{functional} relation between input and output variables. This would seem to imply our analysis is less precise. As the system by Freeman puts some restrictions on recursive definitions of recursive types, it is unclear to us if |risers| could be given a suitable refinement type that precludes the occurrence of pattern-match failures. Additionally, the use of intersection types leads to a superexponential blowup of the size of types in the number of |rectype|-definitions.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\section{Future Research}\label{sec-futureresearch} %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1645,7 +1645,7 @@ We would like to thank Stefan Holdermans for his contributions in the earlier st
 %\clearpage
 
 \bibliographystyle{abbrvnat}
-\bibliography{paper} % FIXME: merge .bbl here and add \softraggedright
+\bibliography{paper} % FIXME: merge .bbl here; Sherridan complains about supposedly missing \raggedright...
 
 \end{document}
 
