@@ -13,10 +13,16 @@ import Analysis.Names
 import Data.Set
 import GHC.Exts (sortWith)
 
+import Analysis.Latex
+
 -- | Expressions
 
 data Sort = C | Sort :=> Sort
-    deriving (Eq, Show)
+    deriving (Eq, Read, Show)
+
+instance Latex Sort where
+    latex C           = "C"
+    latex (s1 :=> s2) = "(" ++ latex s1 ++ "\\Rightarrow " ++ latex s2 ++ ")"
 
 -- TODO: (future work) can we do multi-sorted algebras elegantly with type families?
 -- TODO: (future work) generalize over the underlying first-order algebra
@@ -27,6 +33,7 @@ data Tm a
     | App (Tm a) (Tm a)
     | Union (Tm a) (Tm a)
     | Empty
+    deriving Read
 
 instance Show a => Show (Tm a) where
     show (Var   x    ) = "x" ++ show x
@@ -35,6 +42,20 @@ instance Show a => Show (Tm a) where
     show (App   e1 e2) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
     show (Union e1 e2) = "(" ++ show e1 ++ "∪" ++ show e2 ++ ")"
     show (Empty      ) = "∅"
+
+instance Latex a => Latex (Tm a) where
+    latex (Var   x    )
+        = "x_{" ++ show x ++ "}"
+    latex (Con   c    )
+        = "\\{" ++ latex c ++ "\\}"
+    latex (Abs   x s e)
+        = "(\\lambda x_{" ++ show x ++ "}:" ++ latex s ++ "." ++ latex e ++ ")"
+    latex (App   e1 e2) 
+        = "(" ++ latex e1 ++ "\\ " ++ latex e2 ++ ")"
+    latex (Union e1 e2)
+        = "(" ++ latex e1 ++ "\\cup" ++ latex e2 ++ ")"
+    latex (Empty      )
+        = "\\emptyset"
 
 -- * Syntactic equality up to alpha-renaming
 

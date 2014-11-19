@@ -3,7 +3,10 @@ module Analysis.Latex where
 import Data.List
 
 class Latex a where
-    lhs2tex :: a -> String
+    latex :: a -> String
+
+instance Latex () where
+    latex () = "\\diamond"
 
 instance Latex a => Latex [a] where
-    lhs2tex env = "[" ++ intercalate "," (map lhs2tex env) ++ "]"
+    latex env = "[" ++ intercalate "," (map latex env) ++ "]"

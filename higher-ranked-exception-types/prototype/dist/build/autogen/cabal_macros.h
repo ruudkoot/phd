@@ -14,12 +14,26 @@
   (major1) == 0 && (major2) <  7 || \
   (major1) == 0 && (major2) == 7 && (minor) <= 0)
 
+/* package containers-0.5.5.1 */
+#define VERSION_containers "0.5.5.1"
+#define MIN_VERSION_containers(major1,major2,minor) (\
+  (major1) <  0 || \
+  (major1) == 0 && (major2) <  5 || \
+  (major1) == 0 && (major2) == 5 && (minor) <= 5)
+
 /* package happstack-lite-7.3.5 */
 #define VERSION_happstack_lite "7.3.5"
 #define MIN_VERSION_happstack_lite(major1,major2,minor) (\
   (major1) <  7 || \
   (major1) == 7 && (major2) <  3 || \
   (major1) == 7 && (major2) == 3 && (minor) <= 5)
+
+/* package mtl-2.2.1 */
+#define VERSION_mtl "2.2.1"
+#define MIN_VERSION_mtl(major1,major2,minor) (\
+  (major1) <  2 || \
+  (major1) == 2 && (major2) <  2 || \
+  (major1) == 2 && (major2) == 2 && (minor) <= 1)
 
 /* package text-1.2.0.0 */
 #define VERSION_text "1.2.0.0"
