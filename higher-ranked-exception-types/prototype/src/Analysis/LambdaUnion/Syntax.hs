@@ -1,5 +1,6 @@
 module Analysis.LambdaUnion.Syntax (
     module Analysis.Names,
+    Env,
     Sort(..),
     Tm(..),
     fv,
@@ -12,6 +13,8 @@ import Data.Set
 import Analysis.Names
 
 -- | Types
+
+type Env = [(Name, Sort)]
 
 data Sort = C | Sort :=> Sort
     deriving (Eq, Read, Show)

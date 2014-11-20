@@ -1,4 +1,10 @@
-module Analysis.LambdaUnion.Reduce where
+module Analysis.LambdaUnion.Reduce (
+    NormalizeTm(..),
+    reduce,
+    normalize,
+    normalize',
+    etaExpand
+) where
 
 import Analysis.LambdaUnion.Syntax
 
@@ -82,35 +88,54 @@ congrue _ _
 
 -- | Normalization (full β-reduction)
 
-normalize :: Ord a => Tm a -> Tm a
-normalize (Var x)
-    = Var x
-normalize (Con c)
-    = Con c
-normalize (Abs x k e)
-    = Abs x k (normalize e)
-normalize (App e1 e2)
-    = let e1' = normalize e1
-          e2' = normalize e2
+data NormalizeTm a
+    = NormalizeVar (Tm a) (Tm a)
+    | NormalizeCon (Tm a) (Tm a)
+    | NormalizeAbs (NormalizeTm a) (Tm a) (Tm a)
+    | NormalizeApp1 (NormalizeTm a) (NormalizeTm a) (Tm a) (Tm a)
+    | NormalizeApp2 (NormalizeTm a) (NormalizeTm a) (NormalizeTm a) (Tm a) (Tm a)
+    | NormalizeUnion1 (NormalizeTm a) (NormalizeTm a) (Tm a) (Tm a)
+    | NormalizeUnion2 (NormalizeTm a) (NormalizeTm a) (NormalizeTm a) (Tm a) (Tm a)
+    | NormalizeEmpty (Tm a) (Tm a)
+
+(#) :: (b -> a) -> b -> (a, b)
+x # y = (x y, y)
+
+normalize' :: Ord a => Tm a -> (NormalizeTm a, Tm a)
+normalize' tm@(Var x)
+    = NormalizeVar tm # tm
+normalize' tm@(Con c)
+    = NormalizeCon tm # tm
+normalize' tm@(Abs x k e)
+    = let (de', e') = normalize' e
+       in NormalizeAbs de' tm # Abs x k e'
+normalize' tm@(App e1 e2)
+    = let (de1', e1') = normalize' e1
+          (de2', e2') = normalize' e2
        in case reduce (App e1' e2') of
-            Just e' -> normalize e'
-            Nothing -> App e1' e2'
-normalize (Union e1 e2)
-    = let e1' = normalize e1
-          e2' = normalize e2
+            Nothing -> NormalizeApp1 de1' de2' tm # App e1' e2'
+            Just ({-de', -}e') ->
+                let (de'', e'') = normalize' e'
+                in NormalizeApp2 de1' de2' de'' tm # e''
+normalize' tm@(Union e1 e2)
+    = let (de1', e1') = normalize' e1
+          (de2', e2') = normalize' e2
        in case reduce (Union e1' e2') of
-            Just e' -> normalize e'
-            Nothing -> Union e1' e2'
-normalize Empty
-    = Empty
-            
+            Nothing -> NormalizeUnion1 de1' de2' tm # Union e1' e2'
+            Just ({-de', -}e') ->
+                let (de'', e'') = normalize' e'
+                in NormalizeUnion2 de1' de2' de'' tm # e''
+normalize' tm@Empty
+    = NormalizeEmpty tm # Empty
+    
+normalize :: Ord a => Tm a -> Tm a
+normalize = snd . normalize'
+
 -- | η-expansion
 
 -- TODO: we also need to do "∅-expansion" (or better: generate correct terms in
 --       the solver), but we cannot always do this without knowing its sort;
 --       instead there currently is a small hack in reduce
-
-type Env = [(Name, Sort)]
 
 etaExpand :: Env -> Tm a -> Fresh (Tm a)
 etaExpand env (Var x)

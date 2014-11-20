@@ -13,7 +13,7 @@ import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 
 import qualified Analysis.LambdaUnion as LU
-import           Analysis.Latex
+import           Analysis.Print
 
 main :: IO ()
 main = serve Nothing myApp
@@ -36,7 +36,8 @@ template (toHtml -> title) body = toResponse $
                   "MathJax.Hub.Config({",
                   "  extensions: [\"tex2jax.js\"],",
                   "  jax: [\"input/TeX\",\"output/HTML-CSS\"],",
-                  "  tex2jax: {inlineMath: [[\"$\",\"$\"],[\"\\\\(\",\"\\\\)\"]]}",
+                  "  tex2jax: {inlineMath: [[\"$\",\"$\"],[\"\\\\(\",\"\\\\)\"]]},",
+                  "  \"HTML-CSS\": { styles: { '.MathJax_Display': { \"margin\": 0 }}}",
                   "});"
               ]
             H.script ! type_ "text/javascript"
@@ -71,10 +72,15 @@ lambdaUnion = msum [ viewForm, processForm ] where
     processForm :: ServerPart Response
     processForm = do
         method POST
+
         expr :: LU.Tm () <- read . unpack <$> lookText "expr"
+
+        let (normalizationTree, _) = LU.normalize' expr
+
         ok $ template "lambda-union" $ do
             H.h2 "Expression"
             H.p $ toHtml $ "\\[" ++ latex expr ++ "\\]"
 
             H.h2 "Reduction"
+            H.p $ toHtml normalizationTree
             
