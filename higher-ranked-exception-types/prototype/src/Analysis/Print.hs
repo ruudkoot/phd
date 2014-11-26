@@ -33,7 +33,7 @@ derive rule premises conclusion
                 if null premises then
                     H.td ""
                 else
-                    mapM_ H.td premises
+                    mapM_ (H.td ! A.style "vertical-align: bottom") premises
                 H.td ""
             H.tr $ do
                 H.td ! A.colspan colSpan $ H.hr

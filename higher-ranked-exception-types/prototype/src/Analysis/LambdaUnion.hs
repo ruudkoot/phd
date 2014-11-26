@@ -1,6 +1,7 @@
 module Analysis.LambdaUnion (
     module Analysis.LambdaUnion.Syntax,
-    module Analysis.LambdaUnion.Reduce
+    module Analysis.LambdaUnion.Reduce,
+    module Analysis.LambdaUnion.Equality
 ) where
 
 -- TODO: make use of the fact that terms are always fully applied
