@@ -30,22 +30,6 @@ instance MonadFresh Fresh where
 evalFresh :: Fresh a -> Name -> a
 evalFresh = evalState
 
--- | Fresh names + logging
-
-type FreshLog s = State (Name, s)
-
-instance MonadFresh (FreshLog s) where
-    fresh = do
-        (name, _) <- get
-        modify (\(name, s) -> (next name, s))
-        return name
-
-msg :: Monoid s => s -> FreshLog s ()
-msg s = modify (\(name, st) -> (name, s <> st))
-
-runFreshLog :: Monoid s => FreshLog s a -> Name -> (a, s)
-runFreshLog m n = let (x, (_, s)) = runState m (n, mempty) in (x, s)
-
 -- | Miscellaneous
 
 -- FIXME: this function is here to avoid a cyclic import

@@ -30,13 +30,14 @@ data Expr
     | Nil Ty
     | Cons Expr Expr
     | Case Expr Expr Name Name Expr
+    deriving Read
     
 instance Latex Expr where
     latex (Var x     ) = "x_{" ++ show x ++ "}"
     latex (Abs x t e ) = "(λx" ++ show x ++ ":" ++ show t ++ "." ++ latex e ++ ")"
     latex (App e1 e2 ) = "(" ++ latex e1 ++ " " ++ latex e2 ++ ")"
-    latex (Con True  ) = "true"
-    latex (Con False ) = "false"
+    latex (Con True  ) = "\\mathbf{true}"
+    latex (Con False ) = "\\mathbf{false}"
     latex (Crash l t ) = "(⚡" ++ l ++ ":" ++ show t ++ ")"
     latex (Seq e1 e2 ) = "(" ++ latex e1 ++ " seq " ++ latex e2 ++ ")"
     latex (Fix e     ) = "(fix " ++ latex e ++ ")"
@@ -131,6 +132,7 @@ data ExnTy
     | ExnBool
     | ExnList ExnTy Exn
     | ExnArr  ExnTy Exn ExnTy Exn
+    deriving Show
     
 exnTyEq :: KindEnv -> ExnTy -> ExnTy -> Bool
 exnTyEq env (ExnForall e k t) (ExnForall e' k' t')

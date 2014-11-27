@@ -2,13 +2,16 @@
 
 module Analysis.Print (
     Latex(..),
+    mathjax,
+    envAsTable,
     derive
 ) where
 
+import Control.Monad
 import Data.List
 
 import Data.Text (Text)
-import Text.Blaze.Html5 (ToMarkup, (!))
+import Text.Blaze.Html5 (ToMarkup, Html, (!), toHtml)
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 
@@ -24,6 +27,17 @@ instance Latex a => Latex [a] where
     latex env = "[" ++ intercalate "," (map latex env) ++ "]"
     
 -- | HTML
+
+mathjax :: Latex a => a -> Html
+mathjax x = toHtml $ "\\[" ++ latex x ++ "\\]"
+
+envAsTable :: (Show a, Latex b) => [(a,b)] -> H.Html
+envAsTable env = do
+    H.table $ do
+        forM_ env $ \(k,v) -> do
+            H.tr $ do
+                H.td $ toHtml $ show k
+                H.td $ mathjax v
 
 derive :: Text -> [H.Html] -> H.Html -> H.Html
 derive rule premises conclusion
