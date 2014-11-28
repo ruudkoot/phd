@@ -64,39 +64,53 @@ data Reconstruct
                        Name
                        Result
     | ReconstructCrash Env KindEnv Expr
+                       Complete'
                        Result
     | ReconstructSeq   Env KindEnv Expr
+                       Reconstruct' Reconstruct' Name
                        Result
     | ReconstructFix   Env KindEnv Expr
+                       Reconstruct' Instantiate' Subst Subst Name [Constr] 
                        Result
     | ReconstructNil   Env KindEnv Expr
+                       Complete' Name
                        Result
     | ReconstructCons  Env KindEnv Expr
+                       Reconstruct' Reconstruct' ExnTy Name Name
                        Result
     | ReconstructCase  Env KindEnv Expr
+                       Reconstruct' Reconstruct' Env Reconstruct' ExnTy Name [Constr]
                        Result
 
 instance ToMarkup Reconstruct where
     toMarkup (ReconstructVar   env kenv tm _ _ _ _)
         = derive "R-Var" [] ""
-    toMarkup (ReconstructAbs   env kenv tm _ _ _ _ _ _ _ _)
-        = derive "R-Abs" [] ""
+    toMarkup (ReconstructAbs   env kenv tm _ _ (re,_,_,_,_) _ _ _ _ _)
+        = derive "R-Abs" (map H.toMarkup [re]) ""
     toMarkup (ReconstructApp   env kenv tm (re1,_,_,_,_) (re2,_,_,_,_) _ _ _ _ _)
         = derive "R-App" (map H.toMarkup [re1, re2]) ""
     toMarkup (ReconstructCon   env kenv tm _ _)
         = derive "R-Con" [] ""
-    toMarkup (ReconstructCrash env kenv tm _)
+    toMarkup (ReconstructCrash env kenv tm _ _)
         = derive "R-Crash" [] ""
-    toMarkup (ReconstructSeq   env kenv tm _)
-        = derive "R-Seq" [] ""
-    toMarkup (ReconstructFix   env kenv tm _)
-        = derive "R-Fix" [] ""
-    toMarkup (ReconstructNil   env kenv tm _)
+    toMarkup (ReconstructSeq   env kenv tm (re1,_,_,_,_) (re2,_,_,_,_) _ _)
+        = derive "R-Seq" (map H.toMarkup [re1, re2]) ""
+    toMarkup (ReconstructFix   env kenv tm (re,_,_,_,_) _ _ _ _ _ _)
+        = derive "R-Fix" (map H.toMarkup [re]) ""
+    toMarkup (ReconstructNil   env kenv tm _ _ _)
         = derive "R-Nil" [] ""
-    toMarkup (ReconstructCons  env kenv tm _)
+    toMarkup (ReconstructCons  env kenv tm _ _ _ _ _ _)
         = derive "R-Cons" [] ""
-    toMarkup (ReconstructCase  env kenv tm _)
-        = derive "R-Case" [] ""
+    toMarkup (ReconstructCase  env kenv tm 
+                    (re1,_,_,_,_) (re2,_,_,_,_) _  (re3,_,_,_,_) _ _ _ _)
+        = derive "R-Case" (map H.toMarkup [re1, re2, re3]) ""
+        
+reconstructHtml :: Reconstruct -> [H.Html]
+reconstructHtml (ReconstructApp env kenv tm re1 re2 _ _ _ _ _)
+    = return $ H.table $ do
+        H.tr $ H.td $ H.toHtml $
+            "reconstruct $\\Gamma=" ++ latex env ++ "$ $\\Delta="
+            ++ latex kenv ++ "$ $" ++ latex tm ++ "$"
 
 (#) :: ((a, b, c, d) -> e) -> (a, b, c, d) -> (e, a, b, c, d)
 x # y@(y1,y2,y3,y4) = (x y, y1, y2, y3, y4)
@@ -140,59 +154,59 @@ reconstruct env kenv tm@(Con b)
             (ExnBool, e, [], [(e,EXN)])
 
 reconstruct env kenv tm@(Crash lbl ty)
-    = do (dty', ty', ExnVar exn1, kenv1) <- C.complete [] ty
-         return $ ReconstructCrash env kenv tm #
+    = do co@(dty', ty', ExnVar exn1, kenv1) <- C.complete [] ty
+         return $ ReconstructCrash env kenv tm co #
             (ty', exn1, [ExnCon lbl :<: exn1], kenv1)
 
 reconstruct env kenv tm@(Seq e1 e2)
-    = do (_, t1, exn1, c1, kenv1) <- reconstruct env kenv e1
-         (_, t2, exn2, c2, kenv2) <- reconstruct env kenv e2
+    = do re1@(_, t1, exn1, c1, kenv1) <- reconstruct env kenv e1
+         re2@(_, t2, exn2, c2, kenv2) <- reconstruct env kenv e2
          e <- fresh
-         return $ ReconstructSeq env kenv tm #
+         return $ ReconstructSeq env kenv tm re1 re2 e #
             (t2, e, [ExnVar exn1 :<: e, ExnVar exn2 :<: e] ++ c1 ++ c2
             ,[(e,kindOf (kenv1 ++ kenv) (ExnVar exn1))] ++ kenv2 ++ kenv1)
 
 reconstruct env kenv tm@(Fix e1)   -- FIXME: unknown to be sound (see notes)
-    = do (_, t1, exn1, c1, kenv1) <- reconstruct env kenv e1
-         (ExnArr t' (ExnVar exn') t'' exn'', kenv') <- instantiate t1
+    = do re@(_, t1, exn1, c1, kenv1) <- reconstruct env kenv e1
+         ins@(ExnArr t' (ExnVar exn') t'' exn'', kenv') <- instantiate t1
          let subst1 = match [] t'' t'
          let subst2 = [(exn', substExn' subst1 exn'')]
          e <- fresh
          let c = [substExn' (subst2 <.> subst1) exn'' :<: e] ++ c1
-         return $ ReconstructFix env kenv tm # 
+         return $ ReconstructFix env kenv tm re ins subst1 subst2 e c # 
             (substExnTy' (subst2 <.> subst1) t', e, c
             ,[(e,EXN)] ++ kenv' ++ kenv1)
 
 reconstruct env kenv tm@(Nil ty)
-    = do (dty', ty', ExnVar exn1, kenv1) <- C.complete [] ty
+    = do co@(dty', ty', ExnVar exn1, kenv1) <- C.complete [] ty
          exn2 <- fresh
          -- FIXME: not completely sure about the kind of exn2 (should be ∅)
-         return $ ReconstructNil env kenv tm # 
+         return $ ReconstructNil env kenv tm co exn2 # 
             (ExnList ty' (ExnVar exn1), exn2, [], [(exn2, EXN)] ++ kenv1)
 
 reconstruct env kenv tm@(Cons e1 e2)
-    = do (_, t1              , exn1, c1, kenv1) <- reconstruct env kenv e1
-         (_, ExnList t2 exn2', exn2, c2, kenv2) <- reconstruct env kenv e2
+    = do re1@(_, t1              , exn1, c1, kenv1) <- reconstruct env kenv e1
+         re2@(_, ExnList t2 exn2', exn2, c2, kenv2) <- reconstruct env kenv e2
          let t = join t1 t2
          ex1 <- fresh
          ex2 <- fresh
          -- FIXME: not completely sure about the kind of ex1 and ex2 (should be ∅)
-         return $ ReconstructCons env kenv tm # 
+         return $ ReconstructCons env kenv tm re1 re2 t ex1 ex2 # 
             (ExnList t (ExnVar ex1), ex2
             ,[ExnVar exn1 :<: ex1, exn2' :<: ex1, ExnVar exn2 :<: ex2] ++ c1 ++ c2
             ,[(ex1, kindOf (kenv1 ++ kenv) (ExnVar exn1))
             ,(ex2, kindOf (kenv2 ++ kenv) (ExnVar exn2))] ++ kenv2 ++ kenv1)
 
 reconstruct env kenv tm@(Case e1 e2 x1 x2 e3)
-    = do (_, ExnList t1 exn1', exn1, c1, kenv1) <- reconstruct env kenv e1
-         (_, t2, exn2, c2, kenv2) <- reconstruct env kenv e2
+    = do re1@(_, ExnList t1 exn1', exn1, c1, kenv1) <- reconstruct env kenv e1
+         re2@(_, t2, exn2, c2, kenv2) <- reconstruct env kenv e2
          let env' = (x1, (t1, exn1')) : (x2, (ExnList t1 exn1', ExnVar exn1)) : env
-         (_, t3, exn3, c3, kenv3) <- reconstruct env' (kenv1 ++ kenv) e3
+         re3@(_, t3, exn3, c3, kenv3) <- reconstruct env' (kenv1 ++ kenv) e3
          let t = join t2 t3
          exn <- fresh
          let c = [ExnVar exn1 :<: exn, ExnVar exn2 :<: exn, ExnVar exn3 :<: exn]
                     ++ c1 ++ c2 ++ c3
-         return $ ReconstructCase env kenv tm # 
+         return $ ReconstructCase env kenv tm re1 re2 env' re3 t exn c # 
             (t, exn, c
             ,[(exn, kindOf (kenv1 ++ kenv) (ExnVar exn1))] ++ kenv3 ++ kenv2 ++ kenv1)
          

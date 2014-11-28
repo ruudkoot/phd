@@ -165,3 +165,4 @@ inferencePage = msum [ viewForm, processForm ] where
             H.p $ toHtml re
             
             H.h2 "Algorithm"
+            mapM_ H.p (An.reconstructHtml re)
