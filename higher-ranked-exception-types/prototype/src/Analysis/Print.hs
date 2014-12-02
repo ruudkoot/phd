@@ -3,6 +3,7 @@
 module Analysis.Print (
     Latex(..),
     mathjax,
+    mathjax',
     envAsTable,
     derive
 ) where
@@ -28,8 +29,9 @@ instance Latex a => Latex [a] where
     
 -- | HTML
 
-mathjax :: Latex a => a -> Html
-mathjax x = toHtml $ "\\[" ++ latex x ++ "\\]"
+mathjax, mathjax' :: Latex a => a -> Html
+mathjax  x = toHtml $ "\\[" ++ latex x ++ "\\]"
+mathjax' x = toHtml $ "$"   ++ latex x ++ "$"
 
 envAsTable :: (Show a, Latex b) => [(a,b)] -> H.Html
 envAsTable env = do

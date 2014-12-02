@@ -3,11 +3,12 @@
 module Main where
 
 import Control.Applicative ((<$>), optional)
+import Control.Monad (replicateM_)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text.Lazy (unpack)
 import Happstack.Lite
-import Text.Blaze.Html5 (Html, (!), a, form, input, p, toHtml, label, textarea)
+import Text.Blaze.Html5 (Html, (!), a, form, input, p, toHtml, label, textarea, br)
 import Text.Blaze.Html5.Attributes (action, enctype, href, name, size, type_, value)
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
@@ -54,6 +55,7 @@ template (toHtml -> title) body = toResponse $
         H.body $ do
             H.h1 title
             body
+            replicateM_ 10 br
             p $ a ! href "/" $ "back home"
 
 fileServing :: ServerPart Response
