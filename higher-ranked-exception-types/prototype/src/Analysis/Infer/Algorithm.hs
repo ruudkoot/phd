@@ -1,6 +1,8 @@
 {-# LANGUAGE ViewPatterns #-}
 
-module Analysis.Infer.Algorithm where
+module Analysis.Infer.Algorithm (
+    reconstruct
+) where
 
 import qualified Data.Map    as M
 

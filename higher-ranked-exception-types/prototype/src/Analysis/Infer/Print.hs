@@ -2,7 +2,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns      #-}
 
-module Analysis.Infer.Print where
+module Analysis.Infer.Print (
+    reconstructHtml
+) where
 
 import Text.Blaze.Html5 (ToMarkup)
 import Text.Blaze.Html5 ((!))
@@ -19,7 +21,7 @@ import Analysis.Infer.Types
 
 instance Latex (Name, (ExnTy, Exn)) where
     latex (show -> e, (latex -> ty, latex -> exn))
-        = "e_" ++ e ++ " : " ++ ty ++ " & " ++ exn
+        = "e_{" ++ e ++ "} : " ++ ty ++ " & " ++ exn
 
 instance Latex Constr where
     latex (exn :<: e) = latex exn ++ " \\sqsubseteq e_{" ++ show e ++ "}"
@@ -55,7 +57,7 @@ instance ToMarkup Reconstruct where
 
 reconstructHtml :: Reconstruct -> [H.Html]
 reconstructHtml (ReconstructApp env kenv tm re1 re2 ins subst e c result)
-    = return $ H.table $ do
+    = (return $ H.table $ do
         H.tr $ H.td ! A.colspan "3" $ H.toHtml $
             "reconstruct $\\Gamma=" ++ latex env ++ "$ $\\Delta=" ++ latex kenv
             ++ "$ $" ++ latex tm ++ "$"
@@ -90,6 +92,12 @@ reconstructHtml (ReconstructApp env kenv tm re1 re2 ins subst e c result)
         H.tr $ do
             H.td $ H.b $ "in"
             H.td ! A.colspan "2" $ htmlResult result
+      ) ++ recurse [re1, re2]
+reconstructHtml _ = ["reconstruct"]
+
+      
+recurse :: [Reconstruct'] -> [H.Html]
+recurse = concatMap (\(re,_,_,_,_) -> reconstructHtml re)
 
 rowRes html = H.tr $ do
                 H.td $ ""
