@@ -56,6 +56,23 @@ instance ToMarkup Reconstruct where
         = derive "R-Case" (map H.toMarkup [re1, re2, re3]) ""
 
 reconstructHtml :: Reconstruct -> [H.Html]
+reconstructHtml (ReconstructVar env kenv tm t exn e result)
+    = (return $ H.table $ do
+        H.tr $ H.td ! A.colspan "3" $ H.toHtml $
+            htmlHeader env kenv tm
+        H.tr $ do
+            H.td $ H.b $ "let"
+            H.td $ "(t, exn)"
+            H.td $ "$\\leftarrow$ lookup x env"
+        H.tr $ do
+            H.td $ ""
+            H.td $ ""
+            H.td $ H.toHtml $ "$" ++ latex t ++ ", " ++ latex exn ++ "$"
+        htmlFresh "e"
+        H.tr $ do
+            H.td $ H.b $ "in"
+            H.td ! A.colspan "2" $ htmlResult result
+      )
 reconstructHtml (ReconstructAbs env kenv tm@(Abs x ty tm') co@(_, t1', exn1, kenv1) env' re@(_, t2', exn2, c1, kenv2) v exn2' t' e result)
     = (return $ H.table $ do
         H.tr $ H.td ! A.colspan "3" $ H.toHtml $
