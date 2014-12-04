@@ -21,7 +21,7 @@ import Analysis.Infer.Types
 
 instance Latex (Name, (ExnTy, Exn)) where
     latex (show -> e, (latex -> ty, latex -> exn))
-        = "e_{" ++ e ++ "} : " ++ ty ++ " & " ++ exn
+        = "e_{" ++ e ++ "} : " ++ ty ++ "\\ \\&\\ " ++ exn
 
 instance Latex Constr where
     latex (exn :<: e) = latex exn ++ " \\sqsubseteq e_{" ++ show e ++ "}"
@@ -56,11 +56,53 @@ instance ToMarkup Reconstruct where
         = derive "R-Case" (map H.toMarkup [re1, re2, re3]) ""
 
 reconstructHtml :: Reconstruct -> [H.Html]
+reconstructHtml (ReconstructAbs env kenv tm@(Abs x ty tm') co@(_, t1', exn1, kenv1) env' re@(_, t2', exn2, c1, kenv2) v exn2' t' e result)
+    = (return $ H.table $ do
+        H.tr $ H.td ! A.colspan "3" $ H.toHtml $
+            htmlHeader env kenv tm
+        H.tr $ do
+            H.td $ H.b $ "let"
+            H.td $ "(t1', exn1, kenv1)"
+            H.td $ "$\\leftarrow$ complete [] ty"
+        rowRes $ htmlComplete t1' exn1 kenv1
+        H.tr $ do
+            H.td $ ""
+            H.td $ "env'"
+            H.td $ H.toHtml $ "$\\leftarrow " ++ latex env' ++ "$"
+        H.tr $ do
+            H.td $ ""
+            H.td $ "(t2', exn2, c1, kenv2)"
+            H.td $ "$\\leftarrow$ reconstruct env' (kenv1 ++ kenv) tm'"
+        rowRes $ htmlReconstruct re
+        H.tr $ do
+            H.td $ ""
+            H.td $ "v"
+            H.td $ H.toHtml $ "$\\leftarrow " ++ show v ++ "$"
+        H.tr $ do
+            H.td $ ""
+            H.td $ "exn2'"
+            H.td $ "$\\leftarrow$ solve (kenv1 ++ [(exn1,EXN)] ++ kenv) c1 v exn2"
+        H.tr $ do
+            H.td $ ""
+            H.td $ ""
+            H.td $ mathjax' exn2'
+        H.tr $ do
+            H.td $ ""
+            H.td $ "t'"
+            H.td $ "$\\leftarrow$ C.forallFromEnv kenv1 (ExnArr t1' (ExnVar exn1) t2' exn2')"
+        H.tr $ do
+            H.td $ ""
+            H.td $ ""
+            H.td $ mathjax' t'
+        htmlFresh "e"
+        H.tr $ do
+            H.td $ H.b $ "in"
+            H.td ! A.colspan "2" $ htmlResult result
+      ) ++ recurse [re]
 reconstructHtml (ReconstructApp env kenv tm re1 re2 ins subst e c result)
     = (return $ H.table $ do
         H.tr $ H.td ! A.colspan "3" $ H.toHtml $
-            "reconstruct $\\Gamma=" ++ latex env ++ "$ $\\Delta=" ++ latex kenv
-            ++ "$ $" ++ latex tm ++ "$"
+            htmlHeader env kenv tm
         H.tr $ do
             H.td $ H.b $ "let"
             H.td $ "(t1, exn1, c1, kenv1)"
@@ -81,10 +123,7 @@ reconstructHtml (ReconstructApp env kenv tm re1 re2 ins subst e c result)
             H.td $ "subst"
             H.td $ "= [(exn2', ExnVar exn2)] <.> match [] t2 t2'"
         rowRes $ mathjax' subst
-        H.tr $ do
-            H.td $ ""
-            H.td $ "e"
-            H.td $ H.b $ "fresh"
+        htmlFresh "e"
         H.tr $ do
             H.td $ ""
             H.td $ "c"
@@ -95,7 +134,7 @@ reconstructHtml (ReconstructApp env kenv tm re1 re2 ins subst e c result)
       ) ++ recurse [re1, re2]
 reconstructHtml _ = ["reconstruct"]
 
-      
+
 recurse :: [Reconstruct'] -> [H.Html]
 recurse = concatMap (\(re,_,_,_,_) -> reconstructHtml re)
 
@@ -104,13 +143,27 @@ rowRes html = H.tr $ do
                 H.td $ ""
                 H.td $ html
 
+htmlHeader env kenv tm
+    = "reconstruct $\\Gamma=" ++ latex env ++ "$ $\\Delta=" ++ latex kenv
+            ++ "$ $" ++ latex tm ++ "$"
+
+htmlFresh name
+    = H.tr $ do
+        H.td $ ""
+        H.td $ name
+        H.td $ H.b $ "fresh"
+
 htmlReconstruct (re, t, exn, c, kenv)
     = H.toHtml $ "$(" ++ latex t ++ ", e_{" ++ show exn ++ "}," ++ latex c
-                 ++ "," ++ latex kenv ++ ")$"
+                    ++ "," ++ latex kenv ++ ")$"
+
+htmlComplete exnTy exn kenv
+    = H.toHtml $ "$(" ++ latex exnTy ++ ", " ++ latex exn ++ ", "
+                    ++ latex kenv ++ ")$"
 
 htmlInstantiate (exnTy, kenv)
     = H.toHtml $ "$(" ++ latex exnTy ++ "," ++ latex kenv ++ ")$"
 
 htmlResult (exnTy, exn, c, kenv)
     = H.toHtml $ "$(" ++ latex exnTy ++ ", e_{" ++ show exn ++ "}, " ++ latex c
-                 ++ ", " ++ latex kenv ++ ")$"
+                    ++ ", " ++ latex kenv ++ ")$"

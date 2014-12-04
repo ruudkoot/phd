@@ -34,15 +34,15 @@ data Expr
     
 instance Latex Expr where
     latex (Var x     ) = "x_{" ++ show x ++ "}"
-    latex (Abs x t e ) = "(λx" ++ show x ++ ":" ++ show t ++ "." ++ latex e ++ ")"
-    latex (App e1 e2 ) = "(" ++ latex e1 ++ " " ++ latex e2 ++ ")"
+    latex (Abs x t e ) = "(\\lambda x_{" ++ show x ++ "}:" ++ latex t ++ "." ++ latex e ++ ")"
+    latex (App e1 e2 ) = "(" ++ latex e1 ++ "\\ " ++ latex e2 ++ ")"
     latex (Con True  ) = "\\mathbf{true}"
     latex (Con False ) = "\\mathbf{false}"
-    latex (Crash l t ) = "(⚡" ++ l ++ ":" ++ show t ++ ")"
-    latex (Seq e1 e2 ) = "(" ++ latex e1 ++ " seq " ++ latex e2 ++ ")"
-    latex (Fix e     ) = "(fix " ++ latex e ++ ")"
-    latex (Nil t     ) = "(ε:" ++ show t ++ ")"
-    latex (Cons e1 e2) = "(" ++ latex e1 ++ "⸪" ++ latex e2 ++ ")"
+    latex (Crash l t ) = "(⚡" ++ l ++ ":" ++ latex t ++ ")"
+    latex (Seq e1 e2 ) = "(" ++ latex e1 ++ " \\mathbf{seq} " ++ latex e2 ++ ")"
+    latex (Fix e     ) = "(\\mathbf{fix} " ++ latex e ++ ")"
+    latex (Nil t     ) = "(\\epsilon:" ++ latex t ++ ")"
+    latex (Cons e1 e2) = "(" ++ latex e1 ++ " :: " ++ latex e2 ++ ")"
     latex (Case e1 e2 x1 x2 e3)
         = "(case " ++ latex e1 ++ " of { ε ↦ " ++ latex e2 ++ "; x"
                         ++ show x1 ++ "⸪x" ++ show x2 ++ " ↦ " ++ latex e3 ++ "})"
@@ -74,7 +74,7 @@ type KindEnv = [(Name, Kind)]
 
 instance Latex (Name, Kind) where
     latex (show -> e, latex -> k)
-        = "e_" ++ e ++ " : " ++ k
+        = "e_{" ++ e ++ "} : " ++ k
 
 kind2sort :: Kind -> LU.Sort
 kind2sort EXN         = LU.C
@@ -120,12 +120,12 @@ exnNormalize :: Exn -> Exn
 exnNormalize = lu2exn . LU.normalize . exn2lu
 
 instance Latex Exn where
-    latex (ExnEmpty)       = "∅"
-    latex (ExnUnion e1 e2) = "(" ++ latex e1 ++ "∪" ++ latex e2 ++ ")"
+    latex (ExnEmpty)       = "\\emptyset"
+    latex (ExnUnion e1 e2) = "(" ++ latex e1 ++ "\\cup " ++ latex e2 ++ ")"
     latex (ExnCon lbl)     = "{" ++ lbl ++ "}"
     latex (ExnVar n)       = "e_{" ++ show n ++ "}"
     latex (ExnApp e1 e2)   = "(" ++ latex e1 ++ "\\ " ++ latex e2 ++ ")"
-    latex (ExnAbs n k e)   = "(λe" ++ show n ++ ":" ++ show k ++ "." ++ latex e ++ ")"
+    latex (ExnAbs n k e)   = "(\\lambda e_{" ++ show n ++ "}:" ++ latex k ++ "." ++ latex e ++ ")"
     
 data ExnTy
     = ExnForall Name Kind ExnTy
