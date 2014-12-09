@@ -58,96 +58,52 @@ instance ToMarkup Reconstruct where
 reconstructHtml :: Reconstruct -> [H.Html]
 reconstructHtml (ReconstructVar env kenv tm t exn e result)
     = (return $ H.table $ do
-        H.tr $ H.td ! A.colspan "3" $ H.toHtml $
-            htmlHeader env kenv tm
-        H.tr $ do
-            H.td $ H.b $ "let"
-            H.td $ "(t, exn)"
-            H.td $ "$\\leftarrow$ lookup x env"
-        H.tr $ do
-            H.td $ ""
-            H.td $ ""
-            H.td $ H.toHtml $ "$" ++ latex t ++ ", " ++ latex exn ++ "$"
-        htmlFresh "e"
-        H.tr $ do
-            H.td $ H.b $ "in"
-            H.td ! A.colspan "2" $ htmlResult result
+        htmlHeader env kenv tm
+        htmlDo "lookup x env"
+        trAssign "t"   (latex t)
+        trAssign "exn" (latex exn)
+        htmlFresh e
+        htmlResult result
       )
 reconstructHtml (ReconstructAbs env kenv tm@(Abs x ty tm') co@(_, t1', exn1, kenv1) env' re@(_, t2', exn2, c1, kenv2) v exn2' t' e result)
     = (return $ H.table $ do
-        H.tr $ H.td ! A.colspan "3" $ H.toHtml $
-            htmlHeader env kenv tm
-        H.tr $ do
-            H.td $ H.b $ "let"
-            H.td $ "(t1', exn1, kenv1)"
-            H.td $ "$\\leftarrow$ complete [] ty"
-        rowRes $ htmlComplete t1' exn1 kenv1
+        htmlHeader env kenv tm
+        htmlDo "complete [] ty"
+        htmlComplete t1' exn1 kenv1
         H.tr $ do
             H.td $ ""
             H.td $ "env'"
-            H.td $ H.toHtml $ "$\\leftarrow " ++ latex env' ++ "$"
-        H.tr $ do
-            H.td $ ""
-            H.td $ "(t2', exn2, c1, kenv2)"
-            H.td $ "$\\leftarrow$ reconstruct env' (kenv1 ++ kenv) tm'"
-        rowRes $ htmlReconstruct re
-        H.tr $ do
-            H.td $ ""
-            H.td $ "v"
-            H.td $ H.toHtml $ "$\\leftarrow " ++ show v ++ "$"
-        H.tr $ do
-            H.td $ ""
-            H.td $ "exn2'"
-            H.td $ "$\\leftarrow$ solve (kenv1 ++ [(exn1,EXN)] ++ kenv) c1 v exn2"
-        H.tr $ do
-            H.td $ ""
-            H.td $ ""
-            H.td $ mathjax' exn2'
-        H.tr $ do
-            H.td $ ""
-            H.td $ "t'"
-            H.td $ "$\\leftarrow$ C.forallFromEnv kenv1 (ExnArr t1' (ExnVar exn1) t2' exn2')"
-        H.tr $ do
-            H.td $ ""
-            H.td $ ""
-            H.td $ mathjax' t'
-        htmlFresh "e"
-        H.tr $ do
-            H.td $ H.b $ "in"
-            H.td ! A.colspan "2" $ htmlResult result
+            H.td ! A.colspan "3" $ H.toHtml $ "$\\leftarrow " ++ latex env' ++ "$"
+        htmlDo "reconstruct env' (kenv1 ++ kenv) tm'"
+        htmlReconstruct re "XXX"                -- FIXME: (t2', exn2, c1, kenv2)
+        trAssign "v" (show v)
+        htmlDo "solve (kenv1 ++ [(exn1,EXN)] ++ kenv) c1 v exn2"
+        trAssign "exn2'" (show exn2')
+        htmlDo "C.forallFromEnv kenv1 (ExnArr t1' (ExnVar exn1) t2' exn2')"
+        trAssign "t'" (latex t')
+        htmlFresh e
+        htmlResult result
       ) ++ recurse [re]
 reconstructHtml (ReconstructApp env kenv tm re1 re2 ins subst e c result)
     = (return $ H.table $ do
-        H.tr $ H.td ! A.colspan "3" $ H.toHtml $
-            htmlHeader env kenv tm
-        H.tr $ do
-            H.td $ H.b $ "let"
-            H.td $ "(t1, exn1, c1, kenv1)"
-            H.td $ "$\\leftarrow$ reconstruct env kenv e1"
-        rowRes $ htmlReconstruct re1
-        H.tr $ do
-            H.td $ ""
-            H.td $ "(t2, exn2, c2, kenv2)"
-            H.td $ "$\\leftarrow$ reconstruct env kenv e2"
-        rowRes $ htmlReconstruct re2
-        H.tr $ do
-            H.td $ ""
-            H.td $ "(ExnArr t2' (ExnVar exn2') t' exn', kenv')"
-            H.td $ "<- instantiate t1"
-        rowRes $ htmlInstantiate ins
+        htmlHeader env kenv tm
+        htmlDo "reconstruct env kenv e1"
+        htmlReconstruct re1 "1"
+        htmlDo "reconstruct env kenv e2"
+        htmlReconstruct re2 "2"
+        htmlDo "instantiate t1"
+        htmlInstantiate ins
         H.tr $ do
             H.td $ ""
             H.td $ "subst"
-            H.td $ "= [(exn2', ExnVar exn2)] <.> match [] t2 t2'"
+            H.td ! A.colspan "3" $ "= [(exn2', ExnVar exn2)] <.> match [] t2 t2'"
         rowRes $ mathjax' subst
-        htmlFresh "e"
+        htmlFresh e
         H.tr $ do
             H.td $ ""
             H.td $ "c"
-            H.td $ "[substExn' subst exn' :<: e, ExnVar exn1 :<: e] ++ c1 ++ c2"
-        H.tr $ do
-            H.td $ H.b $ "in"
-            H.td ! A.colspan "2" $ htmlResult result
+            H.td ! A.colspan "3" $ "[substExn' subst exn' :<: e, ExnVar exn1 :<: e] ++ c1 ++ c2"
+        htmlResult result
       ) ++ recurse [re1, re2]
 reconstructHtml _ = ["reconstruct"]
 
@@ -158,29 +114,66 @@ recurse = concatMap (\(re,_,_,_,_) -> reconstructHtml re)
 rowRes html = H.tr $ do
                 H.td $ ""
                 H.td $ ""
-                H.td $ html
+                H.td ! A.colspan "3" $ html
+
+trAssign :: String -> String -> H.Html
+trAssign name expr = do
+    H.tr $ do
+        H.td $ ""
+        H.td $ ""
+        H.td $ H.toHtml $ "$" ++ name ++ "$"
+        H.td $ "$\\leftarrow$"
+        H.td $ H.toHtml $ "$" ++ expr ++ "$"
 
 htmlHeader env kenv tm
-    = "reconstruct $\\Gamma=" ++ latex env ++ "$ $\\Delta=" ++ latex kenv
+    = H.tr $ H.td ! A.colspan "5" $ H.toHtml $
+        "reconstruct $\\Gamma=" ++ latex env ++ "$ $\\Delta=" ++ latex kenv
             ++ "$ $" ++ latex tm ++ "$"
 
 htmlFresh name
     = H.tr $ do
         H.td $ ""
-        H.td $ name
-        H.td $ H.b $ "fresh"
+        H.td $ H.toHtml $ "$e_{" ++ show name ++ "}$"
+        H.td ! A.colspan "3" $ H.b $ "fresh"
 
-htmlReconstruct (re, t, exn, c, kenv)
-    = H.toHtml $ "$(" ++ latex t ++ ", e_{" ++ show exn ++ "}," ++ latex c
-                    ++ "," ++ latex kenv ++ ")$"
+htmlReconstruct :: Reconstruct' -> String -> H.Html
+htmlReconstruct (re, t, exn, c, kenv) n
+    = do trAssign ("t_{" ++ n ++ "}")    (latex t)
+         trAssign ("exn_{" ++ n ++ "}")  ("e_{" ++ show exn ++ "}")
+         trAssign ("c_{" ++ n ++ "}")    (latex c)
+         trAssign ("kenv_{" ++ n ++ "}") (latex kenv)
 
 htmlComplete exnTy exn kenv
-    = H.toHtml $ "$(" ++ latex exnTy ++ ", " ++ latex exn ++ ", "
-                    ++ latex kenv ++ ")$"
+    = do trAssign "t_1'"   (latex exnTy)
+         trAssign "exn_1"  (latex exn)
+         trAssign "kenv_1" (latex kenv)
 
 htmlInstantiate (exnTy, kenv)
-    = H.toHtml $ "$(" ++ latex exnTy ++ "," ++ latex kenv ++ ")$"
+    = do trAssign "t_2'\\{\\chi_2'\\} \\to t'\\{\\chi'\\}" (latex exnTy)
+         trAssign "kenv'"                                  (latex kenv)
+
+htmlDo thing = H.tr $ do
+            H.td $ H.b "do"
+            H.td ! A.colspan "4" $ thing
 
 htmlResult (exnTy, exn, c, kenv)
-    = H.toHtml $ "$(" ++ latex exnTy ++ ", e_{" ++ show exn ++ "}, " ++ latex c
-                    ++ ", " ++ latex kenv ++ ")$"
+    = do H.tr $ do
+            H.td $ H.b "in"
+            H.td $ "$t$"
+            H.td $ "="
+            H.td ! A.colspan "3" $ mathjax' exnTy
+         H.tr $ do
+            H.td $ ""
+            H.td $ "$e$"
+            H.td $ "="
+            H.td ! A.colspan "3" $ H.toHtml $ "$e_{" ++ show exn ++ "}$"
+         H.tr $ do
+            H.td $ ""
+            H.td $ "$C$"
+            H.td $ "="
+            H.td ! A.colspan "3" $ mathjax' c
+         H.tr $ do
+            H.td $ ""
+            H.td $ "$\\Delta$"
+            H.td $ "="
+            H.td ! A.colspan "3" $ mathjax' kenv
