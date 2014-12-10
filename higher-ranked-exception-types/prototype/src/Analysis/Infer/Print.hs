@@ -79,7 +79,7 @@ reconstructHtml (ReconstructAbs env kenv tm@(Abs x ty tm') co@(_, t1', exn1, ken
         trAssign "v" (show v)
         htmlDo "solve (kenv1 ++ [(exn1,EXN)] ++ kenv) c1 v exn2"
         trAssign "exn2'" (show exn2')
-        htmlDo "C.forallFromEnv kenv1 (ExnArr t1' (ExnVar exn1) t2' exn2')"
+        htmlDo "forallFromEnv kenv1 (ExnArr t1' (ExnVar exn1) t2' exn2')"
         trAssign "t'" (latex t')
         htmlFresh e
         htmlResult result
@@ -256,12 +256,12 @@ htmlDo thing = H.tr $ do
 htmlResult (exnTy, exn, c, kenv)
     = do H.tr $ do
             H.td $ H.b "in"
-            H.td $ "$t$"
+            H.td $ "$\\tau$"
             H.td $ "="
             H.td ! A.colspan "3" $ mathjax' exnTy
          H.tr $ do
             H.td $ ""
-            H.td $ "$e$"
+            H.td $ "$\\chi$"
             H.td $ "="
             H.td ! A.colspan "3" $ H.toHtml $ "$e_{" ++ show exn ++ "}$"
          H.tr $ do

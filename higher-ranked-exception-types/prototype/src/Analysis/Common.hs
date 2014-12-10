@@ -30,7 +30,7 @@ data Expr
     | Nil Ty
     | Cons Expr Expr
     | Case Expr Expr Name Name Expr
-    deriving Read
+    deriving (Read, Show)
     
 instance Latex Expr where
     latex (Var x     ) = "x_{" ++ show x ++ "}"

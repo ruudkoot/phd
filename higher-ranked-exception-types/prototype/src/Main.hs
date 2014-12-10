@@ -3,7 +3,7 @@
 module Main where
 
 import Control.Applicative ((<$>), optional)
-import Control.Monad (replicateM_)
+import Control.Monad (forM_, replicateM_, when)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text.Lazy (unpack)
@@ -67,20 +67,24 @@ homePage = ok $ template "Higher-Ranked Exception Types" $ do
     H.p $ a ! href "/lambda-union" $ "lambda-union"
     H.p $ a ! href "/hret"         $ "higher-ranked exception types"
 
-expressionForm :: Text -> H.AttributeValue -> ServerPart Response
-expressionForm title url = do
+expressionForm :: Text -> H.AttributeValue -> [String] -> ServerPart Response
+expressionForm title url examples = do
     method GET
-    ok $ template title $
+    ok $ template title $ do
         form ! action url
              ! enctype "multipart/form-data" ! A.method "POST" $ do
-            textarea ! name "expr" ! A.cols "80" $ ""
+            textarea ! A.id "expr" ! name "expr" ! A.cols "80" $ ""
             input ! type_ "submit"
+        when (not (null examples)) $ do
+            H.h2 "Examples"
+            H.ol $ forM_ examples $ \example -> do
+                H.li $ H.a ! A.href "javascript:void(0);" ! A.onclick (H.toValue $ "$('#expr').val('" ++ example ++ "');") $ H.code $ toHtml example
 
 lambdaUnion :: ServerPart Response
 lambdaUnion = msum [ viewForm, processForm ] where
 
     viewForm :: ServerPart Response
-    viewForm = expressionForm "lambda-union" "/lambda-union"
+    viewForm = expressionForm "lambda-union" "/lambda-union" []
 
     processForm :: ServerPart Response
     processForm = do
@@ -110,7 +114,7 @@ completionPage = msum [ viewForm, processForm ] where
     title = "Higher-Ranked Exception Types: Completion"
 
     viewForm :: ServerPart Response
-    viewForm = expressionForm title "/hret/completion"
+    viewForm = expressionForm title "/hret/completion" []
 
     processForm :: ServerPart Response
     processForm = do
@@ -139,7 +143,7 @@ inferencePage = msum [ viewForm, processForm ] where
     title = "Higher-Ranked Exception Types: Inference"
 
     viewForm :: ServerPart Response
-    viewForm = expressionForm title "/hret/inference"
+    viewForm = expressionForm title "/hret/inference" An.inferenceExamples
 
     processForm :: ServerPart Response
     processForm = do
