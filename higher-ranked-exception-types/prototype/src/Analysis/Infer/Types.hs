@@ -33,7 +33,7 @@ data Reconstruct
                        Complete' Env Reconstruct' [Name] Exn ExnTy Name
                        Result
     | ReconstructApp   Env KindEnv Expr
-                       Reconstruct' Reconstruct' Instantiate' Subst Name [Constr]
+                       Reconstruct' Reconstruct' Instantiate' Subst Subst Name [Constr]
                        Result
     | ReconstructCon   Env KindEnv Expr
                        Name

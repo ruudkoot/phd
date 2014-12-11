@@ -46,10 +46,11 @@ reconstruct env kenv tm@(App e1 e2)
     = do re1@(_, t1, exn1, c1, kenv1) <- reconstruct env kenv e1
          re2@(_, t2, exn2, c2, kenv2) <- reconstruct env kenv e2
          ins@(ExnArr t2' (ExnVar exn2') t' exn', kenv') <- instantiate t1
-         let subst = [(exn2', ExnVar exn2)] <.> match [] t2 t2'
+         subst' <- match [] t2 t2'
+         let subst = [(exn2', ExnVar exn2)] <.> subst'
          e <- fresh
          let c = [substExn' subst exn' :<: e, ExnVar exn1 :<: e] ++ c1 ++ c2
-         return $ ReconstructApp env kenv tm re1 re2 ins subst e c #
+         return $ ReconstructApp env kenv tm re1 re2 ins subst' subst e c #
             (substExnTy' subst  t', e, c
             ,[(e, kindOf (kenv1 ++ kenv) (ExnVar exn1))] ++ kenv' ++ kenv2 ++ kenv1)
 
@@ -74,7 +75,7 @@ reconstruct env kenv tm@(Seq e1 e2)
 reconstruct env kenv tm@(Fix e1)   -- FIXME: unknown to be sound (see notes)
     = do re@(_, t1, exn1, c1, kenv1) <- reconstruct env kenv e1
          ins@(ExnArr t' (ExnVar exn') t'' exn'', kenv') <- instantiate t1
-         let subst1 = match [] t'' t'
+         subst1 <- match [] t'' t'
          let subst2 = [(exn', substExn' subst1 exn'')]
          e <- fresh
          let c = [substExn' (subst2 <.> subst1) exn'' :<: e] ++ c1

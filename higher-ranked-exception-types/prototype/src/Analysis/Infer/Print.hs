@@ -37,7 +37,7 @@ instance ToMarkup Reconstruct where
         = derive "R-Var" [] ""
     toMarkup (ReconstructAbs   env kenv tm _ _ (re,_,_,_,_) _ _ _ _ _)
         = derive "R-Abs" (map H.toMarkup [re]) ""
-    toMarkup (ReconstructApp   env kenv tm (re1,_,_,_,_) (re2,_,_,_,_) _ _ _ _ _)
+    toMarkup (ReconstructApp   env kenv tm (re1,_,_,_,_) (re2,_,_,_,_) _ _ _ _ _ _)
         = derive "R-App" (map H.toMarkup [re1, re2]) ""
     toMarkup (ReconstructCon   env kenv tm _ _)
         = derive "R-Con" [] ""
@@ -49,8 +49,8 @@ instance ToMarkup Reconstruct where
         = derive "R-Fix" (map H.toMarkup [re]) ""
     toMarkup (ReconstructNil   env kenv tm _ _ _)
         = derive "R-Nil" [] ""
-    toMarkup (ReconstructCons  env kenv tm _ _ _ _ _ _)
-        = derive "R-Cons" [] ""
+    toMarkup (ReconstructCons  env kenv tm (re1,_,_,_,_) (re2,_,_,_,_) _ _ _ _)
+        = derive "R-Cons" (map H.toMarkup [re1, re2]) ""
     toMarkup (ReconstructCase  env kenv tm 
                     (re1,_,_,_,_) (re2,_,_,_,_) _  (re3,_,_,_,_) _ _ _ _)
         = derive "R-Case" (map H.toMarkup [re1, re2, re3]) ""
@@ -84,7 +84,7 @@ reconstructHtml (ReconstructAbs env kenv tm@(Abs x ty tm') co@(_, t1', exn1, ken
         htmlFresh e
         htmlResult result
       ) ++ recurse [re]
-reconstructHtml (ReconstructApp env kenv tm re1 re2@(_, t2, exn2, c2, kenv2) ins@(ExnArr t2' (ExnVar exn2') t' exn', kenv') subst e c result)
+reconstructHtml (ReconstructApp env kenv tm re1 re2@(_, t2, exn2, c2, kenv2) ins@(ExnArr t2' (ExnVar exn2') t' exn', kenv') subst' subst e c result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
         htmlDo "reconstruct env kenv e1"
@@ -97,6 +97,7 @@ reconstructHtml (ReconstructApp env kenv tm re1 re2@(_, t2, exn2, c2, kenv2) ins
             H.td $ ""
             H.td $ "subst"
             H.td ! A.colspan "3" $ H.toHtml $ "= [(exn2', ExnVar exn2)] <.> match [] $" ++ latex t2 ++ "$ $" ++ latex t2' ++ "$"
+        -- rowRes $ mathjax' subst'
         rowRes $ mathjax' subst
         htmlFresh e
         H.tr $ do
