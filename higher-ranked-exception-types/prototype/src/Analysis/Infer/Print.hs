@@ -78,13 +78,13 @@ reconstructHtml (ReconstructAbs env kenv tm@(Abs x ty tm') co@(_, t1', exn1, ken
         htmlReconstruct re "XXX"                -- FIXME: (t2', exn2, c1, kenv2)
         trAssign "v" (show v)
         htmlDo "solve (kenv1 ++ [(exn1,EXN)] ++ kenv) c1 v exn2"
-        trAssign "exn2'" (show exn2')
+        trAssign "exn2'" (latex exn2')
         htmlDo "forallFromEnv kenv1 (ExnArr t1' (ExnVar exn1) t2' exn2')"
         trAssign "t'" (latex t')
         htmlFresh e
         htmlResult result
       ) ++ recurse [re]
-reconstructHtml (ReconstructApp env kenv tm re1 re2 ins subst e c result)
+reconstructHtml (ReconstructApp env kenv tm re1 re2@(_, t2, exn2, c2, kenv2) ins@(ExnArr t2' (ExnVar exn2') t' exn', kenv') subst e c result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
         htmlDo "reconstruct env kenv e1"
@@ -96,7 +96,7 @@ reconstructHtml (ReconstructApp env kenv tm re1 re2 ins subst e c result)
         H.tr $ do
             H.td $ ""
             H.td $ "subst"
-            H.td ! A.colspan "3" $ "= [(exn2', ExnVar exn2)] <.> match [] t2 t2'"
+            H.td ! A.colspan "3" $ H.toHtml $ "= [(exn2', ExnVar exn2)] <.> match [] $" ++ latex t2 ++ "$ $" ++ latex t2' ++ "$"
         rowRes $ mathjax' subst
         htmlFresh e
         H.tr $ do
@@ -176,7 +176,7 @@ reconstructHtml (ReconstructCons env kenv tm re1 re2 t ex1 ex2 result)
         htmlFresh ex1
         htmlFresh ex2
         htmlResult result
-      )
+      ) ++ recurse [re1, re2]
 reconstructHtml (ReconstructCase env kenv tm re1 re2 env' re3 t exn c result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
@@ -189,7 +189,7 @@ reconstructHtml (ReconstructCase env kenv tm re1 re2 env' re3 t exn c result)
             H.td $ "env'"
             H.td ! A.colspan "3" $ "= (x1, (t1, exn1')) : (x2, (ExnList t1 exn1', ExnVar exn1)) : env"
         htmlDo "reconstruct env (kenv1 ++ kenv) e3"
-        htmlReconstruct re2 "3"
+        htmlReconstruct re3 "3"
         rowRes $ mathjax' env'
         H.tr $ do
             H.td $ ""
@@ -202,7 +202,7 @@ reconstructHtml (ReconstructCase env kenv tm re1 re2 env' re3 t exn c result)
             H.td $ "c"
             H.td ! A.colspan "3" $ "[ExnVar exn1 :<: exn, ExnVar exn2 :<: exn, ExnVar exn3 :<: exn] ++ c1 ++ c2 ++ c3"
         htmlResult result
-      )
+      ) ++ recurse [re1, re2, re3]
 
 
 recurse :: [Reconstruct'] -> [H.Html]

@@ -105,8 +105,9 @@ hretPage :: ServerPart Response
 hretPage = ok $ template "Higher-Ranked Exception Types" $ do
     H.p $ a ! href "/hret/completion" $ "completion"
     H.p $ a ! href "/hret/inference"  $ "inference"
-    H.p $ a ! href "/hret/join"       $ "join"
+    H.p $ a ! href "/hret/solve"      $ "solve"
     H.p $ a ! href "/hret/match"      $ "match"
+    H.p $ a ! href "/hret/join"       $ "join"
 
 completionPage :: ServerPart Response
 completionPage = msum [ viewForm, processForm ] where

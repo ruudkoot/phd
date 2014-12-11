@@ -1,11 +1,11 @@
 module Analysis.Infer (
-    module Analysis.Infer.Algorithm,
+    module Analysis.Infer.Reconstruct,
     module Analysis.Infer.Print,
     inferenceExamples
 ) where
 
 import Analysis.Common
-import Analysis.Infer.Algorithm
+import Analysis.Infer.Reconstruct
 import Analysis.Infer.Print
 
 inferenceExamples = map show [
@@ -22,7 +22,6 @@ inferenceExamples = map show [
     -- * crash
     Crash "foo" Bool,
     Crash "foo" (Bool :-> Bool),
-    -- ex07 = -- was a duplicate of ex09
     App (Abs 1 Bool (Var 1)) (Crash "foo" Bool),
     -- ex09: (bool,8,[e2 :<: 4,{foo} :<: 4,e5 :<: 6,{bar} :<: 6,(e3 e6) :<: 8,e4 :<: 8])
     --       not that e3 is by default set to {}, so we lose e6 = {bar}. also see ex11.
