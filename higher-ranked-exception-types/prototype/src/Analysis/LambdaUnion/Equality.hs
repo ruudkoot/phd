@@ -35,7 +35,7 @@ synEqAlpha _ _
 --       alternatively, we could 1) do η-expansion on-the-fly as a reduction rule, or
 --       2) alter the syntax to keep all expressions in fully applied form
 
-semanticallyEqual :: (Show a, Ord a) => Env -> Tm a -> Tm a -> Bool
+semanticallyEqual :: Ord a => Env -> Tm a -> Tm a -> Bool
 semanticallyEqual env e1 e2 =
     let e1'  = evalFresh (etaExpand env e1) (maxName e1 + 1001)
         e2'  = evalFresh (etaExpand env e2) (maxName e2 + 1001)

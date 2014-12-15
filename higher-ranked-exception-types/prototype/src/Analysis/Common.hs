@@ -40,12 +40,13 @@ instance Latex Expr where
     latex (Con False ) = "\\mathbf{false}"
     latex (Crash l t ) = "(⚡" ++ l ++ ":" ++ latex t ++ ")"
     latex (Seq e1 e2 ) = "(" ++ latex e1 ++ " \\mathbf{seq} " ++ latex e2 ++ ")"
-    latex (Fix e     ) = "(\\mathbf{fix} " ++ latex e ++ ")"
+    latex (Fix e     ) = "(\\mathbf{fix}\\ " ++ latex e ++ ")"
     latex (Nil t     ) = "(\\epsilon:" ++ latex t ++ ")"
     latex (Cons e1 e2) = "(" ++ latex e1 ++ " :: " ++ latex e2 ++ ")"
     latex (Case e1 e2 x1 x2 e3)
-        = "(case " ++ latex e1 ++ " of { ε ↦ " ++ latex e2 ++ "; x"
-                        ++ show x1 ++ "⸪x" ++ show x2 ++ " ↦ " ++ latex e3 ++ "})"
+        = "(\\mathbf{case}\\ " ++ latex e1 ++ "\\ \\mathbf{of}\\ \\{ ε \\mapsto "
+            ++ latex e2 ++ "; x" ++ show x1 ++ "::x" ++ show x2 ++ " \\mapsto "
+            ++ latex e3 ++ "\\})"
 
 -- | Types
 
@@ -64,7 +65,7 @@ instance Latex Ty where
         = "\\left[" ++ latex t ++ "\\right]"
 
 data Kind = EXN | Kind :=> Kind
-    deriving (Eq, Show)
+    deriving (Eq, Read, Show)
     
 instance Latex Kind where
     latex EXN         = "E"
@@ -94,7 +95,7 @@ data Exn
     | ExnVar Name
     | ExnApp Exn Exn
     | ExnAbs Name Kind Exn
-    deriving Show
+    deriving (Read, Show)
 
 exn2lu :: Exn -> LU.Tm Lbl
 exn2lu (ExnEmpty      ) = LU.Empty
@@ -132,11 +133,11 @@ data ExnTy
     | ExnBool
     | ExnList ExnTy Exn
     | ExnArr  ExnTy Exn ExnTy Exn
-    deriving Show
+    deriving (Read, Show)
     
 exnTyEq :: KindEnv -> ExnTy -> ExnTy -> Bool
 exnTyEq env (ExnForall e k t) (ExnForall e' k' t')
-    = k == k' && exnTyEq env t (substExnTy e' e t')
+    = k == k' && exnTyEq ((e,k) : env) t (substExnTy e' e t')
 exnTyEq env ExnBool ExnBool
     = True
 exnTyEq env (ExnList t exn) (ExnList t' exn')

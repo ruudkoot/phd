@@ -227,6 +227,16 @@ trAssign name expr = do
         H.td $ "$\\leftarrow$"
         H.td $ H.toHtml $ "$" ++ expr ++ "$"
 
+trCode :: String -> H.Html
+trCode expr = do
+    H.tr $ do
+        H.td $ ""
+        H.td $ ""
+        H.td $ ""
+        H.td $ "$\\leftarrow$"
+        H.td $ H.code $ H.toHtml $ expr
+
+
 htmlHeader env kenv tm
     = H.tr $ H.td ! A.colspan "5" $ H.toHtml $
         "reconstruct $\\Gamma=" ++ latex env ++ "$ $\\Delta=" ++ latex kenv
@@ -250,8 +260,14 @@ htmlComplete exnTy exn kenv
          trAssign "exn_1"  (latex exn)
          trAssign "kenv_1" (latex kenv)
 
-htmlInstantiate (exnTy, kenv)
+htmlInstantiate (exnTy@(ExnArr t2' (ExnVar exn2') t' exn'), kenv)   -- FIXME: local variable naming...
     = do trAssign "t_2'\\{\\chi_2'\\} \\to t'\\{\\chi'\\}" (latex exnTy)
+         trAssign "t_2'"     (latex t2')
+         trCode              (show t2')
+         trAssign "t'"       (latex t')
+         trCode              (show  t')
+         trAssign "\\chi_2'" (show exn2')
+         trAssign "\\chi'"   (latex exn')
          trAssign "kenv'"                                  (latex kenv)
 
 htmlDo thing = H.tr $ do

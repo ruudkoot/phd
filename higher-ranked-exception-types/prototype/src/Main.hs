@@ -17,6 +17,7 @@ import qualified Analysis.Names       as An
 import qualified Analysis.Common      as An
 import qualified Analysis.Completion  as An
 import qualified Analysis.Infer       as An
+import qualified Analysis.Infer.Match as An
 import qualified Analysis.LambdaUnion as LU
 import           Analysis.Print
 
@@ -30,6 +31,7 @@ myApp = msum $ reverse
     , dir "hret"                    $ hretPage
     , dir "hret" $ dir "completion" $ completionPage
     , dir "hret" $ dir "inference"  $ inferencePage
+    , dir "hret" $ dir "match"      $ matchPage
     , dir "static"                  $ fileServing
     ]
 
@@ -79,6 +81,17 @@ expressionForm title url examples = do
             H.h2 "Examples"
             H.ol $ forM_ examples $ \example -> do
                 H.li $ H.a ! A.href "javascript:void(0);" ! A.onclick (H.toValue $ "$('#expr').val('" ++ example ++ "');") $ H.code $ toHtml example
+
+expressionForm3 :: Text -> H.AttributeValue -> ServerPart Response
+expressionForm3 title url = do
+    method GET
+    ok $ template title $ do
+        form ! action url
+             ! enctype "multipart/form-data" ! A.method "POST" $ do
+            textarea ! A.id "env" ! name "env" ! A.cols "80" $ "[]"
+            textarea ! A.id "ty1" ! name "ty1" ! A.cols "80" $ "ExnBool"
+            textarea ! A.id "ty2" ! name "ty2" ! A.cols "80" $ "ExnBool"
+            input ! type_ "submit"
 
 lambdaUnion :: ServerPart Response
 lambdaUnion = msum [ viewForm, processForm ] where
@@ -173,3 +186,34 @@ inferencePage = msum [ viewForm, processForm ] where
             
             H.h2 "Algorithm"
             mapM_ H.p (An.reconstructHtml re)
+
+matchPage :: ServerPart Response
+matchPage = msum [ viewForm, processForm ] where
+
+    title = "Higher-Ranked Exception Types: Matching"
+
+    viewForm :: ServerPart Response
+    viewForm = expressionForm3 title "/hret/match"
+
+    processForm :: ServerPart Response
+    processForm = do
+        method POST
+
+        env :: An.Env   <- read . unpack <$> lookText "env"
+        ty1 :: An.ExnTy <- read . unpack <$> lookText "ty1"
+        ty2 :: An.ExnTy <- read . unpack <$> lookText "ty2"
+
+        let ({-ma, -}subst) = An.evalFresh (An.match env ty1 ty2) 1
+
+        ok $ template title $ do
+            H.h2 "Expression"
+            H.p $ mathjax env
+            H.p $ mathjax ty1
+            H.p $ mathjax ty2
+
+            H.h2 "Substitution"
+            H.p $ mathjax subst
+{-
+            H.h2 "Derivation Tree"
+            H.p $ toHtml ma
+-}

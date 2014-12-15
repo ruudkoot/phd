@@ -26,7 +26,7 @@ match env (ExnList t exn) (ExnList t' exn')
          {- when (not (null es)) $ error $ {- ASSERT -}
             "match: list; t = " ++ show t ++"; t' = " ++ show t' ++
             "; env = " ++ show env ++ "; e = " ++ show e ++ "; es = " ++ show es -}
-         fs <- replicateM (length es) fresh      -- TODO: may be superfluous
+         fs <- replicateM (length es) fresh          -- TODO: may be superfluous
          subst <- match env t t'
          return $ [(e, reapply env es fs exn)] <.> subst
 match env t@(ExnArr t1 (ExnVar exn1) t2 exn2) t'@(ExnArr t1' (ExnVar exn1') t2' exn2')

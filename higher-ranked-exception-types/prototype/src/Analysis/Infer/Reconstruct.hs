@@ -8,12 +8,12 @@ import qualified Data.Map    as M
 
 import           Analysis.Names
 import           Analysis.Common
-import qualified Analysis.Completion  as C
+import qualified Analysis.Completion as C
 
-import Analysis.Infer.Types
-import Analysis.Infer.Join
-import Analysis.Infer.Match
-import Analysis.Infer.Solve
+import           Analysis.Infer.Types
+import           Analysis.Infer.Join
+import           Analysis.Infer.Match
+import           Analysis.Infer.Solve
 
 -- | Reconstruction
 
@@ -76,7 +76,7 @@ reconstruct env kenv tm@(Seq e1 e2)
 reconstruct env kenv tm@(Fix e1)   -- FIXME: unknown to be sound (see notes)
     = do re@(_, t1, exn1, c1, kenv1) <- reconstruct env kenv e1
          ins@(ExnArr t' (ExnVar exn') t'' exn'', kenv') <- instantiate t1
-         subst1 <- match [(10,EXN)] t'' t'
+         subst1 <- match [] t'' t'
          let subst2 = [(exn', substExn' subst1 exn'')]
          e <- fresh
          let c = [substExn' (subst2 <.> subst1) exn'' :<: e] ++ c1
