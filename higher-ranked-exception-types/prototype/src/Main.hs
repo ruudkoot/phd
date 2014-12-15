@@ -47,7 +47,8 @@ template (toHtml -> title) body = toResponse $
                   "  extensions: [\"tex2jax.js\"],",
                   "  jax: [\"input/TeX\",\"output/HTML-CSS\"],",
                   "  tex2jax: {inlineMath: [[\"$\",\"$\"],[\"\\\\(\",\"\\\\)\"]]},",
-                  "  \"HTML-CSS\": { styles: { '.MathJax_Display': { \"margin\": 0 }}}",
+                  "  \"HTML-CSS\": { styles: { '.MathJax_Display': { \"margin\": 0 }}},",
+                  "  TeX: {extensions: [\"color.js\"]}",
                   "});"
               ]
             H.script ! type_ "text/javascript"

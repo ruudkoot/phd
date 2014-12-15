@@ -45,7 +45,7 @@ instance Latex Expr where
     latex (Cons e1 e2) = "(" ++ latex e1 ++ " :: " ++ latex e2 ++ ")"
     latex (Case e1 e2 x1 x2 e3)
         = "(\\mathbf{case}\\ " ++ latex e1 ++ "\\ \\mathbf{of}\\ \\{ ε \\mapsto "
-            ++ latex e2 ++ "; x" ++ show x1 ++ "::x" ++ show x2 ++ " \\mapsto "
+            ++ latex e2 ++ "; x_{" ++ show x1 ++ "}::x_{" ++ show x2 ++ "} \\mapsto "
             ++ latex e3 ++ "\\})"
 
 -- | Types
@@ -134,7 +134,35 @@ data ExnTy
     | ExnList ExnTy Exn
     | ExnArr  ExnTy Exn ExnTy Exn
     deriving (Read, Show)
-    
+
+checkExnTy :: KindEnv -> ExnTy -> Bool    -- FIXME: also check kind-correctness!
+checkExnTy env (ExnForall e k t)
+    | Just _ <- lookup e env = False
+    | otherwise = checkExnTy ((e,k):env) t
+checkExnTy env ExnBool
+    = True
+checkExnTy env (ExnList t exn)
+    = checkExnTy env t && checkExn env exn
+checkExnTy env (ExnArr t1 exn1 t2 exn2)
+    = checkExnTy env t1 && checkExnTy env t2
+        && checkExn env exn1 && checkExn env exn2
+        
+checkExn :: KindEnv -> Exn -> Bool        -- FIXME: also check kind-correctness!
+checkExn env (ExnEmpty)
+    = True
+checkExn env (ExnUnion exn1 exn2)
+    = checkExn env exn1 && checkExn env exn2
+checkExn env (ExnCon lbl)
+    = True
+checkExn env (ExnVar x)
+    | Just _ <- lookup x env = True
+    | otherwise              = False
+checkExn env (ExnApp exn1 exn2)
+    = checkExn env exn1 && checkExn env exn2
+checkExn env (ExnAbs e k exn)
+    | Just _ <- lookup e env = False
+    | otherwise              = checkExn ((e,k):env) exn
+
 exnTyEq :: KindEnv -> ExnTy -> ExnTy -> Bool
 exnTyEq env (ExnForall e k t) (ExnForall e' k' t')
     = k == k' && exnTyEq ((e,k) : env) t (substExnTy e' e t')
