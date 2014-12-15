@@ -35,7 +35,7 @@ instance Latex (Name, Exn) where
 instance ToMarkup Reconstruct where
     toMarkup (ReconstructVar   env kenv tm _ _ _ _)
         = derive "R-Var" [] ""
-    toMarkup (ReconstructAbs   env kenv tm _ _ (re,_,_,_,_) _ _ _ _ _)
+    toMarkup (ReconstructAbs   env kenv tm _ _ (re,_,_,_,_) _ _ _ _ _ _)
         = derive "R-Abs" (map H.toMarkup [re]) ""
     toMarkup (ReconstructApp   env kenv tm (re1,_,_,_,_) (re2,_,_,_,_) _ _ _ _ _ _)
         = derive "R-App" (map H.toMarkup [re1, re2]) ""
@@ -65,7 +65,7 @@ reconstructHtml (ReconstructVar env kenv tm t exn e result)
         htmlFresh e
         htmlResult result
       )
-reconstructHtml (ReconstructAbs env kenv tm@(Abs x ty tm') co@(_, t1', exn1, kenv1) env' re@(_, t2', exn2, c1, kenv2) v exn2' t' e result)
+reconstructHtml (ReconstructAbs env kenv tm@(Abs x ty tm') co@(_, t1', exn1, kenv1) env' re@(_, t2', exn2, c1, kenv2) v kenv' exn2' t' e result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
         htmlDo "complete [] ty"
@@ -77,6 +77,10 @@ reconstructHtml (ReconstructAbs env kenv tm@(Abs x ty tm') co@(_, t1', exn1, ken
         htmlDo "reconstruct env' (kenv1 ++ kenv) tm'"
         htmlReconstruct re "XXX"                -- FIXME: (t2', exn2, c1, kenv2)
         trAssign "v" (show v)
+        H.tr $ do
+            H.td $ ""
+            H.td $ "kenv'"
+            H.td ! A.colspan "3" $ H.toHtml $ "$\\leftarrow " ++ latex kenv' ++ "$"
         htmlDo "solve (kenv1 ++ [(exn1,EXN)] ++ kenv) c1 v exn2"
         trAssign "exn2'" (latex exn2')
         htmlDo "forallFromEnv kenv1 (ExnArr t1' (ExnVar exn1) t2' exn2')"

@@ -19,20 +19,20 @@ match env (ExnForall e k t) (ExnForall e' k' t')
     | otherwise = error "match: kind mismatch"
 -- FIXME: correct definition for lists?
 match env (ExnList t exn) (ExnList t' exn')
-    = do when (not (null env)) $ error $ {- ASSERT -}
+    = do {- when (not (null env)) $ error $ {- ASSERT -}
             "match: list; t = " ++ show t ++"; t' = " ++ show t' ++
-            "; env = " ++ show env
+            "; env = " ++ show env -}
          let (e, es) = deapply exn'
-         when (not (null es)) $ error $ {- ASSERT -}
+         {- when (not (null es)) $ error $ {- ASSERT -}
             "match: list; t = " ++ show t ++"; t' = " ++ show t' ++
-            "; env = " ++ show env ++ "; e = " ++ show e ++ "; es = " ++ show es
-         -- FIXME: REFRESH!!!
+            "; env = " ++ show env ++ "; e = " ++ show e ++ "; es = " ++ show es -}
+         fs <- replicateM (length es) fresh      -- TODO: may be superfluous
          subst <- match env t t'
-         return $ [(e, reapply env es (repeat $ error "match: list") exn)] <.> subst
+         return $ [(e, reapply env es fs exn)] <.> subst
 match env t@(ExnArr t1 (ExnVar exn1) t2 exn2) t'@(ExnArr t1' (ExnVar exn1') t2' exn2')
     | exnTyEq env t1 t1', exn1 == exn1'
         = do let (e, es) = deapply exn2'
-             fs <- replicateM (length es) fresh
+             fs <- replicateM (length es) fresh      -- TODO: may be superfluous
              subst <- match env t2 t2'
              return $ [(e, reapply env es fs exn2)] <.> subst
     | otherwise = error $ "match: function space (t = "   ++ show t ++

@@ -30,6 +30,14 @@ data Tm a
     | Empty
     deriving Read
     
+instance Show a => Show (Tm a) where        -- FIXME: move to Print (needs Types
+    show (Var   x    ) = "x" ++ show x      --        to avoid cyclic imports)
+    show (Con   c    ) = "{" ++ show c ++ "}"
+    show (Abs   x s e) = "(λx" ++ show x ++ ":" ++ show s ++ "." ++ show e ++ ")"
+    show (App   e1 e2) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
+    show (Union e1 e2) = "(" ++ show e1 ++ "∪" ++ show e2 ++ ")"
+    show (Empty      ) = "∅"
+   
 -- | Free variables
 
 fv :: Tm a -> Set Name

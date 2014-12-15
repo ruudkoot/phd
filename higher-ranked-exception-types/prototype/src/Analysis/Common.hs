@@ -115,7 +115,7 @@ lu2exn (LU.Abs   n s e) = ExnAbs n (sort2kind s) (lu2exn e)
 exnEq :: KindEnv -> Exn -> Exn -> Bool
 exnEq env e1 e2
     = LU.semanticallyEqual (map (\(x,k) -> (x, kind2sort k)) env) (exn2lu e1) (exn2lu e2)
-    
+
 exnNormalize :: Exn -> Exn
 exnNormalize = lu2exn . LU.normalize . exn2lu
 

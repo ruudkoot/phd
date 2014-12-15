@@ -137,24 +137,25 @@ normalize = snd . normalize'
 --       the solver), but we cannot always do this without knowing its sort;
 --       instead there currently is a small hack in reduce
 
-etaExpand :: Env -> Tm a -> Fresh (Tm a)
-etaExpand env (Var x)
-    = do etaExpand' x (lookup' "etaExpand" x env)
-etaExpand env (Con c)
-    = do return (Con c)
-etaExpand env (Abs x s e)
-    = do e' <- etaExpand ((x,s) : env) e
-         return (Abs x s e')
-etaExpand env (App e1 e2)
-    = do e1' <- etaExpand env e1
-         e2' <- etaExpand env e2
-         return (App e1' e2')
-etaExpand env (Union e1 e2)
-    = do e1' <- etaExpand env e1
-         e2' <- etaExpand env e2
-         return (Union e1' e2')
-etaExpand env (Empty)
-    = do return (Empty)
+etaExpand :: Show a => Env -> Tm a -> Fresh (Tm a)
+etaExpand env tm = etaExpand_ env tm where  -- FIXME: wrapper only for debugging
+    etaExpand_ env_ (Var x)
+        = do etaExpand' x (lookup' ("etaExpand[" ++ show tm ++ "]") x env_)
+    etaExpand_ env_ (Con c)
+        = do return (Con c)
+    etaExpand_ env_ (Abs x s e)
+        = do e' <- etaExpand_ ((x,s) : env_) e
+             return (Abs x s e')
+    etaExpand_ env_ (App e1 e2)
+        = do e1' <- etaExpand_ env_ e1
+             e2' <- etaExpand_ env_ e2
+             return (App e1' e2')
+    etaExpand_ env_ (Union e1 e2)
+        = do e1' <- etaExpand_ env_ e1
+             e2' <- etaExpand_ env_ e2
+             return (Union e1' e2')
+    etaExpand_ env_ (Empty)
+        = do return (Empty)
 
 etaExpand' :: Name -> Sort -> Fresh (Tm a)
 etaExpand' x C

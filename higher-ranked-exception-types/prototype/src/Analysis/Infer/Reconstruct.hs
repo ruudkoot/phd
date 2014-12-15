@@ -36,10 +36,11 @@ reconstruct env kenv tm@(Abs x ty tm')
          re@(_, t2', exn2, c1, kenv2) <- reconstruct env' (kenv1 ++ kenv) tm'
          let v = [exn1] ++ map fst kenv1 ++ fev env
          -- FIXME: is this the correct environment we are passing here?
-         let exn2' = solve (kenv1 ++ [(exn1,EXN)] ++ kenv) c1 v exn2
+         let kenv' = kenv1 ++ [(exn1,EXN)] ++ kenv
+         let exn2' = solve kenv' c1 v exn2
          let t' = C.forallFromEnv kenv1 (ExnArr t1' (ExnVar exn1) t2' exn2')
          e <- fresh
-         return $ ReconstructAbs env kenv tm co env' re v exn2' t' e #
+         return $ ReconstructAbs env kenv tm co env' re v kenv' exn2' t' e #
             (t', e, [], [(e,EXN)])
 
 reconstruct env kenv tm@(App e1 e2)
@@ -75,7 +76,7 @@ reconstruct env kenv tm@(Seq e1 e2)
 reconstruct env kenv tm@(Fix e1)   -- FIXME: unknown to be sound (see notes)
     = do re@(_, t1, exn1, c1, kenv1) <- reconstruct env kenv e1
          ins@(ExnArr t' (ExnVar exn') t'' exn'', kenv') <- instantiate t1
-         subst1 <- match [] t'' t'
+         subst1 <- match [(10,EXN)] t'' t'
          let subst2 = [(exn', substExn' subst1 exn'')]
          e <- fresh
          let c = [substExn' (subst2 <.> subst1) exn'' :<: e] ++ c1
