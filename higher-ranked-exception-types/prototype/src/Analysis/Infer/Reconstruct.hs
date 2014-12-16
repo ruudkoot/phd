@@ -41,7 +41,7 @@ reconstruct env kenv tm@(Abs x ty tm')
          let t' = C.forallFromEnv kenv1 (ExnArr t1' (ExnVar exn1) t2' exn2')
          e <- fresh
          return $ ReconstructAbs env kenv tm co env' re v kenv' exn2' t' e #
-            (t', e, [], [(e,EXN)])
+            (t', e, [], [(e,EXN)] ++ kenv2 {- FIXME: might not need all of this -})
 
 reconstruct env kenv tm@(App e1 e2)
     = do re1@(_, t1, exn1, c1, kenv1) <- reconstruct env kenv e1
