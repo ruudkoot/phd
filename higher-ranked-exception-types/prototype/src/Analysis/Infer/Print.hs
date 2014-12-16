@@ -123,13 +123,13 @@ reconstructHtml (ReconstructCrash env kenv tm co@(_, t1', exn1, kenv1) result)
         htmlComplete t1' exn1 kenv1
         htmlResult kenv result
       )
-reconstructHtml (ReconstructSeq env kenv tm re1 re2 e result)
+reconstructHtml (ReconstructSeq env kenv tm re1@(_,_,_,_,kenv1) re2@(_,_,_,_,kenv2) e result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
         htmlDo "reconstruct env kenv e1"
-        htmlReconstruct kenv re1 "1"
+        htmlReconstruct (kenv1 ++ kenv) re1 "1"
         htmlDo "reconstruct env kenv e2"
-        htmlReconstruct kenv re2 "2"
+        htmlReconstruct (kenv2 ++ kenv) re2 "2"
         htmlFresh e
         htmlResult kenv result
       ) ++ recurse [re1, re2]
@@ -281,6 +281,12 @@ htmlResult kenv0 (exnTy, exn, c, kenv)
             H.td $ "="
             H.td ! A.colspan "3" $ H.toHtml $
                 "$" ++ (latexCheck (kenv ++ kenv0) exnTy) ++ "$"
+         H.tr $ do
+            H.td $ H.b ""
+            H.td $ ""
+            H.td $ "="
+            H.td ! A.colspan "3" $ H.toHtml $
+                "$" ++ (latexCheck (kenv ++ kenv0) (simplifyExnTy (kenv ++ kenv0) exnTy)) ++ "$"
          H.tr $ do
             H.td $ ""
             H.td $ "$\\chi$"

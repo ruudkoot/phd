@@ -34,7 +34,8 @@ data Expr
     
 instance Latex Expr where
     latex (Var x     ) = "x_{" ++ show x ++ "}"
-    latex (Abs x t e ) = "(\\lambda x_{" ++ show x ++ "}:" ++ latex t ++ "." ++ latex e ++ ")"
+    latex (Abs x t e ) = "(\\lambda x_{" ++ show x ++ "}:" ++ latex t ++ "."
+                            ++ latex e ++ ")"
     latex (App e1 e2 ) = "(" ++ latex e1 ++ "\\ " ++ latex e2 ++ ")"
     latex (Con True  ) = "\\mathbf{true}"
     latex (Con False ) = "\\mathbf{false}"
@@ -89,7 +90,7 @@ type Lbl = String
 
 -- TODO: replace this with module LambdaUnion
 data Exn
-    = ExnEmpty
+    = ExnEmpty                  -- TODO: alternatively, give it a kind
     | ExnUnion Exn Exn
     | ExnCon Lbl
     | ExnVar Name
@@ -117,7 +118,7 @@ exnEq :: KindEnv -> Exn -> Exn -> Bool
 exnEq env e1 e2
     = LU.semanticallyEqual (map (\(x,k) -> (x, kind2sort k)) env) (exn2lu e1) (exn2lu e2)
 
-exnNormalize :: Exn -> Exn
+exnNormalize :: Exn -> Exn                    -- FIXME: replace by simplifyExn
 exnNormalize = lu2exn . LU.normalize . exn2lu
 
 instance Latex Exn where
@@ -135,33 +136,62 @@ data ExnTy
     | ExnArr  ExnTy Exn ExnTy Exn
     deriving (Read, Show)
 
-checkExnTy :: KindEnv -> ExnTy -> Bool    -- FIXME: also check kind-correctness!
+-- * Sanity checking
+
+checkExnTy :: KindEnv -> ExnTy -> Bool
 checkExnTy env (ExnForall e k t)
-    | Just _ <- lookup e env = False
+    | Just _ <- lookup e env = False {- shadowing -}
     | otherwise = checkExnTy ((e,k):env) t
 checkExnTy env ExnBool
     = True
 checkExnTy env (ExnList t exn)
-    = checkExnTy env t && checkExn env exn
+    = checkExnTy env t && checkExn env exn == Just EXN
 checkExnTy env (ExnArr t1 exn1 t2 exn2)
-    = checkExnTy env t1 && checkExnTy env t2
-        && checkExn env exn1 && checkExn env exn2
-        
-checkExn :: KindEnv -> Exn -> Bool        -- FIXME: also check kind-correctness!
+    = checkExnTy env t1 && checkExn env exn1 == Just EXN
+        && checkExnTy env t2 && checkExn env exn2 == Just EXN
+
+checkExn :: KindEnv -> Exn -> Maybe Kind
 checkExn env (ExnEmpty)
-    = True
+    = return EXN
 checkExn env (ExnUnion exn1 exn2)
-    = checkExn env exn1 && checkExn env exn2
+    = do k1 <- checkExn env exn1
+         k2 <- checkExn env exn2
+         if k1 == k2 then
+            return k1
+         else
+            Nothing {- kind error -}
 checkExn env (ExnCon lbl)
-    = True
+    = return EXN
 checkExn env (ExnVar x)
-    | Just _ <- lookup x env = True
-    | otherwise              = False
+    = lookup x env
 checkExn env (ExnApp exn1 exn2)
-    = checkExn env exn1 && checkExn env exn2
+    = do k1 <- checkExn env exn1
+         k2 <- checkExn env exn2
+         case k1 of
+            (k1' :=> k1'') | k1' == k2 -> return k1''
+            _                          -> Nothing {- kind error -}
 checkExn env (ExnAbs e k exn)
-    | Just _ <- lookup e env = False
-    | otherwise              = checkExn ((e,k):env) exn
+    | Just _ <- lookup e env = Nothing {- shadowing -}
+    | otherwise              = do k' <- checkExn ((e,k):env) exn
+                                  return (k :=> k')
+
+-- * Type simplification (reduction)
+
+simplifyExnTy :: KindEnv -> ExnTy -> ExnTy
+simplifyExnTy env (ExnForall e k t)
+    = ExnForall e k (simplifyExnTy ((e,k):env) t)
+simplifyExnTy env ExnBool
+    = ExnBool
+simplifyExnTy env (ExnList t exn)
+    = ExnList (simplifyExnTy env t) (simplifyExn env exn)
+simplifyExnTy env (ExnArr t1 exn1 t2 exn2)
+    = ExnArr (simplifyExnTy env t1) (simplifyExn env exn1)
+             (simplifyExnTy env t2) (simplifyExn env exn2)
+             
+simplifyExn :: KindEnv -> Exn -> Exn
+simplifyExn _env = exnNormalize
+
+-- * Equality tests
 
 exnTyEq :: KindEnv -> ExnTy -> ExnTy -> Bool
 exnTyEq env (ExnForall e k t) (ExnForall e' k' t')
