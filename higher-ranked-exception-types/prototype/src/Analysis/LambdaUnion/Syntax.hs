@@ -46,6 +46,7 @@ fv (Con   c    ) = empty
 fv (Abs   x k e) = delete x (fv e)
 fv (App   e1 e2) = union (fv e1) (fv e2)
 fv (Union e1 e2) = union (fv e1) (fv e2)
+fv (Empty      ) = empty
 
 -- FIXME: 0 might not be the least element of Name
 maxName :: Tm a -> Name

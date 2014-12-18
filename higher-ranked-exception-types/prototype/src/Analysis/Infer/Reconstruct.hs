@@ -1,10 +1,11 @@
 {-# LANGUAGE ViewPatterns #-}
 
 module Analysis.Infer.Reconstruct (
-    reconstruct
+    reconstruct, reconstructTop
 ) where
 
 import qualified Data.Map    as M
+import           Data.Maybe (fromJust)
 
 import           Analysis.Names
 import           Analysis.Common
@@ -14,6 +15,15 @@ import           Analysis.Infer.Types
 import           Analysis.Infer.Join
 import           Analysis.Infer.Match
 import           Analysis.Infer.Solve
+
+-- | Top-level solving
+
+reconstructTop :: Expr -> Fresh (ExnTy, Exn)
+reconstructTop expr = do
+    re@(_, t, e, c, kenv) <- reconstruct [] [] expr
+    let t'    = simplifyExnTy kenv t
+    let subst = M.toList $ solveAll kenv c
+    return (simplifyExnTy kenv (substExnTy' subst t'), fromJust $ lookup e subst)
 
 -- | Reconstruction
 
@@ -41,7 +51,11 @@ reconstruct env kenv tm@(Abs x ty tm')
          let t' = C.forallFromEnv kenv1 (ExnArr t1' (ExnVar exn1) t2' exn2')
          e <- fresh
          return $ ReconstructAbs env kenv tm co env' re v kenv' exn2' t' e #
-            (t', e, [], [(e,EXN)] ++ kenv2 {- FIXME: might not need all of this -})
+            (t', e, [] {-c1-} {- FIXME: Stefan claims this should be empty!
+                We would at least need to solve more agressively then, but
+                can this even be done if C contains variables free in the
+                environment??? -}
+            ,[(e,EXN)] ++ kenv2 {- FIXME: might not need all of this -})
 
 reconstruct env kenv tm@(App e1 e2)
     = do re1@(_, t1, exn1, c1, kenv1) <- reconstruct env kenv e1
@@ -97,12 +111,19 @@ reconstruct env kenv tm@(Cons e1 e2)
          let t = join t1 t2
          ex1 <- fresh
          ex2 <- fresh
+
+         let c' = [ExnVar exn1 :<: ex1, exn2' :<: ex1, ExnVar exn2 :<: ex2] ++ c1 ++ c2
+
+         -- FIXME: solving pass from R-Abs (see comments there)
+         let v = [ex2] ++ fev env
+         let kenv' = [(ex2,EXN)] ++ kenv2 ++ kenv1 ++ kenv
+         let ex1'  = solve kenv' c' v ex1
+
          -- FIXME: not completely sure about the kind of ex1 and ex2 (should be ∅)
          return $ ReconstructCons env kenv tm re1 re2 t ex1 ex2 # 
-            (ExnList t (ExnVar ex1), ex2
-            ,[ExnVar exn1 :<: ex1, exn2' :<: ex1, ExnVar exn2 :<: ex2] ++ c1 ++ c2
+            (ExnList t ex1', ex2, c'
             ,[(ex1, kindOf (kenv1 ++ kenv) (ExnVar exn1))
-            ,(ex2, kindOf (kenv2 ++ kenv) (ExnVar exn2))] ++ kenv2 ++ kenv1)
+             ,(ex2, kindOf (kenv2 ++ kenv) (ExnVar exn2))] ++ kenv2 ++ kenv1)
 
 reconstruct env kenv tm@(Case e1 e2 x1 x2 e3)
     = do re1@(_, ExnList t1 exn1', exn1, c1, kenv1) <- reconstruct env kenv e1

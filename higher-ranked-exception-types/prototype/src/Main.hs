@@ -17,7 +17,9 @@ import qualified Analysis.Names       as An
 import qualified Analysis.Common      as An
 import qualified Analysis.Completion  as An
 import qualified Analysis.Infer       as An
+import qualified Analysis.Infer.Print as An
 import qualified Analysis.Infer.Match as An
+import qualified Analysis.Infer.Solve as An
 import qualified Analysis.LambdaUnion as LU
 import           Analysis.Print
 
@@ -167,16 +169,20 @@ inferencePage = msum [ viewForm, processForm ] where
         expr :: An.Expr <- read . unpack <$> lookText "expr"
 
         let (re, exnTy, exn, cs, kenv) = An.evalFresh (An.reconstruct [] [] expr) 1
+        let (exnTy', exn')             = An.evalFresh (An.reconstructTop expr) 1
 
         ok $ template title $ do
-            H.p "Need to solve once more at top-level."
         
             H.h2 "Expression"
             H.p $ mathjax expr
 
-            H.h2 "Exception Type"
+            H.h2 "Solved Exception Type"
             H.p $ toHtml $
-                "\\[" ++ latex exnTy ++ "\\ \\&\\ " ++ show exn ++ "\\]"  
+                "\\[" ++ An.latexCheck kenv exnTy' ++ "\\ \\&\\ " ++ latex exn' ++ "\\]"
+
+            H.h2 "Unsolved Exception Type"
+            H.p $ toHtml $
+                "\\[" ++ latex exnTy ++ "\\ \\&\\ " ++ show exn ++ "\\]"
             H.h3 "Constraints"
             H.p $ mathjax cs
             H.h3 "Kind environment"

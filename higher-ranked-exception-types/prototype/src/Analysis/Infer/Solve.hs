@@ -1,5 +1,5 @@
 module Analysis.Infer.Solve (
-    solve
+    solve, solveAll
 ) where
 
 import qualified Data.Map    as M
@@ -24,7 +24,8 @@ solve env cs xs e =
             where f (_ :<: e) d = M.insert e ExnEmpty d
         analysis'' = foldr f analysis' xs
             where f e d = M.insert e (ExnVar e) d
-        analysis = M.insert e ExnEmpty analysis''
+        analysis = M.insert e ExnEmpty analysis'' {- FIXME: this is the only
+            thing that relies on the variable we are solving for... -}
         
         f :: Constr -> M.Map Name Exn -> ([Constr], M.Map Name Exn)
         f (exn :<: e) analysis
@@ -40,6 +41,41 @@ solve env cs xs e =
                            --        (it does!)
                            , M.insert e (exnNormalize (ExnUnion exn1 exn2)) analysis )
      in mapLookup "solve result" (worklist f cs analysis) e
+     
+solveAll :: KindEnv -> [Constr] -> M.Map Name Exn
+solveAll kenv cs =
+    let dependencies :: M.Map Name [Constr]
+        dependencies = foldr f M.empty cs
+            where f c@(exn :<: _) d
+                    = foldr (\e -> M.insertWith (++) e [c]) d (fevExn exn)
+
+        analysis :: M.Map Name Exn
+        analysis = foldr f M.empty kenv
+            -- FIXME: we need an abstracted Empty depending on the kind...
+            where f (e,k) d = M.insert e (kindedEmpty k) d
+
+        f :: Constr -> M.Map Name Exn -> ([Constr], M.Map Name Exn)
+        f (exn :<: e) analysis
+                -- FIXME: need a whole lot more βη∪-normalization here
+                = let exn1 = interpret analysis exn
+                      exn2 = mapLookup "exn2" analysis e
+                   in -- FIXME: is this environment sufficient? the call to solve
+                      --        in reconstruct suggests perhaps not!
+                      if isIncludedIn kenv exn1 exn2
+                      then ( [], analysis )
+                      else ( M.findWithDefault [] e dependencies
+                           -- FIXME: should the above lookup ever be allowed to fail?
+                           --        (it does!)
+                           , M.insert e (exnNormalize (ExnUnion exn1 exn2)) analysis )
+     in worklist f cs analysis
+
+-- TODO: move to somewhere (also: what an ugly hack..)
+
+kindedEmpty :: Kind -> Exn
+kindedEmpty EXN         = ExnEmpty
+kindedEmpty (k1 :=> k2) = case kindedEmpty k2 of
+                            ExnEmpty -> ExnAbs 666 k1 ExnEmpty
+                            ExnAbs x k e -> ExnAbs (x+1) k1 (ExnAbs x k e)
 
 -- TODO: move to LambdaUnion
 isIncludedIn :: KindEnv -> Exn -> Exn -> Bool

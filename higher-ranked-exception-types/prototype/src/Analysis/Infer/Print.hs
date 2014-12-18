@@ -3,7 +3,8 @@
 {-# LANGUAGE ViewPatterns      #-}
 
 module Analysis.Infer.Print (
-    reconstructHtml
+    reconstructHtml,
+    latexCheck
 ) where
 
 import Text.Blaze.Html5 (ToMarkup)
@@ -194,7 +195,7 @@ reconstructHtml (ReconstructCase env kenv tm re1@(_,_,_,_,kenv1) re2@(_,_,_,_,ke
             H.td $ "env'"
             H.td ! A.colspan "3" $ "= (x1, (t1, exn1')) : (x2, (ExnList t1 exn1', ExnVar exn1)) : env"
         htmlDo "reconstruct env (kenv1 ++ kenv) e3"
-        htmlReconstruct (kenv3 ++ kenv) re3 "3"
+        htmlReconstruct (kenv3 ++ kenv2 ++ kenv1 ++ kenv) re3 "3"
         rowRes $ mathjax' env'
         H.tr $ do
             H.td $ ""
@@ -304,6 +305,6 @@ htmlResult kenv0 (exnTy, exn, c, kenv)
             H.td ! A.colspan "3" $ mathjax' kenv
             
 latexCheck :: KindEnv -> ExnTy -> String
-latexCheck env t
-    | checkExnTy env t = "\\color{green}" ++ latex t
-    | otherwise        = "\\color{red}"   ++ latex t
+latexCheck kenv t
+    | checkExnTy kenv t = "\\color{green}" ++ latex t
+    | otherwise         = "\\color{red}"   ++ latex t
