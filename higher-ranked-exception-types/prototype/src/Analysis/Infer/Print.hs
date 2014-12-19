@@ -42,8 +42,9 @@ instance ToMarkup Reconstruct where
         = derive "R-App" (map H.toMarkup [re1, re2]) ""
     toMarkup (ReconstructCon   env kenv tm _ _)
         = derive "R-Con" [] ""
-    toMarkup (ReconstructIf    env kenv tm _ _ _ _ _ _ _)
-        = derive "R-If" [] ""
+    toMarkup (ReconstructIf    env kenv tm
+                    (re1,_,_,_,_) (re2,_,_,_,_) (re3,_,_,_,_) _ _ _ _)
+        = derive "R-If" (map H.toMarkup [re1, re2, re3]) ""
     toMarkup (ReconstructCrash env kenv tm _ _)
         = derive "R-Crash" [] ""
     toMarkup (ReconstructSeq   env kenv tm (re1,_,_,_,_) (re2,_,_,_,_) _ _)
@@ -119,6 +120,31 @@ reconstructHtml (ReconstructCon env kenv tm e result)
         htmlFresh e
         htmlResult kenv result
       )
+reconstructHtml (ReconstructIf env kenv tm re1@(_,_,_,_,kenv1) re2@(_,_,_,_,kenv2) re3@(_,_,_,_,kenv3) t exn c result)
+    = (return $ H.table $ do
+        htmlHeader env kenv tm
+        htmlDo "reconstruct env kenv e1"
+        htmlReconstruct (kenv1 ++ kenv) re1 "1"
+        htmlDo "reconstruct env kenv e2"
+        htmlReconstruct (kenv2 ++ kenv) re2 "2"
+        H.tr $ do
+            H.td $ ""
+            H.td $ "env'"
+            H.td ! A.colspan "3" $ "= (x1, (t1, exn1')) : (x2, (ExnList t1 exn1', ExnVar exn1)) : env"
+        htmlDo "reconstruct env (kenv1 ++ kenv) e3"
+        htmlReconstruct (kenv3 ++ kenv2 ++ kenv1 ++ kenv) re3 "3"
+        H.tr $ do
+            H.td $ ""
+            H.td $ "t"
+            H.td ! A.colspan "3" $ "= join t1 t2"
+        rowRes $ mathjax' t
+        htmlFresh exn
+        H.tr $ do
+            H.td $ ""
+            H.td $ "c"
+            H.td ! A.colspan "3" $ "[ExnVar exn1 :<: exn, ExnVar exn2 :<: exn, ExnVar exn3 :<: exn] ++ c1 ++ c2 ++ c3"
+        htmlResult kenv result
+      ) ++ recurse [re1, re2, re3]
 reconstructHtml (ReconstructCrash env kenv tm co@(_, t1', exn1, kenv1) result)
     = (return $ H.table $ do
         htmlHeader env kenv tm

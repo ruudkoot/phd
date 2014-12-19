@@ -61,7 +61,8 @@ checkExpr env (Var x)
     = lookup x env
 checkExpr env (Abs x t e)
     = case lookup x env of
-        Nothing -> checkExpr ((x,t):env) e
+        Nothing -> do t' <- checkExpr ((x,t):env) e
+                      return (t :-> t')
         _       -> error "shadowing (Abs)"
 checkExpr env (App e1 e2)
     = case checkExpr env e1 of
@@ -84,7 +85,7 @@ checkExpr env (Seq e1 e2)
 checkExpr env (Fix e)
     = case checkExpr env e of
         Just (t1 :-> t2) -> if t1 == t2 then return t1 else error "type (Fix, type 2)"
-        _                -> error "type (Fix, type 1)"
+        _                -> error $ "type (Fix, type 1)"
 checkExpr env (Nil t)
     = return (List t)
 checkExpr env (Cons e1 e2)
