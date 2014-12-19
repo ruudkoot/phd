@@ -38,6 +38,9 @@ data Reconstruct
     | ReconstructCon   Env KindEnv Expr
                        Name
                        Result
+    | ReconstructIf    Env KindEnv Expr
+                       Reconstruct' Reconstruct' Reconstruct' ExnTy Name [Constr]
+                       Result
     | ReconstructCrash Env KindEnv Expr
                        Complete'
                        Result

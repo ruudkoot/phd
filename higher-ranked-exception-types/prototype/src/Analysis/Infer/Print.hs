@@ -42,6 +42,8 @@ instance ToMarkup Reconstruct where
         = derive "R-App" (map H.toMarkup [re1, re2]) ""
     toMarkup (ReconstructCon   env kenv tm _ _)
         = derive "R-Con" [] ""
+    toMarkup (ReconstructIf    env kenv tm _ _ _ _ _ _ _)
+        = derive "R-If" [] ""
     toMarkup (ReconstructCrash env kenv tm _ _)
         = derive "R-Crash" [] ""
     toMarkup (ReconstructSeq   env kenv tm (re1,_,_,_,_) (re2,_,_,_,_) _ _)

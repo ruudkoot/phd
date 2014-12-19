@@ -61,13 +61,22 @@ inferenceExamples = map show [
     -- * recursive functions on lists
     ex29,
     Fix ex29,
-    ex31,
-    Fix ex31
+    exMap,
+    Fix exMap,
+    exFilter,
+    Fix exFilter
     -- * high-order functions
   ] where
         ex29 = Abs 1 (List Bool :-> List Bool) $ Abs 2 (List Bool) $
                 Case (Var 2) (Nil Bool) 3 4 (Cons (Var 3) (App (Var 1) (Var 4)))
-        ex31 = Abs 1 ((Bool :-> Bool) :-> (List Bool :-> List Bool)) $
+        exMap = Abs 1 ((Bool :-> Bool) :-> (List Bool :-> List Bool)) $
                 Abs 2 (Bool :-> Bool) $ Abs 3 (List Bool) $
                     Case (Var 3) (Nil Bool) 4 5
                          (Cons (App (Var 2) (Var 4)) (App (App (Var 1) (Var 2)) (Var 5)))
+        exFilter =
+            Abs 1 ((Bool :-> Bool) :-> (List Bool :-> List Bool)) $
+                Abs 2 (Bool :-> Bool) $ Abs 3 (List Bool) $
+                    Case (Var 3) (Nil Bool) 4 5 $
+                        If (App (Var 2) (Var 4))
+                           (Cons (Var 4) (App (App (Var 1) (Var 2)) (Var 5)))
+                           (App (App (Var 1) (Var 2)) (Var 5))

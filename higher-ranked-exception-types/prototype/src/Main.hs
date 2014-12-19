@@ -4,7 +4,7 @@ module Main where
 
 import Control.Applicative ((<$>), optional)
 import Control.Monad (forM_, replicateM_, when)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromJust, fromMaybe)
 import Data.Text (Text)
 import Data.Text.Lazy (unpack)
 import Happstack.Lite
@@ -175,10 +175,13 @@ inferencePage = msum [ viewForm, processForm ] where
         
             H.h2 "Expression"
             H.p $ mathjax expr
+            H.h3 $ "Type"
+            H.p $ mathjax $ fromJust $ An.checkExpr [] expr
 
             H.h2 "Solved Exception Type"
             H.p $ toHtml $
-                "\\[" ++ An.latexCheck kenv exnTy' ++ "\\ \\&\\ " ++ latex exn' ++ "\\]"
+                "\\[" ++ An.latexCheck [] exnTy' ++ "\\ \\&\\ "
+                ++ latex exn' ++ "\\]"
 
             H.h2 "Unsolved Exception Type"
             H.p $ toHtml $

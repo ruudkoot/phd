@@ -68,11 +68,23 @@ reconstruct env kenv tm@(App e1 e2)
          return $ ReconstructApp env kenv tm re1 re2 ins subst' subst e c #
             (substExnTy' subst  t', e, c
             ,[(e, kindOf (kenv1 ++ kenv) (ExnVar exn1))] ++ kenv' ++ kenv2 ++ kenv1)
+            -- FIXME: can e ever be anything but of kind EXN?
 
 reconstruct env kenv tm@(Con b)
     = do e <- fresh
          return $ ReconstructCon env kenv tm e #
             (ExnBool, e, [], [(e,EXN)])
+
+reconstruct env kenv tm@(If e1 e2 e3)
+    = do re1@(_, ExnBool, exn1, c1, kenv1) <- reconstruct env kenv e1
+         re2@(_, t2,      exn2, c2, kenv2) <- reconstruct env kenv e2
+         re3@(_, t3,      exn3, c3, kenv3) <- reconstruct env kenv e3
+         let t = join t2 t3
+         e <- fresh
+         let c = [ExnVar exn1 :<: e, ExnVar exn2 :<: e, ExnVar exn3 :<: e ]
+                    ++ c1 ++ c2 ++ c3
+         return $ ReconstructIf env kenv tm re1 re2 re3 t e c #
+            (t, e, c, kenv3 ++ kenv2 ++ kenv1)
 
 reconstruct env kenv tm@(Crash lbl ty)
     = do co@(dty', ty', ExnVar exn1, kenv1) <- C.complete [] ty

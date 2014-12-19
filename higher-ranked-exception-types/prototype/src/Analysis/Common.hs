@@ -1,7 +1,28 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ViewPatterns      #-}
 
-module Analysis.Common where
+module Analysis.Common (
+    Expr(..),
+    checkExpr,
+    Ty(..),
+    Kind(..),
+    KindEnv,
+    Lbl,
+    Exn(..),
+    ExnTy(..),
+    fevExn,
+    fevExnTy,
+    checkExnTy,
+    exnNormalize,
+    exnEq,
+    exnTyEq,
+    simplifyExnTy,
+    Subst,
+    substExn',
+    substExnTy,
+    substExnTy',
+    (<.>)
+) where
 
 -- FIXME: make all functions total (and remove dead errors)
 
@@ -24,6 +45,7 @@ data Expr
     | Abs Name Ty Expr
     | App Expr Expr
     | Con Bool
+    | If Expr Expr Expr
     | Crash Lbl Ty
     | Seq Expr Expr
     | Fix Expr
@@ -31,19 +53,85 @@ data Expr
     | Cons Expr Expr
     | Case Expr Expr Name Name Expr
     deriving (Read, Show)
-    
+
+type TyEnv = [(Name, Ty)]
+
+checkExpr :: TyEnv -> Expr -> Maybe Ty
+checkExpr env (Var x)
+    = lookup x env
+checkExpr env (Abs x t e)
+    = case lookup x env of
+        Nothing -> checkExpr ((x,t):env) e
+        _       -> error "shadowing (Abs)"
+checkExpr env (App e1 e2)
+    = case checkExpr env e1 of
+        Just (t1 :-> t2) -> if checkExpr env e2 == Just t1 then return t2 else Nothing
+        _                -> error "type (App)"
+checkExpr env (Con _)
+    = return Bool
+checkExpr env tm@(If e1 e2 e3)
+    = case checkExpr env e1 of
+        Just Bool -> if checkExpr env e2 == checkExpr env e3 then
+                         checkExpr env e2
+                     else
+                         error "type (If, body)"
+        _         -> error "type (If, guard)"
+checkExpr env (Crash _ t)
+    = return t
+checkExpr env (Seq e1 e2)
+    = do _ <- checkExpr env e1
+         checkExpr env e2
+checkExpr env (Fix e)
+    = case checkExpr env e of
+        Just (t1 :-> t2) -> if t1 == t2 then return t1 else error "type (Fix, type 2)"
+        _                -> error "type (Fix, type 1)"
+checkExpr env (Nil t)
+    = return (List t)
+checkExpr env (Cons e1 e2)
+    = do t1 <- checkExpr env e1
+         case checkExpr env e2 of
+            Just (List t2) -> if t1 == t2 then return (List t1) else Nothing
+            _              -> error "type (Cons, type)"
+checkExpr env (Case e1 e2 x1 x2 e3)
+    = do case lookup x1 env of
+             Nothing -> return ()
+             _       -> error "type (Case, shadowing 1)"
+         case lookup x2 env of
+             Nothing -> return ()
+             _       -> error "type (Case, shadowing 2)"
+         case checkExpr env e1 of
+            Just (List t1) -> do t2 <- checkExpr env e2
+                                 t3 <- checkExpr ((x1,t1):(x2,List t1):env) e3
+                                 if t2 == t3 then
+                                    checkExpr env e2
+                                 else
+                                    error "type (Case, type 2)"
+            _              -> error "type (Case, type 1)"
+
 instance Latex Expr where
-    latex (Var x     ) = "x_{" ++ show x ++ "}"
-    latex (Abs x t e ) = "(\\lambda x_{" ++ show x ++ "}:" ++ latex t ++ "."
-                            ++ latex e ++ ")"
-    latex (App e1 e2 ) = "(" ++ latex e1 ++ "\\ " ++ latex e2 ++ ")"
-    latex (Con True  ) = "\\mathbf{true}"
-    latex (Con False ) = "\\mathbf{false}"
-    latex (Crash l t ) = "(⚡" ++ l ++ ":" ++ latex t ++ ")"
-    latex (Seq e1 e2 ) = "(" ++ latex e1 ++ " \\mathbf{seq} " ++ latex e2 ++ ")"
-    latex (Fix e     ) = "(\\mathbf{fix}\\ " ++ latex e ++ ")"
-    latex (Nil t     ) = "(\\epsilon:" ++ latex t ++ ")"
-    latex (Cons e1 e2) = "(" ++ latex e1 ++ " :: " ++ latex e2 ++ ")"
+    latex (Var x)
+        = "x_{" ++ show x ++ "}"
+    latex (Abs x t e)  
+        = "(\\lambda x_{" ++ show x ++ "}:" ++ latex t ++ "." ++ latex e ++ ")"
+    latex (App e1 e2)
+        = "(" ++ latex e1 ++ "\\ " ++ latex e2 ++ ")"
+    latex (Con True)
+        = "\\mathbf{true}"
+    latex (Con False)
+        = "\\mathbf{false}"
+    latex (If e1 e2 e3)
+        = "(\\mathbf{if}\\ " ++ latex e1 ++ "\\ \\mathbf{then}\\ " ++ latex e2
+            ++ "\\ \\mathbf{else}\\ " ++ latex e3 ++ ")"
+    latex (Crash l t)  
+        = "(⚡" ++ l ++ ":" ++ latex t ++ ")"
+    latex (Seq e1 e2)
+        = "(" ++ latex e1 ++ " \\mathbf{seq} " ++ latex e2 ++ ")"
+    latex (Fix e)
+        = "(\\mathbf{fix}\\ " ++ latex e ++ ")"
+    latex (Nil t)
+        = "(\\epsilon:" ++ latex t ++ ")"
+    latex (Cons e1 e2)
+        = "(" ++ latex e1 ++ " :: " ++ latex e2 ++ ")"
     latex (Case e1 e2 x1 x2 e3)
         = "(\\mathbf{case}\\ " ++ latex e1 ++ "\\ \\mathbf{of}\\ \\{ ε \\mapsto "
             ++ latex e2 ++ "; x_{" ++ show x1 ++ "}::x_{" ++ show x2 ++ "} \\mapsto "
@@ -55,8 +143,8 @@ data Ty
     = Bool
     | Ty :-> Ty
     | List Ty
-    deriving (Read, Show)
-    
+    deriving (Eq, Read, Show)
+
 instance Latex Ty where
     latex Bool
         = "\\textbf{bool}"
