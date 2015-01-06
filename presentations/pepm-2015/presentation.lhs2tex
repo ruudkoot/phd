@@ -1,0 +1,120 @@
+\documentclass[serif,professionalfont]{beamer}
+
+\usepackage[sc,osf]{mathpazo}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{xspace}
+
+%include polycode.fmt
+%include forall.fmt
+
+%format alpha = "\alpha"
+
+\newtheorem{conjecture}{Conjecture}
+
+\setbeamersize{description width=-\labelsep}
+
+\begin{document}
+
+\title{Type-based Exception Analysis}
+\subtitle{for Non-strict Higher-order Functional Languages with Imprecise Exception Semantics}
+\author{Ruud Koot \quad Jurriaan Hage}
+\institute[UU]{Department of Information and Computing Sciences\\Utrecht University}
+\date{January 14, 2015}
+\maketitle
+
+\begin{frame}{Motivation}
+
+    \begin{itemize}
+
+        \item ``Well-typed programs do not go wrong''
+        
+        \pause
+        
+        \item Except:
+        
+            \begin{itemize}
+            
+                \item |divideByZero x = x / 0|
+
+                \item |head (x :: xs) = x|
+
+                \item ...
+
+            \end{itemize}
+            
+        \item Practical programming languages allow functions to be \emph{partial}.
+
+    \end{itemize}
+    
+\end{frame}
+
+\begin{frame}{Motivation}
+
+    \begin{itemize}
+    
+        \item Requiring all functions to be total may be undesirable.
+        
+            \begin{itemize}
+            
+                \item Dependent types are heavy-weight.
+                
+                \item Running everything in the |Maybe| monad does not solve the problem, only moves it.
+
+                \item Some partial functions are \emph{benign}.
+                
+            \end{itemize}
+
+        \item We do want to warn the programmer something may go wrong at run-time.
+
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Motivation}
+
+    \begin{itemize}
+
+        \item Currently compilers do a local and syntactic analysis.
+
+    \end{itemize}
+
+    \begin{code}
+        head : [alpha] -> alpha
+        head xs = case xs of { (y :: ys) -> y }
+    \end{code}
+
+    \pause
+
+    \begin{itemize}
+
+        \item ``The problem is in |head| and \emph{every} place you call it!''
+
+    \end{itemize}
+
+    \begin{code}
+        main = head [1,2,3]
+    \end{code}
+
+\end{frame}
+
+\begin{frame}{Motivation}
+
+    \begin{itemize}
+
+        \item Worse are non-escaping local definitions. The canonical example by Mitchell \& Runciman:
+        
+    \end{itemize}
+    
+    \begin{code}
+    
+        
+    
+    \end{code}
+
+\end{frame}
+
+\end{document}
