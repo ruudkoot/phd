@@ -5,48 +5,341 @@
 
 \usetheme{Darmstadt}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\Pipe}{\quad | \quad}
+\newcommand{\Abs}[2]{\lambda #1.#2}
+\newcommand{\App}[2]{#1\ #2}
+\newcommand{\Pair}[2]{\left(#1, #2\right)}
+\newcommand{\BTrue}{\mathbf{true}}
+\newcommand{\BFalse}{\mathbf{false}}
+\newcommand{\ITE}[3]{\mathbf{if}\ #1\ \mathbf{then}\ #2\ \mathbf{else}\ #3}
+\newcommand{\TBool}{\mathbf{bool}}
+\newcommand{\TFun}[2]{#1 \to #2}
+\newcommand{\AFun}[3]{#1 \xrightarrow{#2} #3}
+\newcommand{\TPair}[2]{#1 \times #2}
+\newcommand{\Rule}[3]{\frac{#2}{#3}\text{\ [#1]}}
+%\newcommand{\Rule}[3]{\frac{#2}{#3}}
+\newcommand{\Judge}[3][\Gamma]{#1 \vdash #2 : #3}
+\newcommand{\tauhat}{\widehat\tau}
+\newcommand{\N}[1]{[#1]^{\mathbf{N}}}
+\newcommand{\C}[1]{[#1]^{\mathbf{C}}}
+\newcommand{\NC}[1]{[#1]^{\mathbf{N}\sqcup\mathbf{C}}}
+\newcommand{\POLYV}[2]{[#1]^{#2}}
 
-\newcommand{\Rule}[3]{\frac{#2}{#3}\mbox{\ [#1]}}
-\newcommand{\JudgeT}[3][\Gamma]{#1 \vdash #2 : #3}
+\begin{document}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{document} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\title{Type-based program analysis}
+\title{Type-based Program Analysis}
 \subtitle{IPA Spring Days 2013}
 \author{Ruud Koot\\Utrecht University\\\texttt{r.koot@uu.nl}}
 \date{May 13, 2012}
 \maketitle
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Type systems and type inference} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\begin{frame}{Aap}
-\begin{align*}
-\Lambda \quad ::= \quad x
-        \quad  |  \quad \lambda x.\ \Lambda
-        \quad  |  \quad \Lambda\ \Lambda
-\end{align*}
-\begin{align*}
-\Rule{T-App}
-     {\JudgeT{e_1}{\tau_2 \to \tau_1} \quad \JudgeT{e_2}{\tau_2}}
-     {a}
-\end{align*}
-\end{frame}
-
 \section{Type-based program analysis}
 
-\begin{frame}{Aap}
-Aap
+\subsection{Type systems}
+
+\begin{frame}{Definitions}
+	\begin{description}
+		\item[Syntax]
+			\begin{eqnarray*}
+				% x &\in& \mathbf{Var} \quad\quad\quad\quad e \quad \in \quad \mathbf{Expr}\\
+				% \\
+				e &::=& x \Pipe \lambda x.\ e \Pipe e_1\ e_2 \\
+				  &\Pipe& \Pair{e_1}{e_2} \Pipe \BTrue \Pipe \BFalse \\
+				  &\Pipe& \ITE{e_1}{e_2}{e_3}
+			\end{eqnarray*}
+		\item[Types]
+			\begin{eqnarray*}
+				\tau &::=& \TFun{\tau_1}{\tau_2} \Pipe \TPair{\tau_1}{\tau_2} \Pipe \TBool
+			\end{eqnarray*}
+	\end{description}
+\end{frame}
+
+\begin{frame}{Typing rules}
+%	\begin{description}
+%		\item[Rules]
+			\vspace{-2em}
+			\begin{gather*}
+				\Rule{T-Var}
+					 {}
+					 {\Judge[\Gamma, x : \tau]{x}{\tau}}
+				\quad\quad\quad\quad
+				\Rule{T-Abs}
+					 {\Judge[\Gamma, x : \tau_1]{e}{\tau_2}}
+					 {\Judge{\Abs{x}{e}}{\TFun{\tau_1}{\tau_2}}}
+				\\\\
+				\Rule{T-App}
+				     {\Judge{e_1}{\TFun{\tau_2}{\tau_1}}\quad\Judge{e_2}{\tau_2}}
+				     {\Judge{\App{e_1}{e_2}}{\tau_1}}
+				\\\\
+				\Rule{T-Pair}
+				     {\Judge{e_1}{\tau_1}\quad\Judge{e_2}{\tau_2}}
+				     {\Judge{\Pair{e_1}{e_2}}{\TPair{\tau_1}{\tau_2}}}
+			    \\\\
+			    \Rule{T-True}
+			    	 {}
+			    	 {\Judge{\BTrue}{\TBool}}
+			    \quad\quad\quad\quad
+			    \Rule{T-False}
+			    	 {}
+			    	 {\Judge{\BFalse}{\TBool}}
+			   	\\\\
+			   	\Rule{T-If}
+			   		 {\Judge{e_1}{\TBool}\quad\Judge{e_2}{\tau}\quad\Judge{e_3}{\tau}}
+			   		 {\Judge{\ITE{e_1}{e_2}{e_3}}{\tau}}
+			\end{gather*}
+%	\end{description}
+\end{frame}
+
+\begin{frame}{Typing derivation}
+	\begin{description}
+		\item[Example]
+			\[\left(\Abs{x_1}{\Abs{x_2}{\App{x_1}{x_2}}}\right)\ \left(\Abs{x_3}{x_3}\right)\ \BTrue \]
+		\item[Derivation]
+	\end{description}
+	\vspace{1em}
+	\begin{equation*}
+		\frac{\frac{\frac{\frac{\frac{\frac{}
+		                                   {\Judge[x_1 : \TFun{\TBool}{\TBool}, ...]{x_1}{\TFun{\TBool}{\TBool}}}
+		                              \quad
+		                              \frac{}
+		                                   {\Judge[..., x_2 : \TBool]{x_2}{\TBool}}}
+		                             {\Judge[x_1 : \TFun{\TBool}{\TBool}, x_2 : \TBool]{\App{x_1}{x_2}}{\TBool}}}
+		                       {\Judge[x_1 : \TFun{\TBool}{\TBool}]{\Abs{x_2}{\App{x_1}{x_2}}}{\TFun{\TBool}{\TBool}}}}
+		                 {\Judge[]{\Abs{x_1}{\Abs{x_2}{\App{x_1}{x_2}}}}{\TFun{\left(\TFun{\TBool}{\TBool}\right)}{\TFun{\TBool}{\TBool}}}}
+		            \quad
+		            \frac{\frac{}{\Judge[x_3 : \TBool]{x_3}{\TBool}}}
+		                 {\Judge[]{\Abs{x_3}{x_3}}{\TFun{\TBool}{\TBool}}}}
+		           {\Judge[]{\left(\Abs{x_1}{\Abs{x_2}{\App{x_1}{x_2}}}\right)\ \left(\Abs{x_3}{x_3}\right)}{\TFun{\TBool}{\TBool}}}
+		      \quad
+		      \frac{}
+		           {\Judge[]{\BTrue}{\TBool}}}
+		     {\Judge[]{\left(\Abs{x_1}{\Abs{x_2}{\App{x_1}{x_2}}}\right)\ \left(\Abs{x_3}{x_3}\right)\ \BTrue}{\TBool}}
+	\end{equation*}
+	\vspace{1em}
+	\begin{description}
+		\item[Inference] Algorithm W (Damas--Hindley--Milner)
+	\end{description}
+\end{frame}
+
+\subsection{Control-flow analysis}
+
+\begin{frame}{Control-flow analysis}
+	\begin{description}
+		\item[Problem] Software analysis tools often require access to a \emph{control flow graph}:
+			\begin{itemize}
+				\item For \emph{first-order languages} it can be extracted syntactically.
+				\item \emph{Higher-order languages} require semantic methods.
+			\end{itemize}
+		\item[Analysis] Solve the \emph{dynamic dispatch problem}. I.e., for a given program $e$, determine for all variables $x_i$ in $e$ to which abstractions they can be bound at run-time.
+	\end{description}
+\end{frame}
+
+\begin{frame}{Example 1}
+	\begin{description}
+		\item[Example]
+			\[ \left(\Abs{x_1}{\Abs{x_2}{\App{x_1}{x_2}}}\right)\ \left(\Abs{x_3}{x_3}\right)\ \BTrue \]
+		\item[Solution]
+			\begin{eqnarray*}
+				x_1 &\mapsto& \left\{x_3\right\} \\
+				x_2 &\mapsto& \emptyset \\
+				x_3 &\mapsto& \emptyset \\
+			\end{eqnarray*}
+	\end{description}
+\end{frame}
+
+\begin{frame}{Example 2}
+	\begin{description}
+		\item[Example]
+			\[ \left(\Abs{x_1}{\Abs{x_2}{\App{x_1}{x_2}}}\right)\ \left(\Abs{x_3}{x_3}\right)\ \left(\Abs{x_4}{x_4}\right) \]
+		\item[Solution]
+			\begin{eqnarray*}
+				x_1 &\mapsto& \left\{x_3\right\} \\
+				x_2 &\mapsto& \left\{x_4\right\} \\
+				x_3 &\mapsto& \left\{x_4\right\} \\
+				x_4 &\mapsto& \emptyset
+			\end{eqnarray*}
+	\end{description}
+\end{frame}
+
+\begin{frame}{Annotated types}
+	\begin{description}
+		\item[Annotations]
+			\begin{eqnarray*}
+				\varphi &\in& \mathcal{P}(\mathbf{Var})
+			\end{eqnarray*}
+		\item[Types]
+			\begin{eqnarray*}
+				\widehat\tau &::=& \AFun{\widehat\tau_1}{\varphi}{\widehat\tau_2} \Pipe \TPair{\widehat\tau_1}{\widehat\tau_2} \Pipe \TBool
+			\end{eqnarray*}
+	\end{description}
+\end{frame}
+
+\begin{frame}{Type system (1st attempt)}
+%	\begin{description}
+%		\item[Rules]
+			\vspace{-2em}
+			\begin{gather*}
+				\Rule{CF-Var}
+					 {}
+					 {\Judge[\Gamma, x : \widehat\tau]{x}{\tauhat}}
+				\quad\quad\quad\quad
+				\Rule{CF-Abs}
+					 {\Judge[\Gamma, x : \tauhat_1]{e}{\tauhat_2}}
+					 {\Judge{\Abs{x}{e}}{\AFun{\tauhat_1}{\{x\}}{\tauhat_2}}}
+				\\\\
+				\Rule{CF-App}
+				     {\Judge{e_1}{\AFun{\tauhat_2}{\varphi}{\tauhat_1}}\quad\Judge{e_2}{\tauhat_2}}
+				     {\Judge{\App{e_1}{e_2}}{\tauhat_1}}
+				\\\\
+				\Rule{CF-Pair}
+				     {\Judge{e_1}{\tauhat_1}\quad\Judge{e_2}{\tauhat_2}}
+				     {\Judge{\Pair{e_1}{e_2}}{\TPair{\tauhat_1}{\tauhat_2}}}
+			    \\\\
+			    \Rule{CF-True}
+			    	 {}
+			    	 {\Judge{\BTrue}{\TBool}}
+			    \quad\quad\quad\quad
+			    \Rule{CF-False}
+			    	 {}
+			    	 {\Judge{\BFalse}{\TBool}}
+			   	\\\\
+			   	\Rule{CF-If}
+			   		 {\Judge{e_1}{\TBool}\quad\Judge{e_2}{\tauhat}\quad\Judge{e_3}{\tauhat}}
+			   		 {\Judge{\ITE{e_1}{e_2}{e_3}}{\tauhat}}
+			\end{gather*}
+%	\end{description}
+\end{frame}
+
+\begin{frame}{Typing derivation}
+	\begin{description}
+		\item[Example]
+			\[\left(\Abs{x_1}{\Abs{x_2}{\App{x_1}{x_2}}}\right)\ \left(\Abs{x_3}{x_3}\right)\ \left(\Abs{x_4}{x_4}\right) \]
+		\item[Derivation]
+	\end{description}
+	\vspace{1em}
+	\begin{equation*}
+	%\hspace{-2em}
+		\frac{\frac{\frac{\frac{\frac{\vdots}
+		                             {\Judge[x_1 : \AFun{\left(\AFun{\tauhat}{x_4}{\tauhat}\right)}{x_3}{\AFun{\tauhat}{x_4}{\tauhat}}, x_2 : \AFun{\tauhat}{x_4}{\tauhat}]{\App{x_1}{x_2}}{\tauhat}}}
+		                       {\Judge[x_1 : \AFun{\left(\AFun{\tauhat}{x_4}{\tauhat}\right)}{x_3}{\AFun{\tauhat}{x_4}{\tauhat}}]{\Abs{x_2}{\App{x_1}{x_2}}}{\TFun{\tauhat}{\tauhat}}}}
+		                 {\Judge[]{\Abs{x_1}{\Abs{x_2}{\App{x_1}{x_2}}}}{...}}
+		            %\quad
+		            \frac{\frac{}{\Judge[x_3 : \AFun{\tauhat}{x_4}{\tauhat}]{x_3}{\AFun{\tauhat}{x_4}{\tauhat}}}}
+		                 {\Judge[]{\Abs{x_3}{x_3}}{\AFun{\left(\AFun{\tauhat}{x_4}{\tauhat}\right)}{x_3}{\AFun{\tauhat}{x_4}{\tauhat}}}}}
+		           {\Judge[]{\left(\Abs{x_1}{\Abs{x_2}{\App{x_1}{x_2}}}\right)\ \left(\Abs{x_3}{x_3}\right)}{\AFun{\left(\AFun{\tauhat}{x_4}{\tauhat}\right)}{x_3}{\AFun{\tauhat}{x_4}{\tauhat}}}}
+		      %\quad
+		      \frac{\frac{}{\Judge[x_4 : \tauhat]{x_4}{\tauhat}}}
+		                 {\Judge[]{\Abs{x_4}{x_4}}{\AFun{\tauhat}{x_4}{\tauhat}}}}
+		     {\Judge[]{\left(\Abs{x_1}{\Abs{x_2}{\App{x_1}{x_2}}}\right)\ \left(\Abs{x_3}{x_3}\right)\ \left(\Abs{x_4}{x_4}\right)}{\AFun{\tauhat}{x_4}{\tauhat}}}
+	\end{equation*}
+	\vspace*{0.1em}
+	\begin{description}
+		\item[Inference] \begin{itemize}
+			\item Algorithm W with unification modulo UCAI
+			\item Two-phase constraint-based type inference
+		\end{itemize}
+	\end{description}
+\end{frame}
+
+\subsection{Subeffecting, subtyping and polyvariance}
+
+\begin{frame}{Conservative extension}
+	\begin{itemize}
+		\item This system fails to be a \emph{conservative extension}: \[\ITE{\BTrue}{\left(\Abs{x_1}{x_1}\right)}{\left(\Abs{x_2}{x_2}\right)}\]
+		\pause
+		\item Introduce \emph{subeffecting}: \[				\Rule{CF-Abs}
+					 {\Judge[\Gamma, x : \tauhat_1]{e}{\tauhat_2}}
+					 {\Judge{\Abs{x}{e}}{\AFun{\tauhat_1}{\{x\} \cup \varphi}{\tauhat_2}}} \]
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Poisoning}
+	\begin{itemize}
+		\item Subeffecting can cause \emph{poisoning}:
+		\begin{eqnarray*}
+			\mathbf{let} &&id = \Abs{x_1}{x_1}\\
+			\mathbf{in}  &&(\ \ITE{\BTrue}{id}{\left(\Abs{x_2}{x_2}\right)},\\
+			             &&\ \ \ITE{\BTrue}{id}{\left(\Abs{x_3}{x_3}\right)}\ )
+		\end{eqnarray*}
+		\item Need to assign to $id$ the type: \[ id : \AFun{\tauhat}{\left\{x_1,x_2,x_3\right\}}{\tauhat} \]
+		\item Analyzed type of the whole program is: \[ \TPair{\left(\AFun{\tauhat}{\left\{x_1,x_2,x_3\right\}}{\tauhat}\right)}{\left(\AFun{\tauhat}{\left\{x_1,x_2,x_3\right\}}{\tauhat}\right)} \] instead of: \[ \TPair{\left(\AFun{\tauhat}{\left\{x_1,x_2\right\}}{\tauhat}\right)}{\left(\AFun{\tauhat}{\left\{x_1,x_3\right\}}{\tauhat}\right)} \]
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Context-sensitivity}
+	\begin{itemize}
+		\item Introduce \emph{subtyping}:
+			\begin{gather*}
+				\Rule{CF-If}
+			   		 {\Judge{e_1}{\TBool}\quad\Judge{e_2}{\tauhat_2}\quad\Judge{e_3}{\tauhat_3}\quad\tauhat_2 \leq \tauhat\quad\tauhat_3\leq\tauhat}
+			   		 {\Judge{\ITE{e_1}{e_2}{e_3}}{\tauhat}}\\\\
+				\Rule{S-Arrow}
+					 {\tauhat_1' \leq \tauhat_1 \quad \tauhat_2 \leq \tauhat_2' \quad \varphi \subseteq \varphi'}
+					 {\AFun{\tauhat_1}{\varphi}{\tauhat_2} \leq \AFun{\tauhat_1'}{\varphi'}{\tauhat_2'}}
+			\end{gather*}
+		\pause
+		\item Introduce \emph{polyvariance}: \[ id : \forall \varphi : \AFun{\tauhat}{\left\{x_1\right\} \cup \varphi}{\tauhat} \]
+	\end{itemize}
 \end{frame}
 
 \section{Type-based exception analysis}
 
-\begin{frame}{Aap}
-Aap
+\subsection{Overview}
+
+\begin{frame}{Exception analysis}
+	\begin{itemize}
+		\item Accurately approximate exceptions that may be thrown at run-time
+		\item In particular: pattern-match failures
+		\begin{itemize}
+			\item Requires analyzing data flow
+		\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Example}
+	\begin{block}{Program}
+	\begin{verbatim}
+		risers :  Ord a => [a] -> [[a]]
+		risers []                 = []
+		risers [x]                = [[x]]
+		risers (x_1 :: x_2 :: xs) = if x_1 <= x_2
+		                            then (x_1 :: y) :: ys
+		                            else [x_1] :: (y :: ys)
+		    where (y :: ys) = risers (x_2 :: xs)
+	\end{verbatim}
+	\end{block}
+	\begin{block}{REPL}
+		\begin{verbatim}
+			risers [1,4,7,3,6,2]
+			> [[1,4,7],[3,6],[2]]
+		\end{verbatim}
+	\end{block}
+\end{frame}
+
+\subsection{Polyvariant recursion}
+
+\begin{frame}{Type system (informally)}
+	\begin{itemize}
+		\item The three branches can be assigned the types:
+			\begin{flalign*}
+				risers_1 : \forall \alpha. Ord\ \alpha \Rightarrow \N{\alpha} \to \N{\NC{\alpha}}\\
+				risers_2 : \forall \alpha. Ord\ \alpha \Rightarrow \C{\alpha} \to \C{\NC{\alpha}}\\
+				risers_3 : \forall \alpha. Ord\ \alpha \Rightarrow \C{\alpha} \to \C{\NC{\alpha}}
+			\end{flalign*}
+		\item The whole function then gets type:
+			\begin{flalign*}
+				risers : \forall \alpha. Ord\ \alpha \Rightarrow \NC{\alpha} \to \NC{\NC{\alpha}}
+			\end{flalign*}
+		\item This is not what we want!
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Polyvariant recursion}
+	\begin{itemize}
+		\item It seems polyvariance might save us: \[ risers : \forall \alpha\beta. Ord\ \alpha \Rightarrow \POLYV{\alpha}{\beta} \to \POLYV{\NC{\alpha}}{\beta} \]
+		\item But in Hindley--Milner $\mathbf{fix}$ is always monomorphic
+		\item We need Milner--Mycroft's polymorphic $\mathbf{fix}$
+	\end{itemize}
 \end{frame}
 
 \section{Higher-ranked polyvariance}
