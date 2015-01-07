@@ -12,6 +12,8 @@
 %include forall.fmt
 
 %format alpha = "\alpha"
+%format x_1
+%format x_2
 
 \newtheorem{conjecture}{Conjecture}
 
@@ -98,6 +100,12 @@
     \begin{code}
         main = head [1,2,3]
     \end{code}
+    
+    \begin{itemize}
+    
+        \item Worse are non-escaping local definitions.
+    
+    \end{itemize}
 
 \end{frame}
 
@@ -105,14 +113,17 @@
 
     \begin{itemize}
 
-        \item Worse are non-escaping local definitions. The canonical example by Mitchell \& Runciman:
+        \item The canonical example by Mitchell \& Runciman (2008):
         
     \end{itemize}
     
     \begin{code}
-    
-        
-    
+        risers  ::  Ord alpha => [alpha] -> [[alpha]]
+        risers  []               =  []
+        risers  [x]              =  [[x]]
+        risers (x_1 : x_2 : xs)  =
+            if x_1 <= x_2 then (x_1 : y) : ys else [x_1] : (y : ys)
+                where (y : ys) = risers (x_2 : xs)
     \end{code}
 
 \end{frame}
