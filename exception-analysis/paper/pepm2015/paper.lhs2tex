@@ -1,4 +1,4 @@
-\documentclass[authoryear,preprint]{sigplanconf}
+\documentclass[authoryear]{sigplanconf}
 
 %% FIXME: Rule [T-Abs] still introduces a bit of poisoning. A rule with more
 %%        fresh variables would likely result in a nicer proof (as for [T-Fst]).
@@ -202,21 +202,20 @@ Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor 
 
 \begin{document}
 
-\conferenceinfo{ICFP '14}{September 1--3, 2014, Gothenburg, Sweden.}
-\copyrightyear{2014}
-\copyrightdata{[to be supplied]} 
+\exclusivelicense
+\conferenceinfo{PEPM~'15}{January 13--14, 2015, Mumbai, India}
+\copyrightyear{2015}
+\copyrightdata{978-1-4503-3297-2/15/01}
+\copyrightdoi{2678015.2682542}
 
-\titlebanner{DRAFT---Do not distribute}
-\preprintfooter{Submitted to ICFP '14}
+%\titlebanner{DRAFT---Do not distribute}
+%\preprintfooter{Submitted to PEPM '15}
 
 \title{Type-based Exception Analysis for\\Non-strict Higher-order Functional Languages\\with Imprecise Exception Semantics}
 
-\authorinfo{\ANONYMOUS{Ruud Koot}{Robb Stark}\thanks{This material is based upon work supported by the \ANONYMOUS{Netherlands Organisation for Scientific Research (NWO)}{Night's Watch}.}\and \ANONYMOUS{Jurriaan Hage}{Daenerys Targaryen}}
+\authorinfo{\ANONYMOUS{Ruud Koot}{Robb Stark}\thanks{This material is based upon work supported by the \ANONYMOUS{Netherlands Organisation for Scientific Research (NWO)}{Night's Watch} under grant number 612.001.120.}\and \ANONYMOUS{Jurriaan Hage}{Daenerys Targaryen}}
 {Department of Computing and Information Sciences\\Utrecht University}
-{\ANONYMOUS{\{r.koot,j.hage\}@@uu.nl}{\{r.stark,d.targaryen\}@@winterfell.no}}
-%\authorinfo{Robb Stark\thanks{This material is based upon work supported by the \ANONYMOUS{Netherlands Organisation for Scientific Research (NWO)}{Night's Watch}.}}
-%{Winterfell University\\Westeros}{r.stark@@winterfell.no}
-%\authorinfo{Daenerys Targaryen}{Astapor Academy\\Essos}{d.targaryen@@astapor.es}
+{\{r.koot,j.hage\}@@uu.nl}
 
 \maketitle
 
@@ -246,7 +245,7 @@ Languages, Theory, Verification
 
 % FIXME: add/remove keywords
 \keywords
-type-based program analysis, exception analysis, imprecise exceptions, pattern-matching, polymorphic recursion, static contract checking
+type-based program analysis, exception analysis, imprecise exceptions, pattern-matching%, polymorphic recursion, static contract checking
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}\label{sec-introduction} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -262,7 +261,7 @@ Still, we would like to warn the programmer when we accept a program as correctl
 Unlike other exception analyses that have appeared in the literature---%FIXME: list 'em
 which primarily attempt to track uncaught user-thrown or environment-induced exceptions, such as those that could be encountered when reading invalid data from disk---we are first and foremost concerned with accurately tracking the exceptions raised by failed pattern-matches. Therefore, our analysis might equally well be called a \emph{pattern-match analysis}, although it is certainly not strictly limited to one as such. Getting results of usable accuracy---eliminating as many false positives as possible---requires carefully keeping track of the data-flow through the program. This additionally improves the accuracy of reporting potential exceptions not related to pattern matching and opens the way for employing the analysis to perform static contract checking.
 
-\subsection{Contributions}
+\subsection{Contributions}\label{sec-contributions}
 
 Our contributions include the following:
 \begin{itemize}
@@ -336,7 +335,7 @@ Compilers work with large and complex data types to represent the abstract synta
 The compiler writer now has a choice between two different options: either write a desugaring stage |desugar :: ComplexAST -> SimpleAST|---duplicating most of the data type representing and functions operating on the abstract syntax tree---or take the easy route |desugar :: AST -> AST| and assume certain constructors will no longer be present in the abstract syntax tree at stages of the compiler executed after the desugaring phase. The former has all the usual downsides of code duplication---such as having to manually keep multiple data types and the functions operating on them synchronized---while the latter forgoes many of the advantages of strong typing and type safety: if the compiler pipeline is restructured and one of the stages that was originally assumed to run only after desugaring suddenly runs before that point the error might only be detected at run-time by a pattern-match failure. A pattern-match analysis should be able to detect such errors statically.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Informalities}\label{sec-informalities} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Overview}\label{sec-informalities} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 We formulate our analysis in terms of a constraint-based type and effect system \cite{Talpin:1994:TED:191349.184660,NNA,Abadi:1999:CCD:292540.292555}.
@@ -369,7 +368,7 @@ risers :: forall alphabeta. Ord alpha => POLYV alpha beta -> POLYV (NC alpha) be
 In the recursive call to |risers| we know the argument passed is a non-empty list, so we can instantiate $\beta$ to $\SingletonCons$, informing us that the result of the recursive call will be a non-empty list as well and guaranteeing that the irrefutable pattern-match will succeed.
 There is one little subtlety here, though: in a conventional Hindley--Milner type system we are not allowed, or even able, to instantiate $\beta$ to anything, as the type is kept monomorphic for recursive calls. We, therefore, have to extend our type system with \emph{polyvariant recursion}.
 While inferring polymorphic recursive types is undecidable in general \cite{Kfoury:1993:TRP:169701.169687,Henglein:1993:TIP:169701.169692}---and, %FIXME: citation
-being a program analysis, we cannot rely on any programmer-supplied annotations---earlier research \cite{Tofte:1994:ITC:174675.177855,Dussart:1995:PRS:647163.717680,Rittri:1995:DIU:224164.224197,Leroy:2000:TAU:349214.349230} has shown that this special case of polyvariant recursion is often both crucial to obtain adequate precision and feasible to infer automatically.
+being an automatic analysis, we do not want to rely on any programmer-supplied annotations---earlier research \cite{Tofte:1994:ITC:174675.177855,Dussart:1995:PRS:647163.717680,Rittri:1995:DIU:224164.224197,Leroy:2000:TAU:349214.349230} has shown that this special case of polyvariant recursion is often both crucial to obtain adequate precision and feasible to infer automatically.
 
 \subsection{Exception flow}
 
@@ -419,7 +418,7 @@ head :: forall taualphabeta. LABELLEDLIST tau_alpha beta -_|_> tau_alpha_beta_pf
 \end{code}
 \end{center}
 This type tells us that |head| might always raise a \PMF exception, irrespective of what argument it is applied to. Clearly, we won't be able to outperform a simple syntactic analysis in this manner.
-What we need is a way to introduce a dependency of the exception flow on the data flow of the program, so we can express that |head| will only raise a \PMF if it possible for the argument passed to it to be an empty list. We can do so by introducing conditional constraints into our type system:
+What we need is a way to introduce a dependency of the exception flow on the data flow of the program, so we can express that |head| will only raise a \PMF if it is possible for the argument passed to it to be an empty list. We can do so by introducing conditional constraints into our type system:
 %format tau_abc = "\tau\alpha\beta\gamma"
 %format tau_alpha_beta = "\tau^{\alpha\sqcup\beta\sqcup\gamma}"
 %format constraint_set_thing = "\textbf{with} \left\{\SingletonNil \sqsubseteq \beta \Rightarrow \PMF \sqsubseteq \gamma\right\}"
@@ -479,7 +478,7 @@ We adopt the following syntactic convention: we denote non-exceptional values by
 
 The \textbf{case}-construct in the language is always assumed to be complete. As our primary goal is to detect pattern-match failures produced by incomplete \textbf{case}-expressions, we assume any incomplete \textbf{case}-expressions written by the programmer has first been appropriately desugared into an equivalent complete \textbf{case}-expression by filling out any missing arms in the incomplete \textbf{case}-expression with an exceptional value $\Crash{\PMF}$ before being passed to the analysis \cite{Augustsson:1985:CPM:5280.5303,Maranget:2008:CPM:1411304.1411311}. % ,Maranget:2008:CPM:1411304.1411311
 
-The $\textbf{close}$ and $\textbf{bind}$ constructs are only necessary to formalize the small-step operational semantics (Section \ref{sec-operational-semantics}) and are assumed to be absent from the program under analysis.
+The $\textbf{close}$ and $\textbf{bind}$ constructs are only necessary to formalize the small-step operational semantics (Section \ref{sec-operational-semantics}) and are assumed to be absent in the source program.
 
 As call-by-name languages model exceptions as exceptional values, instead of exceptional control-flow, we do not need a \textbf{throw} or \textbf{raise}-construct. As most call-by-name languages omit a \textbf{catch}-construct from their pure fragment, we shall do so as well.
 
@@ -697,7 +696,7 @@ The small-step reduction relation $\Reduce{e}{e'}$ has an explicit environment $
 \CiteRule{E-App} first reduces $e_1$ until it has been evaluated to a function closure, after which \CiteRule{E-AppAbs} performs the application by binding $x$ to $e_2$ in the scope of $e_1$. The scope of $e_2$ is $\rho_1$, the scope that was closed over, while $e_1$ gets bound by the outer scope $\rho$, as it is not necessarily a value and may thus still have free variables that need to remain bound in the outer scope.
 In case $e_1$ does not evaluate to a function closure, but to an exceptional value,  \CiteRule{E-AppExn1} will first continue reducing the argument $e_2$ to a (possibly exceptional) value. Once this is done, \CiteRule{E-AppExn2} will reduce the whole application to a single exceptional value with a set of exceptional labels consisting of the union of both the exception labels associated with the applicee as well as the applicant. This behaviour is part of the imprecise exception semantics of our language and will be further motivated in the reduction rules for the \textbf{if-then-else} construct.
 \CiteRule{E-Let} binds $x$ to $e_1$ in the scope of $e_2$. \CiteRule{E-Fix} performs a one-step unfolding, binding any recursive occurrences of the binder to the original expression in its original scope.
-To reduce an \textbf{if-then-else} expression, \CiteRule{E-If} will start by evaluating the conditional $e_1$. If it evaluates to either the value $\BTrue$ or the value $\BFalse$, \CiteRule{E-IfTrue} respectively \CiteRule{E-IfFalse}, will reduce the whole expression to the appropriate branch $e_2$ or $e_3$. In case the conditional $e_1$ reduces to an exceptional value $\Crash{\ell}$, the rules \CiteRule{If-Exn1} and \CiteRule{If-Exn2} will continue evaluating both branches of the \textbf{if-then-else} expression, as dictated by the imprecise exception semantics. Finally, once both arms have been fully evaluated to possibly exceptional values $v^{\ell_2}$ and $v^{\ell_3}$, \CiteRule{If-Exn3} will join all the exception labels from the conditional and both arms together---remembering that we by convention associate an empty set of exception labels with non-exceptional values---in an exceptional value $\Crash{\ell_1 \sqcup \ell_2 \sqcup \ell_3}$. This ``imprecision'' is necessary to validate program transformations, such as \textbf{case}-switching, in the presence of distinguishable exceptions:
+To reduce an \textbf{if-then-else} expression, \CiteRule{E-If} will start by evaluating the conditional $e_1$. If it evaluates to either the value $\BTrue$ or the value $\BFalse$, \CiteRule{E-IfTrue} respectively \CiteRule{E-IfFalse}, will reduce the whole expression to the appropriate branch $e_2$ or $e_3$. In case the conditional $e_1$ reduces to an exceptional value $\Crash{\ell}$, the rules \CiteRule{E-IfExn1} and \CiteRule{E-IfExn2} will continue evaluating both branches of the \textbf{if-then-else} expression, as dictated by the imprecise exception semantics. Finally, once both arms have been fully evaluated to possibly exceptional values $v^{\ell_2}$ and $v^{\ell_3}$, \CiteRule{E-IfExn3} will join all the exception labels from the conditional and both arms together---remembering that we by convention associate an empty set of exception labels with non-exceptional values---in an exceptional value $\Crash{\ell_1 \sqcup \ell_2 \sqcup \ell_3}$. This ``imprecision'' is necessary to validate program transformations, such as \textbf{case}-switching, in the presence of distinguishable exceptions:
 %format e_5
 %format e_6
 %format e_i
@@ -715,8 +714,14 @@ If both the left- and right-hand side of the operator reduce to a numeric value,
 If either of, or both, the arguments reduce to an exceptional value, the rules \CiteRule{E-OpExn1}, \CiteRule{E-OpExn2} and \CiteRule{E-OpExn3} will propagate the exception labels of all the exceptional values in the expression.
 The rules \CiteRule{E-Pair} and \CiteRule{E-Cons} wrap the syntactic pair and cons constructors in a closure to make them into values---in a call-by-name language constructors are only evaluated up to weak head normal form (\emph{whnf}) and can still contain unevaluated subexpressions that need to have their free variables closed over in their original scope.
 \CiteRule{E-Fst} evaluates the argument passed to $\Fst$to a normal form. If it is an exceptional value, \CiteRule{E-FstExn} will propagate it; if it is a closed pair constructor, \CiteRule{E-FstPair} will project the first argument and bind its free variables in the environment it has been closed over. Accordingly for \CiteRule{E-Snd}, \CiteRule{E-SndExn} and \CiteRule{E-SndPair}.
-\CiteRule{E-Case} will evaluate the scrutinee of a \textbf{case}-expression to a normal form. If it evaluates to a nil-constructor, \CiteRule{E-CaseNil} will select the first arm. If it evaluates to a closed cons-constructor, \CiteRule{E-CaseCons} will select the second arm, binding $x_1$ and $x_2$ to respectively the first and second component of the constructor in the environment the constructor was closed over. In case the scrutinee evaluates to an exceptional value \CiteRule{E-CaseExn1}, \mbox{\CiteRule{E-CaseExn2}} and \CiteRule{E-CaseExn3} will continue evaluating both arms and gather and propagate all exception labels encountered. In the reduction rule \CiteRule{E-CaseExn-2} we still need to bind $x_1$ and $x_2$ to some expression in $\rho$. As this expression we take $\Crash{\emptyset}$ in both cases, as it is the least committing value in our system: it is associated with both an empty set of exceptional values, as well as with an empty set of non-exceptional values.
+\CiteRule{E-Case} will evaluate the scrutinee of a \textbf{case}-expression to a normal form. If it evaluates to a nil-constructor, \CiteRule{E-CaseNil} will select the first arm. If it evaluates to a closed cons-constructor, \CiteRule{E-CaseCons} will select the second arm, binding $x_1$ and $x_2$ to respectively the first and second component of the constructor in the environment the constructor was closed over. In case the scrutinee evaluates to an exceptional value \CiteRule{E-CaseExn1}, \mbox{\CiteRule{E-CaseExn2}} and \CiteRule{E-CaseExn3} will continue evaluating both arms and gather and propagate all exception labels encountered. In the reduction rule \CiteRule{E-CaseExn2} we still need to bind $x_1$ and $x_2$ to some expression in $\rho$. As this expression we take $\Crash{\emptyset}$ in both cases, as it is the least committing value in our system: it is associated with both an empty set of exceptional values, as well as with an empty set of non-exceptional values.
 \CiteRule{E-Bind1} and \CiteRule{E-Bind2} will continue evaluating any expression $e$ in the given environment $\rho_1$ until it has been fully reduced to a value, which either contains no free variables, or has them explicitly closed over by a \textbf{close}-construct.
+
+%% Termination %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\paragraph{Diverging expressions}
+
+Note that diverging expressions, such as $\Crash{}\ (\Fix{f}{f})$ will not raise an exception in this operational semantics. This is not consistent with Haskell's imprecise exception semantics, where this is possible. Resolving this discrepancy without sacrificing precision would involve adding a termination analysis (\emph{cf}. \citealt{Vazou:2014:RTH:2628136.2628161}). While we believe this can be accommodated with minor changes to the analysis, we shall not further address this issue in remainder of the paper.
 
 %% Constraints %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1019,11 +1024,11 @@ The subtyping relation is as usual for a type and effect system, thus note the s
      {\Judge[C;\Delta]{e}{\sigma} \quad \EC{\Delta}{\rho}}
      {\Judge{\Bind{\rho}{e}}{\sigma}}
 \end{gather*}
-\caption{Normalized type system ($\Judge{e}{\sigma}$)}
+\caption{Syntax-directed type system ($\Judge{e}{\sigma}$)}
 \label{fig-normalized-typesystem}
 \end{figure*}
 
-A normalized type system for exception analysis is given in Figure~\ref{fig-normalized-typesystem}.
+A syntax-directed type system for exception analysis is given in Figure~\ref{fig-normalized-typesystem}.
 
 \CiteRule{T-Var} combines a lookup in the type environment with instantiation of variables quantified over in the type scheme.
 \CiteRule{T-Con} and \CiteRule{T-Exn} make sure that any constants and exception literals flow into the top-level annotations of their type. Constants will have to be abstracted into an element of the lattice $\Lambda_\delta$, using the auxiliary function $i$, first.
@@ -1077,7 +1082,7 @@ An operator constraint set $\omega_\oplus$ is \emph{monotonic} if, whenever $\Ce
 Informally this means that operator constraint sets can only let the result of evaluating an operator and its operands depend on the values of those operands and not the other way around: the operator constraint sets must respect the fact that we are defining a \emph{forwards} analysis.
 
 \subsection{Declarative rules}
-While we have formulated the analysis directly as a normalized type system, we do need to appeal to the three logical rules that have been folded into the non-logical ones---in order to make the system syntax-directed---in the metatheoretic proofs. Their formulation should hold no surprises:
+While we have formulated the analysis directly as a syntax-directed type system, we do need to appeal to the three logical rules that have been folded into the non-logical ones---in order to make the system syntax-directed---in the metatheoretic proofs. Their formulation should hold no surprises:
 %\begin{figure}[h]
 \begin{gather*}
     \Rule{T-Inst}
@@ -1426,6 +1431,8 @@ by instead of generating a fresh variable that will end up in the left-hand side
 \section{Extensions}\label{sec-extensions} %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+To handle the motivating examples from Section~\ref{sec-motivation} a number of extensions to the language and analysis are necessary. (These are not supported by the prototype mentioned in Section~\ref{sec-contributions}, but are being implemented in an improved prototype.)
+
 \subsection{Polymorphism} \label{sec-polymorphism}
 
 Consider the polymorphic function |apply|:
@@ -1521,7 +1528,7 @@ Some additional issues need to be resolved to generalize to arbitrary algebraic 
 
 \subsection{Static contract checking} Our analysis can also be used for static contract checking. A contract can be desugared into a Findler--Felleisen wrapper \cite{Findler:2002:CHF:581478.581484}, raising a contract violation exception (together with some additional information on who to blame for the violation) when a contract violation is detected. The data flow-dependence of the analysis should be able to statically determine some contract can never be violated and prevent the contract violation exception from being propagated.
 
-\subsection{Code optimization} While designed as a validating analysis, the analysis can also be used to improve the performance of compiled code. Currently, the Glasgow Haskell Compiler generates inefficient code for |risers|: it will emit code that still contains a \textbf{case}-expression with a branch testing the result in the recursive call as being a nil-constructor and raising an exception if so. Based on the results of our analysis this test can be elided. A small subtlety is that the polyvariance of our analysis should be reduced, as only a single instance of the code will be generated for all polyvariant instantiations; more ambitiously we might want to let the compiler generate specialized instances of the code for different polyvariant instances.
+%\subsection{Code optimization} While designed as a validating analysis, the analysis can also be used to improve the performance of compiled code. Currently, the Glasgow Haskell Compiler generates inefficient code for |risers|: it will emit code that still contains a \textbf{case}-expression with a branch testing the result in the recursive call as being a nil-constructor and raising an exception if so. Based on the results of our analysis this test can be elided. A small subtlety is that the polyvariance of our analysis should be reduced, as only a single instance of the code will be generated for all polyvariant instantiations; more ambitiously we might want to let the compiler generate specialized instances of the code for different polyvariant instances.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\section{Implementation}\label{sec-implementation} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1609,7 +1616,7 @@ forall alpha  beta_1 beta_2.  FPNil alpha        -> beta_1  -> (alpha  -> FPList
 \end{code}
 \end{center}
 
-Compared to our analysis the inference of intersection types would make this a \emph{relational analysis}, while our use of subtyping and conditional constraints only define a \emph{functional} relation between input and output variables. This would seem to imply our analysis is less precise. As the system by Freeman put some restrictions on recursive definitions of recursive types, it is unclear to us if |risers| could be given a suitable refinement type that precludes the occurrence of pattern-match failures. Additionally, the use of intersection types leads to a superexponential blowup of the size of types in the number of |rectype|-definitions.
+Compared to our analysis the inference of intersection types would make this a \emph{relational analysis}, while our use of subtyping and conditional constraints only define a \emph{functional} relation between input and output variables. This would seem to imply our analysis is less precise. As the system by Freeman puts some restrictions on recursive definitions of recursive types, it is unclear to us if |risers| could be given a suitable refinement type that precludes the occurrence of pattern-match failures. Additionally, the use of intersection types leads to a superexponential blowup of the size of types in the number of |rectype|-definitions.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\section{Future Research}\label{sec-futureresearch} %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1633,12 +1640,14 @@ Compared to our analysis the inference of intersection types would make this a \
 %\clearpage
 
 \acks
-We would like to thank \ANONYMOUS{Stefan Holdermans}{Tyrion Lannister} for his contributions in the earlier stages of this research and Neil Mitchell for answering several questions related to Catch.
+We would like to thank Stefan Holdermans for his contributions in the earlier stages of this research, Matthijs Steen for implementing an improved version of the prototype, and Neil Mitchell for answering several questions related to Catch. Lastly we would like to thank the anonymous reviewers for providing valuable feedback and criticisms over various iterations of this paper.
 
 %\clearpage
 
 \bibliographystyle{abbrvnat}
-\bibliography{paper} % FIXME: merge .bbl here and add \softraggedright
+\bibliography{paper} % FIXME: merge .bbl here; Sherridan complains about supposedly missing \raggedright...
+
+\end{document}
 
 \clearpage
 

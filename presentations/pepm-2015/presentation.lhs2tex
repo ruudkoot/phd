@@ -1,0 +1,214 @@
+\documentclass[serif,professionalfont]{beamer}
+
+\usepackage[sc,osf]{mathpazo}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{stmaryrd}
+\usepackage{xspace}
+
+%include polycode.fmt
+%include forall.fmt
+
+%format alpha = "\alpha"
+%format x_1
+%format x_2
+%format e_i
+%format e_1
+%format e_2
+%format e_3
+%format e_4
+%format e_5
+%format e_6
+%format EXN = "\lightning"
+
+\newtheorem{conjecture}{Conjecture}
+
+\setbeamersize{description width=-\labelsep}
+
+\begin{document}
+
+\title{Type-based Exception Analysis}
+\subtitle{for Non-strict Higher-order Functional Languages with Imprecise Exception Semantics}
+\author{Ruud Koot \quad Jurriaan Hage}
+\institute[UU]{Department of Information and Computing Sciences\\Utrecht University}
+\date{January 14, 2015}
+\maketitle
+
+\begin{frame}{Motivation}
+
+    \begin{itemize}
+
+        \item ``Well-typed programs do not go wrong''
+        
+        \pause
+        
+        \item Except:
+        
+            \begin{itemize}
+            
+                \item |divideByZero x = x / 0|
+
+                \item |head (x :: xs) = x|
+
+                \item ...
+
+            \end{itemize}
+            
+        \item Practical programming languages allow functions to be \emph{partial}.
+
+    \end{itemize}
+    
+\end{frame}
+
+\begin{frame}{Motivation}
+
+    \begin{itemize}
+    
+        \item Requiring all functions to be total may be undesirable.
+        
+            \begin{itemize}
+            
+                \item Dependent types are heavy-weight.
+                
+                \item Running everything in the |Maybe| monad does not solve the problem, only moves it.
+
+                \item Some partial functions are \emph{benign}.
+                
+            \end{itemize}
+
+        \item We do want to warn the programmer something may go wrong at run-time.
+
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Motivation}
+
+    \begin{itemize}
+
+        \item Currently compilers do a local and syntactic analysis.
+
+    \end{itemize}
+
+    \begin{code}
+        head :: [alpha] -> alpha
+        head xs = case xs of { (y : ys) -> y }
+    \end{code}
+
+    \pause
+
+    \begin{itemize}
+
+        \item ``The problem is in |head| and \emph{every} place you call it!''
+
+    \end{itemize}
+
+    \begin{code}
+        main = head [1,2,3]
+    \end{code}
+    
+    \begin{itemize}
+    
+        \item Worse are non-escaping local definitions.
+    
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Motivation}
+
+    \begin{itemize}
+
+        \item The canonical example by Mitchell \& Runciman (2008):
+        
+    \end{itemize}
+    
+    \begin{code}
+        risers  ::  Ord alpha => [alpha] -> [[alpha]]
+        risers  []               =  []
+        risers  [x]              =  [[x]]
+        risers (x_1 : x_2 : xs)  =
+            if x_1 <= x_2 then (x_1 : y) : ys else [x_1] : (y : ys)
+                where (y : ys) = risers (x_2 : xs)
+    \end{code}
+    
+    \begin{itemize}
+    
+        \item Program invariants can ensure incomplete pattern matches never fail.
+        
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Motivation}
+
+    \begin{itemize}
+    
+        \item Instead use a semantic approach: ``where can exceptions flow to?''
+        
+    \end{itemize}
+    
+    \begin{code}
+        head :: [alpha] -> alpha
+        head xs = case xs of { [] -> EXN; (y : ys) -> y }
+    \end{code}
+    
+    \begin{itemize}
+        
+        \item Simultaneously need to track data flow to determine which branches are not taken.
+
+        \item Using a type-and-effect system, the analysis is still modular.
+    
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Basic idea}
+
+
+\end{frame}
+
+\begin{frame}{Imprecise exception semantics}
+
+    \begin{itemize}
+    
+        \item Non-strict languages can have an \emph{imprecise exception semantics}
+        
+            \begin{itemize}
+            
+                \item Can non-deterministically raise one from a set of exceptions
+                
+                \item Necessary for the soundness of certain program transformations, e.g. the case-switching transformation:
+            
+            \end{itemize}
+   
+    \end{itemize}
+
+    \begin{code}
+        forall e_i.  if e_1 then
+                         if  e_2  then  e_3  else  e_4
+                     else
+                         if  e_2  then  e_5  else  e_6 =  if e_2 then
+                                                              if e_1  then  e_3  else  e_5
+                                                          else
+                                                              if e_1  then  e_4  else  e_6
+    \end{code}
+
+\end{frame}
+
+\begin{frame}{Imprecise exception semantics}
+
+    \begin{itemize}
+    
+        \item If the scrutinee of a ... excpetion-finding mode
+        
+        \item implication for the analysis: cannot separate data and expcetion flow phases
+    
+    \end{itemize}
+
+\end{frame}
+
+\end{document}

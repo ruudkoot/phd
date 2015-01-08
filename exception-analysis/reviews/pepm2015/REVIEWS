@@ -1,0 +1,239 @@
+Dear Ruud,
+
+Your paper
+
+  Type-based Exception Analysis for Non-strict Higher-order Functional Languages with Imprecise Exception Semantics
+
+has been accepted for PEPM 2015 with the condition mentioned in one
+of the reviews under "The following comment is added after the PC
+discussion".
+
+Please acknowledge the condition by replying to this e-mail.
+
+Although we will not check the final version, we ask you to strictly
+follow the condition as well as carefully take the reviews into
+account when preparing the camera-ready version of your paper.  The
+camera-ready version is due in the very early beginning of November.
+More details on formatting, copyright forms, and submitting will be
+sent to you soon.
+
+Please also make sure that at least one of the authors is registered
+for the workshop and presents the paper there.  As communicated
+previously, India requires a visa for most nationalities and there has
+been a pre-registration process which we hope you have already used.
+
+We look forward to seeing you in Mumbai in January!
+
+Sincerely,
+
+--
+Kenichi Asai, Kostis Sagonas, PC co-chairs, PEPM 2015
+
+
+----------------------- REVIEW 1 ---------------------
+PAPER: 15
+TITLE: Type-based Exception Analysis for Non-strict Higher-order Functional Languages with Imprecise Exception Semantics
+AUTHORS: Ruud Koot and Jurriaan Hage
+
+OVERALL EVALUATION: -2 (reject)
+REVIEWER'S CONFIDENCE: 4 (high)
+
+----------- REVIEW -----------
+The paper proposes an exception analysis for a call-by-name language
+with the imprecise exception semantics.
+
+I have a technical concern about the operational semantics, in the
+treatment of diverging runs. If I understand correctly, according to
+the authors' operational semantics, there is no way for an expression
+(raise error) (fix f.f) or (raise error) ⊕ (fix f.f) to raise an
+exception. As far as I can tell, this disagrees with the imprecise
+exception semantics of Peyton Jones et al. as well as with GHC. Hence,
+the proven technical theorems do not establish what the authors claim.
+
+I could not understand how to type check the risers from Section 2.1
+using the paper's type system. An extension with algebraic data types
+is discussed briefly in Section 6.2. The authors do not explain the
+update typing rules for lists, however. (Generally I found Section 6.2
+is unsatisfactory.) I was not fully convinced that the proposed type
+system can indeed type check the risers. Section 6.2 sounded this is
+still an ongoing work with some more issues to be resolves. In this
+regard, I found Section 2 is misleading. I urge the authors to make it
+clear upfront to which the extend their analysis can deal with the
+examples in Section 2, and what remains as a future work.
+
+Since there have been numerous proposals on exception analysis, it
+would be very helpful if the authors compare their approach with
+existing approaches using concrete examples. For instance, I didn't
+understand why their subtying based approach is more flexible than the
+approach by Leroy and Pessaux (2000) based on row variables.
+
+I do not wish to sound too critical, but the technical and
+presentational inaccuracies mentioned above need to be addressed for
+the paper to be accepted.
+
+
+Detailed comments.
+
+Section 2: The title "Informalities" sounds wired to me.
+
+Section 2: I believe polymorphic variants in OCaml can handle all the
+examples in Section 2 with a minor modification in the case of risers.
+
+Page 3, left: "being a program analysis, we cannot rely on any
+programmer-supplied annotations". I do not understand why a program
+analysis cannot rely on programmer-supplied annotations. Could you
+please explain?
+
+Page 3, Section 4.1: Please align the order of the informal
+explanation in accordance to the grammar of the syntax.
+
+Page 4, Section 4.2: It'd be clearer to give the (notation for the)
+order of the lattice Λ.
+
+Page 4: Section 4.4 should come before Section 4.2 and 4.3. Neither
+types nor type environment Γ is used in the operational semantics.
+
+Page 6, left: Please explain the rules for the constraint
+satisfaction. I'd imagine that you use the order from the lattice,
+which is however not mentioned.
+
+Page 6, right: What is a "normalized" type system?
+
+Grammatical suggestions.
+
+Page 3, right: "if it possible for the argument" -> if it is.
+
+Page 4, left, 2nd paragraph, line 3: "from the program under analysis" ->
+"in the source program" sounds clearer in the meaning.
+
+Page 4, left: you haven't explain what ⊕ is.
+
+Section 4.4: I think splitting the last paragraph into several
+paragraphs makes reading easier.
+
+Page 6, left, 1st paragraph: It is strange to use Λ_ι as a
+metavariable of an element of Λ_ι.
+
+[The following comment is added after the PC discussion.]
+
+We request the authors to make the following points clear upfront in the final version of the paper
+
+- that non-terminating programs do not and cannot raise exceptions with the authors' operational semantics, which is not the case with the imprecise exception semantics or GHC;
+
+and
+
+- to which extent the authors' analysis as presented in the paper can handle the examples in Section 2, e.g., type polymorphism in the risers and user-defined datatypes, and what remains as ongoing or future work.
+
+
+----------------------- REVIEW 2 ---------------------
+PAPER: 15
+TITLE: Type-based Exception Analysis for Non-strict Higher-order Functional Languages with Imprecise Exception Semantics
+AUTHORS: Ruud Koot and Jurriaan Hage
+
+OVERALL EVALUATION: 1 (weak accept)
+REVIEWER'S CONFIDENCE: 3 (medium)
+
+----------- REVIEW -----------
+A method for analyzing exceptions for a Haskell-like language (without user-defined algebraic data types) is proposed.  Among others, this method can guarantee not to cause pattern-match failure in a program with incomplete case expressions.  The proposed constraint-based type system can infer annotated types by propagating constraints of data and exceptions.  Several fundamental theorems of type analysis such as progress and preservation with respect to a specified semantics are shown.  The proposed constraint inference algorithm is reasonably constructed, while its soundness and completeness is not explicitly shown.  Examples in the early sections help grasp the general idea very much.  The work is also properly positioned to related work.
+
+
+The current paper has not explicitly mentioned how to deal with non-terminating expressions, which may return imprecise exceptions.  For example, how to deal with expressions
+
+lightning^l nt
+lightning^l + nt
+case lightning^l of { [] -> nt; x1::x2 -> nt }
+if lightning^l then nt else nt
+
+where nt is a non-terminating expression.  If it is impossible to catch exception l, it is too restrictive.  Since imprecise exceptions are assumed, those expressions may return exception l in some implementation.
+I tried to understand what is behind this, by assuming the authors take an approach in [Peyton Jones et al. '99] for granted.  Their approach adds to the Exception type NonTermination, which corresponds to arbitrary exceptions (otherwise, e.g., case switching would change its exceptions).  If non-termination were detectable by runtime system, NonTermination exception could be thrown.  For example, getException (nt lightning^l) either return NonTermination or is non-terminating, and thus an implementation may throw exception l.
+One straightforward solution would be to translate the above paper's approach to an unconventional pseudo-rule of operational semantics:
+
+           e: a detectable bottom
+-------------------------------------------------------
+ro |- getException e -> return lightning^NonTermination
+
+Since ordinary functions cannot detect a bottom (e.g., by analyzing graph reduction), getException is with I/O.
+
+
+I do not intuitively understand what annotation variables \alpha on the arrows of functional types mean: \tau_1 -->^\alpha \tau_2.  The examples in Sec 2-3 use just \emptyset, and did not much help me to get an idea.
+
+It is  not clear whether the notation of exception labels is consistent in the entire paper.  Since \ll is defined as a set of exception labels in Sec 4.1, pattern-match-failure in Sec 3.2 should be a singleton set, which includes a pattern-match-failure exception label.  Thus \sqsubseteq is a set inclusion operator.  In p.8, {div-by-0} is denoted by a singleton set, but the other singleton sets are denoted by its elements, for example, pattern-match-failure, N and C.  What is the relation between labels and lattice \Lambda?  (An element of lattice is written as \Lambda_\iota in p.6, but it is written as l, e.g., in (275), (317),...)  I may miss something, but it was confusing.  Also, in rule [CL-\exists I], \Lambda must not be \bot_\iota?
+
+In the premises of [CM-Var] and [CM-Con], \sqsubseteq's are used as mathematical operators on lattices while in the conclusions they are constructors of constraints.
+
+There is no explicit definition of what are constants.  Some elements of the values are constants (b, n, [] are constants).
+
+While the type of risers in Section 3.1 is simple, the actual inferred type by Fig. 3 is very complex to me.  It would be nice to have the theorem of soundness, or explain how to intuitively check its soundness.
+
+Fig. 3: C_1 is passed to gen as a parameter, but not used?
+
+Sec 5.1
+. "The auxiliary function freshFrom creates a type with the same type-constructor shape as the given underlying type v, with all annotation variables fresh"
+  I found it ambiguous.  I suppose annotation variables are not generated each time the function freshFrom is called.  Instead, it remembers each fresh variable for each underlying type variable.  In fact, in Sec 6.1, function apply has type (a -> b) -> c -> b, in which b appears twice.
+. "inst instantiates all quantified annotation variables in \tau and C with fresh ones."  C does not appear in inst \Gamma x?
+
+Fig. 4: in function dv: is the latter "case c of" redundant?
+
+Sec 6.1:  I am not following the constraints of apply.  Why can we eliminate the auxiliary function to extract types \lceil . \rceil ?
+
+Some rules are referred to by wrong names.
+[If-Exn1] -> [E-IfExn1]
+[If-Exn2] -> [E-IfExn2]
+[E-CaseExn-2] -> [E-CaseExn2]
+
+
+----------------------- REVIEW 3 ---------------------
+PAPER: 15
+TITLE: Type-based Exception Analysis for Non-strict Higher-order Functional Languages with Imprecise Exception Semantics
+AUTHORS: Ruud Koot and Jurriaan Hage
+
+OVERALL EVALUATION: 2 (accept)
+REVIEWER'S CONFIDENCE: 3 (medium)
+
+----------- REVIEW -----------
+The paper describes an analysis that flags programs that may exhibit exceptions due to incomplete pattern matches.
+The analysis is type-based (incorporating a simple constraint system into the type system), thus making it modular.
+
+I quite liked the  paper.  A couple of comments, though:
+
+- The analysis is really just a flow analysis which discovers whether or not control can reach certain parts of the
+   program.   The program parts under consideration here are the exception-raising branches of pattern-matching
+   case analyses -- the branches that get filled in automatically by a compiler to account for values not covered
+   by any of the given patterns.
+   I actually like that approach, but it isn't really an exception analysis in the usual sense (e.g., the kind performed
+   by Leroy and Pessaux's work where the system checks if raised exceptions are matched by corresponding
+   handlers, although there is a certain conceptual overlap given that exceptions are often also modeled as
+   sum types).
+
+- I would like to see a bit more discussion of the choice of constraint system.  Are the asymmetries and restrictions
+   chosen strictly to make solving easier?  Are the specifically catering to the problem of discovering unmatched
+   values in case analysis?  Are they "just weak enough" for the former or "just strong enough" for the latter?
+   Somewhere in between?
+
+- I would have loved to see some discussion of the prototype implementation:  How well does the algorithm
+   scale in practice?  How many false positives does it produce in realistic settings?
+
+
+----------------------- REVIEW 4 ---------------------
+PAPER: 15
+TITLE: Type-based Exception Analysis for Non-strict Higher-order Functional Languages with Imprecise Exception Semantics
+AUTHORS: Ruud Koot and Jurriaan Hage
+
+OVERALL EVALUATION: 1 (weak accept)
+REVIEWER'S CONFIDENCE: 4 (high)
+
+----------- REVIEW -----------
+This paper is a static type system that chases the uncaught exceptions from incomplete pattern match in Haskell-style call-by-name language.
+
+The system is an impressive collection of static typing techniques: subtyping, constraints, polymorphism, and polymorphic recursion. The type system's soundness is Coq-checked.
+
+The type inference algorithm's correctness(sound-&-completeness) is not formally proven.
+
+I have two concerns:
+1. The practicality. In static analysis, striking a right cost-accuracy balance is the key for the analysis to be practically used in reality. We need to know how cost-effectively the proposed analysis works. The paper's elaborate static typing can be overkill if simpler techniques are enough for most existing Haskell code. Some experiment numbers at least for the analysis cost is needed.
+
+2. Discussing on related works on exception analysis is not thorough. Cost-effective exception analysis for call-by-value ML has gone far. For example, a constraint-based cost-effective approach is
+
+     A Cost-effective Estimation of Uncaught Exceptions in SML Programs
+     Kwangkeun Yi and Sukyoung Ryu
+     Theoretical Computer Science, Vol. 277, No.1-2, pp.185-217, 2002

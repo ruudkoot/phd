@@ -1,13 +1,34 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ViewPatterns      #-}
 
-module Analysis.Common where
+module Analysis.Common (
+    Expr(..),
+    checkExpr,
+    Ty(..),
+    Kind(..),
+    KindEnv,
+    Lbl,
+    Exn(..),
+    ExnTy(..),
+    fevExn,
+    fevExnTy,
+    checkExnTy,
+    exnNormalize,
+    exnEq,
+    exnTyEq,
+    simplifyExnTy,
+    Subst,
+    substExn',
+    substExnTy,
+    substExnTy',
+    (<.>)
+) where
 
 -- FIXME: make all functions total (and remove dead errors)
 
 import           Analysis.Names
 import qualified Analysis.LambdaUnion as LU
-import           Analysis.Latex
+import           Analysis.Print
 
 import Data.List (delete)
 
@@ -24,52 +45,98 @@ data Expr
     | Abs Name Ty Expr
     | App Expr Expr
     | Con Bool
+    | If Expr Expr Expr
     | Crash Lbl Ty
     | Seq Expr Expr
     | Fix Expr
     | Nil Ty
     | Cons Expr Expr
     | Case Expr Expr Name Name Expr
-    
-instance Show Expr where
-    show (Var x     ) = "x" ++ show x
-    show (Abs x t e ) = "(λx" ++ show x ++ ":" ++ show t ++ "." ++ show e ++ ")"
-    show (App e1 e2 ) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
-    show (Con True  ) = "true"
-    show (Con False ) = "false"
-    show (Crash l t ) = "(⚡" ++ l ++ ":" ++ show t ++ ")"
-    show (Seq e1 e2 ) = "(" ++ show e1 ++ " seq " ++ show e2 ++ ")"
-    show (Fix e     ) = "(fix " ++ show e ++ ")"
-    show (Nil t     ) = "(ε:" ++ show t ++ ")"
-    show (Cons e1 e2) = "(" ++ show e1 ++ "⸪" ++ show e2 ++ ")"
-    show (Case e1 e2 x1 x2 e3)
-        = "(case " ++ show e1 ++ " of { ε ↦ " ++ show e2 ++ "; x"
-                        ++ show x1 ++ "⸪x" ++ show x2 ++ " ↦ " ++ show e3 ++ "})"
-                        
+    deriving (Read, Show)
+
+type TyEnv = [(Name, Ty)]
+
+checkExpr :: TyEnv -> Expr -> Maybe Ty
+checkExpr env (Var x)
+    = lookup x env
+checkExpr env (Abs x t e)
+    = case lookup x env of
+        Nothing -> do t' <- checkExpr ((x,t):env) e
+                      return (t :-> t')
+        _       -> error "shadowing (Abs)"
+checkExpr env (App e1 e2)
+    = case checkExpr env e1 of
+        Just (t1 :-> t2) -> if checkExpr env e2 == Just t1 then return t2 else Nothing
+        _                -> error "type (App)"
+checkExpr env (Con _)
+    = return Bool
+checkExpr env tm@(If e1 e2 e3)
+    = case checkExpr env e1 of
+        Just Bool -> if checkExpr env e2 == checkExpr env e3 then
+                         checkExpr env e2
+                     else
+                         error "type (If, body)"
+        _         -> error "type (If, guard)"
+checkExpr env (Crash _ t)
+    = return t
+checkExpr env (Seq e1 e2)
+    = do _ <- checkExpr env e1
+         checkExpr env e2
+checkExpr env (Fix e)
+    = case checkExpr env e of
+        Just (t1 :-> t2) -> if t1 == t2 then return t1 else error "type (Fix, type 2)"
+        _                -> error $ "type (Fix, type 1)"
+checkExpr env (Nil t)
+    = return (List t)
+checkExpr env (Cons e1 e2)
+    = do t1 <- checkExpr env e1
+         case checkExpr env e2 of
+            Just (List t2) -> if t1 == t2 then return (List t1) else Nothing
+            _              -> error "type (Cons, type)"
+checkExpr env (Case e1 e2 x1 x2 e3)
+    = do case lookup x1 env of
+             Nothing -> return ()
+             _       -> error "type (Case, shadowing 1)"
+         case lookup x2 env of
+             Nothing -> return ()
+             _       -> error "type (Case, shadowing 2)"
+         case checkExpr env e1 of
+            Just (List t1) -> do t2 <- checkExpr env e2
+                                 t3 <- checkExpr ((x1,t1):(x2,List t1):env) e3
+                                 if t2 == t3 then
+                                    checkExpr env e2
+                                 else
+                                    error "type (Case, type 2)"
+            _              -> error "type (Case, type 1)"
+
 instance Latex Expr where
-    lhs2tex (Var x     )
-        = "Var " ++ show x
-    lhs2tex (Abs x t e )
-        = "(LAMBDA (x_" ++ show x ++ " :: " ++ lhs2tex t ++ ") (" ++ lhs2tex e ++ "))"
-    lhs2tex (App e1 e2 )    -- FIXME: Use App constructor?
-        = "((" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2 ++ "))"
-    lhs2tex (Con True  )
-        = "True"
-    lhs2tex (Con False )
-        = "False"
-    lhs2tex (Crash l t )
-        = "Bottom (" ++ l ++ ") (" ++ lhs2tex t ++ ")"
-    lhs2tex (Seq e1 e2 )
-        = "Seq (" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2 ++ ")"
-    lhs2tex (Fix e     )
-        = "Fix (" ++ lhs2tex e ++ ")"
-    lhs2tex (Nil t     )
-        = "Nil (" ++ lhs2tex t ++ ")"
-    lhs2tex (Cons e1 e2)
-        = "Cons (" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2 ++ ")"
-    lhs2tex (Case e1 e2 x1 x2 e3)
-        = "Case (" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2 ++ ") (x_"
-            ++ show x1 ++ ") (x_" ++ show x2 ++ ") (" ++ lhs2tex e3 ++ ")"
+    latex (Var x)
+        = "x_{" ++ show x ++ "}"
+    latex (Abs x t e)  
+        = "(\\lambda x_{" ++ show x ++ "}:" ++ latex t ++ "." ++ latex e ++ ")"
+    latex (App e1 e2)
+        = "(" ++ latex e1 ++ "\\ " ++ latex e2 ++ ")"
+    latex (Con True)
+        = "\\mathbf{true}"
+    latex (Con False)
+        = "\\mathbf{false}"
+    latex (If e1 e2 e3)
+        = "(\\mathbf{if}\\ " ++ latex e1 ++ "\\ \\mathbf{then}\\ " ++ latex e2
+            ++ "\\ \\mathbf{else}\\ " ++ latex e3 ++ ")"
+    latex (Crash l t)  
+        = "(⚡" ++ l ++ ":" ++ latex t ++ ")"
+    latex (Seq e1 e2)
+        = "(" ++ latex e1 ++ " \\mathbf{seq} " ++ latex e2 ++ ")"
+    latex (Fix e)
+        = "(\\mathbf{fix}\\ " ++ latex e ++ ")"
+    latex (Nil t)
+        = "(\\epsilon:" ++ latex t ++ ")"
+    latex (Cons e1 e2)
+        = "(" ++ latex e1 ++ " :: " ++ latex e2 ++ ")"
+    latex (Case e1 e2 x1 x2 e3)
+        = "(\\mathbf{case}\\ " ++ latex e1 ++ "\\ \\mathbf{of}\\ \\{ ε \\mapsto "
+            ++ latex e2 ++ "; x_{" ++ show x1 ++ "}::x_{" ++ show x2 ++ "} \\mapsto "
+            ++ latex e3 ++ "\\})"
 
 -- | Types
 
@@ -77,25 +144,28 @@ data Ty
     = Bool
     | Ty :-> Ty
     | List Ty
-    deriving Show
-    
+    deriving (Eq, Read, Show)
+
 instance Latex Ty where
-    lhs2tex Bool        = "Bool"
-    lhs2tex (t1 :-> t2) = "(" ++ lhs2tex t1 ++ " -> " ++ lhs2tex t2 ++ ")"
-    lhs2tex (List t)    = "[" ++ lhs2tex t ++ "]"
+    latex Bool
+        = "\\textbf{bool}"
+    latex (t1 :-> t2) 
+        = "\\left(" ++ latex t1 ++ " \\rightarrow " ++ latex t2 ++ "\\right)"
+    latex (List t)
+        = "\\left[" ++ latex t ++ "\\right]"
 
 data Kind = EXN | Kind :=> Kind
-    deriving (Eq, Show)
+    deriving (Eq, Read, Show)
     
 instance Latex Kind where
-    lhs2tex EXN         = "EXN"
-    lhs2tex (k1 :=> k2) = "KindArr (" ++ lhs2tex k1 ++ ") (" ++ lhs2tex k2 ++ ")"
+    latex EXN         = "E"
+    latex (k1 :=> k2) = "(" ++ latex k1 ++ " \\Rightarrow " ++ latex k2 ++ ")"
 
 type KindEnv = [(Name, Kind)]
 
 instance Latex (Name, Kind) where
-    lhs2tex (show -> e, lhs2tex -> k)
-        = "e_" ++ e ++ " : " ++ k
+    latex (show -> e, latex -> k)
+        = "e_{" ++ e ++ "} : " ++ k
 
 kind2sort :: Kind -> LU.Sort
 kind2sort EXN         = LU.C
@@ -109,12 +179,13 @@ type Lbl = String
 
 -- TODO: replace this with module LambdaUnion
 data Exn
-    = ExnEmpty
+    = ExnEmpty                  -- TODO: alternatively, give it a kind
     | ExnUnion Exn Exn
     | ExnCon Lbl
     | ExnVar Name
     | ExnApp Exn Exn
     | ExnAbs Name Kind Exn
+    deriving (Read, Show)
 
 exn2lu :: Exn -> LU.Tm Lbl
 exn2lu (ExnEmpty      ) = LU.Empty
@@ -135,35 +206,85 @@ lu2exn (LU.Abs   n s e) = ExnAbs n (sort2kind s) (lu2exn e)
 exnEq :: KindEnv -> Exn -> Exn -> Bool
 exnEq env e1 e2
     = LU.semanticallyEqual (map (\(x,k) -> (x, kind2sort k)) env) (exn2lu e1) (exn2lu e2)
-    
-exnNormalize :: Exn -> Exn
+
+exnNormalize :: Exn -> Exn                    -- FIXME: replace by simplifyExn
 exnNormalize = lu2exn . LU.normalize . exn2lu
 
-instance Show Exn where
-    show (ExnEmpty)       = "∅"
-    show (ExnUnion e1 e2) = "(" ++ show e1 ++ "∪" ++ show e2 ++ ")"
-    show (ExnCon lbl)     = "{" ++ lbl ++ "}"
-    show (ExnVar n)       = "e" ++ show n
-    show (ExnApp e1 e2)   = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
-    show (ExnAbs n k e)   = "(λe" ++ show n ++ ":" ++ show k ++ "." ++ show e ++ ")"
-    
 instance Latex Exn where
-    lhs2tex (ExnEmpty)       = "ExnEmpty"
-    lhs2tex (ExnUnion e1 e2) = "ExnUnion (" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2 ++ ")"
-    lhs2tex (ExnCon lbl)     = "ExnCon (" ++ show lbl ++ ")"
-    lhs2tex (ExnVar n)       = "ExnVar (" ++ show n ++ ")"
-    lhs2tex (ExnApp e1 e2)   = "ExnApp (" ++ lhs2tex e1 ++ ") (" ++ lhs2tex e2 ++ ")"
-    lhs2tex (ExnAbs n k e)   = "ExnAbs (" ++ show n ++ ") (" ++ lhs2tex k ++ ") (" ++ lhs2tex e ++ ")"
-
+    latex (ExnEmpty)       = "\\emptyset"
+    latex (ExnUnion e1 e2) = "(" ++ latex e1 ++ "\\cup " ++ latex e2 ++ ")"
+    latex (ExnCon lbl)     = "{" ++ lbl ++ "}"
+    latex (ExnVar n)       = "e_{" ++ show n ++ "}"
+    latex (ExnApp e1 e2)   = "(" ++ latex e1 ++ "\\ " ++ latex e2 ++ ")"
+    latex (ExnAbs n k e)   = "(\\lambda e_{" ++ show n ++ "}:" ++ latex k ++ "." ++ latex e ++ ")"
+    
 data ExnTy
     = ExnForall Name Kind ExnTy
     | ExnBool
     | ExnList ExnTy Exn
     | ExnArr  ExnTy Exn ExnTy Exn
-    
+    deriving (Read, Show)
+
+-- * Sanity checking
+
+checkExnTy :: KindEnv -> ExnTy -> Bool
+checkExnTy env (ExnForall e k t)
+    | Just _ <- lookup e env = False {- shadowing -}
+    | otherwise = checkExnTy ((e,k):env) t
+checkExnTy env ExnBool
+    = True
+checkExnTy env (ExnList t exn)
+    = checkExnTy env t && checkExn env exn == Just EXN
+checkExnTy env (ExnArr t1 exn1 t2 exn2)
+    = checkExnTy env t1 && checkExn env exn1 == Just EXN
+        && checkExnTy env t2 && checkExn env exn2 == Just EXN
+
+checkExn :: KindEnv -> Exn -> Maybe Kind
+checkExn env (ExnEmpty)
+    = return EXN
+checkExn env (ExnUnion exn1 exn2)
+    = do k1 <- checkExn env exn1
+         k2 <- checkExn env exn2
+         if k1 == k2 then
+            return k1
+         else
+            Nothing {- kind error -}
+checkExn env (ExnCon lbl)
+    = return EXN
+checkExn env (ExnVar x)
+    = lookup x env
+checkExn env (ExnApp exn1 exn2)
+    = do k1 <- checkExn env exn1
+         k2 <- checkExn env exn2
+         case k1 of
+            (k1' :=> k1'') | k1' == k2 -> return k1''
+            _                          -> Nothing {- kind error -}
+checkExn env (ExnAbs e k exn)
+    | Just _ <- lookup e env = Nothing {- shadowing -}
+    | otherwise              = do k' <- checkExn ((e,k):env) exn
+                                  return (k :=> k')
+
+-- * Type simplification (reduction)
+
+simplifyExnTy :: KindEnv -> ExnTy -> ExnTy
+simplifyExnTy env (ExnForall e k t)
+    = ExnForall e k (simplifyExnTy ((e,k):env) t)
+simplifyExnTy env ExnBool
+    = ExnBool
+simplifyExnTy env (ExnList t exn)
+    = ExnList (simplifyExnTy env t) (simplifyExn env exn)
+simplifyExnTy env (ExnArr t1 exn1 t2 exn2)
+    = ExnArr (simplifyExnTy env t1) (simplifyExn env exn1)
+             (simplifyExnTy env t2) (simplifyExn env exn2)
+             
+simplifyExn :: KindEnv -> Exn -> Exn
+simplifyExn _env = exnNormalize
+
+-- * Equality tests
+
 exnTyEq :: KindEnv -> ExnTy -> ExnTy -> Bool
 exnTyEq env (ExnForall e k t) (ExnForall e' k' t')
-    = k == k' && exnTyEq env t (substExnTy e' e t')
+    = k == k' && exnTyEq ((e,k) : env) t (substExnTy e' e t')
 exnTyEq env ExnBool ExnBool
     = True
 exnTyEq env (ExnList t exn) (ExnList t' exn')
@@ -174,30 +295,17 @@ exnTyEq env (ExnArr t1 exn1 t2 exn2) (ExnArr t1' exn1' t2' exn2')
 exnTyEq env _ _
     = False
 
-instance Show ExnTy where
-    show (ExnForall e k t)
-        = "(∀e" ++ show e ++ "::" ++ show k ++ "." ++ show t ++ ")"
-    show (ExnBool)
-        = "bool"
-    show (ExnList t exn)
-        = "[" ++ show t ++ "{" ++ show exn ++ "}]"
-    -- TODO: print top-level annotation on the arrow for readability
-    show (ExnArr t1 exn1 t2 exn2)
-        = "(" ++ show t1 ++ "{" ++ show exn1 ++ "} -> "
-              ++ show t2 ++ "{" ++ show exn2 ++ "})"
-
 instance Latex ExnTy where
-    lhs2tex (ExnForall e k t)
-        = "(ExnForall (" ++ show e ++ ") (" ++ lhs2tex k ++ ") (" ++ lhs2tex t ++ "))"
-    lhs2tex (ExnBool)
-        = "ExnBool"
-    lhs2tex (ExnList t exn)
-        = "(ExnList (" ++ lhs2tex t ++ ") (" ++ lhs2tex exn ++ "))"
+    latex (ExnForall e k t)
+        = "\\left(\\forall e_{" ++ show e ++ "}::" ++ latex k ++ "." ++ latex t ++ "\\right)"
+    latex (ExnBool)
+        = "\\mathbf{bool}"
+    latex (ExnList t exn)
+        = "\\left[" ++ latex t ++ "\\{" ++ latex exn ++ "\\}\\right]"
     -- TODO: print top-level annotation on the arrow for readability
-    lhs2tex (ExnArr t1 exn1 t2 exn2)
-        = "(ExnArr (" ++ lhs2tex t1 ++ ") (" ++ lhs2tex exn1 ++ ") ("
-              ++ lhs2tex t2 ++ ") (" ++ lhs2tex exn2 ++ "))"
-
+    latex (ExnArr t1 exn1 t2 exn2)
+        = "\\left(" ++ latex t1 ++ "\\{" ++ latex exn1 ++ "\\} \\rightarrow "
+              ++ latex t2 ++ "\\{" ++ latex exn2 ++ "\\}\\right)"
 
 -- | Free exception variables
 
