@@ -6,6 +6,7 @@
 \usepackage{amssymb}
 \usepackage{amsthm}
 \usepackage{mathtools}
+\usepackage{stmaryrd}
 \usepackage{xspace}
 
 %include polycode.fmt
@@ -14,6 +15,14 @@
 %format alpha = "\alpha"
 %format x_1
 %format x_2
+%format e_i
+%format e_1
+%format e_2
+%format e_3
+%format e_4
+%format e_5
+%format e_6
+%format EXN = "\lightning"
 
 \newtheorem{conjecture}{Conjecture}
 
@@ -85,8 +94,8 @@
     \end{itemize}
 
     \begin{code}
-        head : [alpha] -> alpha
-        head xs = case xs of { (y :: ys) -> y }
+        head :: [alpha] -> alpha
+        head xs = case xs of { (y : ys) -> y }
     \end{code}
 
     \pause
@@ -125,6 +134,80 @@
             if x_1 <= x_2 then (x_1 : y) : ys else [x_1] : (y : ys)
                 where (y : ys) = risers (x_2 : xs)
     \end{code}
+    
+    \begin{itemize}
+    
+        \item Program invariants can ensure incomplete pattern matches never fail.
+        
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Motivation}
+
+    \begin{itemize}
+    
+        \item Instead use a semantic approach: ``where can exceptions flow to?''
+        
+    \end{itemize}
+    
+    \begin{code}
+        head :: [alpha] -> alpha
+        head xs = case xs of { [] -> EXN; (y : ys) -> y }
+    \end{code}
+    
+    \begin{itemize}
+        
+        \item Simultaneously need to track data flow to determine which branches are not taken.
+
+        \item Using a type-and-effect system, the analysis is still modular.
+    
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Basic idea}
+
+
+\end{frame}
+
+\begin{frame}{Imprecise exception semantics}
+
+    \begin{itemize}
+    
+        \item Non-strict languages can have an \emph{imprecise exception semantics}
+        
+            \begin{itemize}
+            
+                \item Can non-deterministically raise one from a set of exceptions
+                
+                \item Necessary for the soundness of certain program transformations, e.g. the case-switching transformation:
+            
+            \end{itemize}
+   
+    \end{itemize}
+
+    \begin{code}
+        forall e_i.  if e_1 then
+                         if  e_2  then  e_3  else  e_4
+                     else
+                         if  e_2  then  e_5  else  e_6 =  if e_2 then
+                                                              if e_1  then  e_3  else  e_5
+                                                          else
+                                                              if e_1  then  e_4  else  e_6
+    \end{code}
+
+\end{frame}
+
+\begin{frame}{Imprecise exception semantics}
+
+    \begin{itemize}
+    
+        \item If the scrutinee of a ... excpetion-finding mode
+        
+        \item implication for the analysis: cannot separate data and expcetion flow phases
+    
+    \end{itemize}
 
 \end{frame}
 
