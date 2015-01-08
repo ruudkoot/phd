@@ -37,11 +37,11 @@
 \subtitle{\textsc{\alert{Work-in-Progress}}}
 \author{Ruud Koot}
 \institute[UU]{Department of Information and Computing Sciences\\Utrecht University}
-\date{June 12, 2014}
+%\date{June 12, 2014}
 \maketitle
 
 %include section/motivation.lhs2tex
-%include section/intermezzo.lhs2tex
+%%include section/intermezzo.lhs2tex
 %include section/technicalities.lhs2tex
 %include section/problems.lhs2tex
 

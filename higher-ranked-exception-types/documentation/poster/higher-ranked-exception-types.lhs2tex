@@ -56,14 +56,14 @@
             \item Exceptions that may be raised are \emph{not} captured in the type
                 \begin{itemize}
                     \item We would like them to be during program verification
-                    \item Adding exception types in Haskell are more complicated than in a strict first-order language
+                    \item Adding exception types to Haskell is more complicated than in a strict first-order language
                 \end{itemize}
           \end{itemize}
         \end{block}
-        \vspace{2em}
+        \vspace{3em}
         \begin{block}{Exception Types in Haskell} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             \begin{itemize}
-                \item Exception types in Haskell can get complicated because:
+                \item Exception types in Haskell can get complicated because of:
                     \begin{description}
                         \item[Higher-order functions] Exceptions raised by higher-order functions depend on the exceptions raised by functional arguments.
 
@@ -80,7 +80,7 @@
 
             \end{itemize}
         \end{block}
-        \vspace{2em}
+        \vspace{3em}
         \begin{block}{Precise Exception Types} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             \begin{itemize}
                 \item The exception type above is not a precise as we would like
@@ -159,7 +159,7 @@
                     
                         \item Needed for soundness of various program transformations in an optimizing compiler
                         
-                        \item Not adequately captured by ACI1 constraints; attempt to unification in Boolean rings
+                        \item Not adequately captured by ACI1 constraints; attempt to use equational unification in Boolean rings instead
                     
                     \end{itemize}
             
