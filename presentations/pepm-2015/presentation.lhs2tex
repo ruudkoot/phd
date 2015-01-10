@@ -7,12 +7,15 @@
 \usepackage{amsthm}
 \usepackage{mathtools}
 \usepackage{stmaryrd}
+\usepackage{bm}
 \usepackage{xspace}
 
 %include polycode.fmt
 %include forall.fmt
 
 %format alpha = "\alpha"
+%format beta = "\beta"
+%format alphabeta = "\alpha\beta"
 %format x_1
 %format x_2
 %format e_i
@@ -23,6 +26,112 @@
 %format e_5
 %format e_6
 %format EXN = "\lightning"
+%format risers_1
+%format risers_2
+%format risers_3
+%format N (a) = "\bm{[}" a "\bm{]}^{\SingletonNil}"
+%format CL (a) = "\bm{[}" a "\bm{]}^{\SingletonCons}"
+%format NC (a) = "\bm{[}" a "\bm{]}^{\SingletonNil \sqcup \SingletonCons}"
+%format POLYV (a) (b) = "\bm{[}" a "\bm{]}^{" b "}"
+%format LABELLEDLIST (a) (b) = "\bm{[}" a "\bm{]}^{" b "}"
+
+%% Double-blind peer-review
+\newcommand{\ANONYMOUS}[2]{#1}
+
+%% Generic formatting stuff
+\newcommand{\BigBreak}{\\[0.5\baselineskip]}
+\newcommand{\MaybeBigBreak}{\\}
+
+%% Generic text stuff
+\newcommand{\ala}{\emph{\`a la}\xspace}
+
+%% Generic math stuff
+\newcommand{\isdef}{\stackrel{\text{def}}{=}}
+\newcommand{\IndCase}[1]{\emph{Case} \CiteRule{#1}:}
+
+%% Types
+\newcommand{\Var}{\textbf{Var}}
+\newcommand{\AnnVar}{\textbf{AnnVar}}
+\newcommand{\Shape}{\textbf{Ty}}
+\newcommand{\ShapeScheme}{\textbf{TySch}}
+
+%% Syntax
+\newcommand{\Crash}[1]{\lightning^{#1}}
+\newcommand{\BTrue}{\textbf{true}}
+\newcommand{\BFalse}{\textbf{false}}
+
+\newcommand{\Abs}[2]{\lambda #1.#2}
+\newcommand{\App}[2]{#1\ #2}
+\newcommand{\Op}[2]{#1 \oplus #2}
+\newcommand{\Let}[3]{\textbf{let}\ #1 = #2\ \textbf{in}\ #3}
+\newcommand{\Fix}[2]{\textbf{fix}\ #1.\ #2}
+\newcommand{\IfThenElse}[3]{\textbf{if}\ #1\ \textbf{then}\ #2\ \textbf{else}\ #3}
+\newcommand{\Pair}[2]{\bm{\left(}#1\bm{,} #2\bm{\right)}}
+\newcommand{\Fst}[1]{\textbf{fst}\ #1}
+\newcommand{\Snd}[1]{\textbf{snd}\ #1}
+\newcommand{\LNil}{\bm{\left[\right]}}
+\newcommand{\LCons}[2]{#1 \bm{::} #2}
+\newcommand{\Case}[5]{\textbf{case}\ #1\ \textbf{of} \left\{ \LNil \mapsto #2; #3 \bm{::} #4 \mapsto #5 \right\}}
+\newcommand{\CaseBREAK}[5]{\textbf{case}\ #1\ \textbf{of}\\\left\{ \LNil \mapsto #2; #3 \bm{::} #4 \mapsto #5 \right\}}
+\newcommand{\Bind}[2]{\textbf{bind}\ #1\ \textbf{in}\ #2}
+\newcommand{\Close}[2]{\textbf{close}\ #1\ \textbf{in}\ #2}
+\newcommand{\CloseEMPH}[2]{\emph{\textbf{close}}\ #1\ \emph{\textbf{in}}\ #2}
+
+\newcommand{\PMF}{\textbf{pattern-match-failure}\xspace}
+
+%% Semantics
+\newcommand{\Eval}[4]{\left<#1; #2\right> \Downarrow \left<#3;#4\right>}
+\newcommand{\Transform}[1]{\widehat{#1}}
+
+\newcommand{\Reduce}[3][\rho]{#1~\vdash~#2 \longrightarrow~#3}
+\newcommand{\InterpretOp}[1]{\llbracket #1 \rrbracket}
+
+%% Typing
+\newcommand{\Rule}[3]{\frac{#2}{#3}\mbox{\ [\textsc{#1}]}}
+\newcommand{\CiteRule}[1]{\mbox{[\textsc{#1}]}}
+\newcommand{\Judge}[3][C; \Gamma]{{#1 \vdash #2 : #3}}              %declarative
+\newcommand{\JudgeUL}[3][C; \Gamma]{{#1 \vdash_{\mathrm{UL}} #2 : #3}}   %underlying
+\newcommand{\Centail}[2][C]{{#1 \Vdash #2}}
+\newcommand{\CM}[2][\theta]{{#1 \vDash #2}}
+\newcommand{\Ref}{\delta}
+\newcommand{\Exn}{\chi}
+\newcommand{\Judgement}[5][\Gamma]{#1 \vdash #2 : #3 \leadsto #4\ \&\ #5} %algo
+\newcommand{\PmSch}{\sigma}
+\newcommand{\PmTy}{\varsigma}
+\newcommand{\Sh}{\tau}
+\newcommand{\ShSch}{\sigma}
+\newcommand{\TopLevel}[1]{\lceil #1\rceil}
+\newcommand{\Fresh}{\ \mathrm{fresh}}
+\newcommand{\SUBST}[1]{#1\!\left[\overline{\beta}/\overline{\alpha}\right]}
+\newcommand{\TyBool}{\mathbb{B}}
+\newcommand{\TyInt}{\mathbb{Z}}
+\newcommand{\TyFun}[3]{#1 \xrightarrow{#3} #2}
+\newcommand{\TyPair}[3]{#1 \bm{\times}^{#3} #2}
+\newcommand{\TyList}[2]{\bm{\left[}#1\bm{\right]}^{#2}}
+\newcommand{\TyForall}[3]{\forall\overline{#1}.\ #2\ \textbf{with}\ #3}
+\newcommand{\TyForallNOOVERLINE}[3]{\forall #1.\ #2\ \textbf{with}\ #3}
+\newcommand{\E}{\textbf{Nil}}
+\newcommand{\NE}{\textbf{Cons}}
+
+\newcommand{\EC}[3][C]{{#1 \vdash #2 \bowtie #3}}
+
+\newcommand{\SingletonTrue}{\textbf{T}}
+\newcommand{\SingletonFalse}{\textbf{F}}
+\newcommand{\SingletonNeg}{\textbf{-}}
+\newcommand{\SingletonZero}{\textbf{0}}
+\newcommand{\SingletonPos}{\textbf{+}}
+\newcommand{\SingletonNil}{\textbf{N}}
+\newcommand{\SingletonCons}{\textbf{C}}
+
+%% Constraints
+\newcommand{\AnnLat}{\Lambda}
+\newcommand{\CC}[5][]{#2 \sqsubseteq_\Ref #3 \Rightarrow #4 \leq_{#1} #5}
+\newcommand{\CCS}[5][]{#2 \sqsubseteq_\Ref #3 \Rightarrow #4 \sqsubseteq_{#1} #5}
+\newcommand{\CCD}[6][]{#2 \sqsubseteq_\Ref #3 \lor #4 \Rightarrow #5 \leq_{#1} #6}
+\newcommand{\CCDO}[6][]{#2 \sqsubseteq_{\Ref_{1}} #3 \lor #4 \Rightarrow #5 \leq_{#1} #6}
+
+%% Extensions
+\newcommand{\MP}[2]{#1~\star~#2}
 
 \newtheorem{conjecture}{Conjecture}
 
@@ -41,7 +150,7 @@
 
     \begin{itemize}
 
-        \item ``Well-typed programs do not go wrong''
+        \item ``Well-typed programs do not go wrong.''
         
         \pause
         
@@ -49,7 +158,7 @@
         
             \begin{itemize}
             
-                \item |divideByZero x = x / 0|
+                \item |reciprocal x = 1 / x|
 
                 \item |head (x :: xs) = x|
 
@@ -166,8 +275,73 @@
 
 \end{frame}
 
-\begin{frame}{Basic idea}
+\begin{frame}{Basic idea: data flow}
 
+    \begin{itemize}
+    
+        \item We can then assign to each of the three individual branches of |risers| the following types:
+
+            \begin{code}
+            risers_1            :: forall alpha. Ord alpha => N alpha   -> N (NC alpha)
+            risers_2, risers_3  :: forall alpha. Ord alpha => CL alpha  -> CL (NC alpha)
+            \end{code}
+
+        \item From the three individual branches we may infer:
+
+            \begin{code}
+            risers :: forall alpha. Ord alpha => NC alpha -> NC (NC alpha)
+            \end{code}
+
+        \item Adding \emph{polyvariance} gives us a more precise result:
+
+            \begin{code}
+            risers :: forall alphabeta. Ord alpha => POLYV alpha beta -> POLYV (NC alpha) beta
+            \end{code}
+
+    \end{itemize}
+
+\end{frame}
+
+%format Integer_alpha = "\mathbb{Z}^\alpha"
+%format Integer_alpha_divbyzero = "\mathbb{Z}^{\alpha \sqcup \textbf{division-by-zero}}"
+%format -_|_> = "\xrightarrow{\emptyset}"
+%format |-> = "\mapsto"
+%format pmf = "\PMF"
+%format tau_alpha = "\tau^\alpha"
+%format tau_alpha_beta_pfm = "\tau^{\alpha\sqcup\beta\sqcup\PMF}"
+%format taualphabeta = "\tau\alpha\beta"
+%format tau_abc = "\tau\alpha\beta\gamma"
+%format tau_alpha_beta = "\tau^{\alpha\sqcup\beta\sqcup\gamma}"
+%format constraint_set_thing = "\textbf{with} \left\{\SingletonNil \sqsubseteq \beta \Rightarrow \PMF \sqsubseteq \gamma\right\}"
+
+\begin{frame}{Basic idea: exception flow}
+
+    \begin{itemize}
+    
+        \item A compiler will translate the partial function |head| into:
+
+            \begin{code}
+                head xs = case  xs of
+                                []      |->  crash pmf
+                                y : ys  |->  y
+            \end{code}
+
+        \item which can be assigned the exception type:
+
+            \begin{code}
+                head :: forall taualphabeta. LABELLEDLIST tau_alpha beta -_|_> tau_alpha_beta_pfm
+            \end{code}
+
+        \item This type tells us that |head| might always raise a \PMF exception!
+
+        \item Introduce a dependency of the exception flow on the data flow of the program:
+
+            \begin{code}
+                head :: forall tau_abc.  LABELLEDLIST tau_alpha beta -_|_> tau_alpha_beta
+                                         constraint_set_thing
+            \end{code}
+
+    \end{itemize}
 
 \end{frame}
 
@@ -175,11 +349,11 @@
 
     \begin{itemize}
     
-        \item Non-strict languages can have an \emph{imprecise exception semantics}
+        \item Non-strict languages can have an \emph{imprecise exception semantics} (Peyton Jones \emph{et al}, 1999).
         
             \begin{itemize}
             
-                \item Can non-deterministically raise one from a set of exceptions
+                \item Can non-deterministically raise one from a set of exceptions.
                 
                 \item Necessary for the soundness of certain program transformations, e.g. the case-switching transformation:
             
@@ -203,11 +377,74 @@
 
     \begin{itemize}
     
-        \item If the scrutinee of a ... excpetion-finding mode
+        \item If the scrutinee of a ... exception-finding mode
         
-        \item implication for the analysis: cannot separate data and expcetion flow phases
+        \item implication for the analysis: cannot separate data and exception flow phases
     
     \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Algorithm}
+
+    \begin{itemize}
+    
+        \item Assumes program is well-typed in underlying type system.
+    
+        \item Algorithm $\mathcal{W}$-like constraint generation phase.
+        
+        \item Worklist/fixpoint-based constraint solver.
+    
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Constraint language}
+
+    \begin{itemize}
+    
+        \item \emph{Conditional constraints} and \emph{indices} model dependence between data flow and exception flow
+
+        \item Asymmetric to keep solving tractable
+            
+    \end{itemize}
+
+    \begin{eqnarray*}
+    c &::=& g \Rightarrow r                                                   \\
+    g &::=& \AnnLat_\iota \sqsubseteq_\iota \alpha
+    %  \quad || \quad \exists \wp : \Lambda_\iota^\wp \sqsubseteq_\iota \alpha
+      \quad || \quad \exists_\iota \alpha
+      \quad || \quad g_1 \lor g_2
+      \quad || \quad \BTrue                                                   \\
+    r &::=& \AnnLat_\iota \sqsubseteq_\iota \alpha
+      \quad || \quad \alpha_1 \sqsubseteq_\iota \alpha_2
+      \quad || \quad \Sh_1 \leq_\iota \Sh_2
+    \end{eqnarray*}
+
+\end{frame}
+
+\begin{frame}{A type rule (case-expressions)}
+
+    \begin{gather*}
+        \Rule{T-Case}
+             {\begin{gathered}
+              \Judge{e_1}{\TyList{\tau_1}{\alpha_1}}
+              \quad \Judge{e_2}{\tau_2}
+              \\ \Judge[C; \Gamma, x_1 : \tau_1, x_2 : \TyList{\tau_1}{\beta}]{e_3}{\tau_3}\\
+              C \Vdash\CCD[\Ref\Exn]{\SingletonNil}{\alpha_1}{\exists_\Exn \alpha_1}{\tau_2}{\tau}
+              \\ C \Vdash\CCD[\Ref\Exn]{\SingletonCons}{\alpha_1}{\exists_\Exn \alpha_1}{\tau_3}{\tau}
+              \\ C \Vdash\alpha_1 \sqsubseteq_\Exn \TopLevel{\tau}
+              \quad C \Vdash\SingletonNil \sqcup \SingletonCons \sqsubseteq_\Ref \beta
+              \quad C \Vdash \alpha_1 \sqsubseteq_\Exn \beta
+              \end{gathered}}
+             {\Judge{\Case{e_1}{e_2}{x_1}{x_2}{e_3}}{\tau}}
+    \end{gather*}
+
+\end{frame}
+
+\begin{frame}\center
+
+    Questions?
 
 \end{frame}
 
