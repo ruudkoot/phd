@@ -34,6 +34,7 @@
 %format NC (a) = "\bm{[}" a "\bm{]}^{\SingletonNil \sqcup \SingletonCons}"
 %format POLYV (a) (b) = "\bm{[}" a "\bm{]}^{" b "}"
 %format LABELLEDLIST (a) (b) = "\bm{[}" a "\bm{]}^{" b "}"
+%format crash (a) = "\lightning^{" a "}"
 
 %% Double-blind peer-review
 \newcommand{\ANONYMOUS}[2]{#1}
@@ -133,7 +134,15 @@
 %% Extensions
 \newcommand{\MP}[2]{#1~\star~#2}
 
+
+%% Theorems
+\theoremstyle{plain}
+%\newtheorem{theorem}{Theorem}
 \newtheorem{conjecture}{Conjecture}
+%\newtheorem{lemma}{Lemma}
+\newtheorem{conjectured-lemma}{Lemma}
+\theoremstyle{definition}
+\newtheorem{mydef}{Definition}
 
 \setbeamersize{description width=-\labelsep}
 
@@ -286,17 +295,33 @@
             risers_2, risers_3  :: forall alpha. Ord alpha => CL alpha  -> CL (NC alpha)
             \end{code}
 
-        \item From the three individual branches we may infer:
-
+        \only<1>{
             \begin{code}
-            risers :: forall alpha. Ord alpha => NC alpha -> NC (NC alpha)
+                risers  ::  Ord alpha => [alpha] -> [[alpha]]
+                risers  []               =  []
+                risers  [x]              =  [[x]]
+                risers (x_1 : x_2 : xs)  =
+                    if x_1 <= x_2 then (x_1 : y) : ys else [x_1] : (y : ys)
+                        where (y : ys) = risers (x_2 : xs)
             \end{code}
+        }
 
-        \item Adding \emph{polyvariance} gives us a more precise result:
+        \pause
+        
+        \only<2>{
 
-            \begin{code}
-            risers :: forall alphabeta. Ord alpha => POLYV alpha beta -> POLYV (NC alpha) beta
-            \end{code}
+            \item From the three individual branches we may infer:
+
+                \begin{code}
+                risers :: forall alpha. Ord alpha => NC alpha -> NC (NC alpha)
+                \end{code}
+
+            \item Adding \emph{polyvariance} gives us a more precise result:
+
+                \begin{code}
+                risers :: forall alphabeta. Ord alpha => POLYV alpha beta -> POLYV (NC alpha) beta
+                \end{code}
+        }
 
     \end{itemize}
 
@@ -322,8 +347,8 @@
 
             \begin{code}
                 head xs = case  xs of
-                                []      |->  crash pmf
-                                y : ys  |->  y
+                                []         |->  crash pmf
+                                (y :: ys)  |->  y
             \end{code}
 
         \item which can be assigned the exception type:
@@ -331,6 +356,8 @@
             \begin{code}
                 head :: forall taualphabeta. LABELLEDLIST tau_alpha beta -_|_> tau_alpha_beta_pfm
             \end{code}
+
+        \pause
 
         \item This type tells us that |head| might always raise a \PMF exception!
 
@@ -377,9 +404,9 @@
 
     \begin{itemize}
     
-        \item If the scrutinee of a ... exception-finding mode
+        \item If an exception can be raised by pattern matching, we need to continue evaluating all branches.
         
-        \item implication for the analysis: cannot separate data and exception flow phases
+        \item Implication for the analysis: cannot separate data and exception flow phases.
     
     \end{itemize}
 
@@ -445,6 +472,78 @@
 \begin{frame}\center
 
     Questions?
+
+\end{frame}
+
+\begin{frame}{Operators}
+
+    \begin{itemize}
+    
+        \item Operators have a constraint set corresponding to their abstract interpretation:
+
+            \[ \omega_\div(\alpha_1,\alpha_2,\alpha) \isdef \left\{\begin{gathered}\SingletonZero \sqsubseteq_\Ref \alpha_2 \Rightarrow \left\{\textbf{div-by-0}\right\} \sqsubseteq_\Exn \alpha \\
+            \SingletonNeg \sqsubseteq_\Ref \alpha_1 \land \SingletonNeg \sqsubseteq_\Ref \alpha_2 \Rightarrow \SingletonPos \sqsubseteq_\Ref \alpha \\
+            \SingletonNeg \sqsubseteq_\Ref \alpha_1 \land \SingletonPos \sqsubseteq_\Ref \alpha_2 \Rightarrow \SingletonNeg \sqsubseteq_\Ref \alpha \\
+            \SingletonPos \sqsubseteq_\Ref \alpha_1 \land \SingletonNeg \sqsubseteq_\Ref \alpha_2 \Rightarrow \SingletonNeg \sqsubseteq_\Ref \alpha \\
+            \SingletonPos \sqsubseteq_\Ref \alpha_1 \land \SingletonPos \sqsubseteq_\Ref \alpha_2 \Rightarrow \SingletonPos \sqsubseteq_\Ref \alpha \\
+            \SingletonZero \sqsubseteq_\Ref \alpha \end{gathered}\right\} \]
+
+        \item Can make a trade-off between precision and accuracy.
+
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Operators}
+
+    \begin{mydef}\label{operator-consistency}%[Operator consistency]
+An operator constraint set $\omega_\oplus$ is said to be \emph{consistent} with respect to an operator interpretation $\InterpretOp{\ \cdot\oplus\cdot\ }$ if, whenever $\Judge{n_1}{\alpha_1}$, $\Judge{n_2}{\alpha_2}$, and $\Centail{\omega_\oplus(\alpha_1, \alpha_2, \alpha)}$ then $\Judge{\InterpretOp{n_1 \oplus n_2}}{\alpha'}$ with $\Centail{\alpha' \leq_{\Ref\Exn} \alpha}$ for some $\alpha'$.
+\end{mydef}
+%This restriction states that the interpretation of an operator and its abstract interpretation by the operator constraint set should coincide. We need one slightly more technical restriction to be able to prove our system sound:
+\begin{mydef}\label{operator-monotonicity}%[Operator monotonicity]
+An operator constraint set $\omega_\oplus$ is \emph{monotonic} if, whenever $\Centail{\omega_\oplus(\alpha_1, \alpha_2, \alpha)}$ and $\Centail{\alpha_1' \sqsubseteq_{\Ref\Exn} \alpha_1}$, $\Centail{\alpha_2' \sqsubseteq_{\Ref\Exn} \alpha_2}$, $\Centail{\alpha \sqsubseteq_{\Ref\Exn} \alpha'}$ then $\Centail{\omega_\oplus(\alpha_1', \alpha_2', \alpha')}$.
+\end{mydef}
+%Informally this means that operator constraint sets can only let the result of evaluating an operator and its operands depend on the values of those operands and not the other way around: the operator constraint sets must respect the fact that we are defining a \emph{forwards} analysis.
+
+\end{frame}
+
+\begin{frame}{Metatheory}
+
+    \begin{theorem}[Conservative extension]
+    If $e$ is well-typed in the underlying type system, then it can be given a type in the annotated type system.
+    \end{theorem}
+
+    \begin{theorem}[Progress]
+        If $\Judge{e}{\sigma}$ then either $e$ is a value or there exist an $e'$, such that for any $\rho$ with $\EC{\Gamma}{\rho}$ we have $\Reduce{e}{e'}$.
+    \end{theorem}
+
+    \begin{theorem}[Preservation]
+    If $\Judge{e}{\sigma_1}$, $\Reduce{e}{e'}$ and $\EC{\Gamma}{\rho}$ then $\Judge{e'}{\sigma_2}$ with $C \Vdash \sigma_2 \leq_{\Ref\Exn} \sigma_1$.
+    \end{theorem}
+
+\end{frame}
+
+\begin{frame}{Polyvariant recursion}
+
+    \begin{itemize}
+    
+        \item To precisely type |risers| (i.e. infer that no exception can be raised if not already present in input) we need \emph{polyvariant recursion} (i.e. polymorphic recursion restricted to annotations).
+        
+        \item This poses algorithmic difficulties w.r.t. termination.
+        
+            \begin{itemize}
+            
+                \item Variable elimination technique by Dussart, Henglein \& Mossin (1995) does not work due to conditional constraints.
+                
+                \item Restricting the number of fresh variables generated makes the analysis fairly unpredictable.
+                
+                \item Terminating before a fixpoint has been reached invalidates the soundness result, but may not be a problem in practice.
+                
+            \end{itemize}
+            
+        \item The \emph{ad hoc} nature of the constraint language comes back to bite us; currently looking at more well-behaved constraint languages (Boolean rings).
+    
+    \end{itemize}
 
 \end{frame}
 
