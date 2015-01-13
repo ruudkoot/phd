@@ -13,6 +13,7 @@
 %include polycode.fmt
 %include forall.fmt
 
+%format ~~~> = "\longrightarrow^{*}"
 %format alpha = "\alpha"
 %format beta = "\beta"
 %format alphabeta = "\alpha\beta"
@@ -169,7 +170,7 @@
             
                 \item |reciprocal x = 1 / x|
 
-                \item |head (x :: xs) = x|
+                \item |head (x : xs) = x|
 
                 \item ...
 
@@ -255,6 +256,18 @@
     
     \begin{itemize}
     
+        \item Computes monotonically increasing subsegments of a list:
+    
+    \end{itemize}
+    
+    \begin{code}
+    
+        risers [1, 3, 5, 1, 2] ~~~> [[1, 3, 5], [1, 2]]
+    
+    \end{code}
+    
+    \begin{itemize}
+    
         \item Program invariants can ensure incomplete pattern matches never fail.
         
     \end{itemize}
@@ -296,6 +309,7 @@
             \end{code}
 
         \only<1>{
+            \rule{25em}{.1pt}
             \begin{code}
                 risers  ::  Ord alpha => [alpha] -> [[alpha]]
                 risers  []               =  []
@@ -347,8 +361,8 @@
 
             \begin{code}
                 head xs = case  xs of
-                                []         |->  crash pmf
-                                (y :: ys)  |->  y
+                                []        |->  crash pmf
+                                (y : ys)  |->  y
             \end{code}
 
         \item which can be assigned the exception type:
