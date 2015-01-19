@@ -64,7 +64,9 @@ inferenceExamples = map show [
     exMap,
     Fix exMap,
     exFilter,
-    Fix exFilter
+    Fix exFilter,
+    exRisers,
+    Fix exRisers
     -- * high-order functions
   ] where
         ex29 = Abs 1 (List Bool :-> List Bool) $ Abs 2 (List Bool) $
@@ -80,3 +82,12 @@ inferenceExamples = map show [
                         If (App (Var 2) (Var 4))
                            (Cons (Var 4) (App (App (Var 1) (Var 2)) (Var 5)))
                            (App (App (Var 1) (Var 2)) (Var 5))
+        exRisers =
+            Abs 1 (List Int :-> List (List Int)) $ Abs 2 (List Int) $
+                Case (Var 2) (Nil (List Int)) 3 4 $
+                    Case (Var 4) (Cons (Cons (Var 3) (Nil Int)) (Nil (List Int))) 5 6 $
+                        Case (App (Var 1) (Cons (Var 5) (Var 6)))
+                             (Crash "risers" (List (List Int))) 7 8 $
+                            If (BinOp (Var 3) (Var 5))
+                               (Cons (Cons (Var 3) (Var 7)) (Var 8))
+                               (Cons (Cons (Var 3) (Nil Int)) (Cons (Var 7) (Var 8)))

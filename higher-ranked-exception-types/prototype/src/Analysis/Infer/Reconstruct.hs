@@ -75,6 +75,14 @@ reconstruct env kenv tm@(Con b)
          return $ ReconstructCon env kenv tm e #
             (ExnBool, e, [], [(e,EXN)])
 
+reconstruct env kenv tm@(BinOp e1 e2)
+    = do re1@(_, ExnInt, exn1, c1, kenv1) <- reconstruct env kenv e1
+         re2@(_, ExnInt, exn2, c2, kenv2) <- reconstruct env kenv e2
+         e <- fresh
+         return $ ReconstructBinOp env kenv tm re1 re2 e #
+            (ExnBool, e, [ExnVar exn1 :<: e, ExnVar exn2 :<: e] ++ c1 ++ c2,
+                [(e,EXN)] ++ kenv1 ++ kenv2)
+
 reconstruct env kenv tm@(If e1 e2 e3)
     = do re1@(_, ExnBool, exn1, c1, kenv1) <- reconstruct env kenv e1
          re2@(_, t2,      exn2, c2, kenv2) <- reconstruct env kenv e2
@@ -84,7 +92,7 @@ reconstruct env kenv tm@(If e1 e2 e3)
          let c = [ExnVar exn1 :<: e, ExnVar exn2 :<: e, ExnVar exn3 :<: e ]
                     ++ c1 ++ c2 ++ c3
          return $ ReconstructIf env kenv tm re1 re2 re3 t e c #
-            (t, e, c, kenv3 ++ kenv2 ++ kenv1)
+            (t, e, c, kenv3 ++ kenv2 ++ kenv1) {- FIXME: are we missing 'e' here? -}
 
 reconstruct env kenv tm@(Crash lbl ty)
     = do co@(dty', ty', ExnVar exn1, kenv1) <- C.complete [] ty
@@ -156,8 +164,11 @@ kindOf :: KindEnv -> Exn -> Kind
 kindOf kenv (ExnVar e)
     | Just k <- lookup e kenv = k
     | otherwise               = error "kindOf: not in scope"
-kindOf kenv _
-    = error "kindOf: not a variable"
+kindOf kenv (ExnApp e1 e2)
+    | (k1 :=> k2) <- kindOf kenv e1, k1' <- kindOf kenv e2, k1 == k1' = k2
+    | otherwise = error "kindOf: application"
+kindOf kenv x
+    = error $ "kindOf: not a variable or application (x=" ++ show x ++ "; kenv=" ++ show kenv ++ ")"
 
 -- | Instantiation
 

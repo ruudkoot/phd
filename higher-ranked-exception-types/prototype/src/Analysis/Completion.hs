@@ -24,6 +24,7 @@ type Env = [(Name, Kind)]
 
 data Complete
     = CompleteBool Env                   Ty ExnTy Exn Env
+    | CompleteInt  Env                   Ty ExnTy Exn Env
     | CompleteList Env Complete          Ty ExnTy Exn Env
     | CompleteArr  Env Complete Complete Ty ExnTy Exn Env
 
@@ -41,6 +42,12 @@ complete env0 ty@Bool = do
     e <- fresh
     return $ CompleteBool env0 ty #
            (ExnBool
+           ,exnFromEnv (ExnVar e) env0
+           ,[(e, kindFromEnv env0)])
+complete env0 ty@Int = do
+    e <- fresh
+    return $ CompleteInt env0 ty #
+           (ExnInt
            ,exnFromEnv (ExnVar e) env0
            ,[(e, kindFromEnv env0)])
 complete env0 ty@(List t) = do
@@ -79,6 +86,8 @@ ltxComplete env ty exnTy exn env'
 instance ToMarkup Complete where
     toMarkup (CompleteBool env ty exnTy exn env')
         = derive "C-Bool" [] (ltxComplete env ty exnTy exn env')
+    toMarkup (CompleteBool env ty exnTy exn env')
+        = derive "C-Int"  [] (ltxComplete env ty exnTy exn env')
     toMarkup (CompleteList env dExnTy ty exnTy exn env')
         = derive "C-List" [H.toMarkup dExnTy] (ltxComplete env ty exnTy exn env')
     toMarkup (CompleteArr env dExnTy1 dExnTy2 ty exnTy exn env')

@@ -10,6 +10,8 @@ import           Analysis.Common
 join :: ExnTy -> ExnTy -> ExnTy
 join ExnBool ExnBool
     = ExnBool
+join ExnInt ExnInt
+    = ExnInt
 join (ExnForall x k t) (ExnForall x' k' t')
     | k == k'   = ExnForall x k (join t (substExnTy x' x t'))
     | otherwise = error "join: kind mismatch"

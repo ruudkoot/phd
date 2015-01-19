@@ -14,6 +14,8 @@ import Analysis.Common
 match :: KindEnv -> ExnTy -> ExnTy -> Fresh Subst
 match env (ExnBool) (ExnBool)
     = return []
+match env (ExnInt) (ExnInt)
+    = return []
 match env (ExnForall e k t) (ExnForall e' k' t')
     | k == k'   = match ((e,k) : env) t (substExnTy e' e t')
     | otherwise = error "match: kind mismatch"

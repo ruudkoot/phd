@@ -45,6 +45,7 @@ data Expr
     | Abs Name Ty Expr
     | App Expr Expr
     | Con Bool
+    | BinOp Expr Expr
     | If Expr Expr Expr
     | Crash Lbl Ty
     | Seq Expr Expr
@@ -70,6 +71,12 @@ checkExpr env (App e1 e2)
         _                -> error "type (App)"
 checkExpr env (Con _)
     = return Bool
+checkExpr env (BinOp e1 e2)
+    = case checkExpr env e1 of
+        Just Int -> case checkExpr env e2 of
+            Just Int -> return Bool
+            _        -> error "type (BinOp, e2)"
+        _        -> error "type (BinOp, e1)"
 checkExpr env tm@(If e1 e2 e3)
     = case checkExpr env e1 of
         Just Bool -> if checkExpr env e2 == checkExpr env e3 then
@@ -120,6 +127,8 @@ instance Latex Expr where
         = "\\mathbf{true}"
     latex (Con False)
         = "\\mathbf{false}"
+    latex (BinOp e1 e2)
+        = "(" ++ latex e1 ++ "\\ \\oplus\\ " ++ latex e2 ++ ")"
     latex (If e1 e2 e3)
         = "(\\mathbf{if}\\ " ++ latex e1 ++ "\\ \\mathbf{then}\\ " ++ latex e2
             ++ "\\ \\mathbf{else}\\ " ++ latex e3 ++ ")"
@@ -141,7 +150,8 @@ instance Latex Expr where
 -- | Types
 
 data Ty
-    = Bool
+    = Bool                      -- TODO: Base
+    | Int
     | Ty :-> Ty
     | List Ty
     deriving (Eq, Read, Show)
@@ -149,6 +159,8 @@ data Ty
 instance Latex Ty where
     latex Bool
         = "\\textbf{bool}"
+    latex Int
+        = "\\textbf{int}"
     latex (t1 :-> t2) 
         = "\\left(" ++ latex t1 ++ " \\rightarrow " ++ latex t2 ++ "\\right)"
     latex (List t)
@@ -220,7 +232,8 @@ instance Latex Exn where
     
 data ExnTy
     = ExnForall Name Kind ExnTy
-    | ExnBool
+    | ExnBool                           -- TODO: ExnBase
+    | ExnInt
     | ExnList ExnTy Exn
     | ExnArr  ExnTy Exn ExnTy Exn
     deriving (Read, Show)
@@ -232,6 +245,8 @@ checkExnTy env (ExnForall e k t)
     | Just _ <- lookup e env = False {- shadowing -}
     | otherwise = checkExnTy ((e,k):env) t
 checkExnTy env ExnBool
+    = True
+checkExnTy env ExnInt
     = True
 checkExnTy env (ExnList t exn)
     = checkExnTy env t && checkExn env exn == Just EXN
@@ -271,6 +286,8 @@ simplifyExnTy env (ExnForall e k t)
     = ExnForall e k (simplifyExnTy ((e,k):env) t)
 simplifyExnTy env ExnBool
     = ExnBool
+simplifyExnTy env ExnInt
+    = ExnInt
 simplifyExnTy env (ExnList t exn)
     = ExnList (simplifyExnTy env t) (simplifyExn env exn)
 simplifyExnTy env (ExnArr t1 exn1 t2 exn2)
@@ -300,6 +317,8 @@ instance Latex ExnTy where
         = "\\left(\\forall e_{" ++ show e ++ "}::" ++ latex k ++ "." ++ latex t ++ "\\right)"
     latex (ExnBool)
         = "\\mathbf{bool}"
+    latex (ExnInt)
+        = "\\mathbf{int}"
     latex (ExnList t exn)
         = "\\left[" ++ latex t ++ "\\{" ++ latex exn ++ "\\}\\right]"
     -- TODO: print top-level annotation on the arrow for readability
@@ -319,6 +338,8 @@ fevExnTy :: ExnTy -> [Name]
 fevExnTy (ExnForall e k t)
     = delete e (fevExnTy t)
 fevExnTy (ExnBool)
+    = []
+fevExnTy (ExnInt)
     = []
 fevExnTy (ExnList t e)
     = fevExnTy t ++ fevExn e
@@ -357,6 +378,8 @@ substExnTy e e' (ExnForall e'' k t)
     | otherwise = ExnForall e'' k (substExnTy e e' t)
 substExnTy e e' (ExnBool)
     = ExnBool
+substExnTy e e' (ExnInt)
+    = ExnInt
 substExnTy e e' (ExnList t exn)
     = ExnList (substExnTy e e' t) (substExn e e' exn)
 substExnTy e e' (ExnArr t1 exn1 t2 exn2)
@@ -371,6 +394,8 @@ substExn' :: Subst -> Exn -> Exn
 substExn' subst exn@(ExnVar x)
     | Just exn' <- lookup x subst = exn'
     | otherwise                   = exn
+substExn' subst (ExnCon c)
+    = ExnCon c
 substExn' subst (ExnAbs x k e)
     = ExnAbs x k (substExn' (deleteKey x subst) e)
 substExn' subst (ExnApp e1 e2)
@@ -388,6 +413,8 @@ substExnTy' subst (ExnForall e k t)
     = ExnForall e k (substExnTy' (deleteKey e subst) t)
 substExnTy' subst (ExnBool)
     = ExnBool
+substExnTy' subst (ExnInt)
+    = ExnInt
 substExnTy' subst (ExnList t exn)
     = ExnList (substExnTy' subst t) (substExn' subst exn)
 substExnTy' subst (ExnArr t1 exn1 t2 exn2)

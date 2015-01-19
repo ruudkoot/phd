@@ -42,6 +42,8 @@ instance ToMarkup Reconstruct where
         = derive "R-App" (map H.toMarkup [re1, re2]) ""
     toMarkup (ReconstructCon   env kenv tm _ _)
         = derive "R-Con" [] ""
+    toMarkup (ReconstructBinOp env kenv tm (re1,_,_,_,_) (re2,_,_,_,_) _ _)
+        = derive "R-BinOp" (map H.toMarkup [re1, re2]) ""
     toMarkup (ReconstructIf    env kenv tm
                     (re1,_,_,_,_) (re2,_,_,_,_) (re3,_,_,_,_) _ _ _ _)
         = derive "R-If" (map H.toMarkup [re1, re2, re3]) ""
@@ -120,6 +122,16 @@ reconstructHtml (ReconstructCon env kenv tm e result)
         htmlFresh e
         htmlResult kenv result
       )
+reconstructHtml (ReconstructBinOp env kenv tm re1@(_,_,_,_,kenv1) re2@(_,_,_,_,kenv2) e result)
+    = (return $ H.table $ do
+        htmlHeader env kenv tm
+        htmlDo "reconstruct env kenv e1"
+        htmlReconstruct (kenv1 ++ kenv) re1 "1"
+        htmlDo "reconstruct env kenv e2"
+        htmlReconstruct (kenv2 ++ kenv) re2 "2"
+        htmlFresh e
+        htmlResult kenv result
+      ) ++ recurse [re1, re2]
 reconstructHtml (ReconstructIf env kenv tm re1@(_,_,_,_,kenv1) re2@(_,_,_,_,kenv2) re3@(_,_,_,_,kenv3) t exn c result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
