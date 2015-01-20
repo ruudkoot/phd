@@ -225,7 +225,7 @@ exnNormalize = lu2exn . LU.normalize . exn2lu
 instance Latex Exn where
     latex (ExnEmpty)       = "\\emptyset"
     latex (ExnUnion e1 e2) = "(" ++ latex e1 ++ "\\cup " ++ latex e2 ++ ")"
-    latex (ExnCon lbl)     = "{" ++ lbl ++ "}"
+    latex (ExnCon lbl)     = "\\{\\mathrm{" ++ lbl ++ "}\\}"
     latex (ExnVar n)       = "e_{" ++ show n ++ "}"
     latex (ExnApp e1 e2)   = "(" ++ latex e1 ++ "\\ " ++ latex e2 ++ ")"
     latex (ExnAbs n k e)   = "(\\lambda e_{" ++ show n ++ "}:" ++ latex k ++ "." ++ latex e ++ ")"
@@ -303,6 +303,8 @@ exnTyEq :: KindEnv -> ExnTy -> ExnTy -> Bool
 exnTyEq env (ExnForall e k t) (ExnForall e' k' t')
     = k == k' && exnTyEq ((e,k) : env) t (substExnTy e' e t')
 exnTyEq env ExnBool ExnBool
+    = True
+exnTyEq env ExnInt ExnInt
     = True
 exnTyEq env (ExnList t exn) (ExnList t' exn')
     = exnTyEq env t t' && exnEq env exn exn'
