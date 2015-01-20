@@ -133,9 +133,9 @@ instance Latex Expr where
         = "(\\mathbf{if}\\ " ++ latex e1 ++ "\\ \\mathbf{then}\\ " ++ latex e2
             ++ "\\ \\mathbf{else}\\ " ++ latex e3 ++ ")"
     latex (Crash l t)  
-        = "(⚡" ++ l ++ ":" ++ latex t ++ ")"
+        = "(⚡_{\\mathrm{" ++ l ++ "}}:" ++ latex t ++ ")"
     latex (Seq e1 e2)
-        = "(" ++ latex e1 ++ " \\mathbf{seq} " ++ latex e2 ++ ")"
+        = "(" ++ latex e1 ++ "\\ \\mathbf{seq}\\ " ++ latex e2 ++ ")"
     latex (Fix e)
         = "(\\mathbf{fix}\\ " ++ latex e ++ ")"
     latex (Nil t)
@@ -331,10 +331,12 @@ instance Latex ExnTy where
 -- | Free exception variables
 
 fevExn :: Exn -> [Name]
-fevExn (ExnVar e)     = [e]
-fevExn (ExnCon c)     = []
-fevExn (ExnApp e1 e2) = fevExn e1 ++ fevExn e2
-fevExn (ExnAbs n k e) = delete n (fevExn e)
+fevExn (ExnEmpty)       = []
+fevExn (ExnUnion e1 e2) = fevExn e1 ++ fevExn e2
+fevExn (ExnVar e)       = [e]
+fevExn (ExnCon c)       = []
+fevExn (ExnApp e1 e2)   = fevExn e1 ++ fevExn e2
+fevExn (ExnAbs n k e)   = delete n (fevExn e)
 
 fevExnTy :: ExnTy -> [Name]
 fevExnTy (ExnForall e k t)

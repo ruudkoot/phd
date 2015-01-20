@@ -66,7 +66,10 @@ inferenceExamples = map show [
     exFilter,
     Fix exFilter,
     exRisers,
-    Fix exRisers
+    Fix exRisers,
+    exCrashOrDiverge1,
+    exCrashOrDiverge2,
+    exCrashOrDiverge3
     -- * high-order functions
   ] where
         ex29 = Abs 1 (List Bool :-> List Bool) $ Abs 2 (List Bool) $
@@ -91,3 +94,13 @@ inferenceExamples = map show [
                             If (BinOp (Var 3) (Var 5))
                                (Cons (Cons (Var 3) (Var 7)) (Var 8))
                                (Cons (Cons (Var 3) (Nil Int)) (Cons (Var 7) (Var 8)))
+        exCrashOrDiverge1 =
+            Abs 1 (List Int) $ Fix $ Abs 2 Bool $
+                Case (Var 1) (Crash "diverge1" Bool) 3 4 (Var 2)
+        exCrashOrDiverge2 =
+            Abs 1 (List Int) $ Fix $ Abs 2 (Int :-> Int) $ Abs 3 Int $
+                Case (Var 1) (Crash "diverge2" Int) 4 5 (App (Var 2) (Var 4))
+        exCrashOrDiverge3 =
+            Abs 1 (List Int) $ Fix $ Abs 2 (List Int :-> List Int) $ Abs 3 (List Int) $
+                Case (Var 1) (Crash "diverge3" (List Int)) 4 5 $ 
+                    Seq (Var 4) (App (Var 2) (Var 5))
