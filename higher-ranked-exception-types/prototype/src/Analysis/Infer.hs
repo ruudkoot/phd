@@ -63,14 +63,24 @@ inferenceExamples = map show [
     Fix ex29,
     exMap,
     Fix exMap,
+    App (Fix exMap) (Abs 5 Bool (Var 5)),
+    App (Fix exMap) (App (Abs 5 Bool (Abs 6 Bool (Var 5))) (Crash "E" Bool)),
     exFilter,
     Fix exFilter,
     exRisers,
     Fix exRisers,
     exCrashOrDiverge1,
     exCrashOrDiverge2,
-    exCrashOrDiverge3
+    exCrashOrDiverge3,
     -- * high-order functions
+    exApply,
+    exHApply,
+    App exHApply exApply,
+    exCompose,
+    exHCompose,
+    exHCompose',
+    App exHCompose exCompose,
+    App exHCompose' exCompose
   ] where
         ex29 = Abs 1 (List Bool :-> List Bool) $ Abs 2 (List Bool) $
                 Case (Var 2) (Nil Bool) 3 4 (Cons (Var 3) (App (Var 1) (Var 4)))
@@ -104,3 +114,19 @@ inferenceExamples = map show [
             Abs 1 (List Int) $ Fix $ Abs 2 (List Int :-> List Int) $ Abs 3 (List Int) $
                 Case (Var 1) (Crash "diverge3" (List Int)) 4 5 $ 
                     Seq (Var 4) (App (Var 2) (Var 5))
+        exApply =
+            Abs 4 (Bool :-> Bool) $ Abs 5 Bool $ App (Var 4) (Var 5)
+        exHApply =
+            Abs 1 ((Bool :-> Bool) :-> (Bool :-> Bool)) $
+                Abs 2 (Bool :-> Bool) $ Abs 3 Bool $ App (App (Var 1) (Var 2)) (Var 3)
+        exCompose =
+            Abs 5 (Bool :-> Bool) $ Abs 6 (Bool :-> Bool) $ Abs 7 Bool $
+                App (Var 5) (App (Var 6) (Var 7))
+        exHCompose =
+            Abs 1 ((Bool :-> Bool) :-> ((Bool :-> Bool) :-> (Bool :-> Bool))) $
+                Abs 2 (Bool :-> Bool) $ Abs 3 (Bool :-> Bool) $
+                    App (App (Var 1) (Var 2)) (Var 3)
+        exHCompose' =
+            Abs 1 ((Bool :-> Bool) :-> ((Bool :-> Bool) :-> (Bool :-> Bool))) $
+                Abs 2 (Bool :-> Bool) $ Abs 3 (Bool :-> Bool) $ Abs 4 Bool $
+                    App (App (App (Var 1) (Var 2)) (Var 3)) (Var 4)

@@ -72,8 +72,8 @@ homePage = ok $ template "Higher-Ranked Exception Types" $ do
     H.p $ a ! href "/lambda-union" $ "lambda-union"
     H.p $ a ! href "/hret"         $ "higher-ranked exception types"
 
-expressionForm :: Text -> H.AttributeValue -> [String] -> ServerPart Response
-expressionForm title url examples = do
+expressionForm :: Text -> [Text] -> H.AttributeValue -> [String] -> ServerPart Response
+expressionForm title notes url examples = do
     method GET
     ok $ template title $ do
         form ! action url
@@ -100,7 +100,7 @@ lambdaUnion :: ServerPart Response
 lambdaUnion = msum [ viewForm, processForm ] where
 
     viewForm :: ServerPart Response
-    viewForm = expressionForm "lambda-union" "/lambda-union" []
+    viewForm = expressionForm "lambda-union" [] "/lambda-union" []
 
     processForm :: ServerPart Response
     processForm = do
@@ -131,7 +131,7 @@ completionPage = msum [ viewForm, processForm ] where
     title = "Higher-Ranked Exception Types: Completion"
 
     viewForm :: ServerPart Response
-    viewForm = expressionForm title "/hret/completion" []
+    viewForm = expressionForm title [] "/hret/completion" []
 
     processForm :: ServerPart Response
     processForm = do
@@ -159,8 +159,12 @@ inferencePage = msum [ viewForm, processForm ] where
 
     title = "Higher-Ranked Exception Types: Inference"
 
+    notes = ["pretty print the examples"
+            ,"check 'hcompose compose'"
+            ]
+
     viewForm :: ServerPart Response
-    viewForm = expressionForm title "/hret/inference" An.inferenceExamples
+    viewForm = expressionForm title notes "/hret/inference" An.inferenceExamples
 
     processForm :: ServerPart Response
     processForm = do

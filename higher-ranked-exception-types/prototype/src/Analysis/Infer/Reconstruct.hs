@@ -160,6 +160,8 @@ reconstruct env kenv tm@(Case e1 e2 x1 x2 e3)
          
 -- | Kind reconstruction
 
+-- FIXME: do we need the missing cases? (or why not?)
+
 kindOf :: KindEnv -> Exn -> Kind
 kindOf kenv (ExnVar e)
     | Just k <- lookup e kenv = k

@@ -82,6 +82,7 @@ isIncludedIn :: KindEnv -> Exn -> Exn -> Bool
 isIncludedIn env exn1 exn2 = exnEq env (ExnUnion exn1 exn2) (exn2)
 
 -- TODO: move to LambdaUnion?
+-- FIXME: do reduction here (or in caller?)
 interpret :: M.Map Name Exn -> Exn -> Exn
 interpret env (ExnEmpty)
     = ExnEmpty
@@ -90,12 +91,14 @@ interpret env (ExnUnion e1 e2)
 interpret env (ExnCon lbl)
     = ExnCon lbl
 interpret env (ExnVar e)
-    -- FIXME: should this lookup ever fail? it does!
-    = M.findWithDefault ExnEmpty e env
+    | Just x <- M.lookup e env = x
+    | otherwise = error "interpret: not in scope"
 interpret env (ExnApp e1 e2)
     = ExnApp (interpret env e1) (interpret env e2)
 interpret env (ExnAbs x k e)
-    = ExnAbs x k (interpret (M.delete x env) e)
+    | M.member x env = error "interpret: shadowing"
+    | otherwise
+        = ExnAbs x k (interpret (M.insert x (ExnVar x) env) e)
 
 worklist :: (c -> a -> ([c], a)) -> [c] -> a -> a
 worklist f [] x     = x
