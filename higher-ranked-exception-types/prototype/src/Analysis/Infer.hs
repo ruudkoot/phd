@@ -72,15 +72,17 @@ inferenceExamples = map show [
     exCrashOrDiverge1,
     exCrashOrDiverge2,
     exCrashOrDiverge3,
-    -- * high-order functions
+    -- * higher-order functions & eta-reduction
     exApply,
+    exApply',       -- exception types are not invariant under eta-reduction!
     exHApply,
     App exHApply exApply,
     exCompose,
-    exHCompose,
-    exHCompose',
+    exHCompose,     -- FIXME: should those EmptySets be there?
+    exHCompose',    -- FIXME: e14 and e17 have been eta-expanded. is this okay?
     App exHCompose exCompose,
     App exHCompose' exCompose
+    -- * very high-order
   ] where
         ex29 = Abs 1 (List Bool :-> List Bool) $ Abs 2 (List Bool) $
                 Case (Var 2) (Nil Bool) 3 4 (Cons (Var 3) (App (Var 1) (Var 4)))
@@ -116,6 +118,8 @@ inferenceExamples = map show [
                     Seq (Var 4) (App (Var 2) (Var 5))
         exApply =
             Abs 4 (Bool :-> Bool) $ Abs 5 Bool $ App (Var 4) (Var 5)
+        exApply' =
+            Abs 4 (Bool :-> Bool) $ Var 4
         exHApply =
             Abs 1 ((Bool :-> Bool) :-> (Bool :-> Bool)) $
                 Abs 2 (Bool :-> Bool) $ Abs 3 Bool $ App (App (Var 1) (Var 2)) (Var 3)
