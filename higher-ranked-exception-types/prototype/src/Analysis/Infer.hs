@@ -27,8 +27,8 @@ inferenceExamples = map show [
     --       not that e3 is by default set to {}, so we lose e6 = {bar}. also see ex11.
     App (Crash "foo" (Bool :-> Bool)) (Crash "bar" Bool),
     Abs 1 Bool $ App (Crash "foo" (Bool :-> Bool)) (Var 1),
-    -- ex11: the analysis does not seem the be sound w.r.t. imprecise exception
-    --       semantics for this example! i'm not sure if that can be resolved
+    -- ex11: the analysis is not sound w.r.t. imprecise exception semantics
+    --       for this example! i'm not sure if that can be resolved
     --       without re-introducing non-emptyness guards, losing precision, or
     --       collapsing to indistinguishable exceptions.
     --       however: this might only affect applications and not conditionals

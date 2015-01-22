@@ -25,7 +25,11 @@ instance Latex (Name, (ExnTy, Exn)) where
         = "e_{" ++ e ++ "} : " ++ ty ++ "\\ \\&\\ " ++ exn
 
 instance Latex Constr where
-    latex (exn :<: e) = latex exn ++ " \\sqsubseteq e_{" ++ show e ++ "}"
+    latex (exn :<: e)
+        = latex exn ++ " \\sqsubseteq e_{" ++ show e ++ "}"
+    latexColor cenv (exn :<: e)
+        = latexColor cenv exn ++ " \\sqsubseteq "
+            ++ colorByNumber cenv e ("e_{" ++ show e ++ "}")
 
 instance Latex (Name, Exn) where
     latex (show -> e, latex -> exn)
@@ -293,8 +297,9 @@ htmlReconstruct :: KindEnv -> Reconstruct' -> String -> H.Html
 htmlReconstruct delta (re, t, exn, c, kenv) n
     = do trAssign ("t_{" ++ n ++ "}")    (latexCheck delta t)
          trAssign ("exn_{" ++ n ++ "}")  ("e_{" ++ show exn ++ "}")
-         trAssign ("c_{" ++ n ++ "}")    (latex c)
+         trAssign ("c_{" ++ n ++ "}")    (latexColor cenv c)
          trAssign ("kenv_{" ++ n ++ "}") (latex kenv)
+  where cenv = map (\(x,_) -> (x, Red)) kenv ++ map (\(x,_) -> (x, Blue)) delta
 
 htmlComplete exnTy exn kenv
     = do trAssign "t_1'"   (latex exnTy)

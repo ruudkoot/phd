@@ -230,6 +230,18 @@ instance Latex Exn where
     latex (ExnApp e1 e2)   = "(" ++ latex e1 ++ "\\ " ++ latex e2 ++ ")"
     latex (ExnAbs n k e)   = "(\\lambda e_{" ++ show n ++ "}:" ++ latex k ++ "." ++ latex e ++ ")"
     
+    latexColor cenv exn@(ExnVar n)
+        = colorByNumber cenv n (latex exn)
+    latexColor cenv (ExnUnion e1 e2)
+        = "(" ++ latexColor cenv e1 ++ "\\cup " ++ latexColor cenv e2 ++ ")"
+    latexColor cenv (ExnApp e1 e2)
+        = "(" ++ latexColor cenv e1 ++ "\\ " ++ latexColor cenv e2 ++ ")"
+    latexColor cenv (ExnAbs n k e)
+        = "(\\lambda " ++ color Orange ("e_{" ++ show n ++ "}") ++ ":"
+            ++ latex k ++ "." ++ latexColor ((n, Orange) : cenv) e ++ ")"
+    latexColor cenv exn
+        = latex exn
+    
 data ExnTy
     = ExnForall Name Kind ExnTy
     | ExnBool                           -- TODO: ExnBase
@@ -322,11 +334,11 @@ instance Latex ExnTy where
     latex (ExnInt)
         = "\\mathbf{int}"
     latex (ExnList t exn)
-        = "\\left[" ++ latex t ++ "\\{" ++ latex exn ++ "\\}\\right]"
+        = "\\left[" ++ latex t ++ "\\langle " ++ latex exn ++ "\\rangle\\right]"
     -- TODO: print top-level annotation on the arrow for readability
     latex (ExnArr t1 exn1 t2 exn2)
-        = "\\left(" ++ latex t1 ++ "\\{" ++ latex exn1 ++ "\\} \\rightarrow "
-              ++ latex t2 ++ "\\{" ++ latex exn2 ++ "\\}\\right)"
+        = "\\left(" ++ latex t1 ++ "\\langle " ++ latex exn1 ++ "\\rangle \\rightarrow "
+              ++ latex t2 ++ "\\langle " ++ latex exn2 ++ "\\rangle \\right)"
 
 -- | Free exception variables
 

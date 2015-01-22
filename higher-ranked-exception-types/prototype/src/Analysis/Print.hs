@@ -2,6 +2,10 @@
 
 module Analysis.Print (
     Latex(..),
+    Color(..),
+    ColorEnv,
+    color,
+    colorByNumber,
     mathjax,
     mathjax',
     envAsTable,
@@ -16,17 +20,40 @@ import Text.Blaze.Html5 (ToMarkup, Html, (!), toHtml)
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 
+import Analysis.Names
+
 -- | LaTeX
 
 class Latex a where
-    latex :: a -> String
+    latex      ::             a -> String
+    latexColor :: ColorEnv -> a -> String
 
 instance Latex () where
     latex () = "\\diamond"
 
 instance Latex a => Latex [a] where
-    latex env = "[" ++ intercalate "," (map latex env) ++ "]"
-    
+    latex           env = "[" ++ intercalate "," (map  latex            env) ++ "]"
+    latexColor cenv env = "[" ++ intercalate "," (map (latexColor cenv) env) ++ "]"
+
+-- * Colored LaTeX
+
+data Color = Red | Green | Blue | Purple | Orange
+
+color :: Color -> String -> String
+color c xs = "\\color{" ++ f c ++ "}" ++ xs ++ "\\color{black}"
+    where f Red    = "red"
+          f Green  = "green"
+          f Blue   = "blue"
+          f Purple = "purple"
+          f Orange = "orange"
+          
+type ColorEnv = [(Name, Color)]
+
+colorByNumber :: ColorEnv -> Name -> String -> String
+colorByNumber cenv x
+    | Just c <- lookup x cenv = color c
+    | otherwise = error "colorByNumber"
+
 -- | HTML
 
 mathjax, mathjax' :: Latex a => a -> Html

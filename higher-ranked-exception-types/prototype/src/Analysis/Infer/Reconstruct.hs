@@ -45,8 +45,7 @@ reconstruct env kenv tm@(Abs x ty tm')
          let env' = (x, (t1', ExnVar exn1)) : env
          re@(_, t2', exn2, c1, kenv2) <- reconstruct env' (kenv1 ++ kenv) tm'
          let v = [exn1] ++ map fst kenv1 ++ fev env
-         -- FIXME: is this the correct environment we are passing here?
-         let kenv' = kenv1 ++ [(exn1,EXN)] ++ kenv
+         let kenv' = kenv1 ++ kenv ++ kenv2
          let exn2' = solve kenv' c1 v exn2
          let t' = C.forallFromEnv kenv1 (ExnArr t1' (ExnVar exn1) t2' exn2')
          e <- fresh
@@ -92,7 +91,7 @@ reconstruct env kenv tm@(If e1 e2 e3)
          let c = [ExnVar exn1 :<: e, ExnVar exn2 :<: e, ExnVar exn3 :<: e ]
                     ++ c1 ++ c2 ++ c3
          return $ ReconstructIf env kenv tm re1 re2 re3 t e c #
-            (t, e, c, kenv3 ++ kenv2 ++ kenv1) {- FIXME: are we missing 'e' here? -}
+            (t, e, c, [(e,EXN)] ++ kenv3 ++ kenv2 ++ kenv1)
 
 reconstruct env kenv tm@(Crash lbl ty)
     = do co@(dty', ty', ExnVar exn1, kenv1) <- C.complete [] ty

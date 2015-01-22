@@ -12,16 +12,15 @@ import Analysis.Infer.Types
 -- | Constraint solving
 
 solve :: KindEnv -> [Constr] -> [Name] -> Name -> Exn
-solve env cs xs e =
+solve kenv cs xs e =
     let dependencies :: M.Map Name [Constr]
         dependencies = foldr f M.empty cs
             where f c@(exn :<: _) d
                     = foldr (\e -> M.insertWith (++) e [c]) d (fevExn exn)
         
         analysis', analysis'', analysis :: M.Map Name Exn
-        analysis' = foldr f M.empty cs
-            -- FIXME: we need an abstracted Empty depending on the kind...
-            where f (_ :<: e) d = M.insert e ExnEmpty d
+        analysis' = foldr f M.empty kenv     -- FIXME: improved w.r.t. Stefan's paper!
+            where f (e,k) d = M.insert e (kindedEmpty k) d
         analysis'' = foldr f analysis' xs
             where f e d = M.insert e (ExnVar e) d
         analysis = M.insert e ExnEmpty analysis'' {- FIXME: this is the only
@@ -34,7 +33,7 @@ solve env cs xs e =
                       exn2 = mapLookup "exn2" analysis e
                    in -- FIXME: is this environment sufficient? the call to solve
                       --        in reconstruct suggests perhaps not!
-                      if isIncludedIn env exn1 exn2
+                      if isIncludedIn kenv exn1 exn2
                       then ( [], analysis )
                       else ( M.findWithDefault [] e dependencies
                            -- FIXME: should the above lookup ever be allowed to fail?
@@ -51,7 +50,6 @@ solveAll kenv cs =
 
         analysis :: M.Map Name Exn
         analysis = foldr f M.empty kenv
-            -- FIXME: we need an abstracted Empty depending on the kind...
             where f (e,k) d = M.insert e (kindedEmpty k) d
 
         f :: Constr -> M.Map Name Exn -> ([Constr], M.Map Name Exn)
@@ -93,6 +91,7 @@ interpret env (ExnCon lbl)
 interpret env (ExnVar e)
     | Just x <- M.lookup e env = x
     | otherwise = error "interpret: not in scope"
+    -- | otherwise = ExnCon $ "e_{" ++ show e ++ "}-not-in-scope"
 interpret env (ExnApp e1 e2)
     = ExnApp (interpret env e1) (interpret env e2)
 interpret env (ExnAbs x k e)
