@@ -26,6 +26,9 @@ x # y@(y1,y2,y3) = (x y, y1, y2, y3)
 -- TODO: store KindEnv, Env in the monad
 reconstruct :: Env -> KindEnv -> Expr
                         -> Fresh (Reconstruct, ExnTy, Exn, KindEnv)
+                                                        -- ^ only from instantiate?
+                                                        --   (or also complete?
+                                                        --    probably quantify there)
 
 reconstruct env kenv tm@(Var x)
     = do let Just (t, exn) = lookup x env
@@ -70,10 +73,9 @@ reconstruct env kenv tm@(If e1 e2 e3)
             (t, exn, kenv3 ++ kenv2 ++ kenv1)
 
 reconstruct env kenv tm@(Crash lbl ty)
-    = do co@(_, ty', ExnVar exn1, kenv1) <- C.complete [] ty
-            -- FIXME: no longer need exn1 (and kenv1?) in the constraintless version!
-         return $ ReconstructCrash env kenv tm co #
-            (ty', ExnCon lbl, kenv1)
+    = do ty' <- C.bottomExnTy ty
+         return $ ReconstructCrash env kenv tm #
+            (ty', ExnCon lbl, [])
 
 reconstruct env kenv tm@(Seq e1 e2)
     = do re1@(_, t1, exn1, kenv1) <- reconstruct env kenv e1
@@ -86,19 +88,19 @@ reconstruct env kenv tm@(Fix e1)   -- FIXME: not known to be sound (see notes)
          ins@(ExnArr t' (ExnVar exn') t'' exn'', kenv') <- instantiate t1
          subst1 <- match [] t'' t'
          let subst2 = [(exn', substExn' subst1 exn'')]
+         let subst3 = map (\(x,k) -> (x, C.kindedEmpty k)) kenv' -- FIXME: masking
          let t_   = substExnTy' (subst2 <.> subst1) t'
          let exn_ = substExn'   (subst2 <.> subst1) exn''
-         return $ ReconstructFix env kenv tm re ins subst1 subst2 t_ exn_ # 
-            ( simplifyExnTy (kenv' ++ kenv1 ++ kenv) t_
-            , simplifyExn (kenv' ++ kenv1 ++ kenv) exn_
+         return $ ReconstructFix env kenv tm re ins subst1 subst2 subst3 t_ exn_ # 
+            ( substExnTy' subst3 (simplifyExnTy (kenv' ++ kenv1 ++ kenv) t_)
+            , substExn'   subst3 (simplifyExn (kenv' ++ kenv1 ++ kenv) exn_)
             , kenv' ++ kenv1
-            )
+            ) -- FIXME: ^ substitution composion seems broken...
 
 reconstruct env kenv tm@(Nil ty)
-    = do co@(_, ty', ExnVar exn1, kenv1) <- C.complete [] ty
-            -- FIXME: no longer need exn1 (and kenv1?) in the constraintless version!
-         return $ ReconstructNil env kenv tm co # 
-            (ExnList ty' ExnEmpty, ExnEmpty, kenv1)
+    = do ty' <- C.bottomExnTy ty
+         return $ ReconstructNil env kenv tm # 
+            (ExnList ty' ExnEmpty, ExnEmpty, [])
 
 reconstruct env kenv tm@(Cons e1 e2)
     = do re1@(_, t1              , exn1, kenv1) <- reconstruct env kenv e1

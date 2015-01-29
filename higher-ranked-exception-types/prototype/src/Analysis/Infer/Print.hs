@@ -44,13 +44,13 @@ instance ToMarkup Reconstruct where
     toMarkup (ReconstructIf    env kenv tm
                     (re1,_,_,_) (re2,_,_,_) (re3,_,_,_) _ _)
         = derive "R-If" (map H.toMarkup [re1, re2, re3]) ""
-    toMarkup (ReconstructCrash env kenv tm _ _)
+    toMarkup (ReconstructCrash env kenv tm _)
         = derive "R-Crash" [] ""
     toMarkup (ReconstructSeq   env kenv tm (re1,_,_,_) (re2,_,_,_) _)
         = derive "R-Seq" (map H.toMarkup [re1, re2]) ""
-    toMarkup (ReconstructFix   env kenv tm (re,_,_,_) _ _ _ _ _ _)
+    toMarkup (ReconstructFix   env kenv tm (re,_,_,_) _ _ _ _ _ _ _)
         = derive "R-Fix" (map H.toMarkup [re]) ""
-    toMarkup (ReconstructNil   env kenv tm _ _)
+    toMarkup (ReconstructNil   env kenv tm _)
         = derive "R-Nil" [] ""
     toMarkup (ReconstructCons  env kenv tm (re1,_,_,_) (re2,_,_,_) _ _)
         = derive "R-Cons" (map H.toMarkup [re1, re2]) ""
@@ -77,8 +77,7 @@ reconstructHtml (ReconstructAbs env kenv tm@(Abs x ty tm') co@(_, t1', exn1, ken
             H.td $ "env'"
             H.td ! A.colspan "3" $ H.toHtml $ "$\\leftarrow " ++ latex env' ++ "$"
         htmlDo "reconstruct env' (kenv1 ++ kenv) tm'"
-        htmlReconstruct (kenv2 ++ kenv) re "XXX"  -- FIXME: (t2', exn2, c1, kenv2)
-        htmlDo "solve (kenv1 ++ [(exn1,EXN)] ++ kenv) c1 v exn2"
+        htmlReconstruct (kenv1 ++ kenv) re "XXX"  -- FIXME: (t2', exn2, c1, kenv2)
         htmlDo "forallFromEnv kenv1 (ExnArr t1' (ExnVar exn1) t2' exn2')"
         trAssign "t'" (latex t')
         htmlResult kenv result
@@ -142,11 +141,9 @@ reconstructHtml (ReconstructIf env kenv tm re1@(_,_,_,kenv1) re2@(_,_,_,kenv2) r
             H.td ! A.colspan "3" $ "[ExnVar exn1 :<: exn, ExnVar exn2 :<: exn, ExnVar exn3 :<: exn] ++ c1 ++ c2 ++ c3"
         htmlResult kenv result
       ) ++ recurse [re1, re2, re3]
-reconstructHtml (ReconstructCrash env kenv tm co@(_, t1', exn1, kenv1) result)
+reconstructHtml (ReconstructCrash env kenv tm result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
-        htmlDo "complete [] ty"
-        htmlComplete t1' exn1 kenv1
         htmlResult kenv result
       )
 reconstructHtml (ReconstructSeq env kenv tm re1@(_,_,_,kenv1) re2@(_,_,_,kenv2) result)
@@ -158,7 +155,7 @@ reconstructHtml (ReconstructSeq env kenv tm re1@(_,_,_,kenv1) re2@(_,_,_,kenv2) 
         htmlReconstruct (kenv2 ++ kenv) re2 "2"
         htmlResult kenv result
       ) ++ recurse [re1, re2]
-reconstructHtml (ReconstructFix env kenv tm re@(_,_,_,kenv1) ins subst1 subst2 ty exn result)
+reconstructHtml (ReconstructFix env kenv tm re@(_,_,_,kenv1) ins subst1 subst2 subst3 ty exn result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
         htmlDo "reconstruct env kenv e1"
@@ -175,13 +172,16 @@ reconstructHtml (ReconstructFix env kenv tm re@(_,_,_,kenv1) ins subst1 subst2 t
             H.td $ "subst2"
             H.td ! A.colspan "3" $ "= [(exn', substExn' subst1 exn'')]"
         rowRes $ mathjax' subst2
+        H.tr $ do
+            H.td $ ""
+            H.td $ "subst3"
+            H.td ! A.colspan "3" $ "= ???"
+        rowRes $ mathjax' subst3
         htmlResult kenv result
       ) ++ recurse [re]
-reconstructHtml (ReconstructNil env kenv tm co@(_, ty', exn1, kenv1) result)
+reconstructHtml (ReconstructNil env kenv tm result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
-        htmlDo "complete [] ty"
-        htmlComplete ty' exn1 kenv1
         htmlResult kenv result
       )
 reconstructHtml (ReconstructCons env kenv tm re1@(_,_,_,kenv1) re2@(_,_,_,kenv2) t result)
@@ -278,9 +278,7 @@ htmlComplete exnTy exn kenv
 htmlInstantiate (exnTy@(ExnArr t2' (ExnVar exn2') t' exn'), kenv)   -- FIXME: local variable naming...
     = do trAssign "t_2'\\{\\chi_2'\\} \\to t'\\{\\chi'\\}" (latex exnTy)
          trAssign "t_2'"     (latex t2')
-         trCode              (show t2')
          trAssign "t'"       (latex t')
-         trCode              (show  t')
          trAssign "\\chi_2'" (show exn2')
          trAssign "\\chi'"   (latex exn')
          trAssign "kenv'"                                  (latex kenv)

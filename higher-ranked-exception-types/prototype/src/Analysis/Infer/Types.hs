@@ -39,16 +39,14 @@ data Reconstruct
                        Reconstruct' Reconstruct' Reconstruct' ExnTy
                        Result
     | ReconstructCrash Env KindEnv Expr
-                       Complete'
                        Result
     | ReconstructSeq   Env KindEnv Expr
                        Reconstruct' Reconstruct'
                        Result
     | ReconstructFix   Env KindEnv Expr
-                       Reconstruct' Instantiate' Subst Subst ExnTy Exn
+                       Reconstruct' Instantiate' Subst Subst Subst ExnTy Exn
                        Result
     | ReconstructNil   Env KindEnv Expr
-                       Complete'
                        Result
     | ReconstructCons  Env KindEnv Expr
                        Reconstruct' Reconstruct' ExnTy

@@ -188,7 +188,7 @@ inferencePage = msum [ viewForm, processForm ] where
 
             H.h2 "Unsimplified exception type"
             H.p $ toHtml $
-                "\\[" ++ latex exnTy ++ "\\ \\&\\ " ++ show exn ++ "\\]"
+                "\\[" ++ latex exnTy ++ "\\ \\&\\ " ++ latex exn ++ "\\]"
             H.h3 "Kind environment"
             H.p $ envAsTable kenv
 

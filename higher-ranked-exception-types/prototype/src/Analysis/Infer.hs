@@ -22,6 +22,7 @@ inferenceExamples = map show [
     -- * crash
     Crash "foo" Bool,
     Crash "foo" (Bool :-> Bool),
+    Crash "foo" ((Bool :-> Bool) :-> Bool),
     App (Abs 1 Bool (Var 1)) (Crash "foo" Bool),
     -- ex09: (bool,8,[e2 :<: 4,{foo} :<: 4,e5 :<: 6,{bar} :<: 6,(e3 e6) :<: 8,e4 :<: 8])
     --       not that e3 is by default set to {}, so we lose e6 = {bar}. also see ex11.
@@ -78,7 +79,7 @@ inferenceExamples = map show [
     exHApply,
     App exHApply exApply,
     exCompose,
-    exHCompose,     -- FIXME: should those EmptySets be there?
+    exHCompose,     -- FIXME: should those EmptySets be there? (GONE NOW?)
     exHCompose',    -- FIXME: e14 and e17 have been eta-expanded. is this okay?
     App exHCompose exCompose,
     App exHCompose' exCompose

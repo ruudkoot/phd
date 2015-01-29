@@ -4,7 +4,15 @@
 -- TODO: pretty print types
 -- NOTE: fresh variable are generated in an order that results in nice types
 
-module Analysis.Completion where
+module Analysis.Completion (
+    Env,
+    Complete(..),
+    complete,
+    complete',
+    forallFromEnv,
+    bottomExnTy,    -- FIXME: move to other module
+    kindedEmpty     -- FIXME: move to other module
+) where
 
 import Text.Blaze.Html5 (ToMarkup)
 import qualified Text.Blaze.Html5 as H
@@ -65,7 +73,7 @@ complete env0 ty@(t1 :-> t2) = do
            (forallFromEnv env1 (ExnArr t1' exn1 t2' exn2)
            ,exnFromEnv (ExnVar e) env0
            ,env2 ++ [(e, kindFromEnv env0)])
-
+           
 -- * Helper functions
 
 exnFromEnv :: Exn -> Env -> Exn
@@ -76,6 +84,23 @@ forallFromEnv env exn = foldl (\r (e,k) -> ExnForall e k r) exn env
 
 kindFromEnv :: Env -> Kind
 kindFromEnv (map snd -> ks) = foldl (flip (:=>)) EXN ks
+
+-- | Bottom exception type from given underlying type
+
+bottomExnTy :: Ty -> Fresh ExnTy
+bottomExnTy ty = do
+    (_, exnTy, _, kenv) <- complete [] ty
+    let fvSubst = map (\(x,k) -> (x, kindedEmpty k)) kenv
+    return (substExnTy' fvSubst exnTy)
+
+-- * Helper functions
+
+-- TODO: move to somewhere (also: what an ugly hack..)
+kindedEmpty :: Kind -> Exn
+kindedEmpty EXN         = ExnEmpty
+kindedEmpty (k1 :=> k2) = case kindedEmpty k2 of
+                            ExnEmpty -> ExnAbs 666 k1 ExnEmpty
+                            ExnAbs x k e -> ExnAbs (x+1) k1 (ExnAbs x k e)
 
 -- | Pretty printing
 
