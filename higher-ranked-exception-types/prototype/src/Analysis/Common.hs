@@ -16,6 +16,7 @@ module Analysis.Common (
     exnNormalize,
     exnEq,
     exnTyEq,
+    simplifyExn,
     simplifyExnTy,
     Subst,
     substExn',

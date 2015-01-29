@@ -19,7 +19,6 @@ import qualified Analysis.Completion  as An
 import qualified Analysis.Infer       as An
 import qualified Analysis.Infer.Print as An
 import qualified Analysis.Infer.Match as An
-import qualified Analysis.Infer.Solve as An
 import qualified Analysis.LambdaUnion as LU
 import           Analysis.Print
 
@@ -172,8 +171,8 @@ inferencePage = msum [ viewForm, processForm ] where
 
         expr :: An.Expr <- read . unpack <$> lookText "expr"
 
-        let (re, exnTy, exn, cs, kenv) = An.evalFresh (An.reconstruct [] [] expr) 1
-        let (exnTy', exn')             = An.evalFresh (An.reconstructTop expr) 1
+        let (re, exnTy, exn, kenv) = An.evalFresh (An.reconstruct [] [] expr) 1
+        let (exnTy', exn') = (An.simplifyExnTy kenv exnTy, An.simplifyExn kenv exn)
 
         ok $ template title $ do
         
@@ -182,16 +181,14 @@ inferencePage = msum [ viewForm, processForm ] where
             H.h3 $ "Type"
             H.p $ mathjax $ fromJust $ An.checkExpr [] expr
 
-            H.h2 "Solved Exception Type"
+            H.h2 "Simplified exception type"
             H.p $ toHtml $
                 "\\[" ++ An.latexCheck [] exnTy' ++ "\\ \\&\\ "
                 ++ latex exn' ++ "\\]"
 
-            H.h2 "Unsolved Exception Type"
+            H.h2 "Unsimplified exception type"
             H.p $ toHtml $
                 "\\[" ++ latex exnTy ++ "\\ \\&\\ " ++ show exn ++ "\\]"
-            H.h3 "Constraints"
-            H.p $ mathjax cs
             H.h3 "Kind environment"
             H.p $ envAsTable kenv
 

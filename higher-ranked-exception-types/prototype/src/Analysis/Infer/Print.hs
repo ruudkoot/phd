@@ -24,13 +24,6 @@ instance Latex (Name, (ExnTy, Exn)) where
     latex (show -> e, (latex -> ty, latex -> exn))
         = "e_{" ++ e ++ "} : " ++ ty ++ "\\ \\&\\ " ++ exn
 
-instance Latex Constr where
-    latex (exn :<: e)
-        = latex exn ++ " \\sqsubseteq e_{" ++ show e ++ "}"
-    latexColor cenv (exn :<: e)
-        = latexColor cenv exn ++ " \\sqsubseteq "
-            ++ colorByNumber cenv e ("e_{" ++ show e ++ "}")
-
 instance Latex (Name, Exn) where
     latex (show -> e, latex -> exn)
         = "e_{" ++ e ++ "} \\mapsto " ++ exn
@@ -38,44 +31,43 @@ instance Latex (Name, Exn) where
 -- | Reconstruction
 
 instance ToMarkup Reconstruct where
-    toMarkup (ReconstructVar   env kenv tm _ _ _ _)
+    toMarkup (ReconstructVar   env kenv tm _ _ _)
         = derive "R-Var" [] ""
-    toMarkup (ReconstructAbs   env kenv tm _ _ (re,_,_,_,_) _ _ _ _ _ _)
+    toMarkup (ReconstructAbs   env kenv tm _ _ (re,_,_,_) _ _)
         = derive "R-Abs" (map H.toMarkup [re]) ""
-    toMarkup (ReconstructApp   env kenv tm (re1,_,_,_,_) (re2,_,_,_,_) _ _ _ _ _ _)
+    toMarkup (ReconstructApp   env kenv tm (re1,_,_,_) (re2,_,_,_) _ _ _ _)
         = derive "R-App" (map H.toMarkup [re1, re2]) ""
-    toMarkup (ReconstructCon   env kenv tm _ _)
+    toMarkup (ReconstructCon   env kenv tm _)
         = derive "R-Con" [] ""
-    toMarkup (ReconstructBinOp env kenv tm (re1,_,_,_,_) (re2,_,_,_,_) _ _)
+    toMarkup (ReconstructBinOp env kenv tm (re1,_,_,_) (re2,_,_,_) _)
         = derive "R-BinOp" (map H.toMarkup [re1, re2]) ""
     toMarkup (ReconstructIf    env kenv tm
-                    (re1,_,_,_,_) (re2,_,_,_,_) (re3,_,_,_,_) _ _ _ _)
+                    (re1,_,_,_) (re2,_,_,_) (re3,_,_,_) _ _)
         = derive "R-If" (map H.toMarkup [re1, re2, re3]) ""
     toMarkup (ReconstructCrash env kenv tm _ _)
         = derive "R-Crash" [] ""
-    toMarkup (ReconstructSeq   env kenv tm (re1,_,_,_,_) (re2,_,_,_,_) _ _)
+    toMarkup (ReconstructSeq   env kenv tm (re1,_,_,_) (re2,_,_,_) _)
         = derive "R-Seq" (map H.toMarkup [re1, re2]) ""
-    toMarkup (ReconstructFix   env kenv tm (re,_,_,_,_) _ _ _ _ _ _)
+    toMarkup (ReconstructFix   env kenv tm (re,_,_,_) _ _ _ _ _ _)
         = derive "R-Fix" (map H.toMarkup [re]) ""
-    toMarkup (ReconstructNil   env kenv tm _ _ _)
+    toMarkup (ReconstructNil   env kenv tm _ _)
         = derive "R-Nil" [] ""
-    toMarkup (ReconstructCons  env kenv tm (re1,_,_,_,_) (re2,_,_,_,_) _ _ _ _)
+    toMarkup (ReconstructCons  env kenv tm (re1,_,_,_) (re2,_,_,_) _ _)
         = derive "R-Cons" (map H.toMarkup [re1, re2]) ""
     toMarkup (ReconstructCase  env kenv tm 
-                    (re1,_,_,_,_) (re2,_,_,_,_) _  (re3,_,_,_,_) _ _ _ _)
+                    (re1,_,_,_) (re2,_,_,_) _  (re3,_,_,_) _ _)
         = derive "R-Case" (map H.toMarkup [re1, re2, re3]) ""
 
 reconstructHtml :: Reconstruct -> [H.Html]
-reconstructHtml (ReconstructVar env kenv tm t exn e result)
+reconstructHtml (ReconstructVar env kenv tm t exn result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
         htmlDo "lookup x env"
         trAssign "t"   (latex t)
         trAssign "exn" (latex exn)
-        htmlFresh e
         htmlResult kenv result
       )
-reconstructHtml (ReconstructAbs env kenv tm@(Abs x ty tm') co@(_, t1', exn1, kenv1) env' re@(_, t2', exn2, c1, kenv2) v kenv' exn2' t' e result)
+reconstructHtml (ReconstructAbs env kenv tm@(Abs x ty tm') co@(_, t1', exn1, kenv1) env' re@(_, t2', exn2, kenv2) t' result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
         htmlDo "complete [] ty"
@@ -85,20 +77,13 @@ reconstructHtml (ReconstructAbs env kenv tm@(Abs x ty tm') co@(_, t1', exn1, ken
             H.td $ "env'"
             H.td ! A.colspan "3" $ H.toHtml $ "$\\leftarrow " ++ latex env' ++ "$"
         htmlDo "reconstruct env' (kenv1 ++ kenv) tm'"
-        htmlReconstruct (kenv' ++ kenv2 ++ kenv) re "XXX"  -- FIXME: (t2', exn2, c1, kenv2)
-        trAssign "v" (show v)
-        H.tr $ do
-            H.td $ ""
-            H.td $ "kenv'"
-            H.td ! A.colspan "3" $ H.toHtml $ "$\\leftarrow " ++ latex kenv' ++ "$"
+        htmlReconstruct (kenv2 ++ kenv) re "XXX"  -- FIXME: (t2', exn2, c1, kenv2)
         htmlDo "solve (kenv1 ++ [(exn1,EXN)] ++ kenv) c1 v exn2"
-        trAssign "exn2'" (latex exn2')
         htmlDo "forallFromEnv kenv1 (ExnArr t1' (ExnVar exn1) t2' exn2')"
         trAssign "t'" (latex t')
-        htmlFresh e
         htmlResult kenv result
       ) ++ recurse [re]
-reconstructHtml (ReconstructApp env kenv tm re1@(_,_,_,_,kenv1) re2@(_, t2, exn2, c2, kenv2) ins@(ExnArr t2' (ExnVar exn2') t' exn', kenv') subst' subst e c result)
+reconstructHtml (ReconstructApp env kenv tm re1@(_,_,_,kenv1) re2@(_, t2, exn2,  kenv2) ins@(ExnArr t2' (ExnVar exn2') t' exn', kenv') subst' subst result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
         htmlDo "reconstruct env kenv e1"
@@ -113,30 +98,27 @@ reconstructHtml (ReconstructApp env kenv tm re1@(_,_,_,_,kenv1) re2@(_, t2, exn2
             H.td ! A.colspan "3" $ H.toHtml $ "= [(exn2', ExnVar exn2)] <.> match [] $" ++ latex t2 ++ "$ $" ++ latex t2' ++ "$"
         -- rowRes $ mathjax' subst'
         rowRes $ mathjax' subst
-        htmlFresh e
         H.tr $ do
             H.td $ ""
             H.td $ "c"
             H.td ! A.colspan "3" $ "[substExn' subst exn' :<: e, ExnVar exn1 :<: e] ++ c1 ++ c2"
         htmlResult kenv result
       ) ++ recurse [re1, re2]
-reconstructHtml (ReconstructCon env kenv tm e result)
+reconstructHtml (ReconstructCon env kenv tm result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
-        htmlFresh e
         htmlResult kenv result
       )
-reconstructHtml (ReconstructBinOp env kenv tm re1@(_,_,_,_,kenv1) re2@(_,_,_,_,kenv2) e result)
+reconstructHtml (ReconstructBinOp env kenv tm re1@(_,_,_,kenv1) re2@(_,_,_,kenv2) result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
         htmlDo "reconstruct env kenv e1"
         htmlReconstruct (kenv1 ++ kenv) re1 "1"
         htmlDo "reconstruct env kenv e2"
         htmlReconstruct (kenv2 ++ kenv) re2 "2"
-        htmlFresh e
         htmlResult kenv result
       ) ++ recurse [re1, re2]
-reconstructHtml (ReconstructIf env kenv tm re1@(_,_,_,_,kenv1) re2@(_,_,_,_,kenv2) re3@(_,_,_,_,kenv3) t exn c result)
+reconstructHtml (ReconstructIf env kenv tm re1@(_,_,_,kenv1) re2@(_,_,_,kenv2) re3@(_,_,_,kenv3) t result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
         htmlDo "reconstruct env kenv e1"
@@ -154,7 +136,6 @@ reconstructHtml (ReconstructIf env kenv tm re1@(_,_,_,_,kenv1) re2@(_,_,_,_,kenv
             H.td $ "t"
             H.td ! A.colspan "3" $ "= join t1 t2"
         rowRes $ mathjax' t
-        htmlFresh exn
         H.tr $ do
             H.td $ ""
             H.td $ "c"
@@ -168,17 +149,16 @@ reconstructHtml (ReconstructCrash env kenv tm co@(_, t1', exn1, kenv1) result)
         htmlComplete t1' exn1 kenv1
         htmlResult kenv result
       )
-reconstructHtml (ReconstructSeq env kenv tm re1@(_,_,_,_,kenv1) re2@(_,_,_,_,kenv2) e result)
+reconstructHtml (ReconstructSeq env kenv tm re1@(_,_,_,kenv1) re2@(_,_,_,kenv2) result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
         htmlDo "reconstruct env kenv e1"
         htmlReconstruct (kenv1 ++ kenv) re1 "1"
         htmlDo "reconstruct env kenv e2"
         htmlReconstruct (kenv2 ++ kenv) re2 "2"
-        htmlFresh e
         htmlResult kenv result
       ) ++ recurse [re1, re2]
-reconstructHtml (ReconstructFix env kenv tm re@(_,_,_,_,kenv1) ins subst1 subst2 e c result)
+reconstructHtml (ReconstructFix env kenv tm re@(_,_,_,kenv1) ins subst1 subst2 ty exn result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
         htmlDo "reconstruct env kenv e1"
@@ -195,23 +175,16 @@ reconstructHtml (ReconstructFix env kenv tm re@(_,_,_,_,kenv1) ins subst1 subst2
             H.td $ "subst2"
             H.td ! A.colspan "3" $ "= [(exn', substExn' subst1 exn'')]"
         rowRes $ mathjax' subst2
-        htmlFresh e
-        H.tr $ do
-            H.td $ ""
-            H.td $ "c"
-            H.td ! A.colspan "3" $ "[substExn' (subst2 <.> subst1) exn'' :<: e] ++ c1"
-        rowRes $ mathjax' c
         htmlResult kenv result
       ) ++ recurse [re]
-reconstructHtml (ReconstructNil env kenv tm co@(_, ty', exn1, kenv1) exn2 result)
+reconstructHtml (ReconstructNil env kenv tm co@(_, ty', exn1, kenv1) result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
         htmlDo "complete [] ty"
         htmlComplete ty' exn1 kenv1
-        htmlFresh exn2
         htmlResult kenv result
       )
-reconstructHtml (ReconstructCons env kenv tm re1@(_,_,_,_,kenv1) re2@(_,_,_,_,kenv2) t ex1 ex2 result)
+reconstructHtml (ReconstructCons env kenv tm re1@(_,_,_,kenv1) re2@(_,_,_,kenv2) t result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
         htmlDo "reconstruct env kenv e1"
@@ -223,11 +196,9 @@ reconstructHtml (ReconstructCons env kenv tm re1@(_,_,_,_,kenv1) re2@(_,_,_,_,ke
             H.td $ "t"
             H.td ! A.colspan "3" $ "= join t1 t2"
         rowRes $ mathjax' t
-        htmlFresh ex1
-        htmlFresh ex2
         htmlResult kenv result
       ) ++ recurse [re1, re2]
-reconstructHtml (ReconstructCase env kenv tm re1@(_,_,_,_,kenv1) re2@(_,_,_,_,kenv2) env' re3@(_,_,_,_,kenv3) t exn c result)
+reconstructHtml (ReconstructCase env kenv tm re1@(_,_,_,kenv1) re2@(_,_,_,kenv2) env' re3@(_,_,_,kenv3) t result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
         htmlDo "reconstruct env kenv e1"
@@ -246,7 +217,6 @@ reconstructHtml (ReconstructCase env kenv tm re1@(_,_,_,_,kenv1) re2@(_,_,_,_,ke
             H.td $ "t"
             H.td ! A.colspan "3" $ "= join t1 t2"
         rowRes $ mathjax' t
-        htmlFresh exn
         H.tr $ do
             H.td $ ""
             H.td $ "c"
@@ -256,7 +226,7 @@ reconstructHtml (ReconstructCase env kenv tm re1@(_,_,_,_,kenv1) re2@(_,_,_,_,ke
 
 
 recurse :: [Reconstruct'] -> [H.Html]
-recurse = concatMap (\(re,_,_,_,_) -> reconstructHtml re)
+recurse = concatMap (\(re,_,_,_) -> reconstructHtml re)
 
 rowRes html = H.tr $ do
                 H.td $ ""
@@ -294,10 +264,9 @@ htmlFresh name
         H.td ! A.colspan "3" $ H.b $ "fresh"
 
 htmlReconstruct :: KindEnv -> Reconstruct' -> String -> H.Html
-htmlReconstruct delta (re, t, exn, c, kenv) n
+htmlReconstruct delta (re, t, exn, kenv) n
     = do trAssign ("t_{" ++ n ++ "}")    (latexCheck delta t)
-         trAssign ("exn_{" ++ n ++ "}")  ("e_{" ++ show exn ++ "}")
-         trAssign ("c_{" ++ n ++ "}")    (latexColor cenv c)
+         trAssign ("exn_{" ++ n ++ "}")  (latex exn)
          trAssign ("kenv_{" ++ n ++ "}") (latex kenv)
   where cenv = map (\(x,_) -> (x, Red)) kenv ++ map (\(x,_) -> (x, Blue)) delta
 
@@ -320,7 +289,7 @@ htmlDo thing = H.tr $ do
             H.td $ H.b "do"
             H.td ! A.colspan "4" $ thing
 
-htmlResult kenv0 (exnTy, exn, c, kenv)
+htmlResult kenv0 (exnTy, exn, kenv)
     = do H.tr $ do
             H.td $ H.b "in"
             H.td $ "$\\tau$"
@@ -337,12 +306,7 @@ htmlResult kenv0 (exnTy, exn, c, kenv)
             H.td $ ""
             H.td $ "$\\chi$"
             H.td $ "="
-            H.td ! A.colspan "3" $ H.toHtml $ "$e_{" ++ show exn ++ "}$"
-         H.tr $ do
-            H.td $ ""
-            H.td $ "$C$"
-            H.td $ "="
-            H.td ! A.colspan "3" $ mathjax' c
+            H.td ! A.colspan "3" $ H.toHtml $ mathjax' exn
          H.tr $ do
             H.td $ ""
             H.td $ "$\\Delta$"

@@ -13,52 +13,46 @@ type Env = [(Name, (ExnTy, Exn))]
 fev :: Env -> [Name]
 fev = concatMap (\(_, (ty, exn)) -> fevExnTy ty ++ fevExn exn)
 
--- | Constraints
-
-data Constr = Exn :<: Name
-    deriving Show
-
 -- | Reconstruction
 
-type Result       = (ExnTy, Name, [Constr], KindEnv)
+type Result       = (ExnTy, Exn, KindEnv)
 type Complete'    = (C.Complete, ExnTy, Exn, C.Env)
-type Reconstruct' = (Reconstruct, ExnTy, Name, [Constr], KindEnv)
+type Reconstruct' = (Reconstruct, ExnTy, Exn, KindEnv)
 type Instantiate' = (ExnTy, KindEnv)
 
 data Reconstruct
     = ReconstructVar   Env KindEnv Expr
-                       ExnTy Exn Name
+                       ExnTy Exn
                        Result
     | ReconstructAbs   Env KindEnv Expr
-                       Complete' Env Reconstruct' [Name] KindEnv Exn ExnTy Name
+                       Complete' Env Reconstruct' ExnTy
                        Result
     | ReconstructApp   Env KindEnv Expr
-                       Reconstruct' Reconstruct' Instantiate' Subst Subst Name [Constr]
+                       Reconstruct' Reconstruct' Instantiate' Subst Subst
                        Result
     | ReconstructCon   Env KindEnv Expr
-                       Name
                        Result
     | ReconstructBinOp Env KindEnv Expr
-                       Reconstruct' Reconstruct' Name
+                       Reconstruct' Reconstruct'
                        Result
     | ReconstructIf    Env KindEnv Expr
-                       Reconstruct' Reconstruct' Reconstruct' ExnTy Name [Constr]
+                       Reconstruct' Reconstruct' Reconstruct' ExnTy
                        Result
     | ReconstructCrash Env KindEnv Expr
                        Complete'
                        Result
     | ReconstructSeq   Env KindEnv Expr
-                       Reconstruct' Reconstruct' Name
+                       Reconstruct' Reconstruct'
                        Result
     | ReconstructFix   Env KindEnv Expr
-                       Reconstruct' Instantiate' Subst Subst Name [Constr] 
+                       Reconstruct' Instantiate' Subst Subst ExnTy Exn
                        Result
     | ReconstructNil   Env KindEnv Expr
-                       Complete' Name
+                       Complete'
                        Result
     | ReconstructCons  Env KindEnv Expr
-                       Reconstruct' Reconstruct' ExnTy Name Name
+                       Reconstruct' Reconstruct' ExnTy
                        Result
     | ReconstructCase  Env KindEnv Expr
-                       Reconstruct' Reconstruct' Env Reconstruct' ExnTy Name [Constr]
+                       Reconstruct' Reconstruct' Env Reconstruct' ExnTy
                        Result
