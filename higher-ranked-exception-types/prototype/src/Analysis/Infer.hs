@@ -5,29 +5,35 @@ module Analysis.Infer (
 ) where
 
 import Analysis.Common
+import Analysis.Print
 import Analysis.Infer.Reconstruct
 import Analysis.Infer.Print
 
-inferenceExamples = map show [
+(#) :: a -> b -> (a, b)
+x # y = (x, y)
+
+infixr 0 #
+
+inferenceExamples = map (\(l,x) -> (l, show x, mathjax' x)) [
     -- decent first example
-    App (Abs 1 (Bool:->Bool) (Var 1)) (Abs 2 Bool (Var 2)),
+    "id id" # App (Abs 1 (Bool:->Bool) (Var 1)) (Abs 2 Bool (Var 2)),
     -- * constants
-    Con True,
+    "true" # Con True,
     -- * abstraction
-    Abs 1 Bool $ Var 1,
-    Abs 1 Bool $ Abs 2 Bool $ Var 1,
-    Abs 1 Bool $ Abs 2 Bool $ Var 2,
+    "" # Abs 1 Bool $ Var 1,
+    "" # Abs 1 Bool $ Abs 2 Bool $ Var 1,
+    "" # Abs 1 Bool $ Abs 2 Bool $ Var 2,
     -- * application
-    Abs 1 (Bool :-> Bool) $ Abs 2 Bool $ App (Var 1) (Var 2),
+    "" # Abs 1 (Bool :-> Bool) $ Abs 2 Bool $ App (Var 1) (Var 2),
     -- * crash
-    Crash "foo" Bool,
-    Crash "foo" (Bool :-> Bool),
-    Crash "foo" ((Bool :-> Bool) :-> Bool),
-    App (Abs 1 Bool (Var 1)) (Crash "foo" Bool),
+    "" # Crash "foo" Bool,
+    "" # Crash "foo" (Bool :-> Bool),
+    "" # Crash "foo" ((Bool :-> Bool) :-> Bool),
+    "" # App (Abs 1 Bool (Var 1)) (Crash "foo" Bool),
     -- ex09: (bool,8,[e2 :<: 4,{foo} :<: 4,e5 :<: 6,{bar} :<: 6,(e3 e6) :<: 8,e4 :<: 8])
     --       not that e3 is by default set to {}, so we lose e6 = {bar}. also see ex11.
-    App (Crash "foo" (Bool :-> Bool)) (Crash "bar" Bool),
-    Abs 1 Bool $ App (Crash "foo" (Bool :-> Bool)) (Var 1),
+    "" # App (Crash "foo" (Bool :-> Bool)) (Crash "bar" Bool),
+    "" # Abs 1 Bool $ App (Crash "foo" (Bool :-> Bool)) (Var 1),
     -- ex11: the analysis is not sound w.r.t. imprecise exception semantics
     --       for this example! i'm not sure if that can be resolved
     --       without re-introducing non-emptyness guards, losing precision, or
@@ -37,52 +43,52 @@ inferenceExamples = map show [
     --       switching transformation.
     --       intuitively/according to the analysis only "foo" can be raised here,
     --       but the imprecise exception semantics would also allow for "bar".
-    Abs 1 Bool $ App (Crash "foo" (Bool :-> Bool)) (Crash "bar" Bool),
+    "" # Abs 1 Bool $ App (Crash "foo" (Bool :-> Bool)) (Crash "bar" Bool),
     -- * seq
-    Seq (Crash "foo" Bool) (Crash "bar" Bool),
-    Seq (Crash "foo" (Bool :-> Bool)) (Abs 1 Bool $ Var 1),
-    Abs 1 Bool $ Seq (Var 1) (Crash "foo" Bool),
-    Abs 1 Bool $ Seq (Crash "foo" Bool) (Crash "bar" Bool),
-    Abs 1 Bool $ Seq (Crash "bar" (Bool :-> Bool)) (Abs 2 Bool $ Var 2),
-    Abs 1 Bool $ Seq (Var 1) (Abs 2 Bool $ Var 1),
+    "" # Seq (Crash "foo" Bool) (Crash "bar" Bool),
+    "" # Seq (Crash "foo" (Bool :-> Bool)) (Abs 1 Bool $ Var 1),
+    "" # Abs 1 Bool $ Seq (Var 1) (Crash "foo" Bool),
+    "" # Abs 1 Bool $ Seq (Crash "foo" Bool) (Crash "bar" Bool),
+    "" # Abs 1 Bool $ Seq (Crash "bar" (Bool :-> Bool)) (Abs 2 Bool $ Var 2),
+    "" # Abs 1 Bool $ Seq (Var 1) (Abs 2 Bool $ Var 1),
     -- * recursive functions
-    Fix (Abs 1 (Bool :-> Bool) (Abs 2 Bool (App (Var 1) (Var 2)))),
+    "" # Fix (Abs 1 (Bool :-> Bool) (Abs 2 Bool (App (Var 1) (Var 2)))),
     -- * lists
-    Nil Bool,
-    Nil (Bool :-> Bool),
-    Cons (Crash "foo" Bool) (Nil Bool),
-    Cons (Abs 1 Bool (Var 1)) (Nil (Bool :-> Bool)),
-    Cons (Abs 1 Bool (Crash "foo" Bool)) (Nil (Bool :-> Bool)),
-    Cons (Abs 1 Bool (Var 1)) (Cons (Abs 1 Bool (Var 1)) (Nil (Bool :-> Bool))),
-    Cons (Abs 1 Bool (Var 1)) (Cons (Abs 1 Bool (Crash "foo" Bool)) (Nil (Bool :-> Bool))),
+    "" # Nil Bool,
+    "" # Nil (Bool :-> Bool),
+    "" # Cons (Crash "foo" Bool) (Nil Bool),
+    "" # Cons (Abs 1 Bool (Var 1)) (Nil (Bool :-> Bool)),
+    "" # Cons (Abs 1 Bool (Crash "foo" Bool)) (Nil (Bool :-> Bool)),
+    "" # Cons (Abs 1 Bool (Var 1)) (Cons (Abs 1 Bool (Var 1)) (Nil (Bool :-> Bool))),
+    "" # Cons (Abs 1 Bool (Var 1)) (Cons (Abs 1 Bool (Crash "foo" Bool)) (Nil (Bool :-> Bool))),
     -- * non-recursive functions on lists
-    Abs 1 (List Bool) (Case (Var 1) (Con True) 2 3 (Con False)),
-    Abs 1 (List Bool) (Case (Var 1) (Crash "head" Bool) 2 3 (Var 2)),
-    Abs 1 (List Bool) (Case (Var 1) (Crash "tail" (List Bool)) 2 3 (Var 3)),
+    "" # Abs 1 (List Bool) (Case (Var 1) (Con True) 2 3 (Con False)),
+    "head" # Abs 1 (List Bool) (Case (Var 1) (Crash "head" Bool) 2 3 (Var 2)),
+    "tail" # Abs 1 (List Bool) (Case (Var 1) (Crash "tail" (List Bool)) 2 3 (Var 3)),
     -- * recursive functions on lists
-    ex29,
-    Fix ex29,
-    exMap,
-    Fix exMap,
-    App (Fix exMap) (Abs 5 Bool (Var 5)),
-    App (Fix exMap) (App (Abs 5 Bool (Abs 6 Bool (Var 5))) (Crash "E" Bool)),
-    exFilter,
-    Fix exFilter,
-    exRisers,
-    Fix exRisers,
-    exCrashOrDiverge1,
-    exCrashOrDiverge2,
-    exCrashOrDiverge3,
+    "" # ex29,
+    "" # Fix ex29,
+    "" # exMap,
+    "map" # Fix exMap,
+    "map id" # App (Fix exMap) (Abs 5 Bool (Var 5)),
+    "map (const E)" # App (Fix exMap) (App (Abs 5 Bool (Abs 6 Bool (Var 5))) (Crash "E" Bool)),
+    "" # exFilter,
+    "filter" # Fix exFilter,
+    "" # exRisers,
+    "risers" # Fix exRisers,
+    "" # exCrashOrDiverge1,
+    "" # exCrashOrDiverge2,
+    "" # exCrashOrDiverge3,
     -- * higher-order functions & eta-reduction
-    exApply,
-    exApply',       -- exception types are not invariant under eta-reduction!
-    exHApply,
-    App exHApply exApply,
-    exCompose,
-    exHCompose,     -- FIXME: should those EmptySets be there? (GONE NOW?)
-    exHCompose',    -- FIXME: e14 and e17 have been eta-expanded. is this okay?
-    App exHCompose exCompose,
-    App exHCompose' exCompose
+    "apply" # exApply,
+    "apply'" # exApply',       -- exception types are not invariant under eta-reduction!
+    "happly" # exHApply,
+    "happly apply" # App exHApply exApply,
+    "compose" # exCompose,
+    "hcompose" # exHCompose,     -- FIXME: should those EmptySets be there? (GONE NOW?)
+    "hcompose'" # exHCompose',    -- FIXME: e14 and e17 have been eta-expanded. is this okay?
+    "hcompose compose" # App exHCompose exCompose,
+    "hcompose' compose" # App exHCompose' exCompose
     -- * very high-order
   ] where
         ex29 = Abs 1 (List Bool :-> List Bool) $ Abs 2 (List Bool) $

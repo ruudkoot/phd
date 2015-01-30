@@ -71,7 +71,7 @@ homePage = ok $ template "Higher-Ranked Exception Types" $ do
     H.p $ a ! href "/lambda-union" $ "lambda-union"
     H.p $ a ! href "/hret"         $ "higher-ranked exception types"
 
-expressionForm :: Text -> [Text] -> H.AttributeValue -> [String] -> ServerPart Response
+expressionForm :: Text -> [Text] -> H.AttributeValue -> [(String,String,Html)] -> ServerPart Response
 expressionForm title notes url examples = do
     method GET
     ok $ template title $ do
@@ -81,8 +81,10 @@ expressionForm title notes url examples = do
             input ! type_ "submit"
         when (not (null examples)) $ do
             H.h2 "Examples"
-            H.ol $ forM_ examples $ \example -> do
-                H.li $ H.a ! A.href "javascript:void(0);" ! A.onclick (H.toValue $ "$('#expr').val('" ++ example ++ "');") $ H.code $ toHtml example
+            H.ol $ forM_ examples $ \(label,code,pretty) -> do
+                H.li $ H.a ! A.href "javascript:void(0);" ! A.onclick (H.toValue $ "$('#expr').val('" ++ code ++ "');") $ do
+                    toHtml $ label ++ " = "
+                    pretty
 
 expressionForm3 :: Text -> H.AttributeValue -> ServerPart Response
 expressionForm3 title url = do
