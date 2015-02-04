@@ -7,6 +7,8 @@ module Analysis.Infer.Print (
     latexCheck
 ) where
 
+import Control.Monad (forM)
+
 import Text.Blaze.Html5 (ToMarkup)
 import Text.Blaze.Html5 ((!))
 import qualified Text.Blaze.Html5 as H
@@ -30,6 +32,8 @@ instance Latex (Name, Exn) where
 
 -- | Reconstruction
 
+-- * Derivation tree
+
 instance ToMarkup Reconstruct where
     toMarkup (ReconstructVar   env kenv tm _ _ _)
         = derive "R-Var" [] ""
@@ -48,7 +52,7 @@ instance ToMarkup Reconstruct where
         = derive "R-Crash" [] ""
     toMarkup (ReconstructSeq   env kenv tm (re1,_,_,_) (re2,_,_,_) _)
         = derive "R-Seq" (map H.toMarkup [re1, re2]) ""
-    toMarkup (ReconstructFix   env kenv tm (re,_,_,_) _ _ _ _ _ _ _)
+    toMarkup (ReconstructFix   env kenv tm (re,_,_,_) _ _ _ _ _ _ _ _ _ _)
         = derive "R-Fix" (map H.toMarkup [re]) ""
     toMarkup (ReconstructNil   env kenv tm _)
         = derive "R-Nil" [] ""
@@ -57,6 +61,8 @@ instance ToMarkup Reconstruct where
     toMarkup (ReconstructCase  env kenv tm 
                     (re1,_,_,_) (re2,_,_,_) _  (re3,_,_,_) _ _)
         = derive "R-Case" (map H.toMarkup [re1, re2, re3]) ""
+
+-- * Algorithm trace
 
 reconstructHtml :: Reconstruct -> [H.Html]
 reconstructHtml (ReconstructVar env kenv tm t exn result)
@@ -155,13 +161,17 @@ reconstructHtml (ReconstructSeq env kenv tm re1@(_,_,_,kenv1) re2@(_,_,_,kenv2) 
         htmlReconstruct (kenv2 ++ kenv) re2 "2"
         htmlResult kenv result
       ) ++ recurse [re1, re2]
-reconstructHtml (ReconstructFix env kenv tm re@(_,_,_,kenv1) ins subst1 subst2 subst3 ty exn result)
+reconstructHtml (ReconstructFix env kenv tm re@(_,_,_,kenv1) ins subst1 subst2 subst3 ty_ exn_ t_0 exn_0 km@(trace, t_w, exn_w) result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
         htmlDo "reconstruct env kenv e1"
         htmlReconstruct (kenv1 ++ kenv) re "1"
         htmlDo "instantiate t1"
         htmlInstantiate ins
+        -- METHOD 1
+        H.tr $ do
+            H.td $ ""
+            H.td ! A.colspan "4" $ "--- METHOD 1"
         H.tr $ do
             H.td $ ""
             H.td $ "subst1"
@@ -177,6 +187,43 @@ reconstructHtml (ReconstructFix env kenv tm re@(_,_,_,kenv1) ins subst1 subst2 s
             H.td $ "subst3"
             H.td ! A.colspan "3" $ "= ???"
         rowRes $ mathjax' subst3
+        H.tr $ do
+            H.td $ ""
+            H.td $ "$\\tau$"
+            H.td ! A.colspan "3" $ "= ???"
+        rowRes $ mathjax' ty_
+        H.tr $ do
+            H.td $ ""
+            H.td $ "$\\chi$"
+            H.td ! A.colspan "3" $ "= ???"
+        rowRes $ mathjax' exn_
+        -- METHOD 2
+        H.tr $ do
+            H.td $ ""
+            H.td ! A.colspan "4" $ "--- METHOD 2"
+        H.tr $ do
+            H.td $ ""
+            H.td $ ""
+            H.td ! A.colspan "3" $ "-- initialization"
+        rowRes $ mathjax' t_0
+        rowRes $ mathjax' exn_0
+        forM trace $ \(t_i,exn_i,t',exn',subst',subst,t_j,t_j',exn_j,exn_j') -> do
+            H.tr $ do
+                H.td $ ""
+                H.td $ ""
+                H.td ! A.colspan "3" $ "-- iteration"
+            trEquals "\\widehat\\tau_i" (latex t_i)
+            trEquals "\\widehat\\tau^\\prime" (latex t')
+            trAssign "\\theta^\\prime" ("match(\\epsilon; \\widehat\\tau_i; \\widehat\\tau^\\prime)")
+            trReduce (latex subst')
+            trAssign "\\theta" ("\\left[\\beta^\\prime\\mapsto\\psi_i\\right]\\circ match(\\epsilon; \\widehat\\tau_i; \\widehat\\tau^\\prime)")
+            trReduce (latex subst)
+            trAssign "\\widehat\\tau_{i+1}" "\\theta\\widehat\\tau^{\\prime\\prime}"
+            trReduce    (latex t_j)
+            trNormalize (latex t_j')
+            rowRes $ mathjax' t_j'
+
+        -- RESULT
         htmlResult kenv result
       ) ++ recurse [re]
 reconstructHtml (ReconstructNil env kenv tm result)
@@ -240,6 +287,33 @@ trAssign name expr = do
         H.td $ ""
         H.td $ H.toHtml $ "$" ++ name ++ "$"
         H.td $ "$\\leftarrow$"
+        H.td $ H.toHtml $ "$" ++ expr ++ "$"
+
+trEquals :: String -> String -> H.Html
+trEquals name expr = do
+    H.tr $ do
+        H.td $ ""
+        H.td $ ""
+        H.td $ H.toHtml $ "$" ++ name ++ "$"
+        H.td $ "$=$"
+        H.td $ H.toHtml $ "$" ++ expr ++ "$"
+        
+trReduce :: String -> H.Html
+trReduce expr = do
+    H.tr $ do
+        H.td $ ""
+        H.td $ ""
+        H.td $ ""
+        H.td $ "$\\leadsto$"
+        H.td $ H.toHtml $ "$" ++ expr ++ "$"
+
+trNormalize :: String -> H.Html
+trNormalize expr = do
+    H.tr $ do
+        H.td $ ""
+        H.td $ ""
+        H.td $ ""
+        H.td $ "$\\Downarrow$"
         H.td $ H.toHtml $ "$" ++ expr ++ "$"
 
 trCode :: String -> H.Html

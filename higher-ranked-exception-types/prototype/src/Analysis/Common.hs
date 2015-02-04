@@ -10,6 +10,7 @@ module Analysis.Common (
     Lbl,
     Exn(..),
     ExnTy(..),
+    underlying,
     fevExn,
     fevExnTy,
     checkExnTy,
@@ -251,6 +252,15 @@ data ExnTy
     | ExnArr  ExnTy Exn ExnTy Exn
     deriving (Read, Show)
 
+-- * Underlying type
+
+underlying :: ExnTy -> Ty
+underlying (ExnForall _ _ t)  = underlying t
+underlying (ExnBool)          = Bool
+underlying (ExnInt)           = Int
+underlying (ExnList t _)      = List (underlying t)
+underlying (ExnArr t1 _ t2 _) = underlying t1 :-> underlying t2
+
 -- * Sanity checking
 
 checkExnTy :: KindEnv -> ExnTy -> Bool
@@ -307,7 +317,7 @@ simplifyExnTy env (ExnArr t1 exn1 t2 exn2)
     = ExnArr (simplifyExnTy env t1) (simplifyExn env exn1)
              (simplifyExnTy env t2) (simplifyExn env exn2)
              
-simplifyExn :: KindEnv -> Exn -> Exn
+simplifyExn :: KindEnv -> Exn -> Exn    -- FIXME: why didn't we need the environment?
 simplifyExn _env = exnNormalize
 
 -- * Equality tests

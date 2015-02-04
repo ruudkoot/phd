@@ -66,7 +66,7 @@ complete env0 ty@(List t) = do
            ,exnFromEnv (ExnVar e) env0
            ,env1 ++ [(e, kindFromEnv env0)])
 complete env0 ty@(t1 :-> t2) = do
-    (dt1', t1', exn1, env1) <- complete [] t1 -- fully-flexible = in any context
+    (dt1', t1', exn1, env1) <- complete [] t1 -- fully-flexible = in any context?
     e <- fresh
     (dt2', t2', exn2, env2) <- complete (env1 ++ env0) t2
     return $ CompleteArr env0 dt1' dt2' ty #
@@ -91,7 +91,7 @@ bottomExnTy :: Ty -> Fresh ExnTy
 bottomExnTy ty = do
     (_, exnTy, _, kenv) <- complete [] ty
     let fvSubst = map (\(x,k) -> (x, kindedEmpty k)) kenv
-    return (substExnTy' fvSubst exnTy)
+    return (simplifyExnTy [] (substExnTy' fvSubst exnTy))
 
 -- * Helper functions
 

@@ -86,16 +86,45 @@ reconstruct env kenv tm@(Seq e1 e2)
 reconstruct env kenv tm@(Fix e1)   -- FIXME: not known to be sound (see notes)
     = do re@(_, t1, exn1, kenv1) <- reconstruct env kenv e1
          ins@(ExnArr t' (ExnVar exn') t'' exn'', kenv') <- instantiate t1
+
+         -- METHOD 1 ("unification")
          subst1 <- match [] t'' t'
          let subst2 = [(exn', substExn' subst1 exn'')]
-         let subst3 = map (\(x,k) -> (x, C.kindedEmpty k)) kenv' -- FIXME: masking
-         let t_   = substExnTy' (subst2 <.> subst1) t'
-         let exn_ = substExn'   (subst2 <.> subst1) exn''
-         return $ ReconstructFix env kenv tm re ins subst1 subst2 subst3 t_ exn_ # 
-            ( substExnTy' subst3 (simplifyExnTy (kenv' ++ kenv1 ++ kenv) t_)
-            , substExn'   subst3 (simplifyExn (kenv' ++ kenv1 ++ kenv) exn_)
-            , kenv' ++ kenv1
-            ) -- FIXME: ^ substitution composion seems broken...
+         let subst3 = map (\(x,k) -> (x, C.kindedEmpty k)) kenv' -- FIXME: "masking"
+         let t_   = substExnTy' subst3 $ simplifyExnTy (kenv' ++ kenv1 ++ kenv) $
+                        substExnTy' (subst2 <.> subst1) t'
+         let exn_ = substExn' subst3 $ simplifyExn (kenv' ++ kenv1 ++ kenv) $
+                        substExn' (subst2 <.> subst1) exn''
+            -- FIXME: ^ substitution composition seems broken...
+
+         -- METHOD 2 (fixpoint iteration)
+         let f t_i exn_i = do
+                subst' <- match [] t_i t'
+                let subst = [(exn', exn_i)] <.> subst'
+                return (t_i
+                       ,exn_i
+                       ,t'      -- constant
+                       ,exn'    -- constant
+                       ,subst'
+                       ,subst
+                       ,substExnTy' subst t''
+                       ,simplifyExnTy kenv $ substExnTy' subst t''
+                       ,substExn' subst exn''
+                       ,simplifyExn   kenv $ substExn' subst exn''
+                       )
+         let kleeneMycroft trace t_i exn_i = do    -- TODO: abstract to fixpointM
+                tr@(_,_,_,_,_,_,_,t_j,_,exn_j) <- f t_i exn_i
+                if exnTyEq kenv t_i t_j && exnEq kenv exn_i exn_j
+                then return (trace, t_i, exn_i)
+                else kleeneMycroft (trace ++ [tr]) t_j exn_j
+         t0 <- C.bottomExnTy (underlying t')
+         let exn0 = ExnEmpty        -- FIXME: exn1?
+         km@(_, t_w, exn_w) <- kleeneMycroft [] t0 exn0
+
+         return $ ReconstructFix env kenv tm re ins
+                                 subst1 subst2 subst3 t_ exn_
+                                 t0 exn0 km
+                # (simplifyExnTy kenv t_, simplifyExn kenv exn_, kenv' ++ kenv1)
 
 reconstruct env kenv tm@(Nil ty)
     = do ty' <- C.bottomExnTy ty
@@ -120,7 +149,7 @@ reconstruct env kenv tm@(Case e1 e2 x1 x2 e3)
          let exn = ExnUnion exn1 (ExnUnion exn2 exn3)
          return $ ReconstructCase env kenv tm re1 re2 env' re3 t # 
             (t, exn, kenv3 ++ kenv2 ++ kenv1)
-         
+
 -- | Kind reconstruction
 
 -- FIXME: do we need the missing cases? (or why not?)
