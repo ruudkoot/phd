@@ -83,11 +83,11 @@ reconstruct env kenv tm@(Seq e1 e2)
          return $ ReconstructSeq env kenv tm re1 re2 #
             (t2, ExnUnion exn1 exn2, kenv2 ++ kenv1)
 
-reconstruct env kenv tm@(Fix e1)   -- FIXME: not known to be sound (see notes)
+reconstruct env kenv tm@(Fix e1)   -- FIXME: METHOD 1 not known to be sound (see notes)
     = do re@(_, t1, exn1, kenv1) <- reconstruct env kenv e1
          ins@(ExnArr t' (ExnVar exn') t'' exn'', kenv') <- instantiate t1
 
-         -- METHOD 1 ("unification")
+         -- METHOD 1 ("unification": works on examples with ad hoc masking step)
          subst1 <- match [] t'' t'
          let subst2 = [(exn', substExn' subst1 exn'')]
          let subst3 = map (\(x,k) -> (x, C.kindedEmpty k)) kenv' -- FIXME: "masking"
@@ -99,21 +99,25 @@ reconstruct env kenv tm@(Fix e1)   -- FIXME: not known to be sound (see notes)
 
          -- METHOD 2 (fixpoint iteration)
          let f t_i exn_i = do
-                subst' <- match [] t_i t'
+                ins@(ExnArr t' (ExnVar exn') t'' exn'', kenv') <- instantiate t1
+                subst' <- match [] t_i t'   -- ^ necessary to do this inside the loop?
                 let subst = [(exn', exn_i)] <.> subst'
                 return (t_i
                        ,exn_i
-                       ,t'      -- constant
-                       ,exn'    -- constant
+                       ,t'      -- no longer constant (with I inside the loop)
+                       ,exn'    -- no longer constant (with I inside the loop)
+                       ,t''     -- no longer constant (with I inside the loop)
+                       ,exn''   -- no longer constant (with I inside the loop)
+                       ,kenv'   -- no longer constant (with I inside the loop)
                        ,subst'
                        ,subst
                        ,substExnTy' subst t''
                        ,simplifyExnTy kenv $ substExnTy' subst t''
                        ,substExn' subst exn''
                        ,simplifyExn   kenv $ substExn' subst exn''
-                       )
+                       )                           -- TODO: accelerate
          let kleeneMycroft trace t_i exn_i = do    -- TODO: abstract to fixpointM
-                tr@(_,_,_,_,_,_,_,t_j,_,exn_j) <- f t_i exn_i
+                tr@(_,_,_,_,_,_,_,_,_,_,t_j,_,exn_j) <- f t_i exn_i
                 if exnTyEq kenv t_i t_j && exnEq kenv exn_i exn_j
                 then return (trace, t_i, exn_i)
                 else kleeneMycroft (trace ++ [tr]) t_j exn_j
@@ -124,7 +128,7 @@ reconstruct env kenv tm@(Fix e1)   -- FIXME: not known to be sound (see notes)
          return $ ReconstructFix env kenv tm re ins
                                  subst1 subst2 subst3 t_ exn_
                                  t0 exn0 km
-                # (simplifyExnTy kenv t_, simplifyExn kenv exn_, kenv' ++ kenv1)
+                # (simplifyExnTy kenv t_w, simplifyExn kenv exn_w, kenv' ++ kenv1)
 
 reconstruct env kenv tm@(Nil ty)
     = do ty' <- C.bottomExnTy ty
@@ -137,7 +141,7 @@ reconstruct env kenv tm@(Cons e1 e2)
          let t = join t1 t2
          let t' = ExnList t (ExnUnion exn1 exn2')
          return $ ReconstructCons env kenv tm re1 re2 t # 
-            (simplifyExnTy (kenv2 ++ kenv1 ++ kenv) t', exn2', kenv2 ++ kenv1)
+            (simplifyExnTy (kenv2 ++ kenv1 ++ kenv) t', exn2, kenv2 ++ kenv1)
 
 reconstruct env kenv tm@(Case e1 e2 x1 x2 e3)
     = do re1@(_, ExnList t1 exn1', exn1, kenv1) <- reconstruct env  kenv  e1

@@ -207,13 +207,20 @@ reconstructHtml (ReconstructFix env kenv tm re@(_,_,_,kenv1) ins subst1 subst2 s
             H.td ! A.colspan "3" $ "-- initialization"
         rowRes $ mathjax' t_0
         rowRes $ mathjax' exn_0
-        forM trace $ \(t_i,exn_i,t',exn',subst',subst,t_j,t_j',exn_j,exn_j') -> do
+        forM trace $ \(t_i, exn_i, t', exn', t'', exn'', kenv',
+                       subst', subst, t_j, t_j', exn_j, exn_j') -> do
             H.tr $ do
                 H.td $ ""
                 H.td $ ""
                 H.td ! A.colspan "3" $ "-- iteration"
             trEquals "\\widehat\\tau_i" (latex t_i)
+            trEquals "\\psi_i" (latex exn_i)
+            trAssign "\\widehat\\tau^\\prime\\langle\\beta^\\prime\\rangle\\rightarrow\\widehat\\tau^{\\prime\\prime}\\langle\\psi^{\\prime\\prime}\\rangle;\\Delta^\\prime" "\\mathrm{instantiate}(t_1)"
             trEquals "\\widehat\\tau^\\prime" (latex t')
+            trEquals "\\beta^\\prime" ("e_{" ++ show exn' ++ "}")
+            trEquals "\\widehat\\tau^{\\prime\\prime}" (latex t'')
+            trEquals "\\psi^{\\prime\\prime}" (latex exn'')
+            trEquals "\\Delta^\\prime" (latex kenv')
             trAssign "\\theta^\\prime" ("match(\\epsilon; \\widehat\\tau_i; \\widehat\\tau^\\prime)")
             trReduce (latex subst')
             trAssign "\\theta" ("\\left[\\beta^\\prime\\mapsto\\psi_i\\right]\\circ match(\\epsilon; \\widehat\\tau_i; \\widehat\\tau^\\prime)")
@@ -221,8 +228,6 @@ reconstructHtml (ReconstructFix env kenv tm re@(_,_,_,kenv1) ins subst1 subst2 s
             trAssign "\\widehat\\tau_{i+1}" "\\theta\\widehat\\tau^{\\prime\\prime}"
             trReduce    (latex t_j)
             trNormalize (latex t_j')
-            rowRes $ mathjax' t_j'
-
         -- RESULT
         htmlResult kenv result
       ) ++ recurse [re]
