@@ -70,8 +70,11 @@ inferenceExamples = map (\(l,x) -> (l, show x, mathjax' x)) [
     "" # Fix ex29,
     "" # exMap,
     "map" # Fix exMap,
-    "map id" # App (Fix exMap) (Abs 5 Bool (Var 5)),
-    "map (const E)" # App (Fix exMap) (App (Abs 5 Bool (Abs 6 Bool (Var 5))) (Crash "E" Bool)),
+    "map id" # App (Fix exMap) (Abs 6 Bool (Var 6)),
+    "map (const E)" # App (Fix exMap) (App (Abs 6 Bool (Abs 7 Bool (Var 6))) (Crash "E" Bool)),
+    "evilMap" # Fix exEvilMap,
+    "evilMap id" # App (Fix exEvilMap) (Abs 8 Bool (Var 8)),
+    "evilMap (const E)" # App (Fix exEvilMap) (App (Abs 8 Bool (Abs 9 Bool (Var 8))) (Crash "E" Bool)),
     "" # exFilter,
     "filter" # Fix exFilter,
     "" # exRisers,
@@ -91,12 +94,20 @@ inferenceExamples = map (\(l,x) -> (l, show x, mathjax' x)) [
     "hcompose' compose" # App exHCompose' exCompose
     -- * very high-order
   ] where
-        ex29 = Abs 1 (List Bool :-> List Bool) $ Abs 2 (List Bool) $
+        ex29 =
+            Abs 1 (List Bool :-> List Bool) $ Abs 2 (List Bool) $
                 Case (Var 2) (Nil Bool) 3 4 (Cons (Var 3) (App (Var 1) (Var 4)))
-        exMap = Abs 1 ((Bool :-> Bool) :-> (List Bool :-> List Bool)) $
+        exMap =
+            Abs 1 ((Bool :-> Bool) :-> (List Bool :-> List Bool)) $
                 Abs 2 (Bool :-> Bool) $ Abs 3 (List Bool) $
                     Case (Var 3) (Nil Bool) 4 5
                          (Cons (App (Var 2) (Var 4)) (App (App (Var 1) (Var 2)) (Var 5)))
+        exEvilMap =     -- METHOD 1: sound / METHOD 2: sound, 2 iterations
+            Abs 1 ((Bool :-> Bool) :-> (List Bool :-> List Bool)) $
+                Seq (Crash "X" Bool) $
+                    Abs 2 (Bool :-> Bool) $ Abs 3 (List Bool) $
+                        Case (Var 3) (Nil Bool) 4 5
+                             (Cons (App (Var 2) (Var 4)) (App (App (Var 1) (Var 2)) (Var 5)))
         exFilter =
             Abs 1 ((Bool :-> Bool) :-> (List Bool :-> List Bool)) $
                 Abs 2 (Bool :-> Bool) $ Abs 3 (List Bool) $
