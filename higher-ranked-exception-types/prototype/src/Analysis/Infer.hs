@@ -72,9 +72,14 @@ inferenceExamples = map (\(l,x) -> (l, show x, mathjax' x)) [
     "map" # Fix exMap,
     "map id" # App (Fix exMap) (Abs 6 Bool (Var 6)),
     "map (const E)" # App (Fix exMap) (App (Abs 6 Bool (Abs 7 Bool (Var 6))) (Crash "E" Bool)),
+    -- * METHOD 1: sound / METHOD 2: sound, 2 iterations
     "evilMap" # Fix exEvilMap,
     "evilMap id" # App (Fix exEvilMap) (Abs 8 Bool (Var 8)),
     "evilMap (const E)" # App (Fix exEvilMap) (App (Abs 8 Bool (Abs 9 Bool (Var 8))) (Crash "E" Bool)),
+    -- * METHOD 1: UNSOUND? / METHOD 2: sound?, 2 iterations
+    "satanicMap" # Fix exSatanicMap,
+    "satanicMap id" # App (Fix exSatanicMap) (Abs 8 Bool (Var 8)),
+    "satanicMap (const E)" # App (Fix exSatanicMap) (App (Abs 8 Bool (Abs 9 Bool (Var 8))) (Crash "E" Bool)),
     "" # exFilter,
     "filter" # Fix exFilter,
     "" # exRisers,
@@ -100,14 +105,20 @@ inferenceExamples = map (\(l,x) -> (l, show x, mathjax' x)) [
         exMap =
             Abs 1 ((Bool :-> Bool) :-> (List Bool :-> List Bool)) $
                 Abs 2 (Bool :-> Bool) $ Abs 3 (List Bool) $
-                    Case (Var 3) (Nil Bool) 4 5
-                         (Cons (App (Var 2) (Var 4)) (App (App (Var 1) (Var 2)) (Var 5)))
-        exEvilMap =     -- METHOD 1: sound / METHOD 2: sound, 2 iterations
+                    Case (Var 3) (Nil Bool) 4 5 $
+                         Cons (App (Var 2) (Var 4)) (App (App (Var 1) (Var 2)) (Var 5))
+        exEvilMap =
             Abs 1 ((Bool :-> Bool) :-> (List Bool :-> List Bool)) $
                 Seq (Crash "X" Bool) $
                     Abs 2 (Bool :-> Bool) $ Abs 3 (List Bool) $
-                        Case (Var 3) (Nil Bool) 4 5
-                             (Cons (App (Var 2) (Var 4)) (App (App (Var 1) (Var 2)) (Var 5)))
+                        Case (Var 3) (Nil Bool) 4 5 $
+                             Cons (App (Var 2) (Var 4)) (App (App (Var 1) (Var 2)) (Var 5))
+        exSatanicMap =
+            Abs 1 ((Bool :-> Bool) :-> (List Bool :-> List Bool)) $
+                Abs 2 (Bool :-> Bool) $ Abs 3 (List Bool) $
+                    Case (Var 3) (Nil Bool) 4 5 $ Seq
+                        (Case (App (App (Var 1) (Var 2)) (Var 5)) (Crash "A" Bool) 6 7 (Var 6))
+                        (Cons (App (Var 2) (Var 4)) (App (App (Var 1) (Var 2)) (Var 5)))
         exFilter =
             Abs 1 ((Bool :-> Bool) :-> (List Bool :-> List Bool)) $
                 Abs 2 (Bool :-> Bool) $ Abs 3 (List Bool) $
