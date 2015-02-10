@@ -53,6 +53,14 @@ inferenceExamples = map (\(l,x) -> (l, show x, mathjax' x)) [
     "" # Abs 1 Bool $ Seq (Var 1) (Abs 2 Bool $ Var 1),
     -- * recursive functions
     "" # Fix (Abs 1 (Bool :-> Bool) (Abs 2 Bool (App (Var 1) (Var 2)))),
+    -- * METHOD 1: UNSOUND / METHOD 2: sound, 2 iterations
+    "dhm" # Fix $ Abs 1 (Bool :-> (Bool :-> Bool)) $ Abs 2 Bool $ Abs 3 Bool $
+                If (Var 2) (Con True) (App (App (Var 1) (Var 3)) (Var 2)),
+    -- * METHOD 1: UNSOUND / METHOD 2: sound, 3 iterations
+    "dhm3" # Fix $ Abs 1 (Bool :-> (Bool :-> (Bool :-> Bool))) $
+                Abs 2 Bool $ Abs 3 Bool $ Abs 4 Bool $
+                    If (Var 2) (Con True) $
+                        App (App (App (Var 1) (Var 4)) (Var 2)) (Var 3),
     -- * lists
     "" # Nil Bool,
     "" # Nil (Bool :-> Bool),
@@ -76,7 +84,7 @@ inferenceExamples = map (\(l,x) -> (l, show x, mathjax' x)) [
     "evilMap" # Fix exEvilMap,
     "evilMap id" # App (Fix exEvilMap) (Abs 8 Bool (Var 8)),
     "evilMap (const E)" # App (Fix exEvilMap) (App (Abs 8 Bool (Abs 9 Bool (Var 8))) (Crash "E" Bool)),
-    -- * METHOD 1: UNSOUND? / METHOD 2: sound?, 2 iterations
+    -- * METHOD 1: UNSOUND / METHOD 2: sound, 2 iterations
     "satanicMap" # Fix exSatanicMap,
     "satanicMap id" # App (Fix exSatanicMap) (Abs 8 Bool (Var 8)),
     "satanicMap (const E)" # App (Fix exSatanicMap) (App (Abs 8 Bool (Abs 9 Bool (Var 8))) (Crash "E" Bool)),
@@ -113,7 +121,7 @@ inferenceExamples = map (\(l,x) -> (l, show x, mathjax' x)) [
                     Abs 2 (Bool :-> Bool) $ Abs 3 (List Bool) $
                         Case (Var 3) (Nil Bool) 4 5 $
                              Cons (App (Var 2) (Var 4)) (App (App (Var 1) (Var 2)) (Var 5))
-        exSatanicMap =
+        exSatanicMap =  -- Note the recursion in the guard of the inner case.
             Abs 1 ((Bool :-> Bool) :-> (List Bool :-> List Bool)) $
                 Abs 2 (Bool :-> Bool) $ Abs 3 (List Bool) $
                     Case (Var 3) (Nil Bool) 4 5 $ Seq

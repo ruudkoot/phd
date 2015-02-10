@@ -141,11 +141,11 @@ instance Latex Expr where
     latex (Fix e)
         = "(\\mathbf{fix}\\ " ++ latex e ++ ")"
     latex (Nil t)
-        = "(\\epsilon:" ++ latex t ++ ")"
+        = "(\\varepsilon:" ++ latex t ++ ")"
     latex (Cons e1 e2)
         = "(" ++ latex e1 ++ " :: " ++ latex e2 ++ ")"
     latex (Case e1 e2 x1 x2 e3)
-        = "(\\mathbf{case}\\ " ++ latex e1 ++ "\\ \\mathbf{of}\\ \\{ ε \\mapsto "
+        = "(\\mathbf{case}\\ " ++ latex e1 ++ "\\ \\mathbf{of}\\ \\{ \\varepsilon \\mapsto "
             ++ latex e2 ++ "; x_{" ++ show x1 ++ "}::x_{" ++ show x2 ++ "} \\mapsto "
             ++ latex e3 ++ "\\})"
 
