@@ -1,0 +1,17 @@
+\section{Type system}
+
+\begin{align}
+    \Tm \in \ClassTm &&::=  \quad &\TmVar                   \tag{term variable}         \\
+                     &&||   \quad &\TmCon                   \tag{term constant}         \\
+                     &&||   \quad &\TmAbs{\TmVar}{\Ty}{\Tm} \tag{term abstraction}      \\
+                     &&||   \quad &\TmApp{\Tm_1}{\Tm_2}     \tag{term application}      \\
+                     &&||   \quad &\TmOp{\Tm_1}{\Tm_2}      \tag{operator}              \\
+                     &&||   \quad &\TmIf{\Tm_1}{\Tm_2}{\Tm_3}\tag{conditional}          \\
+                     &&||   \quad &\TmCrash{\ExnLbl}        \tag{exception constant}    \\
+                     &&||   \quad &\TmSeq{\Tm_1}{\Tm_2}     \tag{forcing}               \\
+                     &&||   \quad &\TmFix{\Tm}              \tag{anonymous fixpoint}    \\
+                     &&||   \quad &\TmNil{\Ty}              \tag{nil constructor}       \\
+                     &&||   \quad &\TmCons{\Tm_1}{\Tm_2}    \tag{cons constructor}      \\
+                     &&||   \quad &\TmCase{\Tm_1}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}
+                                                            \tag{list eliminator}
+\end{align}

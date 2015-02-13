@@ -1,0 +1,25 @@
+\newcommand{\ClassVar}{\mathbf{Var}}
+\newcommand{\ClassCon}{\mathbf{Con}}
+\newcommand{\ClassTm}{\mathbf{Tm}}
+
+\newcommand{\Tm}{t}
+\newcommand{\TmVar}{x}
+\newcommand{\TmCon}{c}
+\newcommand{\TmAbs}[3]{\lambda #1 : #2. #3}
+\newcommand{\TmApp}[2]{#1\ #2}
+\newcommand{\TmOp}[2]{#1 \oplus #2}
+\newcommand{\TmIf}[3]{\mathbf{if}\ #1\ \mathbf{then}\ #2\ \mathbf{else}\ #3}
+\newcommand{\TmCrash}[1]{\lightning^{#1}}
+\newcommand{\TmSeq}[2]{#1\ \mathbf{seq}\ #2}
+\newcommand{\TmFix}[1]{\mathbf{fix}\ #1}
+\newcommand{\TmNil}[1]{\left[\right]_{#1}}
+\newcommand{\TmCons}[2]{#1 :: #2}
+\newcommand{\TmCase}[5]{\mathbf{case}\ #1\ \mathbf{of}\ \{\left[\right]\mapsto #2; #3 :: #4 \mapsto #5\}}
+
+\newcommand{\ExnLbl}{\ell}
+
+\newcommand{\ClassType}{\mathbf{Ty}}
+\newcommand{\Ty}{\tau}
+\newcommand{\TyBool}{\mathbf{bool}}
+\newcommand{\TyList}[1]{\left[#1\right]}
+\newcommand{\TyArr}[2]{#1 \to #2}

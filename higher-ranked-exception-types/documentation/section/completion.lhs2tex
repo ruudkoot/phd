@@ -2,11 +2,11 @@
 
 \begin{align}
     \Kind \in \ClassKind &&::= \quad &\KindEXN \tag{exception} \\
-                &&||  \quad &\Kind_1 \KindArr \Kind_2 \tag{exception operator}
+                         &&||  \quad &\Kind_1 \KindArr \Kind_2 \tag{exception operator}
 \end{align}
 \begin{align}
     \Exn \in \ClassExn &&::= \quad &\ExnVar \tag{exception variables} \\
-                 &&||  \quad &\ExnAbs{\ExnVar}{\Kind}{\Exn} \tag{exception abstraction}\end{align}
+                       &&||  \quad &\ExnAbs{\ExnVar}{\Kind}{\Exn} \tag{exception abstraction}\end{align}
 \begin{align}
     \ExnTy \in \ClassExnTy &&::= \quad &\ExnForall{\ExnVar :: \Kind}\ExnTy \tag{exception quantification} \\
                  &&||  \quad &\ExnTyBool \tag{boolean type} \\
