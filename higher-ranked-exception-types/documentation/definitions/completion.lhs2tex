@@ -17,11 +17,14 @@
 \newcommand{\ExnTyArr}[4]{\Throws{#1}{#2} \to \Throws{#3}{#4}}
 \newcommand{\ExnForall}[1]{\forall {#1}.}
 
-\newcommand{\Exn}{\chi}
+\newcommand{\Exn}{\varphi}
 \newcommand{\ExnVar}{e}
+\newcommand{\ExnCon}[1]{\{#1\}}
 \newcommand{\ExnAbs}[3]{\lambda #1 : #2 . #3}
 \newcommand{\ExnUnion}[2]{#1 \cup #2}
 \newcommand{\ExnEmpty}{\emptyset}
+
+\newcommand{\ExnBool}{\mathbf{b\widehat{oo}l}}
 
 \newcommand{\Kind}{\kappa}
 \newcommand{\KindEXN}{\textsc{e}}
