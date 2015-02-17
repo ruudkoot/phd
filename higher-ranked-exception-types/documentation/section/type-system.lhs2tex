@@ -1,17 +1,17 @@
 \section{Type system}
 
 \begin{align}
-    \Tm \in \ClassTm &&::=  \quad &\TmVar                   \tag{term variable}       \\
-                     &&||   \quad &\TmCon{\Ty}              \tag{term constant}       \\
-                     &&||   \quad &\TmAbs{\TmVar}{\Ty}{\Tm} \tag{term abstraction}    \\
-                     &&||   \quad &\TmApp{\Tm_1}{\Tm_2}     \tag{term application}    \\
-                     &&||   \quad &\TmOp{\Tm_1}{\Tm_2}      \tag{operator}            \\
-                     &&||   \quad &\TmIf{\Tm_1}{\Tm_2}{\Tm_3}\tag{conditional}        \\
-                     &&||   \quad &\TmCrash{\Ty}{\ExnLbl}   \tag{exception constant}  \\
-                     &&||   \quad &\TmSeq{\Tm_1}{\Tm_2}     \tag{forcing}             \\
-                     &&||   \quad &\TmFix{\Tm}              \tag{anonymous fixpoint}  \\
-                     &&||   \quad &\TmNil{\Ty}              \tag{nil constructor}     \\
-                     &&||   \quad &\TmCons{\Tm_1}{\Tm_2}    \tag{cons constructor}    \\
+    \Tm \in \ClassTm &&::=  \quad &\TmVar                   \tag{term variable}     \\
+                     &&||   \quad &\TmCon{\Ty}              \tag{term constant}     \\
+                     &&||   \quad &\TmAbs{\TmVar}{\Ty}{\Tm} \tag{term abstraction}  \\
+                     &&||   \quad &\TmApp{\Tm_1}{\Tm_2}     \tag{term application}  \\
+                     &&||   \quad &\TmOp{\Tm_1}{\Tm_2}      \tag{operator}          \\
+                     &&||   \quad &\TmIf{\Tm_1}{\Tm_2}{\Tm_3}\tag{conditional}      \\
+                     &&||   \quad &\TmCrash{\Ty}{\ExnLbl}   \tag{exception constant}\\
+                     &&||   \quad &\TmSeq{\Tm_1}{\Tm_2}     \tag{forcing}           \\
+                     &&||   \quad &\TmFix{\Tm}              \tag{anonymous fixpoint}\\
+                     &&||   \quad &\TmNil{\Ty}              \tag{nil constructor}   \\
+                     &&||   \quad &\TmCons{\Tm_1}{\Tm_2}    \tag{cons constructor}  \\
                      &&||   \quad &\TmCase{\Tm_1}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}
                                                             \tag{list eliminator}
 \end{align}
@@ -20,13 +20,13 @@
     \begin{gather*}
         \Rule{T-Var}
              {}
-             {\JudgeTy{\TyEnv, \TmVar : \Ty\ \&\ \Exn}
+             {\JudgeTy{\TyEnv, \TmVar : \ExnTy\ \&\ \Exn}
                       {\KiEnv}
                       {\TmVar}
-                      {\Ty}
+                      {\ExnTy}
                       {\Exn}
              }
-        \quad
+        \\\\
         \Rule{T-Con}
              {}
              {\JudgeTy{\TyEnv}
@@ -35,47 +35,96 @@
                       {\BottomTy{\Ty}}
                       {\ExnEmpty}
              }
+        \quad
+        \Rule{T-Crash}
+             {}
+             {\JudgeTy{\TyEnv}
+                      {\KiEnv}
+                      {\TmCrash{\Ty}{\ExnLbl}}
+                      {\BottomTy{\Ty}}
+                      {\ExnCon{\ExnLbl}}
+             }
         \\\\
-        \Rule{T-Abs}
+        \Rule{T-Abs (TODO)}
              {\JudgeTy{\TyEnv}
                       {\KiEnv}
                       {\Tm}
-                      {\Ty_2}
+                      {\ExnTy_2}
                       {\Exn}
              }
              {\JudgeTy{\TyEnv}
                       {\KiEnv}
                       {\TmAbs{\TmVar}{\Ty}{\Tm}}
-                      {\TyArr{\Ty_1}{\Ty_2}}
+                      {\ExnTyArr{\Ty_1}{?}{\Ty_2}{?}}
                       {\ExnEmpty}
              }
         \\\\
-        \Rule{T-App}
+        \Rule{T-App (TODO)}
              {\JudgeTy{\TyEnv}
                       {\KiEnv}
                       {\Tm_1}
-                      {\Ty}
+                      {\ExnTy}
                       {\Exn}
               \quad
               \JudgeTy{\TyEnv}
                       {\KiEnv}
                       {\Tm_2}
-                      {\Ty}
+                      {\ExnTy}
                       {\Exn}
              }
              {\JudgeTy{\TyEnv}
                       {\KiEnv}
                       {\TmApp{\Tm_1}{\Tm_2}}
-                      {\Ty}
+                      {\ExnTy}
                       {\Exn}
              }
         \\\\
-        \Rule{T-Op}
+        \Rule{T-Fix (TODO)}
              {}
              {\JudgeTy{\TyEnv}
                       {\KiEnv}
                       {\Tm}
-                      {\Ty}
+                      {\ExnTy}
+                      {\Exn}
+             }
+        \\\\
+        \Rule{T-Op}
+             {\JudgeTy{\TyEnv}
+                      {\KiEnv}
+                      {\Tm_1}
+                      {\ExnInt}
+                      {\Exn}
+              \quad
+              \JudgeTy{\TyEnv}
+                      {\KiEnv}
+                      {\Tm_2}
+                      {\ExnInt}
+                      {\Exn}
+             }
+             {\JudgeTy{\TyEnv}
+                      {\KiEnv}
+                      {\TmOp{\Tm_1}{\Tm_2}}
+                      {\ExnBool}
+                      {\Exn}
+             }
+        \\\\
+        \Rule{T-Seq}
+             {\JudgeTy{\TyEnv}
+                      {\KiEnv}
+                      {\Tm_1}
+                      {\ExnTy_1}
+                      {\Exn}
+              \quad
+              \JudgeTy{\TyEnv}
+                      {\KiEnv}
+                      {\Tm_2}
+                      {\ExnTy_2}
+                      {\Exn}
+             }
+             {\JudgeTy{\TyEnv}
+                      {\KiEnv}
+                      {\TmSeq{\Tm_1}{\Tm_2}}
+                      {\ExnTy_2}
                       {\Exn}
              }
         \\\\
@@ -103,59 +152,64 @@
                       {\TmIf{\Tm_1}{\Tm_2}{\Tm_3}}
                       {\ExnTy}
                       {\Exn}
-             }
-        \\\\
-        \Rule{T-Crash}
-             {}
-             {\JudgeTy{\TyEnv}
-                      {\KiEnv}
-                      {\TmCrash{\Ty}{\ExnLbl}}
-                      {\BottomTy{\Ty}}
-                      {\ExnCon{\ExnLbl}}
-             }
-        \\\\
-        \Rule{T-Seq}
-             {}
-             {\JudgeTy{\TyEnv}
-                      {\KiEnv}
-                      {\Tm}
-                      {\Ty}
-                      {\Exn}
-             }
-        \\\\
-        \Rule{T-Fix}
-             {}
-             {\JudgeTy{\TyEnv}
-                      {\KiEnv}
-                      {\Tm}
-                      {\Ty}
-                      {\Exn}
-             }
+             }             
         \\\\
         \Rule{T-Nil}
              {}
              {\JudgeTy{\TyEnv}
                       {\KiEnv}
-                      {\Tm}
-                      {\Ty}
-                      {\Exn}
+                      {\TmNil{\Ty}}
+                      {\ExnTyList{\BottomTy{\Ty}}{\ExnEmpty}}
+                      {\ExnEmpty}
              }
         \\\\
         \Rule{T-Cons}
-             {}
              {\JudgeTy{\TyEnv}
                       {\KiEnv}
-                      {\Tm}
-                      {\Ty}
-                      {\Exn}
+                      {\Tm_1}
+                      {\ExnTy}
+                      {\Exn_1}
+              \quad
+              \JudgeTy{\TyEnv}
+                      {\KiEnv}
+                      {\Tm_2}
+                      {\ExnTyList{\ExnTy}{\Exn_1}}
+                      {\Exn_2}
+             }
+             {\JudgeTy{\TyEnv}
+                      {\KiEnv}
+                      {\TmCons{\Tm_1}{\Tm_2}}
+                      {\ExnTyList{\ExnTy}{\Exn_1}}
+                      {\Exn_2}
              }
         \\\\
         \Rule{T-Case}
-             {}
+             {\begin{gathered}
+                  \JudgeTy{\TyEnv}
+                          {\KiEnv}
+                          {\Tm_1}
+                          {\ExnTyList{\ExnTy_1}{\Exn_1}}
+                          {\Exn^\prime}
+                  \quad
+                  \JudgeSubExn{\KiEnv}{\Exn^\prime}{\Exn}
+                  \quad
+                  \JudgeTy{\TyEnv}
+                          {\KiEnv}
+                          {\Tm_2}
+                          {\ExnTy}
+                          {\Exn}
+                  \\
+                  \JudgeTy{\TyEnv, \TmVar_1 : \ExnTy_1\ \&\ \Exn_1, \TmVar_2 : \ExnTyList{\ExnTy_1}{\Exn_1}\ \&\ \Exn^\prime}
+                          {\KiEnv}
+                          {\Tm_3}
+                          {\ExnTy}
+                          {\Exn}
+              \end{gathered}
+             }
              {\JudgeTy{\TyEnv}
                       {\KiEnv}
-                      {\Tm}
-                      {\Ty}
+                      {\TmCase{\Tm_1}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}}
+                      {\ExnTy}
                       {\Exn}
              }
         \\\\

@@ -9,7 +9,7 @@
 \newcommand{\ClassKind}{\mathbf{Kind}}
 %format Kind      = "\ClassKind"
 
-\newcommand{\Throws}[2]{#1\{#2\}}    %%%%%%%%%%%%% WHICH TO USE?
+\newcommand{\Throws}[2]{#1\langle #2\rangle}    %%%%%%%%%%%%% WHICH TO USE?
 \newcommand{\ExnTy}{\widehat\tau}
 %\newcommand{\ExnTyBool}{\widehat{\mathrm{bool}}}
 \newcommand{\ExnTyBool}{\mathrm{b\widehat{oo}l}}
@@ -25,6 +25,7 @@
 \newcommand{\ExnEmpty}{\emptyset}
 
 \newcommand{\ExnBool}{\mathbf{b\widehat{oo}l}}
+\newcommand{\ExnInt}{\mathbf{i\widehat{n}t}}
 
 \newcommand{\Kind}{\kappa}
 \newcommand{\KindEXN}{\textsc{e}}
