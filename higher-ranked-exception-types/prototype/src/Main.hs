@@ -173,8 +173,8 @@ inferencePage = msum [ viewForm, processForm ] where
 
         expr :: An.Expr <- read . unpack <$> lookText "expr"
 
-        let (re, exnTy, exn, kenv) = An.evalFresh (An.reconstruct [] [] expr) 1
-        let (exnTy', exn') = (An.simplifyExnTy kenv exnTy, An.simplifyExn kenv exn)
+        let (re, exnTy, exn) = An.evalFresh (An.reconstruct [] [] expr) 1
+        let (exnTy', exn') = (An.simplifyExnTy [] exnTy, An.simplifyExn [] exn)
 
         ok $ template title $ do
         
@@ -191,8 +191,6 @@ inferencePage = msum [ viewForm, processForm ] where
             H.h2 "Unsimplified exception type"
             H.p $ toHtml $
                 "\\[" ++ latex exnTy ++ "\\ \\&\\ " ++ latex exn ++ "\\]"
-            H.h3 "Kind environment"
-            H.p $ envAsTable kenv
 
             H.h2 "Derivation Tree"
             H.p $ toHtml re

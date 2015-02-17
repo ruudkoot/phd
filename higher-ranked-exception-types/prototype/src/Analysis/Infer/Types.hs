@@ -15,9 +15,9 @@ fev = concatMap (\(_, (ty, exn)) -> fevExnTy ty ++ fevExn exn)
 
 -- | Reconstruction
 
-type Result         = (ExnTy, Exn, KindEnv)
+type Result         = (ExnTy, Exn)
 type Complete'      = (C.Complete, ExnTy, Exn, C.Env)
-type Reconstruct'   = (Reconstruct, ExnTy, Exn, KindEnv)
+type Reconstruct'   = (Reconstruct, ExnTy, Exn)
 type Instantiate'   = (ExnTy, KindEnv)
 type KleeneMycroft' = ([(ExnTy, Exn, ExnTy, Name, ExnTy, Exn, KindEnv,
                          Subst, Subst, ExnTy, ExnTy, Exn, Exn)], ExnTy, Exn)
@@ -46,8 +46,7 @@ data Reconstruct
                        Reconstruct' Reconstruct'
                        Result
     | ReconstructFix   Env KindEnv Expr
-                       Reconstruct' Instantiate' Subst Subst Subst ExnTy Exn
-                       ExnTy Exn KleeneMycroft'
+                       Reconstruct' Instantiate' ExnTy Exn KleeneMycroft'
                        Result
     | ReconstructNil   Env KindEnv Expr
                        Result
