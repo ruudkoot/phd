@@ -6,7 +6,9 @@
 \newcommand{\TmVar}{x}
 \newcommand{\TmCon}[1]{c_{#1}}
 \newcommand{\TmAbs}[3]{\lambda #1 : #2. #3}
+\newcommand{\TmAnnAbs}[3]{\Lambda #1 : #2. #3}
 \newcommand{\TmApp}[2]{#1\ #2}
+\newcommand{\TmAnnApp}[2]{#1\ \langle #2 \rangle}
 \newcommand{\TmOp}[2]{#1 \oplus #2}
 \newcommand{\TmIf}[3]{\mathbf{if}\ #1\ \mathbf{then}\ #2\ \mathbf{else}\ #3}
 \newcommand{\TmCrash}[2]{\lightning_{#1}^{#2}}
@@ -31,6 +33,7 @@
 
 % Judgements
 \newcommand{\JudgeTy}[5]{{#1; #2 \vdash #3 : #4\ \&\ #5}}
+\newcommand{\JudgeExn}[3]{{#1 \vdash #2 : #3}}
 \newcommand{\JudgeSubTy}[4]{{#1; #2 \vdash #3 \leq #4}}
 \newcommand{\JudgeSubExn}[3]{{#1 \vdash #2 \leq #3}}
 

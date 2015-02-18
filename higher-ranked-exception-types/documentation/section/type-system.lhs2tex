@@ -26,7 +26,7 @@
                       {\ExnTy}
                       {\Exn}
              }
-        \\\\
+        \\[1.5ex]
         \Rule{T-Con}
              {}
              {\JudgeTy{\TyEnv}
@@ -44,7 +44,7 @@
                       {\BottomTy{\Ty}}
                       {\ExnCon{\ExnLbl}}
              }
-        \\\\
+        \\[1.5ex]
         \Rule{T-Abs (TODO)}
              {\JudgeTy{\TyEnv}
                       {\KiEnv}
@@ -58,19 +58,33 @@
                       {\ExnTyArr{\Ty_1}{?}{\Ty_2}{?}}
                       {\ExnEmpty}
              }
-        \\\\
-        \Rule{T-App (TODO)}
+        \\[1.5ex]
+        \Rule{T-AnnAbs (TODO)}
+             {\JudgeTy{\TyEnv}
+                      {\KiEnv}
+                      {\Tm}
+                      {\ExnTy_2}
+                      {\Exn}
+             }
+             {\JudgeTy{\TyEnv}
+                      {\KiEnv}
+                      {\TmAbs{\TmVar}{\Ty}{\Tm}}
+                      {\ExnTyArr{\Ty_1}{?}{\Ty_2}{?}}
+                      {\ExnEmpty}
+             }
+        \\[1.5ex]
+        \Rule{T-App}
              {\JudgeTy{\TyEnv}
                       {\KiEnv}
                       {\Tm_1}
-                      {\ExnTy}
+                      {\ExnTyArr{\ExnTy_2}{\Exn_2}{\ExnTy}{\Exn}}
                       {\Exn}
               \quad
               \JudgeTy{\TyEnv}
                       {\KiEnv}
                       {\Tm_2}
-                      {\ExnTy}
-                      {\Exn}
+                      {\ExnTy_2}
+                      {\Exn_2}
              }
              {\JudgeTy{\TyEnv}
                       {\KiEnv}
@@ -78,7 +92,25 @@
                       {\ExnTy}
                       {\Exn}
              }
-        \\\\
+        \\[1.5ex]
+        \Rule{T-AnnApp}
+             {\JudgeTy{\TyEnv}
+                      {\KiEnv}
+                      {\Tm_1}
+                      {\ExnTyForall{\ExnVar}{\Kind}{\ExnTy}}
+                      {\Exn}
+              \quad
+              \JudgeExn{\KiEnv}
+                       {\Exn_2}
+                       {\Kind}
+             }
+             {\JudgeTy{\TyEnv}
+                      {\KiEnv}
+                      {\TmAnnApp{\Tm_1}{\Exn_2}}
+                      {\Subst{\Exn_2}{\ExnVar}{\ExnTy}}
+                      {\Exn}
+             }
+        \\[1.5ex]
         \Rule{T-Fix (TODO)}
              {}
              {\JudgeTy{\TyEnv}
@@ -87,7 +119,7 @@
                       {\ExnTy}
                       {\Exn}
              }
-        \\\\
+        \\[1.5ex]
         \Rule{T-Op}
              {\JudgeTy{\TyEnv}
                       {\KiEnv}
@@ -107,7 +139,7 @@
                       {\ExnBool}
                       {\Exn}
              }
-        \\\\
+        \\[1.5ex]
         \Rule{T-Seq}
              {\JudgeTy{\TyEnv}
                       {\KiEnv}
@@ -127,7 +159,7 @@
                       {\ExnTy_2}
                       {\Exn}
              }
-        \\\\
+        \\[1.5ex]
         \Rule{T-If}
              {\JudgeTy{\TyEnv}
                       {\KiEnv}
@@ -153,7 +185,7 @@
                       {\ExnTy}
                       {\Exn}
              }             
-        \\\\
+        \\[1.5ex]
         \Rule{T-Nil}
              {}
              {\JudgeTy{\TyEnv}
@@ -162,7 +194,7 @@
                       {\ExnTyList{\BottomTy{\Ty}}{\ExnEmpty}}
                       {\ExnEmpty}
              }
-        \\\\
+        \\[1.5ex]
         \Rule{T-Cons}
              {\JudgeTy{\TyEnv}
                       {\KiEnv}
@@ -182,7 +214,7 @@
                       {\ExnTyList{\ExnTy}{\Exn_1}}
                       {\Exn_2}
              }
-        \\\\
+        \\[1.5ex]
         \Rule{T-Case}
              {\begin{gathered}
                   \JudgeTy{\TyEnv}
@@ -212,7 +244,7 @@
                       {\ExnTy}
                       {\Exn}
              }
-        \\\\
+        \\[1.5ex]
         \Rule{T-Sub}
              {\JudgeTy{\TyEnv}
                       {\KiEnv}
@@ -238,4 +270,13 @@
     \end{gather*}
     \caption{Declarative type system ($\JudgeTy{\TyEnv}{\KiEnv}{\Tm}{\ExnTy}{\Exn}$)}    
 \end{figure}
+
+\begin{itemize}
+
+    \item In T-App, note the double occurence of $\Exn$ when typing $\Tm_1$. Is subeffecting sufficient here? Also note that we do \emph{not} expect an exception variable in the left-hand side annotation of the function space constructor.
     
+    \item In T-AnnApp, note the substitution. We will need a substitution lemma for annotations.
+    
+    \item In T-Case, note the use of explicit subeffecting. Can this be done using implicit subeffecting?
+    
+\end{itemize}
