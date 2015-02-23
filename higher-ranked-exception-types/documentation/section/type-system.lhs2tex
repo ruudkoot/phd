@@ -443,6 +443,163 @@
     
     \item In T-Case, note the use of explicit subeffecting. Can this be done using implicit subeffecting?
     
-    \item For T-Sub, should we introduce a term-level coercion, as in Dussart--Henglein--Mossin?
+    \item For T-Sub, should we introduce a term-level coercion, as in Dussart--Henglein--Mossin? We now do atomic subtyping, is subeffecting sufficient?
     
 \end{itemize}
+
+\subsection{Type elaboration system}
+
+\begin{figure}[h]
+    \begin{gather*}
+        \Rule{T-Var}
+             {}
+             {\JudgeElab{\TyEnv, \TmVar : \ExnTy\ \&\ \Exn}
+                        {\TmVar}
+                        {\TmVar}
+                        {\ExnTy}
+                        {\Exn}
+             }
+        \\[1.5em]
+        \Rule{T-Con}
+             {}
+             {\JudgeElab{\TyEnv}
+                        {\TmCon{\Ty}}
+                        {\TmCon{\Ty}}
+                        {\Ty}
+                        {\ExnEmpty}
+             }
+        \quad
+        \Rule{T-Crash}
+             {}
+             {\JudgeElab{\TyEnv}
+                        {\TmCrash{\Ty}{\ExnLbl}}
+                        {\TmCrash{\Ty}{\ExnLbl}}
+                        {\BottomTy{\Ty}}
+                        {\ExnCon{\ExnLbl}}
+             }
+        \\[1.5ex]
+        \Rule{T-Abs (TODO)}
+             {\JudgeTy{\TyEnv, \TmVar : \Ty_1}
+                      {\Tm}
+                      {\Ty_2}
+             }
+             {\JudgeTy{\TyEnv}
+                      {\TmAbs{\TmVar}{\Ty_1}{\Tm}}
+                      {\TyArr{\Ty_1}{\Ty_2}}
+             }
+        \\[1.5ex]
+        \Rule{T-App (TODO)}
+             {\JudgeTy{\TyEnv}
+                      {\Tm_1}
+                      {\TyArr{\Ty_2}{\Ty}}
+              \quad
+              \JudgeTy{\TyEnv}
+                      {\Tm_2}
+                      {\Ty_2}
+             }
+             {\JudgeTy{\TyEnv}
+                      {\TmApp{\Tm_1}{\Tm_2}}
+                      {\Ty}
+             }
+        \\[1.5ex]
+        \Rule{T-Fix (TODO)}
+             {\JudgeTy{\TyEnv}
+                      {\Tm}
+                      {\TyArr{\Ty}{\Ty}}
+             }
+             {\JudgeTy{\TyEnv}
+                      {\TmFix{\Tm}}
+                      {\Ty}
+             }
+        \\[1.5ex]
+        \Rule{T-Op (TODO)}
+             {\JudgeTy{\TyEnv}
+                      {\Tm_1}
+                      {\TyInt}
+              \quad
+              \JudgeTy{\TyEnv}
+                      {\Tm_2}
+                      {\TyInt}
+             }
+             {\JudgeTy{\TyEnv}
+                      {\TmOp{\Tm_1}{\Tm_2}}
+                      {\TyBool}
+             }
+        \\[1.5ex]
+        \Rule{T-Seq (TODO)}
+             {\JudgeTy{\TyEnv}
+                      {\Tm_1}
+                      {\Ty_1}
+              \quad
+              \JudgeTy{\TyEnv}
+                      {\Tm_2}
+                      {\Ty_2}
+             }
+             {\JudgeTy{\TyEnv}
+                      {\TmSeq{\Tm_1}{\Tm_2}}
+                      {\Ty_2}
+             }
+        \\[1.5ex]
+        \Rule{T-If (TODO)}
+             {\JudgeTy{\TyEnv}
+                      {\Tm_1}
+                      {\TyBool}
+              \quad
+              \JudgeTy{\TyEnv}
+                      {\Tm_2}
+                      {\Ty}
+              \quad
+              \JudgeTy{\TyEnv}
+                      {\Tm_3}
+                      {\Ty}
+             }
+             {\JudgeTy{\TyEnv}
+                      {\TmIf{\Tm_1}{\Tm_2}{\Tm_3}}
+                      {\Ty}
+             }             
+        \\[1.5ex]
+        \Rule{T-Nil (TODO)}
+             {}
+             {\JudgeTy{\TyEnv}
+                      {\TmNil{\Ty}}
+                      {\TyList{\Ty}}
+             }
+        \\[1.5ex]
+        \Rule{T-Cons (TODO)}
+             {\JudgeTy{\TyEnv}
+                      {\Tm_1}
+                      {\Ty}
+              \quad
+              \JudgeTy{\TyEnv}
+                      {\Tm_2}
+                      {\TyList{\Ty}}
+             }
+             {\JudgeTy{\TyEnv}
+                      {\TmCons{\Tm_1}{\Tm_2}}
+                      {\TyList{\Ty}}
+             }
+        \\[1.5ex]
+        \Rule{T-Case (TODO)}
+             {%\begin{gathered}
+                  \JudgeTy{\TyEnv}
+                          {\Tm_1}
+                          {\TyList{\Ty_1}}
+                  \quad
+                  \JudgeTy{\TyEnv}
+                          {\Tm_2}
+                          {\Ty}
+                  \quad
+                  \JudgeTy{\TyEnv, \TmVar_1 : \Ty_1, \TmVar_2 : \TyList{\Ty_1}}
+                          {\Tm_3}
+                          {\Ty}
+              %\end{gathered}
+             }
+             {\JudgeTy{\TyEnv}
+                      {\TmCase{\Tm_1}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}}
+                      {\Ty}
+             }
+    \end{gather*}
+    \caption{Syntax-directed type elaboration system ($\JudgeElab{\TyEnv}{\Tm}{\Tm^\prime}{\ExnTy}{\Exn}$)}    
+\end{figure}
+
+\subsection{Type inference algorithm}

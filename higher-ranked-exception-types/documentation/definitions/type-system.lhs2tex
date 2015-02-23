@@ -39,4 +39,4 @@
 \newcommand{\JudgeExn}[3]{{#1 \vdash #2 : #3}}
 \newcommand{\JudgeSubTy}[4]{{#1; #2 \vdash #3 \leq #4}}
 \newcommand{\JudgeSubExn}[3]{{#1 \vdash #2 \leq #3}}
-
+\newcommand{\JudgeElab}[5]{{#1 \vdash #2 \leadsto #3 : #4\ \&\ #5}}
