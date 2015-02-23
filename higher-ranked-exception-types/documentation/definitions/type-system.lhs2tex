@@ -28,6 +28,8 @@
 \newcommand{\TyList}[1]{\left[#1\right]}
 \newcommand{\TyArr}[2]{#1 \to #2}
 
+\newcommand{\TyJoin}[2]{#1 \sqcup #2}
+
 \newcommand{\TyEnv}{\Gamma}
 \newcommand{\KiEnv}{\Delta}
 
@@ -40,3 +42,4 @@
 \newcommand{\JudgeSubTy}[4]{{#1; #2 \vdash #3 \leq #4}}
 \newcommand{\JudgeSubExn}[3]{{#1 \vdash #2 \leq #3}}
 \newcommand{\JudgeElab}[5]{{#1 \vdash #2 \leadsto #3 : #4\ \&\ #5}}
+\newcommand{\JudgeElabM}[5]{{#1 \vdash #2 \leadsto}\\{\quad\quad #3 : #4\ \&\ #5}}

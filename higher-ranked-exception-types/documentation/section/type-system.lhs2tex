@@ -512,91 +512,129 @@
                       {\Ty}
              }
         \\[1.5ex]
-        \Rule{T-Op (TODO)}
-             {\JudgeTy{\TyEnv}
-                      {\Tm_1}
-                      {\TyInt}
+        \Rule{T-Op}
+             {\JudgeElab{\TyEnv}
+                        {\Tm_1}
+                        {\Tm_1^\prime}
+                        {\ExnInt}
+                        {\Exn_1}
               \quad
-              \JudgeTy{\TyEnv}
-                      {\Tm_2}
-                      {\TyInt}
+              \JudgeElab{\TyEnv}
+                        {\Tm_2}
+                        {\Tm_2^\prime}
+                        {\ExnInt}
+                        {\Exn_2}
              }
-             {\JudgeTy{\TyEnv}
-                      {\TmOp{\Tm_1}{\Tm_2}}
-                      {\TyBool}
+             {\JudgeElab{\TyEnv}
+                        {\TmOp{\Tm_1}{\Tm_2}}
+                        {\TmOp{\Tm_1^\prime}{\Tm_2^\prime}}
+                        {\ExnBool}
+                        {\ExnUnion{\Exn_1}{\Exn_2}}
              }
         \\[1.5ex]
-        \Rule{T-Seq (TODO)}
-             {\JudgeTy{\TyEnv}
-                      {\Tm_1}
-                      {\Ty_1}
+        \Rule{T-Seq}
+             {\JudgeElab{\TyEnv}
+                        {\Tm_1}
+                        {\Tm_1^\prime}
+                        {\ExnTy_1}
+                        {\Exn_1}
               \quad
-              \JudgeTy{\TyEnv}
-                      {\Tm_2}
-                      {\Ty_2}
+              \JudgeElab{\TyEnv}
+                        {\Tm_2}
+                        {\Tm_2^\prime}
+                        {\ExnTy_2}
+                        {\Exn_2}
              }
-             {\JudgeTy{\TyEnv}
-                      {\TmSeq{\Tm_1}{\Tm_2}}
-                      {\Ty_2}
+             {\JudgeElab{\TyEnv}
+                        {\TmSeq{\Tm_1}{\Tm_2}}
+                        {\TmSeq{\Tm_1^\prime}{\Tm_2^\prime}}
+                        {\ExnTy_2}
+                        {\ExnUnion{\Exn_1}{\Exn_2}}
              }
         \\[1.5ex]
-        \Rule{T-If (TODO)}
-             {\JudgeTy{\TyEnv}
-                      {\Tm_1}
-                      {\TyBool}
+        \Rule{T-If}
+             {\JudgeElab{\TyEnv}
+                        {\Tm_1}
+                        {\Tm_1^\prime}
+                        {\ExnBool}
+                        {\Exn_1}
               \quad
-              \JudgeTy{\TyEnv}
-                      {\Tm_2}
-                      {\Ty}
+              \JudgeElab{\TyEnv}
+                        {\Tm_2}
+                        {\Tm_2^\prime}
+                        {\ExnTy_2}
+                        {\Exn_2}
               \quad
-              \JudgeTy{\TyEnv}
-                      {\Tm_3}
-                      {\Ty}
+              \JudgeElab{\TyEnv}
+                        {\Tm_3}
+                        {\Tm_3^\prime}
+                        {\ExnTy_3}
+                        {\Exn_3}
              }
-             {\JudgeTy{\TyEnv}
-                      {\TmIf{\Tm_1}{\Tm_2}{\Tm_3}}
-                      {\Ty}
+             {\JudgeElab{\TyEnv}
+                        {\TmIf{\Tm_1}{\Tm_2}{\Tm_3}}
+                        {\TmIf{\Tm_1^\prime}{\Tm_2^\prime}{\Tm_3^\prime}}
+                        {\TyJoin{\ExnTy_2}{\ExnTy_3}}
+                        {\ExnUnion{\Exn_1}{\ExnUnion{\Exn_2}{\Exn_3}}}
              }             
         \\[1.5ex]
-        \Rule{T-Nil (TODO)}
+        \Rule{T-Nil}
              {}
-             {\JudgeTy{\TyEnv}
-                      {\TmNil{\Ty}}
-                      {\TyList{\Ty}}
+             {\JudgeElab{\TyEnv}
+                        {\TmNil{\Ty}}
+                        {\TmNil{\Ty}}
+                        {\BottomTy{\Ty}}
+                        {\ExnEmpty}
              }
         \\[1.5ex]
-        \Rule{T-Cons (TODO)}
-             {\JudgeTy{\TyEnv}
-                      {\Tm_1}
-                      {\Ty}
+        \Rule{T-Cons}
+             {\JudgeElab{\TyEnv}
+                        {\Tm_1}
+                        {\Tm_1^\prime}
+                        {\ExnTy_1}
+                        {\Exn_1}
               \quad
-              \JudgeTy{\TyEnv}
-                      {\Tm_2}
-                      {\TyList{\Ty}}
+              \JudgeElab{\TyEnv}
+                        {\Tm_2}
+                        {\Tm_2^\prime}
+                        {\ExnTyList{\ExnTy_1^\prime}{\Exn_1^\prime}}
+                        {\Exn_2}
              }
-             {\JudgeTy{\TyEnv}
-                      {\TmCons{\Tm_1}{\Tm_2}}
-                      {\TyList{\Ty}}
+             {\JudgeElab{\TyEnv}
+                        {\TmCons{\Tm_1}{\Tm_2}}
+                        {\TmCons{\Tm_1^\prime}{\Tm_2^\prime}}
+                        {\ExnTyList{\TyJoin{\ExnTy_1}{\ExnTy_1^\prime}}{\ExnUnion{\Exn_1}{\Exn_1^\prime}}}
+                        {\Exn_2}
              }
         \\[1.5ex]
-        \Rule{T-Case (TODO)}
-             {%\begin{gathered}
-                  \JudgeTy{\TyEnv}
-                          {\Tm_1}
-                          {\TyList{\Ty_1}}
+        \Rule{T-Case}
+             {\begin{gathered}
+                  \JudgeElab{\TyEnv}
+                            {\Tm_1}
+                            {\Tm_1^\prime}
+                            {\ExnTyList{\Ty_1}{\Exn_1}}
+                            {\Exn_1^\prime}
                   \quad
-                  \JudgeTy{\TyEnv}
-                          {\Tm_2}
-                          {\Ty}
-                  \quad
-                  \JudgeTy{\TyEnv, \TmVar_1 : \Ty_1, \TmVar_2 : \TyList{\Ty_1}}
-                          {\Tm_3}
-                          {\Ty}
-              %\end{gathered}
+                  \JudgeElab{\TyEnv}
+                            {\Tm_2}
+                            {\Tm_2^\prime}
+                            {\ExnTy_2}
+                            {\Exn_2}
+                  \\
+                  \JudgeElab{\TyEnv, \TmVar_1 : \ExnTy_1\ \&\ \Exn_1, \TmVar_2 : \ExnTyList{\Ty_1}{\Exn_1}\ \&\ \Exn_1^\prime}
+                            {\Tm_3}
+                            {\Tm_3^\prime}
+                            {\ExnTy_3}
+                            {\Exn_3}
+              \end{gathered}
              }
-             {\JudgeTy{\TyEnv}
-                      {\TmCase{\Tm_1}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}}
-                      {\Ty}
+             {\begin{multlined}
+                  \JudgeElabM{\TyEnv}
+                             {\TmCase{\Tm_1}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}}
+                             {\TmCase{\Tm_1^\prime}{\Tm_2^\prime}{\TmVar_1}{\TmVar_2}{\Tm_3^\prime}}
+                             {\TyJoin{\ExnTy_2}{\ExnTy_3}}
+                             {\ExnUnion{\Exn_1^\prime}{\ExnUnion{\Exn_2}{\Exn_3}}}
+              \end{multlined}
              }
     \end{gather*}
     \caption{Syntax-directed type elaboration system ($\JudgeElab{\TyEnv}{\Tm}{\Tm^\prime}{\ExnTy}{\Exn}$)}    
