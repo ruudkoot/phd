@@ -410,8 +410,7 @@
                          {\ExnTy}
                          {\Exn}
               \quad
-              \JudgeSubTy{\TyEnv}
-                         {\KiEnv}
+              \JudgeSubTy{\KiEnv}
                          {\ExnTy}
                          {\ExnTy^\prime}
               \quad
@@ -443,7 +442,9 @@
     
     \item In T-Case, note the use of explicit subeffecting. Can this be done using implicit subeffecting?
     
-    \item For T-Sub, should we introduce a term-level coercion, as in Dussart--Henglein--Mossin? We now do atomic subtyping, is subeffecting sufficient?
+    \item For T-Sub, should we introduce a term-level coercion, as in Dussart--Henglein--Mossin? We now do shape-conformant subtyping, is subeffecting sufficient?
+    
+    \item Do we need additional kinding judgements in some of the rules? Can we merge the kinding judgement with the subtyping and/or -effecting judgement? Kind-preserving substitutions.
     
 \end{itemize}
 
@@ -454,6 +455,7 @@
         \Rule{T-Var}
              {}
              {\JudgeElab{\TyEnv, \TmVar : \ExnTy\ \&\ \Exn}
+                        {\KiEnv}
                         {\TmVar}
                         {\TmVar}
                         {\ExnTy}
@@ -463,6 +465,7 @@
         \Rule{T-Con}
              {}
              {\JudgeElab{\TyEnv}
+                        {\KiEnv}
                         {\TmCon{\Ty}}
                         {\TmCon{\Ty}}
                         {\Ty}
@@ -472,6 +475,7 @@
         \Rule{T-Crash}
              {}
              {\JudgeElab{\TyEnv}
+                        {\KiEnv}
                         {\TmCrash{\Ty}{\ExnLbl}}
                         {\TmCrash{\Ty}{\ExnLbl}}
                         {\BottomTy{\Ty}}
@@ -488,18 +492,43 @@
                       {\TyArr{\Ty_1}{\Ty_2}}
              }
         \\[1.5ex]
-        \Rule{T-App (TODO)}
-             {\JudgeTy{\TyEnv}
-                      {\Tm_1}
-                      {\TyArr{\Ty_2}{\Ty}}
-              \quad
-              \JudgeTy{\TyEnv}
-                      {\Tm_2}
-                      {\Ty_2}
+        \Rule{T-App}
+             {\begin{gathered}
+                \JudgeSubTy{\KiEnv}
+                           {\ExnTy_2}
+                           {\SubstS{\Exn_i}{\ExnVar_i}{\ExnTy}}
+                \quad
+                \JudgeSubExn{\KiEnv}
+                            {\Exn_2}
+                            {\SubstS{\Exn_i}{\ExnVar_i}{\Exn}}
+                \quad
+                \overline{
+                    \JudgeKind{\KiEnv}
+                              {\Exn_i}
+                              {\Kind_i}
+                }
+                \\
+                \JudgeElab{\TyEnv}
+                          {\KiEnv}
+                          {\Tm_1}
+                          {\Tm_1^\prime}
+                          {\ExnTyForallS{\ExnVar_i}{\Kind_i}{\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy}{\Exn}}}
+                          {\Exn^\prime}
+                \quad
+                \JudgeElab{\TyEnv}
+                          {\KiEnv}
+                          {\Tm_2}
+                          {\Tm_2^\prime}
+                          {\ExnTy_2}
+                          {\Exn_2}
+              \end{gathered}
              }
-             {\JudgeTy{\TyEnv}
-                      {\TmApp{\Tm_1}{\Tm_2}}
-                      {\Ty}
+             {\JudgeElab{\TyEnv}
+                        {\KiEnv}
+                        {\TmApp{\Tm_1}{\Tm_2}}
+                        {\TmApp{\TmAnnApp{\Tm_1^\prime}{\overline{\Exn_i}}}{\Tm_2^\prime}}
+                        {\SubstS{\Exn_i}{\ExnVar_i}{\ExnTy}}
+                        {\ExnUnion{\SubstS{\Exn_i}{\ExnVar_i}{\Exn}}{\Exn^\prime}}
              }
         \\[1.5ex]
         \Rule{T-Fix (TODO)}
@@ -514,18 +543,21 @@
         \\[1.5ex]
         \Rule{T-Op}
              {\JudgeElab{\TyEnv}
+                        {\KiEnv}
                         {\Tm_1}
                         {\Tm_1^\prime}
                         {\ExnInt}
                         {\Exn_1}
               \quad
               \JudgeElab{\TyEnv}
+                        {\KiEnv}
                         {\Tm_2}
                         {\Tm_2^\prime}
                         {\ExnInt}
                         {\Exn_2}
              }
              {\JudgeElab{\TyEnv}
+                        {\KiEnv}
                         {\TmOp{\Tm_1}{\Tm_2}}
                         {\TmOp{\Tm_1^\prime}{\Tm_2^\prime}}
                         {\ExnBool}
@@ -534,18 +566,21 @@
         \\[1.5ex]
         \Rule{T-Seq}
              {\JudgeElab{\TyEnv}
+                        {\KiEnv}
                         {\Tm_1}
                         {\Tm_1^\prime}
                         {\ExnTy_1}
                         {\Exn_1}
               \quad
               \JudgeElab{\TyEnv}
+                        {\KiEnv}
                         {\Tm_2}
                         {\Tm_2^\prime}
                         {\ExnTy_2}
                         {\Exn_2}
              }
              {\JudgeElab{\TyEnv}
+                        {\KiEnv}
                         {\TmSeq{\Tm_1}{\Tm_2}}
                         {\TmSeq{\Tm_1^\prime}{\Tm_2^\prime}}
                         {\ExnTy_2}
@@ -554,24 +589,28 @@
         \\[1.5ex]
         \Rule{T-If}
              {\JudgeElab{\TyEnv}
+                        {\KiEnv}
                         {\Tm_1}
                         {\Tm_1^\prime}
                         {\ExnBool}
                         {\Exn_1}
               \quad
               \JudgeElab{\TyEnv}
+                        {\KiEnv}
                         {\Tm_2}
                         {\Tm_2^\prime}
                         {\ExnTy_2}
                         {\Exn_2}
               \quad
               \JudgeElab{\TyEnv}
+                        {\KiEnv}
                         {\Tm_3}
                         {\Tm_3^\prime}
                         {\ExnTy_3}
                         {\Exn_3}
              }
              {\JudgeElab{\TyEnv}
+                        {\KiEnv}
                         {\TmIf{\Tm_1}{\Tm_2}{\Tm_3}}
                         {\TmIf{\Tm_1^\prime}{\Tm_2^\prime}{\Tm_3^\prime}}
                         {\TyJoin{\ExnTy_2}{\ExnTy_3}}
@@ -581,6 +620,7 @@
         \Rule{T-Nil}
              {}
              {\JudgeElab{\TyEnv}
+                        {\KiEnv}
                         {\TmNil{\Ty}}
                         {\TmNil{\Ty}}
                         {\BottomTy{\Ty}}
@@ -589,18 +629,21 @@
         \\[1.5ex]
         \Rule{T-Cons}
              {\JudgeElab{\TyEnv}
+                        {\KiEnv}
                         {\Tm_1}
                         {\Tm_1^\prime}
                         {\ExnTy_1}
                         {\Exn_1}
               \quad
               \JudgeElab{\TyEnv}
+                        {\KiEnv}
                         {\Tm_2}
                         {\Tm_2^\prime}
                         {\ExnTyList{\ExnTy_1^\prime}{\Exn_1^\prime}}
                         {\Exn_2}
              }
              {\JudgeElab{\TyEnv}
+                        {\KiEnv}
                         {\TmCons{\Tm_1}{\Tm_2}}
                         {\TmCons{\Tm_1^\prime}{\Tm_2^\prime}}
                         {\ExnTyList{\TyJoin{\ExnTy_1}{\ExnTy_1^\prime}}{\ExnUnion{\Exn_1}{\Exn_1^\prime}}}
@@ -610,18 +653,21 @@
         \Rule{T-Case}
              {\begin{gathered}
                   \JudgeElab{\TyEnv}
+                            {\KiEnv}
                             {\Tm_1}
                             {\Tm_1^\prime}
                             {\ExnTyList{\Ty_1}{\Exn_1}}
                             {\Exn_1^\prime}
                   \quad
                   \JudgeElab{\TyEnv}
+                            {\KiEnv}
                             {\Tm_2}
                             {\Tm_2^\prime}
                             {\ExnTy_2}
                             {\Exn_2}
                   \\
                   \JudgeElab{\TyEnv, \TmVar_1 : \ExnTy_1\ \&\ \Exn_1, \TmVar_2 : \ExnTyList{\Ty_1}{\Exn_1}\ \&\ \Exn_1^\prime}
+                            {\KiEnv}
                             {\Tm_3}
                             {\Tm_3^\prime}
                             {\ExnTy_3}
@@ -630,6 +676,7 @@
              }
              {\begin{multlined}
                   \JudgeElabM{\TyEnv}
+                             {\KiEnv}                 
                              {\TmCase{\Tm_1}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}}
                              {\TmCase{\Tm_1^\prime}{\Tm_2^\prime}{\TmVar_1}{\TmVar_2}{\Tm_3^\prime}}
                              {\TyJoin{\ExnTy_2}{\ExnTy_3}}
@@ -637,7 +684,7 @@
               \end{multlined}
              }
     \end{gather*}
-    \caption{Syntax-directed type elaboration system ($\JudgeElab{\TyEnv}{\Tm}{\Tm^\prime}{\ExnTy}{\Exn}$)}    
+    \caption{Syntax-directed type elaboration system ($\JudgeElab{\TyEnv}{\KiEnv}{\Tm}{\Tm^\prime}{\ExnTy}{\Exn}$)}    
 \end{figure}
 
 \subsection{Type inference algorithm}

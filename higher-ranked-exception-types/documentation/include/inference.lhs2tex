@@ -7,3 +7,4 @@
 
 % Substitutions
 \newcommand{\Subst}[3]{\left[#1/#2\right]#3}
+\newcommand{\SubstS}[3]{\left[\overline{#1}/\overline{#2}\right]#3}
