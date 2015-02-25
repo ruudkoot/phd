@@ -531,14 +531,36 @@
                         {\ExnUnion{\SubstS{\Exn_i}{\ExnVar_i}{\Exn}}{\Exn^\prime}}
              }
         \\[1.5ex]
-        \Rule{T-Fix (TODO)}
-             {\JudgeTy{\TyEnv}
-                      {\Tm}
-                      {\TyArr{\Ty}{\Ty}}
+        \Rule{T-Fix}
+             {\begin{gathered}
+                \JudgeElab{\TyEnv}
+                          {\KiEnv}
+                          {\Tm}
+                          {\Tm^\prime}
+                          {\ExnTyForallS{\ExnVar_i}{\Kind_i}{\ExnTyArr{\ExnTy}{\Exn}{\ExnTy^\prime}{\Exn^\prime}}}
+                          {\Exn^{\prime\prime}}
+                \\
+                \JudgeSubTy{\KiEnv}
+                           {\SubstS{\Exn_i}{\ExnVar_i}{\ExnTy^\prime}}
+                           {\SubstS{\Exn_i}{\ExnVar_i}{\ExnTy}}
+                \quad
+                \JudgeSubExn{\KiEnv}
+                            {\SubstS{\Exn_i}{\ExnVar_i}{\Exn^\prime}}
+                            {\SubstS{\Exn_i}{\ExnVar_i}{\Exn}}
+                \quad
+                \overline{
+                    \JudgeKind{\KiEnv}
+                              {\Exn_i}
+                              {\Kind_i}
+                }
+              \end{gathered}
              }
-             {\JudgeTy{\TyEnv}
-                      {\TmFix{\Tm}}
-                      {\Ty}
+             {\JudgeElab{\TyEnv}
+                        {\KiEnv}
+                        {\TmFix{\Tm}}
+                        {\TmFix{\Tm^\prime}}
+                        {\SubstS{\Exn_i}{\ExnVar_i}{\ExnTy}}
+                        {\ExnUnion{\SubstS{\Exn_i}{\ExnVar_i}{\Exn}}{\Exn^{\prime\prime}}}
              }
         \\[1.5ex]
         \Rule{T-Op}
@@ -686,5 +708,11 @@
     \end{gather*}
     \caption{Syntax-directed type elaboration system ($\JudgeElab{\TyEnv}{\KiEnv}{\Tm}{\Tm^\prime}{\ExnTy}{\Exn}$)}    
 \end{figure}
+
+\begin{itemize}
+
+ \item For T-Fix: how would a binding fixpoint construct work?
+
+\end{itemize}
 
 \subsection{Type inference algorithm}

@@ -94,6 +94,7 @@ reconstruct env kenv tm@(Fix e1)
 
          return $ ReconstructFix env kenv tm re ins t0 exn0 km #
             (simplifyExnTy kenv t_w, simplifyExn kenv exn_w)
+                                             -- FIXME: ^ ExnUnion exn_w exn1?
 
 reconstruct env kenv tm@(BinOp e1 e2) {- TODO: comparisons only; add AOp, BOp -}
     = do re1@(_, ExnInt, exn1) <- reconstruct env kenv e1
