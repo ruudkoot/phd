@@ -482,14 +482,30 @@
                         {\ExnCon{\ExnLbl}}
              }
         \\[1.5ex]
-        \Rule{T-Abs (TODO)}
-             {\JudgeTy{\TyEnv, \TmVar : \Ty_1}
-                      {\Tm}
-                      {\Ty_2}
+        \Rule{T-Abs}
+             {\begin{gathered}
+                \JudgeTyElab{\KiEnv, \overline{\ExnVar_i : \Kind_i}}
+                            {\ExnTy_1}
+                            {\Ty_1}
+                \quad
+                \JudgeKind{\KiEnv, \overline{\ExnVar_i : \Kind_i}}
+                          {\Exn_1}
+                          {\KindEXN}
+                \\
+                \JudgeElab{\TyEnv, x : \ExnTy_1\ \&\ \Exn_1}
+                          {\KiEnv, \overline{\ExnVar_i : \Kind_i}}
+                          {\Tm}
+                          {\Tm^\prime}
+                          {\ExnTy_2}
+                          {\Exn_2}
+              \end{gathered}
              }
-             {\JudgeTy{\TyEnv}
-                      {\TmAbs{\TmVar}{\Ty_1}{\Tm}}
-                      {\TyArr{\Ty_1}{\Ty_2}}
+             {\JudgeElab{\TyEnv}
+                        {\KiEnv}
+                        {\TmAbs{\TmVar}{\Ty_1}{\Tm}}
+                        {\TmAbsExn{\TmVar}{\ExnTy_1}{\Exn_1}{\Tm^\prime}}
+                        {\ExnTyForallS{\ExnVar_i}{\Kind_i}{\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}}}
+                        {\ExnEmpty}
              }
         \\[1.5ex]
         \Rule{T-App}
