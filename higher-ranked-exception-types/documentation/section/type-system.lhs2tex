@@ -735,6 +735,9 @@
 
 %format reconstruct                 = "\mathcal{R}"
 %format complete                    = "\mathcal{C}"
+%format instantiate                 = "\mathcal{I}"
+%format match                       = "\mathcal{M}"
+
 %format Product (a) (b)             = a "\times " b
 %format ClassEnv                    = "\ClassEnv"
 %format env                         = "\TyEnv"
@@ -755,9 +758,13 @@
 %format Abs                         = "\TmAbs{\TmVar}{\Ty}{\Tm}"
 %format Tuple  (x) (y)              = "\langle" x ";" y "\rangle"
 %format Triple (x) (y) (z)          = "\langle" x ";" y ";" z "\rangle"
+%format ExnTy'                      = "\ExnTy^\prime"
 %format ExnTy_1                     = "\ExnTy_1"
 %format ExnTy_2                     = "\ExnTy_2"
+%format ExnTy_2'                    = "\ExnTy_2^\prime"
 %format ExnVar_1                    = "\ExnVar_1"
+%format ExnVar_2'                   = "\ExnVar_2^\prime"
+%format Exn'                        = "\Exn^\prime"
 %format Exn_1                       = "\Exn_1"
 %format Exn_2                       = "\Exn_2"
 %format kenv'                       = "\overline{\ExnVar_i : \Kind_i}"
@@ -771,6 +778,11 @@
 %format ExnForall (a) (b)           = "\ExnForall{" a "}{" b "}"
 
 %format App                         = "\TmApp{\Tm_1}{\Tm_2}"
+%format subst                       = "\theta"
+%format Subst (x) (y)               = "\left[" x "\mapsto " y "\right]"
+%format ExnUnion (a) (b)            = "\ExnUnion{" a "}{" b "}"
+%format applySubst (x)              = "\theta " x
+%format simplify (kenv) (x)         = "\lfloor " x "\rfloor_{" kenv "}"
 
 \begin{code}
     reconstruct : Product ClassEnv (Product ClassKEnv ClassTm) -> Product ClassExnTy ClassExn
@@ -785,14 +797,16 @@
                                              Tuple ExnTy_2 Exn_2            =  reconstruct (extendTyEnv env ExnTy_1 ExnVar_1) kenv,kenv' Tm
                                         in   Result (ExnForall kenv' (ExnTyArr ExnTy_1 ExnVar_1 ExnTy_2 Exn_2)) ExnEmpty
 
-    reconstruct env kenv (App)       =  let  Tuple ExnTy_1 Exn_1  = reconstruct env kenv tm_1
-                                             Tuple ExnTy_2 Exn_2  = reconstruct env kenv tm_2
-                                             
+    reconstruct env kenv (App)       =  let  Tuple ExnTy_1 Exn_1                                    = reconstruct env kenv tm_1
+                                             Tuple ExnTy_2 Exn_2                                    = reconstruct env kenv tm_2
+                                             Tuple (ExnTyArr ExnTy_2' ExnVar_2' ExnTy' Exn') kenv'  = instantiate ExnTy_1
+                                             subst                                                  = Subst ExnVar_2' Exn_2 . match EmptyEnv ExnTy_2 ExnTy_2'
+                                        in   Tuple (simplify kenv (applySubst ExnTy')) (simplify kenv (ExnUnion (applySubst Exn') (Exn_1)))
 \end{code}
 
 \begin{itemize}
 
-    \item Note that we do not construct the elaborated term, as it is not useful except for metatheoretic purposes.
+    \item Note that we do not construct the elaborated term, as it is not useful other than for metatheoretic purposes.
     
     \item Simplification does not exactly match the prototype (update the latter).
 
