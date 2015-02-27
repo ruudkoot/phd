@@ -732,3 +732,70 @@
 \end{itemize}
 
 \subsection{Type inference algorithm}
+
+%format reconstruct                 = "\mathcal{R}"
+%format complete                    = "\mathcal{C}"
+%format Product (a) (b)             = a "\times " b
+%format ClassEnv                    = "\ClassEnv"
+%format env                         = "\TyEnv"
+%format kenv                        = "\KiEnv"
+
+%format Var                         = "\TmVar"
+%format env_x                       = "\TyEnv_x"
+
+%format (Con (t) (c))               = c "_" t
+%format ty                          = "\Ty"
+%format Result (a) (b)              = "\langle" a "; " b "\rangle"
+%format bottomTy                    = "\BottomTy{\Ty}"
+%format ExnEmpty                    = "\ExnEmpty"
+
+%format Crash                       = "\TmCrash{\Ty}{\ExnLbl}"
+%format ExnCon                      = "\ExnCon{\ExnLbl}"
+
+%format Abs                         = "\TmAbs{\TmVar}{\Ty}{\Tm}"
+%format Tuple  (x) (y)              = "\langle" x ";" y "\rangle"
+%format Triple (x) (y) (z)          = "\langle" x ";" y ";" z "\rangle"
+%format ExnTy_1                     = "\ExnTy_1"
+%format ExnTy_2                     = "\ExnTy_2"
+%format ExnVar_1                    = "\ExnVar_1"
+%format Exn_1                       = "\Exn_1"
+%format Exn_2                       = "\Exn_2"
+%format kenv'                       = "\overline{\ExnVar_i : \Kind_i}"
+%format EmptyEnv                    = "\emptyset"
+%format (extendTyEnv env t e)       = env ", " t "\ \&\ " e
+%format Tm                          = "\Tm"
+%format tm                          = "\Tm"
+%format tm_1
+%format tm_2
+%format ExnTyArr (a) (b) (c) (d)    = "\ExnTyArr{" a "}{" b "}{" c "}{" d "}"
+%format ExnForall (a) (b)           = "\ExnForall{" a "}{" b "}"
+
+%format App                         = "\TmApp{\Tm_1}{\Tm_2}"
+
+\begin{code}
+    reconstruct : Product ClassEnv (Product ClassKEnv ClassTm) -> Product ClassExnTy ClassExn
+
+    reconstruct env kenv Var         =  env_x
+
+    reconstruct env kenv (Con ty c)  =  Result bottomTy ExnEmpty
+
+    reconstruct env kenv Crash       =  Result bottomTy ExnCon
+
+    reconstruct env kenv Abs         =  let  Triple ExnTy_1 ExnVar_1 kenv'  =  complete EmptyEnv ty
+                                             Tuple ExnTy_2 Exn_2            =  reconstruct (extendTyEnv env ExnTy_1 ExnVar_1) kenv,kenv' Tm
+                                        in   Result (ExnForall kenv' (ExnTyArr ExnTy_1 ExnVar_1 ExnTy_2 Exn_2)) ExnEmpty
+
+    reconstruct env kenv (App)       =  let  Tuple ExnTy_1 Exn_1  = reconstruct env kenv tm_1
+                                             Tuple ExnTy_2 Exn_2  = reconstruct env kenv tm_2
+                                             
+\end{code}
+
+\begin{itemize}
+
+    \item Note that we do not construct the elaborated term, as it is not useful except for metatheoretic purposes.
+    
+    \item Simplification does not exactly match the prototype (update the latter).
+
+    \item Lemma: The algorithm maintains the invariant that exception types and exceptions are in normal form.
+
+\end{itemize}

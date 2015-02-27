@@ -1,13 +1,19 @@
 \newcommand{\ClassEnv}{\mathbf{Env}}
-%format Env       = "\ClassEnv"
+%format Env         = "\ClassEnv"
+\newcommand{\ClassKEnv}{\mathbf{KiEnv}}
+%format ClassKEnv   = "\ClassKEnv"
+\newcommand{\ClassTm}{\mathbf{Tm}}
+%format ClassTm     = "\ClassTm"
 \newcommand{\ClassTy}{\mathbf{Ty}}
-%format Ty        = "\ClassTy"
+%format Ty          = "\ClassTy"
 \newcommand{\ClassExnTy}{\mathbf{ExnTy}}
-%format ExnTy     = "\ClassExnTy"
+%format ExnTy       = "\ClassExnTy"
+%format ClassExnTy  = "\ClassExnTy"
 \newcommand{\ClassExn}{\mathbf{Exn}}
-%format Exn       = "\ClassExn"
+%format Exn         = "\ClassExn"
+%format ClassExn    = "\ClassExn"
 \newcommand{\ClassKind}{\mathbf{Kind}}
-%format Kind      = "\ClassKind"
+%format Kind        = "\ClassKind"
 
 \newcommand{\Throws}[2]{#1\langle #2\rangle}    %%%%%%%%%%%%% WHICH TO USE?
 \newcommand{\ExnTy}{\widehat\tau}

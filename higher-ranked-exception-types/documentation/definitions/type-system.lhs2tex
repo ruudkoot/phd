@@ -1,6 +1,5 @@
 \newcommand{\ClassVar}{\mathbf{Var}}
 \newcommand{\ClassCon}{\mathbf{Con}}
-\newcommand{\ClassTm}{\mathbf{Tm}}
 
 \newcommand{\Tm}{t}
 \newcommand{\TmVar}{x}
