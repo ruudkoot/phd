@@ -1,7 +1,9 @@
 \newcommand{\ClassEnv}{\mathbf{Env}}
 %format Env         = "\ClassEnv"
-\newcommand{\ClassKEnv}{\mathbf{KiEnv}}
-%format ClassKEnv   = "\ClassKEnv"
+\newcommand{\ClassTyEnv}{\mathbf{TyEnv}}
+%format ClassTyEnv       = "\ClassTyEnv"
+\newcommand{\ClassKiEnv}{\mathbf{KiEnv}}
+%format ClassKiEnv   = "\ClassKiEnv"
 \newcommand{\ClassTm}{\mathbf{Tm}}
 %format ClassTm     = "\ClassTm"
 \newcommand{\ClassTy}{\mathbf{Ty}}
@@ -18,12 +20,12 @@
 \newcommand{\Throws}[2]{#1\langle #2\rangle}    %%%%%%%%%%%%% WHICH TO USE?
 \newcommand{\ExnTy}{\widehat\tau}
 %\newcommand{\ExnTyBool}{\widehat{\mathrm{bool}}}
-\newcommand{\ExnTyBool}{\mathrm{b\widehat{oo}l}}
+\newcommand{\ExnTyBool}{\mathrm{b\widehat{oo}l}}    % FIXME: deprecate
 \newcommand{\ExnTyList}[2]{\left[\Throws{#1}{#2}\right]}
 \newcommand{\ExnTyArr}[4]{\Throws{#1}{#2} \to \Throws{#3}{#4}}
 \newcommand{\ExnTyForall}[3]{\forall #1 : #2. #3}
 \newcommand{\ExnTyForallS}[3]{\forall \overline{#1 : #2}. #3}
-\newcommand{\ExnForall}[1]{\forall {#1}.}           % FIXME: deprecatate
+\newcommand{\ExnForall}[1]{\forall {#1}.}           % FIXME: deprecate
 
 \newcommand{\Exn}{\varphi}
 \newcommand{\ExnVar}{e}
