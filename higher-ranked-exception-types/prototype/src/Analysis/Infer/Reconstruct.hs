@@ -46,7 +46,7 @@ reconstruct env kenv tm@(Abs x ty tm')
          re@(_, t2', exn2) <- reconstruct env' (kenv1 ++ kenv) tm'
          let t' = C.forallFromEnv kenv1 (ExnArr t1' (ExnVar exn1) t2' exn2)
          return $ ReconstructAbs env kenv tm co env' re t' #
-            (simplifyExnTy kenv t', ExnEmpty)
+            (t', ExnEmpty)
 
 reconstruct env kenv tm@(App e1 e2)
     = do re1@(_, t1, exn1) <- reconstruct env kenv e1
@@ -56,7 +56,7 @@ reconstruct env kenv tm@(App e1 e2)
          let subst = [(exn2', exn2)] <.> subst'
          let exn = ExnUnion (substExn' subst exn') exn1
          return $ ReconstructApp env kenv tm re1 re2 ins subst' subst #
-            (substExnTy' subst  t', exn)
+            (simplifyExnTy kenv $ substExnTy' subst  t', simplifyExn kenv $ exn)
 
 reconstruct env kenv tm@(Fix e1)
     = do re@(_, t1, exn1) <- reconstruct env kenv e1
@@ -69,11 +69,11 @@ reconstruct env kenv tm@(Fix e1)
                 let subst = [(exn', exn_i)] <.> subst'
                 return (t_i
                        ,exn_i
-                       ,t'      -- no longer constant (with I inside the loop)
-                       ,exn'    -- no longer constant (with I inside the loop)
-                       ,t''     -- no longer constant (with I inside the loop)
-                       ,exn''   -- no longer constant (with I inside the loop)
-                       ,kenv'   -- no longer constant (with I inside the loop)
+                       ,t'      -- not constant if I inside the loop
+                       ,exn'    -- not constant if I inside the loop
+                       ,t''     -- not constant if I inside the loop
+                       ,exn''   -- not constant if I inside the loop
+                       ,kenv'   -- not constant if I inside the loop
                        ,subst'
                        ,subst
                        ,substExnTy' subst t''
@@ -100,13 +100,13 @@ reconstruct env kenv tm@(BinOp e1 e2) {- TODO: comparisons only; add AOp, BOp -}
     = do re1@(_, ExnInt, exn1) <- reconstruct env kenv e1
          re2@(_, ExnInt, exn2) <- reconstruct env kenv e2
          return $ ReconstructBinOp env kenv tm re1 re2 #
-            (ExnBool, ExnUnion exn1 exn2)
+            (ExnBool, simplifyExn kenv $ ExnUnion exn1 exn2)
 
 reconstruct env kenv tm@(Seq e1 e2)
     = do re1@(_, t1, exn1) <- reconstruct env kenv e1
          re2@(_, t2, exn2) <- reconstruct env kenv e2
          return $ ReconstructSeq env kenv tm re1 re2 #
-            (t2, ExnUnion exn1 exn2)
+            (t2, simplifyExn kenv $ ExnUnion exn1 exn2)
 
 reconstruct env kenv tm@(If e1 e2 e3)
     = do re1@(_, ExnBool, exn1) <- reconstruct env kenv e1
@@ -115,7 +115,7 @@ reconstruct env kenv tm@(If e1 e2 e3)
          let t = join t2 t3
          let exn = ExnUnion exn1 (ExnUnion exn2 exn3)
          return $ ReconstructIf env kenv tm re1 re2 re3 t #
-            (t, exn)
+            (simplifyExnTy kenv $ t, simplifyExn kenv $ exn)
 
 reconstruct env kenv tm@(Nil ty)
     = do ty' <- C.bottomExnTy ty
@@ -138,7 +138,7 @@ reconstruct env kenv tm@(Case e1 e2 x1 x2 e3)
          let t = join t2 t3
          let exn = ExnUnion exn1 (ExnUnion exn2 exn3)
          return $ ReconstructCase env kenv tm re1 re2 env' re3 t # 
-            (t, exn)
+            (simplifyExnTy kenv $ t, simplifyExn kenv $ exn)
 
 -- | Instantiation
 
