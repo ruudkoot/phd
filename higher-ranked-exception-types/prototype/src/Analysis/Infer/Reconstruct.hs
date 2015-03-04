@@ -64,8 +64,8 @@ reconstruct env kenv tm@(Fix e1)
                                                 -- ^ FIXME: unused!
 
          let f t_i exn_i = do
-                ins@(ExnArr t' (ExnVar exn') t'' exn'', kenv') <- instantiate t1
-                subst' <- match [] t_i t'   -- ^ necessary to do this inside the loop?
+                -- ins@(ExnArr t' (ExnVar exn') t'' exn'', kenv') <- instantiate t1
+                subst' <- match [] t_i t'
                 let subst = [(exn', exn_i)] <.> subst'
                 return (t_i
                        ,exn_i
@@ -89,12 +89,11 @@ reconstruct env kenv tm@(Fix e1)
                 else kleeneMycroft (trace ++ [tr]) t_j exn_j
 
          t0 <- C.bottomExnTy (underlying t')
-         let exn0 = ExnEmpty  -- FIXME: exn1?
+         let exn0 = ExnEmpty
          km@(_, t_w, exn_w) <- kleeneMycroft [] t0 exn0
 
          return $ ReconstructFix env kenv tm re ins t0 exn0 km #
-            (simplifyExnTy kenv t_w, simplifyExn kenv exn_w)
-                                             -- FIXME: ^ ExnUnion exn_w exn1?
+            (simplifyExnTy kenv t_w, simplifyExn kenv (ExnUnion exn_w exn1))
 
 reconstruct env kenv tm@(BinOp e1 e2) {- TODO: comparisons only; add AOp, BOp -}
     = do re1@(_, ExnInt, exn1) <- reconstruct env kenv e1

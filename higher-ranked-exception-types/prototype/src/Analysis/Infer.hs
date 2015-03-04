@@ -104,8 +104,12 @@ inferenceExamples = map (\(l,x) -> (l, show x, mathjax' x)) [
     "hcompose" # exHCompose,     -- FIXME: should those EmptySets be there? (GONE NOW?)
     "hcompose'" # exHCompose',    -- FIXME: e14 and e17 have been eta-expanded. is this okay?
     "hcompose compose" # App exHCompose exCompose,
-    "hcompose' compose" # App exHCompose' exCompose
+    "hcompose' compose" # App exHCompose' exCompose,
     -- * very high-order
+    -- * crashing fixpoints
+    "fixCrash1" # Fix $ Crash "foo" (Bool :-> Bool),
+    "fixCrash2" # Fix $ Crash "foo" ((Bool :-> Bool) :-> (Bool :-> Bool)),
+    "fixCrash3" # Fix $ If (Con True) (Abs 1 Bool $ Crash "foo" Bool) (Crash "bar" (Bool :-> Bool))
   ] where
         ex29 =
             Abs 1 (List Bool :-> List Bool) $ Abs 2 (List Bool) $
