@@ -173,7 +173,7 @@ inferencePage = msum [ viewForm, processForm ] where
 
         expr :: An.Expr <- read . unpack <$> lookText "expr"
 
-        let (re, exnTy, exn) = An.evalFresh (An.reconstruct [] [] expr) 1
+        let (re, elabTm, exnTy, exn) = An.evalFresh (An.reconstruct [] [] expr) 1
         let (exnTy', exn') = (An.simplifyExnTy [] exnTy, An.simplifyExn [] exn)
 
         ok $ template title $ do
@@ -182,6 +182,9 @@ inferencePage = msum [ viewForm, processForm ] where
             H.p $ mathjax expr
             H.h3 $ "Type"
             H.p $ mathjax $ fromJust $ An.checkExpr [] expr
+            
+            H.h2 "Elaborated expression"
+            H.p $ mathjax elabTm
 
             H.h2 "Simplified exception type"
             H.p $ toHtml $

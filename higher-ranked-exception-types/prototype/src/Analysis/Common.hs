@@ -3,6 +3,7 @@
 
 module Analysis.Common (
     Expr(..),
+    ElabTm(..),
     checkExpr,
     Ty(..),
     Kind(..),
@@ -55,6 +56,23 @@ data Expr
     | Nil Ty
     | Cons Expr Expr
     | Case Expr Expr Name Name Expr
+    deriving (Read, Show)
+
+data ElabTm
+    = Var' Name
+    | Abs' Name ExnTy Exn ElabTm
+    | AnnAbs Name Kind ElabTm
+    | App' ElabTm ElabTm
+    | AnnApp ElabTm Exn
+    | Con' Bool
+    | BinOp' ElabTm ElabTm
+    | If' ElabTm ElabTm ElabTm
+    | Crash' Lbl Ty
+    | Seq' ElabTm ElabTm
+    | Fix' ElabTm
+    | Nil' Ty
+    | Cons' ElabTm ElabTm
+    | Case' ElabTm ElabTm Name Name ElabTm
     deriving (Read, Show)
 
 type TyEnv = [(Name, Ty)]
@@ -145,6 +163,41 @@ instance Latex Expr where
     latex (Cons e1 e2)
         = "(" ++ latex e1 ++ " :: " ++ latex e2 ++ ")"
     latex (Case e1 e2 x1 x2 e3)
+        = "(\\mathbf{case}\\ " ++ latex e1 ++ "\\ \\mathbf{of}\\ \\{ \\varepsilon \\mapsto "
+            ++ latex e2 ++ "; x_{" ++ show x1 ++ "}::x_{" ++ show x2 ++ "} \\mapsto "
+            ++ latex e3 ++ "\\})"
+            
+instance Latex ElabTm where
+    latex (Var' x)
+        = "x_{" ++ show x ++ "}"
+    latex (Abs' x t exn e)  
+        = "(\\lambda x_{" ++ show x ++ "}:" ++ latex t ++ "\\ \\&\\ " ++ latex exn ++ "." ++ latex e ++ ")"
+    latex (AnnAbs x k e)  
+        = "(\\Lambda e_{" ++ show x ++ "}:" ++ latex k ++ "." ++ latex e ++ ")"
+    latex (App' e1 e2)
+        = "(" ++ latex e1 ++ "\\ " ++ latex e2 ++ ")"
+    latex (AnnApp e1 e2)
+        = "(" ++ latex e1 ++ "\\ ⦉" ++ latex e2 ++ "⦊)"
+    latex (Con' True)
+        = "\\mathbf{true}"
+    latex (Con' False)
+        = "\\mathbf{false}"
+    latex (BinOp' e1 e2)
+        = "(" ++ latex e1 ++ "\\ \\oplus\\ " ++ latex e2 ++ ")"
+    latex (If' e1 e2 e3)
+        = "(\\mathbf{if}\\ " ++ latex e1 ++ "\\ \\mathbf{then}\\ " ++ latex e2
+            ++ "\\ \\mathbf{else}\\ " ++ latex e3 ++ ")"
+    latex (Crash' l t)  
+        = "(⚡_{\\mathrm{" ++ l ++ "}}:" ++ latex t ++ ")"
+    latex (Seq' e1 e2)
+        = "(" ++ latex e1 ++ "\\ \\mathbf{seq}\\ " ++ latex e2 ++ ")"
+    latex (Fix' e)
+        = "(\\mathbf{fix}\\ " ++ latex e ++ ")"
+    latex (Nil' t)
+        = "(\\varepsilon:" ++ latex t ++ ")"
+    latex (Cons' e1 e2)
+        = "(" ++ latex e1 ++ " :: " ++ latex e2 ++ ")"
+    latex (Case' e1 e2 x1 x2 e3)
         = "(\\mathbf{case}\\ " ++ latex e1 ++ "\\ \\mathbf{of}\\ \\{ \\varepsilon \\mapsto "
             ++ latex e2 ++ "; x_{" ++ show x1 ++ "}::x_{" ++ show x2 ++ "} \\mapsto "
             ++ latex e3 ++ "\\})"
