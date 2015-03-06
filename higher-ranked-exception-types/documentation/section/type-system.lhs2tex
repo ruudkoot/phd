@@ -503,7 +503,7 @@
              {\JudgeElab{\TyEnv}
                         {\KiEnv}
                         {\TmAbs{\TmVar}{\Ty_1}{\Tm}}
-                        {\TmAbsExn{\TmVar}{\ExnTy_1}{\Exn_1}{\Tm^\prime}}
+                        {\TmAnnAbsS{\ExnVar_i}{\Kind_i}{\TmAbsExn{\TmVar}{\ExnTy_1}{\Exn_1}{\Tm^\prime}}}
                         {\ExnTyForallS{\ExnVar_i}{\Kind_i}{\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}}}
                         {\ExnEmpty}
              }
