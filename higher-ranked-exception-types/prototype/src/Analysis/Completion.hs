@@ -11,6 +11,7 @@ module Analysis.Completion (
     complete',
     forallFromEnv,
     bottomExnTy,    -- FIXME: move to other module
+    checkElabTm,    -- FIXME: move to other module
     kindedEmpty     -- FIXME: move to other module
 ) where
 
@@ -21,6 +22,8 @@ import qualified Text.Blaze.Html5.Attributes as A
 import Analysis.Names
 import Analysis.Common
 import Analysis.Print
+
+import Analysis.Infer.Join  -- FIXME: only for checkElabTm
 
 -- | Types
 
@@ -87,11 +90,76 @@ kindFromEnv (map snd -> ks) = foldl (flip (:=>)) EXN ks
 
 -- | Bottom exception type from given underlying type
 
+-- TODO: move to Common
+
 bottomExnTy :: Ty -> Fresh ExnTy
 bottomExnTy ty = do
     (_, exnTy, _, kenv) <- complete [] ty
     let fvSubst = map (\(x,k) -> (x, kindedEmpty k)) kenv
     return (simplifyExnTy [] (substExnTy' fvSubst exnTy))
+    
+-- TODO: move to Common (only here because we need bottomExnTy...)
+-- FIXME: do simplification here?
+
+type ExnTyEnv = [(Name, (ExnTy, Exn))]
+type KiEnv    = [(Name, Kind)]
+
+checkElabTm :: ExnTyEnv -> KiEnv -> ElabTm -> Fresh (Maybe (ExnTy, Exn))
+checkElabTm tyEnv kiEnv (Var' x)
+    = return $ lookup x tyEnv
+checkElabTm tyEnv kiEnv (Con' c)
+    = return $ Just (ExnBool, ExnEmpty)
+checkElabTm tyEnv kiEnv (Crash' lbl ty)
+    = do exnTy <- bottomExnTy ty
+         return $ Just (exnTy, ExnCon lbl)
+checkElabTm tyEnv kiEnv (Abs' x ty ann tm)
+    = undefined
+checkElabTm tyEnv kiEnv (AnnAbs e k tm)
+    = undefined
+checkElabTm tyEnv kiEnv (App' tm1 tm2)
+    = undefined
+checkElabTm tyEnv kiEnv (AnnApp tm ann)
+    = undefined
+checkElabTm tyEnv kiEnv (Fix' tm)
+    = undefined
+checkElabTm tyEnv kiEnv (BinOp' tm1 tm2)
+    = do mty1 <- checkElabTm tyEnv kiEnv tm1
+         case mty1 of
+            Just (ExnInt, ann1) -> do
+                mty2 <- checkElabTm tyEnv kiEnv tm2
+                case mty2 of
+                    Just (ExnInt, ann2) -> return $ Just (ExnBool, ExnUnion ann1 ann2)
+                    _ -> error "type (BinOp', tm2)"
+            _ -> error "type (BinOp', tm1)"
+checkElabTm tyEnv kiEnv (Seq' tm1 tm2)
+    = do mty1 <- checkElabTm tyEnv kiEnv tm1
+         case mty1 of
+            Just (ty1, ann1) -> do
+                mty2 <- checkElabTm tyEnv kiEnv tm2
+                case mty2 of
+                    Just (ty2, ann2) -> return $ Just (ty2, ExnUnion ann1 ann2)
+                    _ -> error "type (Seq', tm2)"
+            _ -> error "type (Seq', tm1)"
+checkElabTm tyEnv kiEnv (If' tm1 tm2 tm3)
+    = do mty1 <- checkElabTm tyEnv kiEnv tm1
+         case mty1 of
+            Just (ExnBool, ann1) -> do
+                mty2 <- checkElabTm tyEnv kiEnv tm2
+                case mty2 of
+                    Just (ty2, ann2) -> do
+                        mty3 <- checkElabTm tyEnv kiEnv tm3
+                        case mty3 of
+                            Just (ty3, ann3) -> return $ Just (join ty2 ty3, ExnUnion ann1 (ExnUnion ann2 ann3))
+                            _ -> error "type (If', tm3)"
+                    _ -> error "type (If', tm2)"
+            _ -> error "type (If', tm1)"
+checkElabTm tyEnv kiEnv (Nil' ty)
+    = do exnTy <- bottomExnTy ty
+         return $ Just (ExnList exnTy ExnEmpty, ExnEmpty)
+checkElabTm tyEnv kiEnv (Cons' tm1 tm2)
+    = undefined
+checkElabTm tyEnv kiEnv (Case' tm1 tm2 x1 x2 tm3)
+    = undefined
 
 -- * Helper functions
 

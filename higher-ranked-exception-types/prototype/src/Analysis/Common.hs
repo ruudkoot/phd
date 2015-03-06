@@ -60,16 +60,16 @@ data Expr
 
 data ElabTm
     = Var' Name
+    | Con' Bool
+    | Crash' Lbl Ty
     | Abs' Name ExnTy Exn ElabTm
     | AnnAbs Name Kind ElabTm
     | App' ElabTm ElabTm
     | AnnApp ElabTm Exn
-    | Con' Bool
-    | BinOp' ElabTm ElabTm
-    | If' ElabTm ElabTm ElabTm
-    | Crash' Lbl Ty
-    | Seq' ElabTm ElabTm
     | Fix' ElabTm
+    | BinOp' ElabTm ElabTm
+    | Seq' ElabTm ElabTm
+    | If' ElabTm ElabTm ElabTm
     | Nil' Ty
     | Cons' ElabTm ElabTm
     | Case' ElabTm ElabTm Name Name ElabTm
