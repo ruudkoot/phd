@@ -4,8 +4,7 @@
 %\usepackage{fullpage}                  % FIXME: geometry
 
 \usepackage[sc,osf]{mathpazo}			% Palatino (text + math)
-%\usepackage{eulervm}					% Euler (math)
-%\usepackage{newtxtext,newtxmath}		% Times New Roman (text + math)
+\linespread{1.05}
 
 \usepackage{amsmath}
 \usepackage{amssymb}

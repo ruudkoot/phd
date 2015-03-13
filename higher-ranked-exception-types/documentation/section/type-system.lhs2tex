@@ -574,7 +574,7 @@
              {\JudgeElab{\TyEnv}
                         {\KiEnv}
                         {\TmFix{\Tm}}
-                        {\TmFix{\Tm^\prime}}
+                        {\TmAnnApp{\TmFix{\Tm^\prime}}{\overline{\Exn_i}}}
                         {\SubstS{\Exn_i}{\ExnVar_i}{\ExnTy}}
                         {\ExnUnion{\SubstS{\Exn_i}{\ExnVar_i}{\Exn}}{\Exn^{\prime\prime}}}
              }

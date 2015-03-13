@@ -1,7 +1,8 @@
 {-# LANGUAGE ViewPatterns #-}
 
 module Analysis.Infer.Reconstruct (
-    reconstruct
+    reconstruct,
+    checkElabTm'     -- FIXME: move to other module
 ) where
 
 import qualified Data.Map    as M
@@ -53,7 +54,7 @@ reconstruct env kenv tm@(App e1 e2)
     = do re1@(_, etm1, t1, exn1) <- reconstruct env kenv e1
          re2@(_, etm2, t2, exn2) <- reconstruct env kenv e2
          ins@(ExnArr t2' (ExnVar exn2') t' exn', kenv') <- instantiate t1
-         subst' <- match [] t2 t2'             -- ^ FIXME: unused!
+         subst' <- match [] t2 t2'             -- ^ FIXME: only used for elaboration
          let subst = [(exn2', exn2)] <.> subst'
          let exn = ExnUnion (substExn' subst exn') exn1
          return $ ReconstructApp env kenv tm re1 re2 ins subst' subst #
@@ -64,7 +65,7 @@ reconstruct env kenv tm@(App e1 e2)
 reconstruct env kenv tm@(Fix e1)
     = do re@(_, ee1, t1, exn1) <- reconstruct env kenv e1
          ins@(ExnArr t' (ExnVar exn') t'' exn'', kenv') <- instantiate t1
-                                                -- ^ FIXME: unused!
+                                                -- ^ FIXME: only used for elaboration
 
          let f t_i exn_i = do
                 -- ins@(ExnArr t' (ExnVar exn') t'' exn'', kenv') <- instantiate t1
@@ -86,17 +87,20 @@ reconstruct env kenv tm@(Fix e1)
                        )
 
          let kleeneMycroft trace t_i exn_i = do    -- TODO: abstract to fixpointM
-                tr@(_,_,_,_,_,_,_,_,_,_,t_j,_,exn_j) <- f t_i exn_i
+                tr@(_,_,_,_,_,_,_,_,subst_i,_,t_j,_,exn_j) <- f t_i exn_i
                 if exnTyEq kenv t_i t_j && exnEq kenv exn_i exn_j
-                then return (trace, t_i, exn_i)
+                then return (trace, t_i, exn_i, subst_i)
                 else kleeneMycroft (trace ++ [tr]) t_j exn_j
 
          t0 <- C.bottomExnTy (underlying t')
          let exn0 = ExnEmpty
-         km@(_, t_w, exn_w) <- kleeneMycroft [] t0 exn0
+         km@(_, t_w, exn_w, subst_w) <- kleeneMycroft [] t0 exn0
 
          return $ ReconstructFix env kenv tm re ins t0 exn0 km #
-            (Fix' ee1, simplifyExnTy kenv t_w, simplifyExn kenv (ExnUnion exn_w exn1))
+            ( Fix' (annAppFromEnv kenv' subst_w ee1)
+            , simplifyExnTy kenv t_w
+            , simplifyExn kenv (ExnUnion exn_w exn1)
+            )
 
 reconstruct env kenv tm@(BinOp e1 e2) {- TODO: comparisons only; add AOp, BOp -}
     = do re1@(_, ee1, ExnInt, exn1) <- reconstruct env kenv e1
@@ -169,3 +173,183 @@ annAppFromEnv []        _     tm
     = tm
 annAppFromEnv ((e, _):kenv) subst tm
     = annAppFromEnv kenv subst (AnnApp tm (substExn' subst (ExnVar e)))
+    
+-- | Type checking of elaborated terms
+
+-- TODO: move to Common? (only here because we need bottomExnTy...)
+
+-- * With subtyping coercions (resembles decalrative type system)
+
+-- * Ignore subtyping coercions (resembles elaboration system)
+
+checkElabTm' :: Env -> KindEnv -> ElabTm -> Fresh (Maybe (ExnTy, Exn))
+checkElabTm' tyEnv kiEnv (Var' x)
+    = return $ lookup x tyEnv
+checkElabTm' tyEnv kiEnv (Con' c)
+    = return $ Just (ExnBool, ExnEmpty)
+checkElabTm' tyEnv kiEnv (Crash' lbl ty)
+    = do exnTy <- C.bottomExnTy ty
+         return $ Just (exnTy, ExnCon lbl)
+checkElabTm' tyEnv kiEnv (Abs' x ty1 ann1 tm)
+    = do () <- case lookup x tyEnv of
+                 Nothing -> return ()
+                 _       -> error "shadowing (Abs')"
+         mty2 <- checkElabTm' ((x,(ty1,ann1)):tyEnv) kiEnv tm
+         case mty2 of
+            Just (ty2, ann2) -> return $ Just (ExnArr ty1 ann1 ty2 ann2, ExnEmpty)
+            _ -> error "type (Abs')"
+checkElabTm' tyEnv kiEnv (AnnAbs e k tm)
+    = do () <- case lookup e kiEnv of
+                Nothing -> return ()
+                _       -> error "shadowing (AnnAbs)"
+         mty <- checkElabTm' tyEnv ((e,k):kiEnv) tm
+         case mty of
+            Just (ty, ann) -> return $ Just (ExnForall e k ty, ann)
+            _ -> error "type (AnnAbs)"
+checkElabTm' tyEnv kiEnv (App' tm1 tm2)
+    = do mty1 <- checkElabTm' tyEnv kiEnv tm1
+         case mty1 of
+            Just (ExnArr ty1 ann1 ty ann, ann') -> do
+                mty2 <- checkElabTm' tyEnv kiEnv tm2
+                case mty2 of
+                    Just (ty2, ann2) -> do
+                        if isSubtype kiEnv ty2 ty1 && isSubeffect kiEnv ann2 ann1 then
+                            return $ Just (ty, simplifyExn kiEnv $ ExnUnion ann ann')
+                        else
+                            error "subtype (App')"
+                    _ -> error "type (App', 2)"
+            _ -> error "type (App', 1)"
+checkElabTm' tyEnv kiEnv (AnnApp tm ann2)
+    = do mty <- checkElabTm' tyEnv kiEnv tm
+         case mty of
+            Just (ExnForall e k ty, ann) -> do
+                case checkKind kiEnv ann2 of
+                    Just k' | k == k' -> do
+                        return $ Just (simplifyExnTy kiEnv $ substExnTy' [(e,ann2)] ty, ann)
+                    _ -> error $ "kind (AnnApp)"
+            _ -> error "type (AnnApp)"
+checkElabTm' tyEnv kiEnv (Fix' tm)
+    = do mty <- checkElabTm' tyEnv kiEnv tm
+         case mty of
+            Just (ExnArr ty1 ann1 ty2 ann2, ann) -> do
+                if isSubtype kiEnv ty2 ty1 && isSubeffect kiEnv ann2 ann1 then
+                    return $ Just (ty2, ann2)
+                else
+                    error "fixpoint (Fix')"
+            _ -> error "type (Fix')"
+checkElabTm' tyEnv kiEnv (BinOp' tm1 tm2)
+    = do mty1 <- checkElabTm' tyEnv kiEnv tm1
+         case mty1 of
+            Just (ExnInt, ann1) -> do
+                mty2 <- checkElabTm' tyEnv kiEnv tm2
+                case mty2 of
+                    Just (ExnInt, ann2) -> return $ Just (ExnBool, simplifyExn kiEnv $ ExnUnion ann1 ann2)
+                    _ -> error "type (BinOp', tm2)"
+            _ -> error "type (BinOp', tm1)"
+checkElabTm' tyEnv kiEnv (Seq' tm1 tm2)
+    = do mty1 <- checkElabTm' tyEnv kiEnv tm1
+         case mty1 of
+            Just (ty1, ann1) -> do
+                mty2 <- checkElabTm' tyEnv kiEnv tm2
+                case mty2 of
+                    Just (ty2, ann2) -> return $ Just (ty2, simplifyExn kiEnv $ ExnUnion ann1 ann2)
+                    _ -> error "type (Seq', tm2)"
+            _ -> error "type (Seq', tm1)"
+checkElabTm' tyEnv kiEnv (If' tm1 tm2 tm3)
+    = do mty1 <- checkElabTm' tyEnv kiEnv tm1
+         case mty1 of
+            Just (ExnBool, ann1) -> do
+                mty2 <- checkElabTm' tyEnv kiEnv tm2
+                case mty2 of
+                    Just (ty2, ann2) -> do
+                        mty3 <- checkElabTm' tyEnv kiEnv tm3
+                        case mty3 of
+                            Just (ty3, ann3) -> return $ Just (simplifyExnTy kiEnv $ join ty2 ty3, simplifyExn kiEnv $ ExnUnion ann1 (ExnUnion ann2 ann3))
+                            _ -> error "type (If', tm3)"
+                    _ -> error "type (If', tm2)"
+            _ -> error "type (If', tm1)"
+checkElabTm' tyEnv kiEnv (Nil' ty)
+    = do exnTy <- C.bottomExnTy ty
+         return $ Just (ExnList exnTy ExnEmpty, ExnEmpty)
+checkElabTm' tyEnv kiEnv (Cons' tm1 tm2)
+    = do mty1 <- checkElabTm' tyEnv kiEnv tm1
+         case mty1 of
+            Just (ty1, ann1) -> do
+                mty2 <- checkElabTm' tyEnv kiEnv tm2
+                case mty2 of
+                    Just (ExnList ty2 ann2', ann2) -> do
+                        return $ Just (simplifyExnTy kiEnv $ ExnList (join ty1 ty2) (ExnUnion ann1 ann2'), ann2)
+                    _ -> error "type (Case', tm2)"
+            _ -> error "type (Case', tm1)"
+checkElabTm' tyEnv kiEnv (Case' tm1 tm2 x1 x2 tm3)
+    = do () <- if x1 == x2 then error "non-linearity (Case')" else return ()
+         () <- case lookup x1 tyEnv of
+                 Nothing -> return ()
+                 _       -> error "shadowing (Case', 1)"
+         () <- case lookup x2 tyEnv of
+                 Nothing -> return ()
+                 _       -> error "shadowing (Case', 2)"
+         mty1 <- checkElabTm' tyEnv kiEnv tm1
+         case mty1 of
+            Just annTy1@(ExnList ty1 ann1, ann1') -> do
+                mty2 <- checkElabTm' tyEnv kiEnv tm2
+                case mty2 of
+                    Just (ty2, ann2) -> do
+                        mty3 <- checkElabTm' ((x2,annTy1):(x1,(ty1,ann1)):tyEnv) kiEnv tm3
+                        case mty3 of
+                            Just (ty3, ann3) -> return $ Just (simplifyExnTy kiEnv $ join ty2 ty3, simplifyExn kiEnv $ ExnUnion ann1' (ExnUnion ann2 ann3))
+                            _ -> error "type (Case', 3)"
+                    _ -> error "type (Case', 2)"
+            _ -> error "type (Case', 1)"
+            
+-- * Checking of subtyping and subeffecting
+
+-- TODO: "merge" with exnEq and exnTyEq?
+
+isSubeffect :: KindEnv -> Exn -> Exn -> Bool
+isSubeffect env ann1 ann2 = exnEq env (ExnUnion ann1 ann2) ann2
+
+isSubtype :: KindEnv -> ExnTy -> ExnTy -> Bool
+isSubtype env ExnBool ExnBool = True
+isSubtype env ExnInt  ExnInt  = True
+isSubtype env (ExnArr ty1 ann1 ty2 ann2) (ExnArr ty1' ann1' ty2' ann2')
+    = isSubtype env ty1' ty1 && isSubeffect env ann1' ann1
+        && isSubtype env ty2 ty2' && isSubeffect env ann2 ann2'
+isSubtype env (ExnList ty ann) (ExnList ty' ann')
+    = isSubtype env ty ty' && isSubeffect env ann ann'
+isSubtype env (ExnForall e k ty) (ExnForall e' k' ty')
+    = k == k' && isSubtype ((e,k):env) ty (substExnTy e' e ty')
+    
+-- * Kind checking of annotation
+
+-- TODO: move somewhere else
+
+checkKind :: KindEnv -> Exn -> Maybe Kind
+checkKind env ExnEmpty
+    = return EXN
+checkKind env (ExnUnion exn1 exn2)
+    = do k1 <- checkKind env exn1
+         k2 <- checkKind env exn2
+         if k1 == k2 then
+            return k1
+         else
+            error "kind (ExnUnion)"
+checkKind env (ExnCon _)
+    = return EXN
+checkKind env (ExnVar e)
+    = case lookup e env of
+        Just k -> return k
+        _      -> error "unbound (ExnVar)"
+checkKind env (ExnApp exn1 exn2)
+    = do (k2' :=> k1) <- checkKind env exn1
+         k2           <- checkKind env exn2
+         if k2 == k2' then
+            return k1
+         else
+            error "kind (ExnApp)"
+checkKind env (ExnAbs e k exn)
+    = do () <- case lookup e env of
+                 Nothing -> return ()
+                 _       -> error "shadowing (ExnAbs)"
+         k2 <- checkKind ((e,k):env) exn
+         return (k :=> k2)

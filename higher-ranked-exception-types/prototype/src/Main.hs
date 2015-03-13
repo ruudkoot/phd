@@ -174,7 +174,7 @@ inferencePage = msum [ viewForm, processForm ] where
         expr :: An.Expr <- read . unpack <$> lookText "expr"
 
         let (re, elabTm, exnTy, exn) = An.evalFresh (An.reconstruct [] [] expr) 1
-        let (exnTy', exn') = (An.simplifyExnTy [] exnTy, An.simplifyExn [] exn)
+        let elabTy = An.evalFresh (An.checkElabTm' [] [] elabTm) 666
 
         ok $ template title $ do
         
@@ -185,15 +185,16 @@ inferencePage = msum [ viewForm, processForm ] where
             
             H.h2 "Elaborated expression"
             H.p $ mathjax elabTm
-
-            H.h2 "Simplified exception type"
+            
+            H.h3 "Type"
             H.p $ toHtml $
-                "\\[" ++ An.latexCheck [] exnTy' ++ "\\ \\&\\ "
-                ++ latex exn' ++ "\\]"
+                case elabTy of
+                    Just (ty, ann) -> if An.exnTyEq [] ty exnTy && An.exnEq [] ann exn then "\\[\\color{green}" ++ latex ty ++ "\\ \\&\\ " ++ latex ann ++ "\\color{black}\\]" else error "inferred type does not match type of elaborated expression"
 
-            H.h2 "Unsimplified exception type"
+            H.h2 $ "Inferred exception type"
             H.p $ toHtml $
-                "\\[" ++ latex exnTy ++ "\\ \\&\\ " ++ latex exn ++ "\\]"
+                "\\[" ++ An.latexCheck [] exnTy ++ "\\ \\&\\ "
+                ++ latex exn ++ "\\]"
 
             H.h2 "Derivation Tree"
             H.p $ toHtml re

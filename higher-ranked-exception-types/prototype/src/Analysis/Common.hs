@@ -121,12 +121,13 @@ checkExpr env (Cons e1 e2)
             Just (List t2) -> if t1 == t2 then return (List t1) else Nothing
             _              -> error "type (Cons, type)"
 checkExpr env (Case e1 e2 x1 x2 e3)
-    = do case lookup x1 env of
-             Nothing -> return ()
-             _       -> error "type (Case, shadowing 1)"
-         case lookup x2 env of
-             Nothing -> return ()
-             _       -> error "type (Case, shadowing 2)"
+    = do () <- if x1 == x2 then error "non-linearity (Case)" else return ()
+         () <- case lookup x1 env of
+                 Nothing -> return ()
+                 _       -> error "shadowing (Case, 1)"
+         () <- case lookup x2 env of
+                 Nothing -> return ()
+                 _       -> error "shadowing (Case, 2)"
          case checkExpr env e1 of
             Just (List t1) -> do t2 <- checkExpr env e2
                                  t3 <- checkExpr ((x1,t1):(x2,List t1):env) e3

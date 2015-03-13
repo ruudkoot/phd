@@ -20,7 +20,7 @@ type Complete'      = (C.Complete, ExnTy, Exn, C.Env)
 type Reconstruct'   = (Reconstruct, ElabTm, ExnTy, Exn)
 type Instantiate'   = (ExnTy, KindEnv)
 type KleeneMycroft' = ([(ExnTy, Exn, ExnTy, Name, ExnTy, Exn, KindEnv,
-                         Subst, Subst, ExnTy, ExnTy, Exn, Exn)], ExnTy, Exn)
+                         Subst, Subst, ExnTy, ExnTy, Exn, Exn)], ExnTy, Exn, Subst)
 
 data Reconstruct
     = ReconstructVar   Env KindEnv Expr

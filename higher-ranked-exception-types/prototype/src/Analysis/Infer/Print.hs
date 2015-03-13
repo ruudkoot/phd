@@ -161,7 +161,7 @@ reconstructHtml (ReconstructSeq env kenv tm re1 re2 result)
         htmlReconstruct kenv re2 "2"
         htmlResult kenv result
       ) ++ recurse [re1, re2]
-reconstructHtml (ReconstructFix env kenv tm re ins t_0 exn_0 km@(trace, t_w, exn_w) result)
+reconstructHtml (ReconstructFix env kenv tm re ins t_0 exn_0 km@(trace, t_w, exn_w, subst_w) result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
         htmlDo "reconstruct env kenv e1"
@@ -356,5 +356,5 @@ htmlResult kenv (_, exnTy, exn)
             
 latexCheck :: KindEnv -> ExnTy -> String
 latexCheck kenv t
-    | checkExnTy kenv t = "\\color{green}" ++ latex t
-    | otherwise         = "\\color{red}"   ++ latex t
+    | checkExnTy kenv t = "\\color{green}" ++ latex t ++ "\\color{black}"
+    | otherwise         = "\\color{red}"   ++ latex t ++ "\\color{black}"
