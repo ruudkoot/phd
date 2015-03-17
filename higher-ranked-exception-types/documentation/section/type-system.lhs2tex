@@ -899,3 +899,55 @@
     \item Lemma: The algorithm maintains the invariant that exception types and exceptions are in normal form.
 
 \end{itemize}
+
+\subsection{Subtyping}
+
+\begin{figure}
+    \begin{gather*}
+        \Rule{S-Bool}
+             {}
+             {\JudgeSubTy{\KiEnv}{\ExnBool}{\ExnBool}}
+        \quad
+        \Rule{S-Int}
+             {}
+             {\JudgeSubTy{\KiEnv}{\ExnInt}{\ExnInt}}
+        \\[1.5em]
+        \Rule{S-Arr}
+             {\JudgeSubTy{\KiEnv}{\ExnTy_1^\prime}{\ExnTy_1}
+                \quad
+              \JudgeSubExn{\KiEnv}{\Exn_1^\prime}{\Exn_1}
+                \quad
+              \JudgeSubTy{\KiEnv}{\ExnTy_2}{\ExnTy_2^\prime}
+                \quad
+              \JudgeSubExn{\KiEnv}{\Exn_2}{\Exn_2^\prime}
+             }
+             {\JudgeSubTy{\KiEnv}
+                         {\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}}
+                         {\ExnTyArr{\ExnTy_1^\prime}{\Exn_1^\prime}{\ExnTy_2^\prime}{\Exn_2^\prime}}
+             }
+        \\[1.5em]
+        \Rule{S-List}
+             {\JudgeSubTy{\KiEnv}{\ExnTy}{\ExnTy^\prime}
+                \quad
+              \JudgeSubExn{\KiEnv}{\Exn}{\Exn^\prime}
+             }
+             {\JudgeSubTy{\KiEnv}
+                         {\ExnTyList{\ExnTy}{\Exn}}
+                         {\ExnTyList{\ExnTy^\prime}{\Exn^\prime}}
+             }
+        \quad
+        \Rule{S-Forall}
+             {\JudgeSubTy{\KiEnv, \ExnVar : \Kind}{\ExnTy_1}{\ExnTy_2}}
+             {\JudgeSubTy{\KiEnv}
+                         {\ExnForall{\ExnVar : \Kind}{\ExnTy_1}}
+                         {\ExnForall{\ExnVar : \Kind}{\ExnTy_2}}
+             }
+    \end{gather*}
+\caption{Subtyping}
+\end{figure}
+
+\begin{itemize}
+
+    \item Possibly useful lemma: $\ExnTy_1 = \ExnTy_2 \iff \ExnTy_1 \leq \ExnTy_2 \land \ExnTy_2 \leq \ExnTy_1$.
+
+\end{itemize}
