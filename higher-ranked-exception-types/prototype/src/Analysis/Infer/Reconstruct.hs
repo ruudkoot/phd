@@ -233,7 +233,7 @@ checkElabTm' tyEnv kiEnv (Fix' tm)
          case mty of
             Just (ExnArr ty1 ann1 ty2 ann2, ann) -> do
                 if isSubtype kiEnv ty2 ty1 && isSubeffect kiEnv ann2 ann1 then
-                    return $ Just (ty2, ann2)
+                    return $ Just (ty2, simplifyExn kiEnv $ ExnUnion ann ann2)
                 else
                     error "fixpoint (Fix')"
             _ -> error "type (Fix')"
