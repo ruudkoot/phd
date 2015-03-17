@@ -1,0 +1,7 @@
+\section{Interesting observations}
+
+\begin{itemize}
+
+    \item Exception types are not invariant under $\eta$-reduction.
+
+\end{itemize}
