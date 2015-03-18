@@ -13,11 +13,33 @@ type Env = [(Name, (ExnTy, Exn))]
 fev :: Env -> [Name]
 fev = concatMap (\(_, (ty, exn)) -> fevExnTy ty ++ fevExn exn)
 
--- | Reconstruction
+-- | Derivation tree
+
+type JudgeElab   = (Env, KindEnv, Expr, ElabTm, ExnTy, Exn)
+type JudgeTyWff  = ()           -- FIXME: TODO
+type JudgeKind   = ()           -- FIXME: TODO
+type JudgeSubTy  = ()           -- FIXME: TODO
+type JudgeSubEff = ()           -- FIXME: TODO
+
+data DerivElab
+    = ElabVar                                                          JudgeElab
+    | ElabCon                                                          JudgeElab
+    | ElabCrash                                                        JudgeElab
+    | ElabAbs   JudgeTyWff JudgeKind               DerivElab           JudgeElab
+    | ElabApp   JudgeSubTy JudgeSubEff [JudgeKind] DerivElab DerivElab JudgeElab
+    | ElabFix   JudgeSubTy JudgeSubEff [JudgeKind] DerivElab           JudgeElab
+    | ElabOp                                       DerivElab DerivElab JudgeElab
+    | ElabSeq                                      DerivElab DerivElab JudgeElab
+    | ElabIf                            DerivElab  DerivElab DerivElab JudgeElab
+    | ElabNil                                                          JudgeElab
+    | ElabCons                                     DerivElab DerivElab JudgeElab
+    | ElabCase                          DerivElab  DerivElab DerivElab JudgeElab
+
+-- | Reconstruction algorithm
 
 type Result         = (ElabTm, ExnTy, Exn)
 type Complete'      = (C.Complete, ExnTy, Exn, C.Env)
-type Reconstruct'   = (Reconstruct, ElabTm, ExnTy, Exn)
+type Reconstruct'   = ((DerivElab, Reconstruct), ElabTm, ExnTy, Exn)
 type Instantiate'   = (ExnTy, KindEnv)
 type KleeneMycroft' = ([(ExnTy, Exn, ExnTy, Name, ExnTy, Exn, KindEnv,
                          Subst, Subst, ExnTy, ExnTy, Exn, Exn)], ExnTy, Exn, Subst)

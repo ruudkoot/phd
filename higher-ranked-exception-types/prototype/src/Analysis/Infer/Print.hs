@@ -37,29 +37,29 @@ instance Latex (Name, Exn) where
 instance ToMarkup Reconstruct where
     toMarkup (ReconstructVar   env kenv tm _ _ _)
         = derive "R-Var" [] ""
-    toMarkup (ReconstructAbs   env kenv tm _ _ (re,_,_,_) _ _)
+    toMarkup (ReconstructAbs   env kenv tm _ _ ((_,re),_,_,_) _ _)
         = derive "R-Abs" (map H.toMarkup [re]) ""
-    toMarkup (ReconstructApp   env kenv tm (re1,_,_,_) (re2,_,_,_) _ _ _ _)
+    toMarkup (ReconstructApp   env kenv tm ((_,re1),_,_,_) ((_,re2),_,_,_) _ _ _ _)
         = derive "R-App" (map H.toMarkup [re1, re2]) ""
     toMarkup (ReconstructCon   env kenv tm _)
         = derive "R-Con" [] ""
-    toMarkup (ReconstructBinOp env kenv tm (re1,_,_,_) (re2,_,_,_) _)
+    toMarkup (ReconstructBinOp env kenv tm ((_,re1),_,_,_) ((_,re2),_,_,_) _)
         = derive "R-BinOp" (map H.toMarkup [re1, re2]) ""
     toMarkup (ReconstructIf    env kenv tm
-                    (re1,_,_,_) (re2,_,_,_) (re3,_,_,_) _ _)
+                    ((_,re1),_,_,_) ((_,re2),_,_,_) ((_,re3),_,_,_) _ _)
         = derive "R-If" (map H.toMarkup [re1, re2, re3]) ""
     toMarkup (ReconstructCrash env kenv tm _)
         = derive "R-Crash" [] ""
-    toMarkup (ReconstructSeq   env kenv tm (re1,_,_,_) (re2,_,_,_) _)
+    toMarkup (ReconstructSeq   env kenv tm ((_,re1),_,_,_) ((_,re2),_,_,_) _)
         = derive "R-Seq" (map H.toMarkup [re1, re2]) ""
-    toMarkup (ReconstructFix   env kenv tm (re,_,_,_) _ _ _ _ _)
+    toMarkup (ReconstructFix   env kenv tm ((_,re),_,_,_) _ _ _ _ _)
         = derive "R-Fix" (map H.toMarkup [re]) ""
     toMarkup (ReconstructNil   env kenv tm _)
         = derive "R-Nil" [] ""
-    toMarkup (ReconstructCons  env kenv tm (re1,_,_,_) (re2,_,_,_) _ _)
+    toMarkup (ReconstructCons  env kenv tm ((_,re1),_,_,_) ((_,re2),_,_,_) _ _)
         = derive "R-Cons" (map H.toMarkup [re1, re2]) ""
     toMarkup (ReconstructCase  env kenv tm 
-                    (re1,_,_,_) (re2,_,_,_) _  (re3,_,_,_) _ _)
+                    ((_,re1),_,_,_) ((_,re2),_,_,_) _  ((_,re3),_,_,_) _ _)
         = derive "R-Case" (map H.toMarkup [re1, re2, re3]) ""
 
 -- * Algorithm trace
@@ -249,7 +249,7 @@ reconstructHtml (ReconstructCase env kenv tm re1 re2 env' re3 t result)
 
 
 recurse :: [Reconstruct'] -> [H.Html]
-recurse = concatMap (\(re,_,_,_) -> reconstructHtml re)
+recurse = concatMap (\((_,re),_,_,_) -> reconstructHtml re)
 
 rowRes html = H.tr $ do
                 H.td $ ""

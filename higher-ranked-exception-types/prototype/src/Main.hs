@@ -173,7 +173,7 @@ inferencePage = msum [ viewForm, processForm ] where
 
         expr :: An.Expr <- read . unpack <$> lookText "expr"
 
-        let (re, elabTm, exnTy, exn) = An.evalFresh (An.reconstruct [] [] expr) 1
+        let ((de,re), elabTm, exnTy, exn) = An.evalFresh (An.reconstruct [] [] expr) 1
         let elabTy = An.evalFresh (An.checkElabTm' [] [] elabTm) 666
 
         ok $ template title $ do
