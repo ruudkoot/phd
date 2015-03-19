@@ -48,7 +48,8 @@ reconstruct env kenv tm@(Abs x ty tm')
          let env' = (x, (t1', ExnVar exn1)) : env
          re@((de,_), etm', t2', exn2) <- reconstruct env' (kenv1 ++ kenv) tm'
          let t' = C.forallFromEnv kenv1 (ExnArr t1' (ExnVar exn1) t2' exn2)
-         return $ (ElabAbs () () de ## (env,kenv,tm)
+         return $ (ElabAbs (kenv1++kenv, t1', ty) (kenv1++kenv, ExnVar exn1, EXN) de ##
+                        (env,kenv,tm)
                   ,ReconstructAbs env kenv tm co env' re t') #
             ( annAbsFromEnv (reverse kenv1) $ Abs' x t1' (ExnVar exn1) etm'
             , t', ExnEmpty                                                 )
@@ -57,19 +58,22 @@ reconstruct env kenv tm@(App e1 e2)
     = do re1@((de1,_), etm1, t1, exn1) <- reconstruct env kenv e1
          re2@((de2,_), etm2, t2, exn2) <- reconstruct env kenv e2
          ins@(ExnArr t2' (ExnVar exn2') t' exn', kenv') <- instantiate t1
-         subst' <- match [] t2 t2'             -- ^ FIXME: only used for elaboration
+         subst' <- match [] t2 t2'             -- ^ only used for elaboration
          let subst = [(exn2', exn2)] <.> subst'
          let exn = ExnUnion (substExn' subst exn') exn1
-         return $ (ElabApp () () [] de1 de2 ## (env,kenv,tm)
+         return $ (ElabApp (kenv, t2,   simplifyExnTy kenv $ substExnTy' subst t'  )
+                           (kenv, exn2, simplifyExn   kenv $ substExn'   subst exn')
+                           (map (judgeKindFromEnv kenv) kenv') de1 de2 ##
+                                (env, kenv, tm)
                   ,ReconstructApp env kenv tm re1 re2 ins subst' subst) #
             ( App' (annAppFromEnv kenv' subst etm1) etm2
-            , simplifyExnTy kenv $ substExnTy' subst  t'
-            , simplifyExn   kenv $                    exn)
+            , simplifyExnTy kenv $ substExnTy' subst t'
+            , simplifyExn   kenv $                   exn)
 
 reconstruct env kenv tm@(Fix e1)
     = do re@((de,_), ee1, t1, exn1) <- reconstruct env kenv e1
          ins@(ExnArr t' (ExnVar exn') t'' exn'', kenv') <- instantiate t1
-                                                -- ^ FIXME: only used for elaboration
+                                                -- ^    only used for elaboration
 
          let f t_i exn_i = do
                 -- ins@(ExnArr t' (ExnVar exn') t'' exn'', kenv') <- instantiate t1
@@ -100,7 +104,13 @@ reconstruct env kenv tm@(Fix e1)
          let exn0 = ExnEmpty
          km@(_, t_w, exn_w, subst_w) <- kleeneMycroft [] t0 exn0
 
-         return $ (ElabFix () () [] de ## (env,kenv,tm)
+         return $ (ElabFix (kenv
+                           , simplifyExnTy kenv $ substExnTy' subst_w t''
+                           , simplifyExnTy kenv $ substExnTy' subst_w t'           )
+                           (kenv
+                           , simplifyExn   kenv $ substExn'   subst_w         exn''
+                           , simplifyExn   kenv $ substExn'   subst_w (ExnVar exn' ) )
+                           (map (judgeKindFromEnv kenv) kenv') de ## (env, kenv, tm)
                   ,ReconstructFix env kenv tm re ins t0 exn0 km) #
             ( Fix' (annAppFromEnv kenv' subst_w ee1)
             , simplifyExnTy kenv t_w
@@ -173,16 +183,16 @@ instantiate t
 -- TODO: move forallFromEnv here
 
 annAbsFromEnv :: KindEnv -> ElabTm -> ElabTm
-annAbsFromEnv [] tm
-    = tm
-annAbsFromEnv ((e,k):kenv) tm
-    = AnnAbs e k (annAbsFromEnv kenv tm)
+annAbsFromEnv []           tm =                                tm
+annAbsFromEnv ((e,k):kenv) tm = AnnAbs e k (annAbsFromEnv kenv tm)
 
 annAppFromEnv :: KindEnv -> Subst -> ElabTm -> ElabTm
-annAppFromEnv []        _     tm
-    = tm
+annAppFromEnv []            _     tm = tm
 annAppFromEnv ((e, _):kenv) subst tm
     = annAppFromEnv kenv subst (AnnApp tm (substExn' subst (ExnVar e)))
+    
+judgeKindFromEnv :: KindEnv -> (Name, Kind) -> JudgeKind
+judgeKindFromEnv kenv (exn, kind) = (kenv, ExnVar exn, kind)
     
 -- | Type checking of elaborated terms
 

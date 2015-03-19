@@ -196,8 +196,9 @@ inferencePage = msum [ viewForm, processForm ] where
                 "\\[" ++ An.latexCheck [] exnTy ++ "\\ \\&\\ "
                 ++ latex exn ++ "\\]"
 
-            H.h2 "Derivation Tree"
-            H.p $ toHtml re
+            H.h2 "Derivation tree"
+            H.h3 "Syntax-directed elaboration"            
+            H.p $ toHtml de
             
             H.h2 "Algorithm"
             mapM_ H.p (An.reconstructHtml re)

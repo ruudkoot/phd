@@ -9,9 +9,9 @@ module Analysis.Infer.Print (
 
 import Control.Monad (forM)
 
-import Text.Blaze.Html5 (ToMarkup)
-import Text.Blaze.Html5 ((!))
-import qualified Text.Blaze.Html5 as H
+import           Text.Blaze.Html5 (ToMarkup)
+import           Text.Blaze.Html5 ((!))
+import qualified Text.Blaze.Html5            as H
 import qualified Text.Blaze.Html5.Attributes as A
 
 import Analysis.Names
@@ -30,39 +30,54 @@ instance Latex (Name, Exn) where
     latex (show -> e, latex -> exn)
         = "e_{" ++ e ++ "} \\mapsto " ++ exn
 
+-- | Elaboration
+
+instance ToMarkup DerivElab where
+    toMarkup (ElabVar   je)
+        = derive "TE-Var" [] (judgeElab je)
+    toMarkup (ElabCon   je)
+        = derive "TE-Con" [] (judgeElab je)
+    toMarkup (ElabCrash je)
+        = derive "TE-Crash" [] (judgeElab je)
+    toMarkup (ElabAbs   jt jk de je)
+        = derive "TE-Abs" (map H.toMarkup [de] ++ [judgeKind jk] ++ [judgeTyWff jt])
+            (judgeElab je)
+    toMarkup (ElabApp   _ _ jks de1 de2 je)
+        = derive "TE-App" (map H.toMarkup [de1, de2] ++ map judgeKind jks) 
+            (judgeElab je)
+    toMarkup (ElabFix   _ _ jks de je)
+        = derive "TE-Fix" (map H.toMarkup [de] ++ map judgeKind jks) (judgeElab je)
+    toMarkup (ElabOp    de1 de2 je)
+        = derive "TE-Op" (map H.toMarkup [de1, de2]) (judgeElab je)
+    toMarkup (ElabSeq   de1 de2 je)
+        = derive "TE-Seq" (map H.toMarkup [de1, de2]) (judgeElab je)
+    toMarkup (ElabIf    de1 de2 de3 je)
+        = derive "TE-If" (map H.toMarkup [de1, de2, de3]) (judgeElab je)
+    toMarkup (ElabNil   je)
+        = derive "TE-Nil" [] (judgeElab je)
+    toMarkup (ElabCons  de1 de2 je)
+        = derive "TE-Cons" (map H.toMarkup [de1, de2]) (judgeElab je)
+    toMarkup (ElabCase  de1 de2 de3 je)
+        = derive "TE-Case" (map H.toMarkup [de1, de2, de3]) (judgeElab je)
+
+judgeElab :: JudgeElab -> H.Html
+judgeElab (tyEnv, kiEnv, tm, elabTm, exnTy, exn)
+--    = H.toHtml $ "$" ++ latex tyEnv ++ " ; " ++ latex kiEnv ++ " \\vdash " ++ latex tm ++ " \\leadsto " ++ latex elabTm ++ " : " ++ latex exnTy ++ " \\ \\&\\  " ++ latex exn ++ "$"
+    = H.toHtml $ "$" ++ "\\Gamma" ++ " ; " ++ "\\Delta" ++ " \\vdash "
+        ++ latex tm ++ " \\leadsto " ++ latex elabTm ++ " : " ++ latex exnTy
+        ++ " \\ \\&\\  " ++ latex exn ++ "$"
+    
+judgeKind :: JudgeKind -> H.Html
+judgeKind (kiEnv, exn, kind)
+    = H.toHtml $ "$" ++ "\\Delta" ++ " \\vdash " ++ latex exn ++ " : "
+        ++ latex kind ++ "$"
+
+judgeTyWff :: JudgeTyWff -> H.Html
+judgeTyWff (kiEnv, exnTy, ty)
+    = H.toHtml $ "$" ++ "\\Delta" ++ " \\vdash " ++ latex exnTy
+        ++ " \\triangleright " ++ latex ty ++ "$"
+
 -- | Reconstruction
-
--- * Derivation tree
-
-instance ToMarkup Reconstruct where
-    toMarkup (ReconstructVar   env kenv tm _ _ _)
-        = derive "R-Var" [] ""
-    toMarkup (ReconstructAbs   env kenv tm _ _ ((_,re),_,_,_) _ _)
-        = derive "R-Abs" (map H.toMarkup [re]) ""
-    toMarkup (ReconstructApp   env kenv tm ((_,re1),_,_,_) ((_,re2),_,_,_) _ _ _ _)
-        = derive "R-App" (map H.toMarkup [re1, re2]) ""
-    toMarkup (ReconstructCon   env kenv tm _)
-        = derive "R-Con" [] ""
-    toMarkup (ReconstructBinOp env kenv tm ((_,re1),_,_,_) ((_,re2),_,_,_) _)
-        = derive "R-BinOp" (map H.toMarkup [re1, re2]) ""
-    toMarkup (ReconstructIf    env kenv tm
-                    ((_,re1),_,_,_) ((_,re2),_,_,_) ((_,re3),_,_,_) _ _)
-        = derive "R-If" (map H.toMarkup [re1, re2, re3]) ""
-    toMarkup (ReconstructCrash env kenv tm _)
-        = derive "R-Crash" [] ""
-    toMarkup (ReconstructSeq   env kenv tm ((_,re1),_,_,_) ((_,re2),_,_,_) _)
-        = derive "R-Seq" (map H.toMarkup [re1, re2]) ""
-    toMarkup (ReconstructFix   env kenv tm ((_,re),_,_,_) _ _ _ _ _)
-        = derive "R-Fix" (map H.toMarkup [re]) ""
-    toMarkup (ReconstructNil   env kenv tm _)
-        = derive "R-Nil" [] ""
-    toMarkup (ReconstructCons  env kenv tm ((_,re1),_,_,_) ((_,re2),_,_,_) _ _)
-        = derive "R-Cons" (map H.toMarkup [re1, re2]) ""
-    toMarkup (ReconstructCase  env kenv tm 
-                    ((_,re1),_,_,_) ((_,re2),_,_,_) _  ((_,re3),_,_,_) _ _)
-        = derive "R-Case" (map H.toMarkup [re1, re2, re3]) ""
-
--- * Algorithm trace
 
 reconstructHtml :: Reconstruct -> [H.Html]
 reconstructHtml (ReconstructVar env kenv tm t exn result)

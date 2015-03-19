@@ -16,10 +16,10 @@ fev = concatMap (\(_, (ty, exn)) -> fevExnTy ty ++ fevExn exn)
 -- | Derivation tree
 
 type JudgeElab   = (Env, KindEnv, Expr, ElabTm, ExnTy, Exn)
-type JudgeTyWff  = ()           -- FIXME: TODO
-type JudgeKind   = ()           -- FIXME: TODO
-type JudgeSubTy  = ()           -- FIXME: TODO
-type JudgeSubEff = ()           -- FIXME: TODO
+type JudgeTyWff  = (KindEnv, ExnTy, Ty)
+type JudgeKind   = (KindEnv, Exn, Kind)
+type JudgeSubTy  = (KindEnv, ExnTy, ExnTy)
+type JudgeSubEff = (KindEnv, Exn, Exn)
 
 data DerivElab
     = ElabVar                                                          JudgeElab
