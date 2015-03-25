@@ -18,17 +18,17 @@
 %format ExnEmpty                       = "\ExnEmpty "
 
 
-\newcommand{\Complete}{\mathbb{C}}
+\newcommand{\Complete}{\mathcal{C}}
 %format complete = "\Complete"
-\newcommand{\Reconstruct}{\mathbb{R}}
+\newcommand{\Reconstruct}{\mathcal{R}}
 %format reconstruct = "\Reconstruct"
-\newcommand{\Solve}{\mathbb{S}}
+\newcommand{\Solve}{\mathcal{S}}
 %format solve = "\Solve"
-\newcommand{\Match}{\mathbb{M}}
+\newcommand{\Match}{\mathcal{M}}
 %format match = "\Match"
-\newcommand{\Instantiate}{\mathbb{I}}
+\newcommand{\Instantiate}{\mathcal{I}}
 %format instantiate = "\Instantiate"
-\newcommand{\JOIN}{\mathbb{J}}
+\newcommand{\JOIN}{\mathcal{J}}
 %format join = "\JOIN"
 
 %format env  = "\Gamma"

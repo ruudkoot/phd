@@ -1,5 +1,7 @@
 \documentclass[serif,professionalfont]{beamer}
 
+\usepackage{etex}
+
 %\setbeamercolor{alerted text}{fg=green,bg=red}
 
 \usepackage[sc,osf]{mathpazo}			% Palatino (text + math)
@@ -28,28 +30,46 @@
 %include ../definitions/intermezzo.lhs2tex
 %include ../definitions/lambda-union.lhs2tex
 %include ../definitions/completion.lhs2tex
+%include ../definitions/algorithm.lhs2tex
+%include ../definitions/type-system.lhs2tex
 
 \setbeamersize{description width=-\labelsep}
 
 \begin{document}
 
-\title{Higher-Ranked Exception Types}
+\title{Higher-ranked Exception Types}
 \subtitle{\textsc{\alert{Work-in-Progress}}}
 \author{Ruud Koot}
 \institute[UU]{Department of Information and Computing Sciences\\Utrecht University}
-%\date{June 12, 2014}
+\date{March 26, 2015}
 \maketitle
 
 %include section/motivation.lhs2tex
-%%include section/intermezzo.lhs2tex
+%include section/intermezzo.lhs2tex
 %include section/technicalities.lhs2tex
 %include section/problems.lhs2tex
 
 \begin{frame}[t]{References}
 
-    \nocite{LIX-RR-96-09}
-    \bibliographystyle{amsalpha}
-    \bibliography{../higher-ranked-exception-types}
+    \begin{block}{Paper and prototype}
+
+        A prototype implementation of the type inference algorithm and an early draft of the paper are available from:
+        
+            \begin{itemize}
+            
+                \item \url{https://github.com/ruudkoot/phd}
+                
+            \end{itemize}
+            
+    \end{block}
+
+    \begin{block}{Related work}
+
+        \nocite{LIX-RR-96-09}
+        \bibliographystyle{amsalpha}
+        \bibliography{../higher-ranked-exception-types}
+    
+    \end{block}
 
 \end{frame}
 

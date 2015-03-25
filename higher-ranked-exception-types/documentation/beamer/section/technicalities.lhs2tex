@@ -42,7 +42,7 @@
 
 %format e_2p = "e_2^\prime"
 %format gamma = "\widehat\Gamma"
-%format chi   = "\chi"
+%format chi = "\chi"
 %format chi_2
 %format tauhat = "\widehat\tau"
 %format tauhat_1
@@ -62,32 +62,123 @@
 %format Set (a) = "\{" a "\}"
 %format Sub (a) (b) = a "\subseteq " b
 
-\begin{frame}{Technicalities: Reconstruction (variables)}
+%format reconstruct                 = "\mathcal{R}"
+%format complete                    = "\mathcal{C}"
+%format instantiate                 = "\mathcal{I}"
+%format match                       = "\mathcal{M}"
+
+%format Product (a) (b)             = a "\times " b
+%format ClassEnv                    = "\ClassEnv"
+%format env                         = "\TyEnv"
+%format kenv                        = "\KiEnv"
+
+%format Var                         = "\TmVar"
+%format env_x                       = "\TyEnv_x"
+
+%format (Con (t) (c))               = c "_" t
+%format ty                          = "\Ty"
+%format Result (a) (b)              = "\langle" a "; " b "\rangle"
+%format bottomTy                    = "\BottomTy{\Ty}"
+%format ExnEmpty                    = "\ExnEmpty"
+
+%format Crash                       = "\TmCrash{\Ty}{\ExnLbl}"
+%format ExnCon                      = "\ExnCon{\ExnLbl}"
+
+%format Abs                         = "\TmAbs{\TmVar}{\Ty}{\Tm}"
+%format (Tuple  (x) (y))            = "\langle" x ";" y "\rangle"
+%format (Triple (x) (y) (z))        = "\langle" x ";" y ";" z "\rangle"
+%format ExnTy                       = "\ExnTy"
+%format ExnTy'                      = "\ExnTy^\prime"
+%format ExnTy''                     = "\ExnTy^{\prime\prime}"
+%format ExnTy_0                     = "\ExnTy_0"
+%format ExnTy_1                     = "\ExnTy_1"
+%format ExnTy_2                     = "\ExnTy_2"
+%format ExnTy_2'                    = "\ExnTy_2^\prime"
+%format ExnTy_3                     = "\ExnTy_3"
+%format ExnVar'                     = "\ExnVar^{\prime}"
+%format ExnVar_1                    = "\ExnVar_1"
+%format ExnVar_2'                   = "\ExnVar_2^\prime"
+%format Exn                         = "\Exn"
+%format Exn'                        = "\Exn^\prime"
+%format Exn''                       = "\Exn^{\prime\prime}"
+%format Exn_0                       = "\Exn_0"
+%format Exn_1                       = "\Exn_1"
+%format Exn_1'                      = "\Exn_1^\prime"
+%format Exn_2                       = "\Exn_2"
+%format Exn_2'                      = "\Exn_2^\prime"
+%format Exn_3                       = "\Exn_3"
+%format kenv'                       = "\overline{\ExnVar_i : \Kind_i}"
+%format EmptyEnv                    = "\emptyset"
+%format (extendTyEnv env x (t) e)   = env ", " x " : " t "\ \&\ " e
+%format Tm                          = "\Tm"
+%format tm                          = "\Tm"
+%format tm_1
+%format tm_2
+%format tm_3
+%format ExnTyBool                   = "\ExnBool"
+%format ExnTyInt                    = "\ExnInt"
+%format ExnTyArr (a) (b) (c) (d)    = "\ExnTyArr{" a "}{" b "}{" c "}{" d "}"
+%format ExnForall (a) (b)           = "\ExnForall{" a "}{" b "}"
+
+%format App                         = "\TmApp{\Tm_1}{\Tm_2}"
+%format subst                       = "\theta"
+%format Subst (x) (y)               = "\left[" x "\mapsto " y "\right]"
+%format ExnUnion (a) (b)            = "\ExnUnion{" a "}{" b "}"
+%format applySubst (x)              = "\theta " x
+%format (simplify (kenv) (x))       = "\llfloor " x "\rrfloor_{" kenv "}"
+
+%format Fix                         = "\TmFix{\Tm}"
+%format Exn_i                       = "\Exn_i"
+%format Exn_i1                      = "\Exn_{i+1}"
+%format Exn_im                      = "\Exn_{i-1}"
+%format Exn_w                       = "\Exn_\omega"
+%format Exn_w'                      = "\Exn_\omega^\prime"
+%format ExnTy_i                     = "\ExnTy_i"
+%format ExnTy_i1                    = "\ExnTy_{i+1}"
+%format ExnTy_im                    = "\ExnTy_{i-1}"
+%format ExnTy_w                     = "\ExnTy_\omega"
+%format ExnTy_w'                    = "\ExnTy_\omega^\prime"
+%format bottomTyU                   = "\BottomTy{\lfloor \ExnTy^\prime \rfloor}"
+%format until                       = "\mathbf{until}"
+%format return                      = "\mathbf{return}"
+
+%format BinOp                       = "\TmOp{\Tm_1}{\Tm_2}"
+%format Seq                         = "\TmSeq{\Tm_1}{\Tm_2}"
+
+%format If                          = "\TmIf{\Tm_1}{\Tm_2}{\Tm_3}"
+%format ExnTyJoin a b               = "\TyJoin{" a "}{" b "}"
+
+%format Nil                         = "\TmNil{\Ty}"
+%format ExnTyList a b               = "\ExnTyList{" a "}{" b "}"
+
+%format Cons                        = "\TmCons{\Tm_1}{\Tm_2}"
+%format Case                        = "\TmCase{\Tm_1}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}"
+%format Var_1
+%format Var_2
+
+\begin{frame}{Technicalities: Reconstruction (variables, constants)}
 
     \begin{code}
-        reconstruct gamma x =
-            let  (tauhat, chi) = gamma(x)
-                 e be fresh
-            in   (tauhat, e, Set (Sub chi e))
+        reconstruct : Product ClassTyEnv (Product ClassKiEnv ClassTm) -> Product ClassExnTy ClassExn
+
+        reconstruct env kenv Var         =  env_x
+
+        reconstruct env kenv (Con ty c)  =  Result bottomTy ExnEmpty
+
+        reconstruct env kenv Crash       =  Result bottomTy ExnCon
+
     \end{code}
 
 \end{frame}
 
-%format UNTOUCHABLES  = "\{e_1\} \cup \{\overline{e_i}\} \cup fv\ \widehat\Gamma"
-%format RESULTINGTYPE = "\forall e_1 :: \KindEXN.\overline{\forall e_i :: \kappa_i}.\ \widehat\tau_1^{e_1} \to \widehat\tau_2^{\chi_2}"
-
 \begin{frame}{Technicalities: Reconstruction (abstractions)}
 
     \begin{code}
-        reconstruct gamma (LAMBDA (x : tau) t) =
-            let  (tauhat_1, KindEnv i)  = complete tau EmptyEnv
-                 e_1 be fresh
-                 (tauhat_2, e_2, C_1)   = reconstruct (gamma, MapsTo x ((tauhat_1, e_1))) t
-                 X       = UNTOUCHABLES
-                 chi_2   = solve C_1 X e_2
-                 tauhat  = RESULTINGTYPE
-                 e be fresh
-            in   (tauhat, e, EmptySet)
+        reconstruct : Product ClassTyEnv (Product ClassKiEnv ClassTm) -> Product ClassExnTy ClassExn
+        reconstruct env kenv (Abs) =
+            let  Triple ExnTy_1 ExnVar_1 kenv'  =  complete EmptyEnv ty
+                 Tuple ExnTy_2 Exn_2            =  reconstruct ((extendTyEnv env Var ExnTy_1 ExnVar_1)) (kenv,kenv') Tm
+            in   Result (ExnForall kenv' (ExnTyArr ExnTy_1 ExnVar_1 ExnTy_2 Exn_2)) ExnEmpty
     \end{code}
 
 \end{frame}
@@ -172,7 +263,7 @@
     \begin{itemize}
     
         \item $\TyBool\to\TyBool$
-        \item $\forall e_1 :: \KindEXN.\ \ExnTyBool^{e_1} \to \ExnTyBool^{(e_2\ e_1)}\ \&\ e_3$
+        \item $\forall e_1 :: \KindEXN.\ \ExnTyBool\langle e_1\rangle \to \ExnTyBool\langle e_2\ e_1\rangle\ \&\ e_3$
         \item $e_2 :: \KindEXN \Rightarrow \KindEXN, e_3 :: \KindEXN$
     
     \end{itemize}
@@ -186,7 +277,7 @@
         \item $\TyBool\to\TyBool\to\TyBool$
         \item
             \begin{multline*}
-                \forall e_1 :: \KindEXN.\ \ExnTyBool^{e_1} \to\\ (\forall e_4 :: \KindEXN.\ \ExnTyBool^{e_4} \xrightarrow{e_2\ e_1} \ExnTyBool^{(e_5\ e_1\ e_4)})\ \&\ e_3
+                \forall e_1 :: \KindEXN.\ \ExnTyBool\langle e_1\rangle \to\\ (\forall e_4 :: \KindEXN.\ \ExnTyBool\langle e_4\rangle \xrightarrow{e_2\ e_1} \ExnTyBool\langle e_5\ e_1\ e_4\rangle)\ \&\ e_3
             \end{multline*}
         \item $e_2 :: \KindEXN \Rightarrow \KindEXN, e_3 :: \KindEXN, e_5 :: \KindEXN \Rightarrow \KindEXN \Rightarrow \KindEXN$
     
@@ -201,7 +292,7 @@
         \item $(\TyBool\to\TyBool)\to\TyBool$
         \item
             \begin{multline*}
-                \forall e_2 :: \KindEXN \Rightarrow \KindEXN.\ \forall e_3 :: \KindEXN.\\ \left(\forall e_1 :: \KindEXN.\ \ExnTyBool^{e_1} \xrightarrow{e_3} \ExnTyBool^{(e_2\ e_1)}\right) \to \ExnTyBool^{(e_4\ e_2\ e_3)}\ \&\ e_5
+                \forall e_2 :: \KindEXN \Rightarrow \KindEXN.\ \forall e_3 :: \KindEXN.\\ \left(\forall e_1 :: \KindEXN.\ \ExnTyBool\langle e_1\rangle \xrightarrow{e_3} \ExnTyBool\langle e_2\ e_1\rangle\right) \to \ExnTyBool\langle e_4\ e_2\ e_3 \rangle\ \&\ e_5
             \end{multline*}
         \item $e_4 :: (\KindEXN \Rightarrow \KindEXN) \Rightarrow \KindEXN \Rightarrow \KindEXN, e_5 :: \KindEXN$
     
@@ -214,14 +305,13 @@
 \begin{frame}{Technicalities: Reconstruction (applications)}
 
     \begin{code}
-        reconstruct gamma (t_1 t_2) =
-            let  (tauhat_1, e_1, C_1)  = reconstruct gamma t_1
-                 (tauhat_2, e_2, C_2)  = reconstruct gamma t_2
-                 INSTMATCH             = instantiate tauhat_1
-                 theta = Subst e_2p e_2 . match EmptyEnv tauhat_2 tauhat_2prime
-                 e be fresh
-                 C = Set (...)
-            in (tauhat, e, C)
+        reconstruct : Product ClassTyEnv (Product ClassKiEnv ClassTm) -> Product ClassExnTy ClassExn
+        reconstruct env kenv (App) =
+            let  Tuple ExnTy_1 Exn_1                                    = reconstruct env kenv tm_1
+                 Tuple ExnTy_2 Exn_2                                    = reconstruct env kenv tm_2
+                 Tuple (ExnTyArr ExnTy_2' ExnVar_2' ExnTy' Exn') kenv'  = instantiate ExnTy_1
+                 subst                                                  = Subst ExnVar_2' Exn_2 . match EmptyEnv ExnTy_2 ExnTy_2'
+            in   Tuple (simplify kenv (applySubst ExnTy')) (simplify kenv (ExnUnion (applySubst Exn') (Exn_1)))
     \end{code}
 
 \end{frame}
@@ -251,8 +341,8 @@
 \end{frame}
 
 %format Union (s) (t) = s "\cup " t
-%format Example1 = "\ExnTyBool^{e_1} \to \ExnTyBool^{(e_2\ e_1\ \cup\ e_3)}"
-%format Example2 = "\ExnTyBool^{e_1} \to \ExnTyBool^{(e_0\ e_1\ e_2\ e_3)}"
+%format Example1 = "\ExnTyBool\langle e_1\rangle \to \ExnTyBool\langle e_2\ e_1\ \cup\ e_3\rangle"
+%format Example2 = "\ExnTyBool\langle e_1\rangle \to \ExnTyBool\langle e_0\ e_1\ e_2\ e_3\rangle"
 
 \begin{frame}{Technicalities: Matching --- Example}
 
@@ -260,8 +350,9 @@
     
          \item
             \begin{code}
-                match [e_1::EXN, e_2::EXN=>EXN, e_3 :: EXN]
-                    (Example1) (Example2)
+                match  [e_1::EXN, e_2::EXN=>EXN, e_3 :: EXN]
+                       (Example1)
+                       (Example2)
             \end{code}
             
         \pause
@@ -275,17 +366,19 @@
 
 \end{frame}
 
-\begin{frame}{Technicalities: Constraint solving}
+\begin{frame}{Technicalities: Reconstruction (fixpoints)}
 
-    \begin{itemize}
-    
-        \item Solving subtyping constraints can be done using a fixed-point iteration.
-        
-        \item To decide we have reached a fixed point we need an equality on types.
-        
-        \item But types are now a simply typed $\lambda$-calculus.
-    
-    \end{itemize}
+    \begin{code}
+        reconstruct : Product ClassTyEnv (Product ClassKiEnv ClassTm) -> Product ClassExnTy ClassExn
+        reconstruct env kenv (Fix) =
+            let  Tuple ExnTy Exn                                      = reconstruct env kenv tm
+                 Tuple (ExnTyArr ExnTy' ExnVar' ExnTy'' Exn'') kenv'  = instantiate ExnTy
+            in   Triple ExnTy_0 Exn_0 i  <- Triple bottomTyU ExnEmpty 0
+                 do  subst                     <- Subst ExnVar' Exn_i . match EmptyEnv ExnTy_i ExnTy'
+                     Triple ExnTy_i1 Exn_i1 i  <- Triple  (simplify kenv (applySubst ExnTy'')) (simplify kenv (applySubst Exn'')) (i+1)
+                 until (Tuple ExnTy_i Exn_i) == Tuple ExnTy_im Exn_im
+                 return (Tuple ExnTy_i (simplify kenv (ExnUnion Exn Exn_i)))
+    \end{code}
 
 \end{frame}
 
