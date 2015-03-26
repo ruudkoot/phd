@@ -26,15 +26,11 @@
         
             \begin{enumerate}
             
-                \item Collect a set of subtyping constraints.
-                
                 \item In case of a $\lambda$-abstraction $\lambda x : \tau. e$, we \emph{complete} the type $\tau$ to an exception type.
                 
                 \item In case of an application we \emph{match} the types of the formal and actual parameter.
             
             \end{enumerate}
-            
-        \item Solve the generated subtyping constraints.
     
     \end{enumerate}
 

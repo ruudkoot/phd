@@ -3,18 +3,16 @@
     \begin{itemize}
 
         \item Not sound w.r.t. \emph{imprecise exception semantics}.
-        
+
         \item Making it sound negates the precision gained by higher-ranked types.
-        
-        \item Need to move to a more powerful constraint language.
-        
+
+        \item Need to move to a more powerful language for effects.
+
             \begin{itemize}
-            
-                \item In previous work we used conditionals/implications and a somewhat ad hoc non-emptyness guard.
+
+                \item In previous work we used conditional constraints/implications and a somewhat ad hoc non-emptyness guard.
                 
                 \item Now I want to look at \emph{Boolean rings}, which look more well-behaved.
-                
-                \item May make more sense to use \emph{equational unification} instead of constraints.
 
             \end{itemize}
     
