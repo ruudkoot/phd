@@ -293,7 +293,7 @@ instance Latex Exn where
     latexColor cenv (ExnApp e1 e2)
         = "(" ++ latexColor cenv e1 ++ "\\ " ++ latexColor cenv e2 ++ ")"
     latexColor cenv (ExnAbs n k e)
-        = "(\\lambda " ++ color Orange ("e_{" ++ show n ++ "}") ++ ":"
+        = "(\\lambda " ++ colorLatex Orange ("e_{" ++ show n ++ "}") ++ ":"
             ++ latex k ++ "." ++ latexColor ((n, Orange) : cenv) e ++ ")"
     latexColor cenv exn
         = latex exn

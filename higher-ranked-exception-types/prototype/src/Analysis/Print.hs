@@ -4,7 +4,7 @@ module Analysis.Print (
     Latex(..),
     Color(..),
     ColorEnv,
-    color,
+    colorLatex,
     colorByNumber,
     mathjax,
     mathjax',
@@ -37,11 +37,22 @@ instance Latex a => Latex [a] where
 
 -- * Colored LaTeX
 
-data Color = Red | Green | Blue | Purple | Orange
+data Color = Black | Red | Green | Blue | Purple | Orange
 
-color :: Color -> String -> String
-color c xs = "\\color{" ++ f c ++ "}" ++ xs ++ "\\color{black}"
-    where f Red    = "red"
+colorCSS :: Color -> String
+colorCSS c = "color: " ++ f c ++ ";"
+    where f Black  = "black"
+          f Red    = "red"
+          f Green  = "green"
+          f Blue   = "blue"
+          f Purple = "purple"
+          f Orange = "orange"
+
+
+colorLatex :: Color -> String -> String
+colorLatex c xs = "\\color{" ++ f c ++ "}" ++ xs ++ "\\color{black}"
+    where f Black  = "black"
+          f Red    = "red"
           f Green  = "green"
           f Blue   = "blue"
           f Purple = "purple"
@@ -51,7 +62,7 @@ type ColorEnv = [(Name, Color)]
 
 colorByNumber :: ColorEnv -> Name -> String -> String
 colorByNumber cenv x
-    | Just c <- lookup x cenv = color c
+    | Just c <- lookup x cenv = colorLatex c
     | otherwise = error "colorByNumber"
 
 -- | HTML
@@ -68,8 +79,8 @@ envAsTable env = do
                 H.td $ toHtml $ show k
                 H.td $ mathjax v
 
-derive :: Text -> [H.Html] -> H.Html -> H.Html
-derive rule premises conclusion
+derive :: Color -> Text -> [H.Html] -> H.Html -> H.Html
+derive color rule premises conclusion
     = let colSpan = H.toValue (show (length premises `max` 1)) in
         H.table ! A.style "margin-left: auto; margin-right: auto;" $ do
             H.tr $ do
@@ -80,7 +91,7 @@ derive rule premises conclusion
                 H.td ""
             H.tr $ do
                 H.td ! A.colspan colSpan $ H.hr
-                H.td $ H.toHtml rule
+                H.td ! A.style (H.toValue $ colorCSS color) $ H.toHtml rule
             H.tr $ do
                 H.td ! A.colspan colSpan ! A.style "padding: 0em; text-align: center;" $ do
                     conclusion

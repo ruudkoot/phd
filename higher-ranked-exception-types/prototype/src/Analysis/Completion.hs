@@ -114,12 +114,12 @@ ltxComplete env ty exnTy exn env'
 
 instance ToMarkup Complete where
     toMarkup (CompleteBool env ty exnTy exn env')
-        = derive "C-Bool" [] (ltxComplete env ty exnTy exn env')
+        = derive Black "C-Bool" [] (ltxComplete env ty exnTy exn env')
     toMarkup (CompleteBool env ty exnTy exn env')
-        = derive "C-Int"  [] (ltxComplete env ty exnTy exn env')
+        = derive Black "C-Int"  [] (ltxComplete env ty exnTy exn env')
     toMarkup (CompleteList env dExnTy ty exnTy exn env')
-        = derive "C-List" [H.toMarkup dExnTy] (ltxComplete env ty exnTy exn env')
+        = derive Black "C-List" [H.toMarkup dExnTy] (ltxComplete env ty exnTy exn env')
     toMarkup (CompleteArr env dExnTy1 dExnTy2 ty exnTy exn env')
-        = derive "C-Arr" (map H.toMarkup [dExnTy1, dExnTy2])
+        = derive Black "C-Arr" (map H.toMarkup [dExnTy1, dExnTy2])
                                               (ltxComplete env ty exnTy exn env')
 

@@ -33,67 +33,119 @@ instance Latex (Name, Exn) where
 -- | Elaboration
 
 instance ToMarkup DerivType where
-    toMarkup (TypeVar jt)
-        = derive "T-Var" [] (judgeType jt)
-    toMarkup (TypeCon jt)
-        = derive "T-Con" [] (judgeType jt)
-    toMarkup (TypeCrash jt)
-        = derive "T-Crash" [] (judgeType jt)
-    toMarkup (TypeAbs dt jt)
-        = derive "T-Abs" [H.toMarkup dt] (judgeType jt)
-    toMarkup (TypeAnnAbs dt jt)
-        = derive "T-AnnAbs" [H.toMarkup dt] (judgeType jt)
-    toMarkup (TypeApp dt1 dt2 jt)
-        = derive "T-App" (map H.toMarkup [dt1, dt2]) (judgeType jt)
-    toMarkup (TypeAnnApp jk dt jt)
-        = derive "T-AnnApp" [H.toMarkup dt, judgeKind jk] (judgeType jt)
-    toMarkup (TypeFix dt jt)
-        = derive "T-Fix" [H.toMarkup dt] (judgeType jt)
-    toMarkup (TypeOp dt1 dt2 jt)
-        = derive "T-Op" (map H.toMarkup [dt1, dt2]) (judgeType jt)
-    toMarkup (TypeSeq dt1 dt2 jt)
-        = derive "T-Seq" (map H.toMarkup [dt1, dt2]) (judgeType jt)
-    toMarkup (TypeIf dt1 dt2 dt3 jt)
-        = derive "T-If" (map H.toMarkup [dt1, dt2, dt3]) (judgeType jt)
-    toMarkup (TypeNil jt)
-        = derive "T-Nil" [] (judgeType jt)
-    toMarkup (TypeCons dt1 dt2 jt)
-        = derive "T-Cons" (map H.toMarkup [dt1, dt2]) (judgeType jt)
-    toMarkup (TypeCase jse dt1 dt2 dt3 jt)
-        = derive "T-Case" (map H.toMarkup [dt1, dt2, dt3] ++ [judgeSubEff jse])
-            (judgeType jt)
-    toMarkup (TypeSub jst jse dt jt)
-        = derive "T-Sub" [H.toMarkup dt, judgeSubTy jst, judgeSubEff jse]
-            (judgeType jt)
+    toMarkup dt@(TypeVar jt)
+        = derive (checkDerivType dt) "T-Var" [] (judgeType jt)
+    toMarkup dt@(TypeCon jt)
+        = derive (checkDerivType dt) "T-Con" [] (judgeType jt)
+    toMarkup dt@(TypeCrash jt)
+        = derive (checkDerivType dt) "T-Crash" [] (judgeType jt)
+    toMarkup dt@(TypeAbs dt1 jt)
+        = derive (checkDerivType dt) "T-Abs"
+            [H.toMarkup dt1] (judgeType jt)
+    toMarkup dt@(TypeAnnAbs dt1 jt)
+        = derive (checkDerivType dt) "T-AnnAbs"
+            [H.toMarkup dt1] (judgeType jt)
+    toMarkup dt@(TypeApp dt1 dt2 jt)
+        = derive (checkDerivType dt) "T-App"
+            (map H.toMarkup [dt1, dt2]) (judgeType jt)
+    toMarkup dt@(TypeAnnApp jk dt1 jt)
+        = derive (checkDerivType dt) "T-AnnApp"
+            [H.toMarkup dt1, judgeKind jk] (judgeType jt)
+    toMarkup dt@(TypeFix dt1 jt)
+        = derive (checkDerivType dt) "T-Fix"
+            [H.toMarkup dt1] (judgeType jt)
+    toMarkup dt@(TypeOp dt1 dt2 jt)
+        = derive (checkDerivType dt) "T-Op"
+            (map H.toMarkup [dt1, dt2]) (judgeType jt)
+    toMarkup dt@(TypeSeq dt1 dt2 jt)
+        = derive (checkDerivType dt) "T-Seq"
+            (map H.toMarkup [dt1, dt2]) (judgeType jt)
+    toMarkup dt@(TypeIf dt1 dt2 dt3 jt)
+        = derive (checkDerivType dt) "T-If"
+            (map H.toMarkup [dt1, dt2, dt3]) (judgeType jt)
+    toMarkup dt@(TypeNil jt)
+        = derive (checkDerivType dt) "T-Nil"
+            [] (judgeType jt)
+    toMarkup dt@(TypeCons dt1 dt2 jt)
+        = derive (checkDerivType dt) "T-Cons"
+            (map H.toMarkup [dt1, dt2]) (judgeType jt)
+    toMarkup dt@(TypeCase jse dt1 dt2 dt3 jt)
+        = derive (checkDerivType dt) "T-Case"
+            (map H.toMarkup [dt1, dt2, dt3] ++ [judgeSubEff jse]) (judgeType jt)
+    toMarkup dt@(TypeSub jst jse dt1 jt)
+        = derive (checkDerivType dt) "T-Sub"
+            [H.toMarkup dt1, judgeSubTy jst, judgeSubEff jse] (judgeType jt)
+
+boolToColor :: Bool -> Color
+boolToColor True  = Green
+boolToColor False = error "Red"
+
+checkDerivType :: DerivType -> Color -- FIXME: could check env/kenv
+checkDerivType (TypeVar (env, kenv, Var' x, exnTy, exn)) = boolToColor $
+    let Just (exnTy', exn') = lookup x env
+     in exnTyEq kenv exnTy exnTy' && exnEq kenv exn exn'
+checkDerivType (TypeCon (env, kenv, Con' x, exnTy, exn)) = boolToColor $
+    exnEq kenv exn ExnEmpty     -- FIXME: could check exnTy
+checkDerivType (TypeCrash (env, kenv, Crash' lbl ty, exnTy, exn)) = boolToColor $
+    exnEq kenv exn (ExnCon lbl) -- FIXME: could check exnTy
+checkDerivType (TypeAbs dt1 (env,kenv,Abs' x ty1' exn1' tm,
+                                      ExnArr ty1 exn1 ty2 exn2,exn)) = boolToColor $ 
+    let (env',kenv',tm',ty2',exn2') = getJT dt1 -- FIXME: could check env
+     in exnTyEq kenv ty1 ty1' && exnTyEq kenv ty2 ty2' && exnEq kenv exn1 exn1'
+            && exnEq kenv exn2 exn2' && exnEq kenv exn ExnEmpty
+checkDerivType (TypeAnnAbs dt1 (env, kenv, AnnAbs e k tm
+                                         , ExnForall e' k' ty, exn)) = boolToColor $
+    let (env',kenv',tm',ty',exn') = getJT dt1 -- FIXME: could check kenv
+     in e == e' && k == k' && exnEq kenv' exn exn' && exnTyEq kenv'{-!-} ty ty'
+checkDerivType (TypeApp dt1 dt2 jt) = boolToColor $
+    True -- TODO
+checkDerivType (TypeAnnApp jk dt1 jt) = boolToColor $
+    True -- TODO
+checkDerivType (TypeFix dt1 jt) = boolToColor $
+    True -- TODO
+checkDerivType (TypeOp dt1 dt2 jt) = boolToColor $
+    True -- TODO
+checkDerivType (TypeSeq dt1 dt2 jt) = boolToColor $
+    True -- TODO
+checkDerivType (TypeIf dt1 dt2 dt3 jt) = boolToColor $
+    True -- TODO
+checkDerivType (TypeNil jt) = boolToColor $
+    True -- TODO
+checkDerivType (TypeCons dt1 dt2 jt) = boolToColor $
+    True -- TODO
+checkDerivType (TypeCase jse dt1 dt2 dt3 jt) = boolToColor $
+    True -- TODO
+checkDerivType (TypeSub jst jse dt1 jt) = boolToColor $
+    True -- TODO
 
 instance ToMarkup DerivElab where
     toMarkup (ElabVar je)
-        = derive "TE-Var" [] (judgeElab je)
+        = derive Black "TE-Var" [] (judgeElab je)
     toMarkup (ElabCon je)
-        = derive "TE-Con" [] (judgeElab je)
+        = derive Black "TE-Con" [] (judgeElab je)
     toMarkup (ElabCrash je)
-        = derive "TE-Crash" [] (judgeElab je)
+        = derive Black "TE-Crash" [] (judgeElab je)
     toMarkup (ElabAbs jt jk de je)
-        = derive "TE-Abs" (map H.toMarkup [de] ++ [judgeKind jk] ++ [judgeTyWff jt])
+        = derive Black "TE-Abs" (map H.toMarkup [de] ++ [judgeKind jk] ++ [judgeTyWff jt])
             (judgeElab je)
     toMarkup (ElabApp jst jse jks de1 de2 je)
-        = derive "TE-App" (map H.toMarkup [de1, de2] ++ map judgeKind jks
+        = derive Black "TE-App" (map H.toMarkup [de1, de2] ++ map judgeKind jks
             ++ [judgeSubTy jst, judgeSubEff jse]) (judgeElab je)
     toMarkup (ElabFix jst jse jks de je)
-        = derive "TE-Fix" (map H.toMarkup [de] ++ map judgeKind jks
+        = derive Black "TE-Fix" (map H.toMarkup [de] ++ map judgeKind jks
             ++ [judgeSubTy jst, judgeSubEff jse]) (judgeElab je)
     toMarkup (ElabOp de1 de2 je)
-        = derive "TE-Op" (map H.toMarkup [de1, de2]) (judgeElab je)
+        = derive Black "TE-Op" (map H.toMarkup [de1, de2]) (judgeElab je)
     toMarkup (ElabSeq de1 de2 je)
-        = derive "TE-Seq" (map H.toMarkup [de1, de2]) (judgeElab je)
+        = derive Black "TE-Seq" (map H.toMarkup [de1, de2]) (judgeElab je)
     toMarkup (ElabIf de1 de2 de3 je)
-        = derive "TE-If" (map H.toMarkup [de1, de2, de3]) (judgeElab je)
+        = derive Black "TE-If" (map H.toMarkup [de1, de2, de3]) (judgeElab je)
     toMarkup (ElabNil je)
-        = derive "TE-Nil" [] (judgeElab je)
+        = derive Black "TE-Nil" [] (judgeElab je)
     toMarkup (ElabCons de1 de2  je)
-        = derive "TE-Cons" (map H.toMarkup [de1, de2]) (judgeElab je)
+        = derive Black "TE-Cons" (map H.toMarkup [de1, de2]) (judgeElab je)
     toMarkup (ElabCase de1 de2 de3 je)
-        = derive "TE-Case" (map H.toMarkup [de1, de2, de3]) (judgeElab je)
+        = derive Black "TE-Case" (map H.toMarkup [de1, de2, de3]) (judgeElab je)
 
 judgeType :: JudgeType -> H.Html
 judgeType (tyEnv, kiEnv, elabTm, exnTy, exn)
