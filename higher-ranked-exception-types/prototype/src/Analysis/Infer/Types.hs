@@ -15,11 +15,51 @@ fev = concatMap (\(_, (ty, exn)) -> fevExnTy ty ++ fevExn exn)
 
 -- | Derivation tree
 
-type JudgeElab   = (Env, KindEnv, Expr, ElabTm, ExnTy, Exn)
-type JudgeTyWff  = (KindEnv, ExnTy, Ty)
+-- * Declarative type system
+
+type JudgeType   = (Env, KindEnv, ElabTm, ExnTy, Exn)
 type JudgeKind   = (KindEnv, Exn, Kind)
 type JudgeSubTy  = (KindEnv, ExnTy, ExnTy)
 type JudgeSubEff = (KindEnv, Exn, Exn)
+
+data DerivType
+    = TypeVar                                                         JudgeType
+    | TypeCon                                                         JudgeType
+    | TypeCrash                                                       JudgeType
+    | TypeAbs                           DerivType                     JudgeType
+    | TypeAnnAbs                        DerivType                     JudgeType
+    | TypeApp                           DerivType DerivType           JudgeType
+    | TypeAnnApp JudgeKind              DerivType                     JudgeType
+    | TypeFix                           DerivType                     JudgeType
+    | TypeOp                            DerivType DerivType           JudgeType
+    | TypeSeq                           DerivType DerivType           JudgeType
+    | TypeIf                            DerivType DerivType DerivType JudgeType
+    | TypeNil                                                         JudgeType
+    | TypeCons                          DerivType DerivType           JudgeType
+    | TypeCase   JudgeSubEff            DerivType DerivType DerivType JudgeType
+    | TypeSub    JudgeSubTy JudgeSubEff DerivType                     JudgeType
+    
+getJT :: DerivType -> JudgeType
+getJT (TypeVar            jt) = jt
+getJT (TypeCon            jt) = jt
+getJT (TypeCrash          jt) = jt
+getJT (TypeAbs    _       jt) = jt
+getJT (TypeAnnAbs _       jt) = jt
+getJT (TypeApp    _ _     jt) = jt
+getJT (TypeAnnApp _ _     jt) = jt
+getJT (TypeFix    _       jt) = jt
+getJT (TypeOp     _ _     jt) = jt
+getJT (TypeSeq    _ _     jt) = jt
+getJT (TypeIf     _ _ _   jt) = jt
+getJT (TypeNil            jt) = jt
+getJT (TypeCons   _ _     jt) = jt
+getJT (TypeCase   _ _ _ _ jt) = jt
+getJT (TypeSub    _ _ _   jt) = jt
+
+-- * Syntax-directed elaboration
+
+type JudgeElab   = (Env, KindEnv, Expr, ElabTm, ExnTy, Exn)
+type JudgeTyWff  = (KindEnv, ExnTy, Ty)
 
 data DerivElab
     = ElabVar                                                          JudgeElab
@@ -39,7 +79,7 @@ data DerivElab
 
 type Result         = (ElabTm, ExnTy, Exn)
 type Complete'      = (C.Complete, ExnTy, Exn, C.Env)
-type Reconstruct'   = ((DerivElab, Reconstruct), ElabTm, ExnTy, Exn)
+type Reconstruct'   = ((DerivType, DerivElab, Reconstruct), ElabTm, ExnTy, Exn)
 type Instantiate'   = (ExnTy, KindEnv)
 type KleeneMycroft' = ([(ExnTy, Exn, ExnTy, Name, ExnTy, Exn, KindEnv,
                          Subst, Subst, ExnTy, ExnTy, Exn, Exn)], ExnTy, Exn, Subst)

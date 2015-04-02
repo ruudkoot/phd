@@ -173,8 +173,10 @@ inferencePage = msum [ viewForm, processForm ] where
 
         expr :: An.Expr <- read . unpack <$> lookText "expr"
 
-        let ((de,re), elabTm, exnTy, exn) = An.evalFresh (An.reconstruct [] [] expr) 1
-        let elabTy = An.evalFresh (An.checkElabTm' [] [] elabTm) 666
+        let ((dt,de,re), elabTm, exnTy, exn)
+                = An.evalFresh (An.reconstruct [] [] expr) 1
+        let elabTy
+                = An.evalFresh (An.checkElabTm' [] [] elabTm) 666
 
         ok $ template title $ do
         
@@ -197,7 +199,9 @@ inferencePage = msum [ viewForm, processForm ] where
                 ++ latex exn ++ "\\]"
 
             H.h2 "Derivation tree"
-            H.h3 "Syntax-directed elaboration"            
+            H.h3 "Declarative type system"
+            H.p $ toHtml dt
+            H.h3 "Syntax-directed elaboration"
             H.p $ toHtml de
             
             H.h2 "Algorithm"

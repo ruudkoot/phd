@@ -82,5 +82,5 @@ derive rule premises conclusion
                 H.td ! A.colspan colSpan $ H.hr
                 H.td $ H.toHtml rule
             H.tr $ do
-                H.td ! A.colspan colSpan ! A.style "padding: 0px" $ do
+                H.td ! A.colspan colSpan ! A.style "padding: 0em; text-align: center;" $ do
                     conclusion

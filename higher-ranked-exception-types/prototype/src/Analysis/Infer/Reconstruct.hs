@@ -21,47 +21,60 @@ import           Analysis.Infer.Match
 
 -- | Reconstruction
 
-(#) :: (a -> b -> c -> f, (a, b, c) -> g) -> (a, b, c) -> ((f, g), a, b, c)
-(f,g) # x@(x1,x2,x3) = ((f x1 x2 x3, g x), x1, x2, x3)
+(#) :: (a -> b -> c -> f, a -> b -> c -> g, (a,b,c) -> h) -> (a,b,c) -> ((f,g,h),a,b,c)
+(f,g,h) # x@(x1,x2,x3) = ((f x1 x2 x3, g x1 x2 x3, h x), x1, x2, x3)
 
 c ## (tyEnv, kiEnv, tm) = \elabTm exnTy exn -> c (tyEnv, kiEnv, tm, elabTm, exnTy, exn)
+c #= (tyEnv, kiEnv)     = \elabTm exnTy exn -> c (tyEnv, kiEnv,     elabTm, exnTy, exn)
 
 reconstruct :: Env -> KindEnv -> Expr
-    -> Fresh ((DerivElab, Reconstruct), ElabTm, ExnTy, Exn)
+    -> Fresh ((DerivType, DerivElab, Reconstruct), ElabTm, ExnTy, Exn)
 
 reconstruct env kenv tm@(Var x)
     = do let Just (t, exn) = lookup x env
-         return $ (ElabVar ## (env,kenv,tm), ReconstructVar env kenv tm t exn) #
+         return $ ( TypeVar #= (env, kenv)
+                  , ElabVar ## (env, kenv, tm)
+                  , ReconstructVar env kenv tm t exn) #
             (Var' x, t, exn)
 
 reconstruct env kenv tm@(Con b)       {- TODO: generalize to arbitrary types -}
-    = do return $ (ElabCon ## (env,kenv,tm), ReconstructCon env kenv tm) #
+    = do return $ ( TypeCon #= (env, kenv)
+                  , ElabCon ## (env, kenv, tm)
+                  , ReconstructCon env kenv tm) #
             (Con' b, ExnBool, ExnEmpty)
 
 reconstruct env kenv tm@(Crash lbl ty)
     = do ty' <- C.bottomExnTy ty
-         return $ (ElabCrash ## (env,kenv,tm), ReconstructCrash env kenv tm) #
+         return $ ( TypeCrash #= (env, kenv)
+                  , ElabCrash ## (env, kenv, tm)
+                  , ReconstructCrash env kenv tm) #
             (Crash' lbl ty, ty', ExnCon lbl)
 
-reconstruct env kenv tm@(Abs x ty tm')
+reconstruct env kenv tm@(Abs x ty tm') -- TODO: common subexpression elimination
     = do co@(dt1', t1', ExnVar exn1, kenv1) <- C.complete [] ty
          let env' = (x, (t1', ExnVar exn1)) : env
-         re@((de,_), etm', t2', exn2) <- reconstruct env' (kenv1 ++ kenv) tm'
+         re@((dt,de,_), etm', t2', exn2) <- reconstruct env' (kenv1 ++ kenv) tm'
          let t' = C.forallFromEnv kenv1 (ExnArr t1' (ExnVar exn1) t2' exn2)
-         return $ (ElabAbs (kenv1++kenv, t1', ty) (kenv1++kenv, ExnVar exn1, EXN) de ##
+         return $ (\_ _ _ -> typeAnnAbsFromEnv env' kenv (reverse kenv1) $
+                        TypeAbs dt (env', kenv1++kenv, Abs' x t1' (ExnVar exn1) etm'
+                                   ,ExnArr t1' (ExnVar exn1) t2' exn2, ExnEmpty)
+                  ,ElabAbs (kenv1++kenv, t1', ty) (kenv1++kenv, ExnVar exn1, EXN) de ##
                         (env,kenv,tm)
                   ,ReconstructAbs env kenv tm co env' re t') #
             ( annAbsFromEnv (reverse kenv1) $ Abs' x t1' (ExnVar exn1) etm'
             , t', ExnEmpty                                                 )
 
 reconstruct env kenv tm@(App e1 e2)
-    = do re1@((de1,_), etm1, t1, exn1) <- reconstruct env kenv e1
-         re2@((de2,_), etm2, t2, exn2) <- reconstruct env kenv e2
+    = do re1@((dt1,de1,_), etm1, t1, exn1) <- reconstruct env kenv e1
+         re2@((dt2,de2,_), etm2, t2, exn2) <- reconstruct env kenv e2
          ins@(ExnArr t2' (ExnVar exn2') t' exn', kenv') <- instantiate t1
          subst' <- match [] t2 t2'             -- ^ only used for elaboration
          let subst = [(exn2', exn2)] <.> subst'
          let exn = ExnUnion (substExn' subst exn') exn1
-         return $ (ElabApp (kenv, t2,   simplifyExnTy kenv $ substExnTy' subst t'  )
+         return $ (TypeApp (
+                        typeAnnAppFromEnv subst dt1
+                    ) dt2 #= (env, kenv)
+                  ,ElabApp (kenv, t2,   simplifyExnTy kenv $ substExnTy' subst t'  )
                            (kenv, exn2, simplifyExn   kenv $ substExn'   subst exn')
                            (map (judgeKindFromEnv kenv) kenv') de1 de2 ##
                                 (env, kenv, tm)
@@ -71,27 +84,26 @@ reconstruct env kenv tm@(App e1 e2)
             , simplifyExn   kenv $                   exn)
 
 reconstruct env kenv tm@(Fix e1)
-    = do re@((de,_), ee1, t1, exn1) <- reconstruct env kenv e1
+    = do re@((dt,de,_), ee1, t1, exn1) <- reconstruct env kenv e1
          ins@(ExnArr t' (ExnVar exn') t'' exn'', kenv') <- instantiate t1
                                                 -- ^    only used for elaboration
-
          let f t_i exn_i = do
                 -- ins@(ExnArr t' (ExnVar exn') t'' exn'', kenv') <- instantiate t1
                 subst' <- match [] t_i t'
                 let subst = [(exn', exn_i)] <.> subst'
-                return (t_i
-                       ,exn_i
-                       ,t'      -- not constant if I inside the loop
-                       ,exn'    -- not constant if I inside the loop
-                       ,t''     -- not constant if I inside the loop
-                       ,exn''   -- not constant if I inside the loop
-                       ,kenv'   -- not constant if I inside the loop
-                       ,subst'
-                       ,subst
-                       ,substExnTy' subst t''
-                       ,simplifyExnTy kenv $ substExnTy' subst t''
-                       ,substExn' subst exn''
-                       ,simplifyExn   kenv $ substExn' subst exn''
+                return ( t_i
+                       , exn_i
+                       , t'      -- not constant if I inside the loop
+                       , exn'    -- not constant if I inside the loop
+                       , t''     -- not constant if I inside the loop
+                       , exn''   -- not constant if I inside the loop
+                       , kenv'   -- not constant if I inside the loop
+                       , subst'
+                       , subst
+                       , substExnTy' subst t''
+                       , simplifyExnTy kenv $ substExnTy' subst t''
+                       , substExn' subst exn''
+                       , simplifyExn   kenv $ substExn' subst exn''
                        )
 
          let kleeneMycroft trace t_i exn_i = do    -- TODO: abstract to fixpointM
@@ -104,7 +116,8 @@ reconstruct env kenv tm@(Fix e1)
          let exn0 = ExnEmpty
          km@(_, t_w, exn_w, subst_w) <- kleeneMycroft [] t0 exn0
 
-         return $ (ElabFix (kenv
+         return $ (TypeFix (typeAnnAppFromEnv subst_w dt) #= (env,kenv)
+                  ,ElabFix (kenv
                            , simplifyExnTy kenv $ substExnTy' subst_w t''
                            , simplifyExnTy kenv $ substExnTy' subst_w t'           )
                            (kenv
@@ -118,53 +131,136 @@ reconstruct env kenv tm@(Fix e1)
             )
 
 reconstruct env kenv tm@(BinOp e1 e2) {- TODO: comparisons only; add AOp, BOp -}
-    = do re1@((de1,_), ee1, ExnInt, exn1) <- reconstruct env kenv e1
-         re2@((de2,_), ee2, ExnInt, exn2) <- reconstruct env kenv e2
-         return $ (ElabOp de1 de2 ## (env,kenv,tm)
-                  ,ReconstructBinOp env kenv tm re1 re2) #
-            (BinOp' ee1 ee2, ExnBool, simplifyExn kenv $ ExnUnion exn1 exn2)
+    = do re1@((dt1,de1,_), ee1, ExnInt, exn1) <- reconstruct env kenv e1
+         re2@((dt2,de2,_), ee2, ExnInt, exn2) <- reconstruct env kenv e2
+         let exn = simplifyExn kenv $ ExnUnion exn1 exn2
+         return $ ( TypeOp
+                        (TypeSub
+                            (kenv,ExnInt,ExnInt)
+                            (kenv,exn1,exn)
+                            dt1
+                            (env,kenv,ee1,ExnInt,exn)
+                        )
+                        (TypeSub
+                            (kenv,ExnInt,ExnInt)
+                            (kenv,exn2,exn)
+                            dt2
+                            (env,kenv,ee2,ExnInt,exn)
+                        ) #= (env,kenv)
+                  , ElabOp de1 de2 ## (env,kenv,tm)
+                  , ReconstructBinOp env kenv tm re1 re2) #
+            (BinOp' ee1 ee2, ExnBool, exn)
 
 reconstruct env kenv tm@(Seq e1 e2)
-    = do re1@((de1,_), ee1, t1, exn1) <- reconstruct env kenv e1
-         re2@((de2,_), ee2, t2, exn2) <- reconstruct env kenv e2
-         return $ (ElabSeq de1 de2 ## (env,kenv,tm)
-                  ,ReconstructSeq env kenv tm re1 re2) #
-            (Seq' ee1 ee2, t2, simplifyExn kenv $ ExnUnion exn1 exn2)
+    = do re1@((dt1,de1,_), ee1, t1, exn1) <- reconstruct env kenv e1
+         re2@((dt2,de2,_), ee2, t2, exn2) <- reconstruct env kenv e2
+         let exn = simplifyExn kenv $ ExnUnion exn1 exn2
+         return $ ( TypeSeq
+                        (TypeSub
+                            (kenv,t1,t1)
+                            (kenv,exn1,exn)
+                            dt1
+                            (env,kenv,ee1,t1,exn)
+                        )
+                        (TypeSub
+                            (kenv,t2,t2)
+                            (kenv,exn2,exn)
+                            dt2
+                            (env,kenv,ee2,t2,exn2)
+                        ) #= (env,kenv)
+                  , ElabSeq de1 de2 ## (env,kenv,tm)
+                  , ReconstructSeq env kenv tm re1 re2) #
+            (Seq' ee1 ee2, t2, exn)
 
 reconstruct env kenv tm@(If e1 e2 e3)
-    = do re1@((de1,_), ee1, ExnBool, exn1) <- reconstruct env kenv e1
-         re2@((de2,_), ee2, t2,      exn2) <- reconstruct env kenv e2
-         re3@((de3,_), ee3, t3,      exn3) <- reconstruct env kenv e3
-         let t = join t2 t3
-         let exn = ExnUnion exn1 (ExnUnion exn2 exn3)
-         return $ (ElabIf de1 de2 de3 ## (env,kenv,tm)
-                  ,ReconstructIf env kenv tm re1 re2 re3 t) #
-            (If' ee1 ee2 ee3, simplifyExnTy kenv $ t, simplifyExn kenv $ exn)
+    = do re1@((dt1,de1,_), ee1, ExnBool, exn1) <- reconstruct env kenv e1
+         re2@((dt2,de2,_), ee2, t2,      exn2) <- reconstruct env kenv e2
+         re3@((dt3,de3,_), ee3, t3,      exn3) <- reconstruct env kenv e3
+         let t   = simplifyExnTy kenv $ join t2 t3
+         let exn = simplifyExn   kenv $ ExnUnion exn1 (ExnUnion exn2 exn3)
+         return $ ( TypeIf
+                        (TypeSub
+                            (kenv,ExnBool,ExnBool)
+                            (kenv,exn1,   exn    )
+                            dt1
+                            (env,kenv,ee1,ExnBool,exn)
+                        )
+                        (TypeSub
+                            (kenv,t2,  t  )
+                            (kenv,exn2,exn)
+                            dt2
+                            (env,kenv,ee2,t,exn)
+                        )
+                        (TypeSub
+                            (kenv,t3,  t  )
+                            (kenv,exn3,exn)
+                            dt3
+                            (env,kenv,ee3,t,exn)
+                        ) #= (env,kenv)
+                  , ElabIf de1 de2 de3 ## (env,kenv,tm)
+                  , ReconstructIf env kenv tm re1 re2 re3 t ) #
+            (If' ee1 ee2 ee3, t, exn)
 
 reconstruct env kenv tm@(Nil ty)
     = do ty' <- C.bottomExnTy ty
-         return $ (ElabNil ## (env,kenv,tm), ReconstructNil env kenv tm) # 
+         return $ ( TypeNil #= (env,kenv)
+                  , ElabNil ## (env,kenv,tm)
+                  , ReconstructNil env kenv tm ) #
             (Nil' ty, ExnList ty' ExnEmpty, ExnEmpty)
 
 reconstruct env kenv tm@(Cons e1 e2)
-    = do re1@((de1,_), ee1, t1              , exn1) <- reconstruct env kenv e1
-         re2@((de2,_), ee2, ExnList t2 exn2', exn2) <- reconstruct env kenv e2
-         let t = join t1 t2
-         let t' = ExnList t (ExnUnion exn1 exn2')
-         return $ (ElabCons de1 de2 ## (env,kenv,tm)
-                  ,ReconstructCons env kenv tm re1 re2 t) #
-            (Cons' ee1 ee2, simplifyExnTy kenv t', exn2)
+    = do re1@((dt1,de1,_), ee1, t1              , exn1) <- reconstruct env kenv e1
+         re2@((dt2,de2,_), ee2, ExnList t2 exn2', exn2) <- reconstruct env kenv e2
+         let exn = simplifyExn kenv $ ExnUnion exn1 exn2'
+         let t   = simplifyExnTy kenv $ join t1 t2
+         let t'  = simplifyExnTy kenv $ ExnList t (ExnUnion exn1 exn2')
+         return $ ( TypeCons
+                        (TypeSub
+                            (kenv, t1, t)
+                            (kenv, exn1, exn)
+                            dt1
+                            (env, kenv, ee1, t, exn)
+                        )
+                        (TypeSub
+                            (kenv, t2, t')
+                            (kenv, exn2, exn2)
+                            dt2
+                            (env, kenv, ee2, t, exn)
+                        ) #= (env,kenv)
+                  , ElabCons de1 de2 ## (env,kenv,tm)
+                  , ReconstructCons env kenv tm re1 re2 t) #
+            (Cons' ee1 ee2, t', exn2)
 
 reconstruct env kenv tm@(Case e1 e2 x1 x2 e3)
-    = do re1@((de1,_), ee1, ExnList t1 exn1', exn1) <- reconstruct env  kenv e1
-         re2@((de2,_), ee2, t2,               exn2) <- reconstruct env  kenv e2
+    = do re1@((dt1,de1,_), ee1, ExnList t1 exn1', exn1) <- reconstruct env  kenv e1
+         re2@((dt2,de2,_), ee2, t2,               exn2) <- reconstruct env  kenv e2
          let env'  = [(x1, (t1, exn1')), (x2, (ExnList t1 exn1', exn1))] ++ env
-         re3@((de3,_), ee3, t3,               exn3) <- reconstruct env' kenv e3
-         let t = join t2 t3
-         let exn = ExnUnion exn1 (ExnUnion exn2 exn3)
-         return $ (ElabCase de1 de2 de3 ## (env,kenv,tm)
-                  ,ReconstructCase env kenv tm re1 re2 env' re3 t) #
-            (Case' ee1 ee2 x1 x2 ee3, simplifyExnTy kenv $ t, simplifyExn kenv $ exn)
+         re3@((dt3,de3,_), ee3, t3,               exn3) <- reconstruct env' kenv e3
+         let t   = simplifyExnTy kenv $ join t2 t3
+         let exn = simplifyExn   kenv $ ExnUnion exn1 (ExnUnion exn2 exn3)
+         return $ ( TypeCase
+                        (kenv, exn1, exn)
+                        (TypeSub
+                            (kenv,ExnList t1 exn1',ExnList t1 exn1')
+                            (kenv,exn1,exn1)
+                            dt1
+                            (env,kenv,ee1,ExnList t1 exn1',exn1)
+                        )
+                        (TypeSub
+                            (kenv,t2,t)
+                            (kenv,exn2,exn)
+                            dt2
+                            (env,kenv,ee2,t,exn)
+                        )
+                        (TypeSub
+                            (kenv,t3,t)
+                            (kenv,exn3,exn)
+                            dt3
+                            (env',kenv,ee3,t,exn)
+                        ) #= (env, kenv)
+                  , ElabCase de1 de2 de3 ## (env,kenv,tm)
+                  , ReconstructCase env kenv tm re1 re2 env' re3 t ) #
+            (Case' ee1 ee2 x1 x2 ee3, t, exn)
 
 -- | Instantiation
 
@@ -186,10 +282,28 @@ annAbsFromEnv :: KindEnv -> ElabTm -> ElabTm
 annAbsFromEnv []           tm =                                tm
 annAbsFromEnv ((e,k):kenv) tm = AnnAbs e k (annAbsFromEnv kenv tm)
 
+typeAnnAbsFromEnv :: Env -> KindEnv -> KindEnv -> DerivType -> DerivType
+typeAnnAbsFromEnv env kenv [] dt' = dt'
+typeAnnAbsFromEnv env kenv ((e,k):kenv') dt'
+    = let (dt, jt@(_,_,tm,ty,exn)) =
+            case typeAnnAbsFromEnv env ((e,k):kenv) kenv' dt' of
+                    TypeAbs    dt jt -> (dt, jt)
+                    TypeAnnAbs dt jt -> (dt, jt)
+       in TypeAnnAbs dt (env,kenv,AnnAbs e k tm,ExnForall e k ty,exn)
+
 annAppFromEnv :: KindEnv -> Subst -> ElabTm -> ElabTm
 annAppFromEnv []            _     tm = tm
 annAppFromEnv ((e, _):kenv) subst tm
     = annAppFromEnv kenv subst (AnnApp tm (substExn' subst (ExnVar e)))
+    
+typeAnnAppFromEnv :: Subst -> DerivType -> DerivType -- FIXME: not really from env
+typeAnnAppFromEnv subst dt
+    = case getJT dt of
+        (env, kenv, tm, ExnForall e k t, exn) ->
+            let ann = substExn' subst (ExnVar e)
+            in typeAnnAppFromEnv subst
+                    (TypeAnnApp (kenv, ann, k) dt (env, kenv, AnnApp tm ann, t, exn))
+        _ -> dt
     
 judgeKindFromEnv :: KindEnv -> (Name, Kind) -> JudgeKind
 judgeKindFromEnv kenv (exn, kind) = (kenv, ExnVar exn, kind)
