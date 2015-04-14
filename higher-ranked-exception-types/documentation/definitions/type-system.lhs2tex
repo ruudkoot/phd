@@ -42,6 +42,6 @@
 \newcommand{\JudgeKind}[3]{{#1 \vdash #2 : #3}}
 \newcommand{\JudgeSubTy}[3]{{#1 \vdash #2 \leq #3}}
 \newcommand{\JudgeSubExn}[3]{{#1 \vdash #2 \leq #3}}
-\newcommand{\JudgeElab}[6]{{#1; #2 \vdash #3 \leadsto #4 : #5\ \&\ #6}}
-\newcommand{\JudgeElabM}[6]{{#1; #2 \vdash #3 \leadsto}\\{\quad\quad\quad\quad #4 : #5\ \&\ #6}}
+\newcommand{\JudgeElab}[6]{{#1; #2 \vdash #3 \hookrightarrow #4 : #5\ \&\ #6}}
+\newcommand{\JudgeElabM}[6]{{#1; #2 \vdash #3 \hookrightarrow}\\{\quad\quad\quad\quad #4 : #5\ \&\ #6}}
 \newcommand{\JudgeTyElab}[3]{{#1 \vdash #2 \triangleright #3}}
