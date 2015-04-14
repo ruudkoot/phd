@@ -51,16 +51,55 @@ inferenceExamples = map (\(l,x) -> (l, show x, mathjax' x)) [
     "" # Abs 1 Bool $ Seq (Crash "foo" Bool) (Crash "bar" Bool),
     "" # Abs 1 Bool $ Seq (Crash "bar" (Bool :-> Bool)) (Abs 2 Bool $ Var 2),
     "" # Abs 1 Bool $ Seq (Var 1) (Abs 2 Bool $ Var 1),
+
     -- * recursive functions
     "" # Fix (Abs 1 (Bool :-> Bool) (Abs 2 Bool (App (Var 1) (Var 2)))),
-    -- * METHOD 1: UNSOUND / METHOD 2: sound, 2 iterations
+
+    -- * Dussart, Henglein & Mossin (soundness)
+    -- fix (\f -> \x -> \y -> if x then True else f y x)
+    -- METHOD 1: UNSOUND / METHOD 2: sound, 2 iterations
     "dhm" # Fix $ Abs 1 (Bool :-> (Bool :-> Bool)) $ Abs 2 Bool $ Abs 3 Bool $
                 If (Var 2) (Con True) (App (App (Var 1) (Var 3)) (Var 2)),
-    -- * METHOD 1: UNSOUND / METHOD 2: sound, 3 iterations
+
+    -- fix (\f -> \x -> \y -> \z -> If x then True else f z x y)
+    -- METHOD 1: UNSOUND / METHOD 2: sound, 3 iterations
     "dhm3" # Fix $ Abs 1 (Bool :-> (Bool :-> (Bool :-> Bool))) $
                 Abs 2 Bool $ Abs 3 Bool $ Abs 4 Bool $
                     If (Var 2) (Con True) $
                         App (App (App (Var 1) (Var 4)) (Var 2)) (Var 3),
+
+    -- * Glenn, Stuckey & Sulzmann (precision)
+    -- h x y b = if b then x else h x (h y x b) b
+    -- fix (\h x y b -> if b then x else h x (h y x b) b
+    -- note: 2nd parameter will not be forced
+    "gss" # Fix $ Abs 1 (Bool :-> (Bool :-> (Bool :-> Bool))) $
+                Abs 2 Bool $ Abs 3 Bool $ Abs 4 Bool $
+                    If (Var 4) (Var 2) $
+                        App (App (App (Var 1) (Var 2)) (
+                            App (App (App (Var 1) (Var 3)) (Var 2)) (Var 4)
+                        )) (Var 4),
+
+    -- h x y b = if b then x else h (h y x (not b)) x (not b)
+    -- fix (\h x y b -> if b then x else h (h y x b) x b
+    -- note: 'not' has been omitted, but should not influence static semantics
+    -- note: 2nd parameter might be forced
+    "gss'" # Fix $ Abs 1 (Bool :-> (Bool :-> (Bool :-> Bool))) $
+                Abs 2 Bool $ Abs 3 Bool $ Abs 4 Bool $
+                    If (Var 4) (Var 2) $
+                        App (App (App (Var 1) (
+                            App (App (App (Var 1) (Var 3)) (Var 2)) (Var 4)
+                        )) (Var 2)) (Var 4),
+                            
+    -- * Stefan's examples
+    -- (fix (\f -> \x -> if y then f False else True)) True
+    -- reinterpreted as: (fix (\f -> \x -> if x then f False else True)) True
+    "stefan1'" # Fix $ Abs 1 (Bool :-> Bool) $ Abs 2 Bool $ 
+                    If (Var 2) (App (Var 1) (Con False)) (Con True),
+    "stefan1" # App (Fix $ Abs 1 (Bool :-> Bool) $ Abs 2 Bool $ 
+                    If (Var 2) (App (Var 1) (Con False)) (Con True)) (Con True),
+    -- (fix (\f -> \x -> \y -> if x then True else f y x)) True False
+    "stefan2" # App (App (Fix $ Abs 1 (Bool :-> (Bool :-> Bool)) $ Abs 2 Bool $ Abs 3 Bool $ If (Var 2) (Con True) (App (App (Var 1) (Var 3)) (Var 2))) (Con True)) (Con False),
+
     -- * lists
     "" # Nil Bool,
     "" # Nil (Bool :-> Bool),
@@ -80,7 +119,7 @@ inferenceExamples = map (\(l,x) -> (l, show x, mathjax' x)) [
     "map" # Fix exMap,
     "map id" # App (Fix exMap) (Abs 6 Bool (Var 6)),
     "map (const E)" # App (Fix exMap) (App (Abs 6 Bool (Abs 7 Bool (Var 6))) (Crash "E" Bool)),
-    -- * METHOD 1: sound / METHOD 2: sound, 2 iterations
+    -- * METHOD 1: sound(?) / METHOD 2: sound, 2 iterations
     "evilMap" # Fix exEvilMap,
     "evilMap id" # App (Fix exEvilMap) (Abs 8 Bool (Var 8)),
     "evilMap (const E)" # App (Fix exEvilMap) (App (Abs 8 Bool (Abs 9 Bool (Var 8))) (Crash "E" Bool)),
