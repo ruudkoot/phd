@@ -1,0 +1,165 @@
+\documentclass[serif,professionalfont]{beamer}
+
+\usepackage{etex}
+
+%\setbeamercolor{alerted text}{fg=green,bg=red}
+
+\usepackage[sc,osf]{mathpazo}			% Palatino (text + math)
+%\usepackage{eulervm}					% Euler (math)
+%\usepackage{newtxtext,newtxmath}		% Times New Roman (text + math)
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{xspace}
+
+\usepackage[all]{xy}
+
+\newcommand{\DOMjudge}{\textsc{DOMjudge}\xspace}
+
+%include polycode.fmt
+%include forall.fmt
+
+\setbeamersize{description width=-\labelsep}
+
+\begin{document}
+
+\title{Datastructuren 2014--2015}
+\subtitle{Introductie practicum en \DOMjudge}
+%\author{Ruud Koot}
+%\institute[UU]{Department of Information and Computing Sciences\\Utrecht University}
+\date{22 april 2015}
+\maketitle
+
+\begin{frame}{Practicum}
+
+    \begin{itemize}
+    
+        \item Er zijn 7 opgaven.
+        
+        \item Opgave 1 telt voor 0.4 punt; elk van de andere opgaven telt voor 1.6 punt.
+        \item Een goede opgave levert een 10 op; een foute een 0.
+        
+        \item Inleveren gaat met behulp van \DOMjudge.
+    
+    \end{itemize}
+    
+\end{frame}
+
+\begin{frame}{\DOMjudge}
+
+    \begin{itemize}
+    
+        \item \DOMjudge is een semi-automatisch nakijksysteem voor programmeeropgaven.
+        
+        \item Je levert je opgave in via een webpagina en \DOMjudge vertelt je op de je opgave fout is (waarschijnlijk) correct.
+        
+        \item \DOMjudge kan niet alle fouten vinden, dus er wordt ook nog door een mens naar gekeken:
+        
+            \begin{itemize}
+            
+                \item We vroegen je om \textsc{Insertion Sort} te implementeren, maar je hebt \textsc{Merge Sort} ge\"implementeerd.
+                
+                \item We vroegen je om \textsc{Insertion Sort} te implementeren, maar je roept het sorteer algoritme uit de standaardbibliotheek aan.
+                
+                \item We vroegen je om \textsc{Insertion Sort} te implementeren, maar je hebt het sorteer algoritme van internet of een andere student ingezonden.
+            
+            \end{itemize}
+    
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Inzenden}
+
+    \begin{itemize}
+
+        \item Te vinden op: \url{https://domjudge.cs.uu.nl/ds/team/}
+        
+            \begin{itemize}
+            
+                \item Inloggen kan met je Solis-id en wachtwoord.
+                
+                \item Als je nog niet ingeschreven bent mail dan naar \texttt{r.koot@@uu.nl}.
+
+            \end{itemize}
+        
+        \item Stuur je \emph{broncode} in en niet je al gecompileerde executable.
+        
+            \begin{itemize}
+            
+                \item \DOMjudge compileert je code zelf.
+                
+                \item Zo kunnen wij ook nog naar jou code kijken.
+            
+            \end{itemize}
+        
+        \item Je kan zo vaak insturen als je wilt (in het redelijke).
+        
+        \item De nakijkers kijken alleen naar je laatste (correcte) inzending.
+        
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Beoordeling}
+
+    \begin{itemize}
+
+        \item Enkele minuten na het insturen krijg je een antwoord:
+    
+        \begin{description}
+        
+            \item[\textsc{Pending}] Je programma staat nog in de wachtrij of wordt nu getest.
+        
+            \item[\textsc{Correct}] Jeej! (Mits de nakijkers het er later ook goed vinden.)
+            
+
+            \item[\textsc{Compile-Error}] Het lukte \DOMjudge niet je programma te compileren.
+
+            \item[\textsc{Run-Error}] Je programma is gecrasht tijdens het testen.
+
+            \item[\textsc{Time-Limit}] Je programma is te langzaam.
+
+            \item[\textsc{Wrong-Answer}] Je programma gaf het verkeerde antwoord.
+            
+            \item[\textsc{No-Output}] Je programma crashte niet, maar gaf ook nooit een antwoord.
+            
+        \end{description}
+        
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Beoordeling}
+
+    \begin{itemize}
+    
+        \item In het geval van een \textsc{Compile-Error}, \textsc{Run-Error}, \textsc{Time-Limit} of \textsc{Wrong-Answer} kun je op je inzending klikken voor meer details over wat er mis ging.
+        
+        \item Van sommige testen krijg je te zien:
+        
+            \begin{itemize}
+            
+                \item wat de vraag was,
+                \item welk antwoord verwacht werd, en
+                \item welk antwoord jou programma gaf.
+             
+            \end{itemize}
+        
+        \item Andere testen zijn geheim en krijg je nooit te zien.
+        
+        \item Als alle openbare testen goed lijken te gaan, maar je krijgt toch een \textsc{Run-Error}, \textsc{Time-Limit} of \textsc{Wrong-Answer}, dan kan dat door de geheime testen komen.
+    
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}
+
+    
+
+\end{frame}
+
+\end{document}
