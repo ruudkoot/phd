@@ -146,9 +146,12 @@ inferenceExamples = map (\(l,x) -> (l, show x, mathjax' x)) [
     "hcompose' compose" # App exHCompose' exCompose,
     -- * very high-order
     -- * crashing fixpoints
+    "fixId"     # Fix $ Abs 1 Bool (Var 1),
     "fixCrash1" # Fix $ Crash "foo" (Bool :-> Bool),
     "fixCrash2" # Fix $ Crash "foo" ((Bool :-> Bool) :-> (Bool :-> Bool)),
-    "fixCrash3" # Fix $ If (Con True) (Abs 1 Bool $ Crash "foo" Bool) (Crash "bar" (Bool :-> Bool))
+    "fixCrash3" # Fix $ If (Con True) (Abs 1 Bool $ Crash "foo" Bool) (Crash "bar" (Bool :-> Bool)),
+    "fixIfIdCrash" # Abs 1 Bool $ If (Var 1) (Fix $ Abs 2 Bool (Var 2))
+                                             (Fix $ Crash "foo" (Bool :-> Bool))
   ] where
         ex29 =
             Abs 1 (List Bool :-> List Bool) $ Abs 2 (List Bool) $

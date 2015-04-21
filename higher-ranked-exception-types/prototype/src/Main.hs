@@ -188,7 +188,7 @@ inferencePage = msum [ viewForm, processForm ] where
             H.h2 "Elaborated expression"
             H.p $ mathjax elabTm
             
-            H.h3 "Type"
+            H.h3 "Exception type"
             H.p $ toHtml $
                 case elabTy of
                     Just (ty, ann) -> if An.exnTyEq [] ty exnTy && An.exnEq [] ann exn then "\\[\\color{green}" ++ latex ty ++ "\\ \\&\\ " ++ latex ann ++ "\\color{black}\\]" else error "inferred type does not match type of elaborated expression"

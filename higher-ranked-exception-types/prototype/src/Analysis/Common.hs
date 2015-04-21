@@ -18,6 +18,8 @@ module Analysis.Common (
     exnNormalize,
     exnEq,
     exnTyEq,
+    isSubeffect,
+    isSubtype,
     simplifyExn,
     simplifyExnTy,
     Subst,
@@ -390,6 +392,22 @@ exnTyEq env (ExnArr t1 exn1 t2 exn2) (ExnArr t1' exn1' t2' exn2')
         && exnTyEq env t2 t2' && exnEq env exn2 exn2'
 exnTyEq env _ _
     = False
+    
+-- * Checking of subtyping and subeffecting
+
+isSubeffect :: KindEnv -> Exn -> Exn -> Bool
+isSubeffect env ann1 ann2 = exnEq env (ExnUnion ann1 ann2) ann2
+
+isSubtype :: KindEnv -> ExnTy -> ExnTy -> Bool
+isSubtype env ExnBool ExnBool = True
+isSubtype env ExnInt  ExnInt  = True
+isSubtype env (ExnArr ty1 ann1 ty2 ann2) (ExnArr ty1' ann1' ty2' ann2')
+    = isSubtype env ty1' ty1 && isSubeffect env ann1' ann1
+        && isSubtype env ty2 ty2' && isSubeffect env ann2 ann2'
+isSubtype env (ExnList ty ann) (ExnList ty' ann')
+    = isSubtype env ty ty' && isSubeffect env ann ann'
+isSubtype env (ExnForall e k ty) (ExnForall e' k' ty')
+    = k == k' && isSubtype ((e,k):env) ty (substExnTy e' e ty')
 
 instance Latex ExnTy where
     latex (ExnForall e k t)

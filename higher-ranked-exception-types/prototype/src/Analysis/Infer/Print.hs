@@ -19,12 +19,13 @@ import Analysis.Common
 import Analysis.Print
 
 import Analysis.Infer.Types
+import Analysis.Infer.Common
 
 -- | Types
 
 instance Latex (Name, (ExnTy, Exn)) where
     latex (show -> e, (latex -> ty, latex -> exn))
-        = "e_{" ++ e ++ "} : " ++ ty ++ "\\ \\&\\ " ++ exn
+        = "x_{" ++ e ++ "} : " ++ ty ++ "\\ \\&\\ " ++ exn
 
 instance Latex (Name, Exn) where
     latex (show -> e, latex -> exn)
@@ -51,9 +52,9 @@ instance ToMarkup DerivType where
     toMarkup dt@(TypeAnnApp jk dt1 jt)
         = derive (checkDerivType dt) "T-AnnApp"
             [H.toMarkup dt1, judgeKind jk] (judgeType jt)
-    toMarkup dt@(TypeFix dt1 jt)
+    toMarkup dt@(TypeFix jse1 jse2 dt1 jt)
         = derive (checkDerivType dt) "T-Fix"
-            [H.toMarkup dt1] (judgeType jt)
+            [H.toMarkup dt1, judgeSubEff jse1, judgeSubEff jse2] (judgeType jt)
     toMarkup dt@(TypeOp dt1 dt2 jt)
         = derive (checkDerivType dt) "T-Op"
             (map H.toMarkup [dt1, dt2]) (judgeType jt)
@@ -80,7 +81,7 @@ boolToColor :: Bool -> Color
 boolToColor True  = Green
 boolToColor False = error "Red"
 
-checkDerivType :: DerivType -> Color -- FIXME: could check env/kenv
+checkDerivType :: DerivType -> Color -- FIXME: could check env/kenv, tm
 checkDerivType (TypeVar (env, kenv, Var' x, exnTy, exn)) = boolToColor $
     let Just (exnTy', exn') = lookup x env
      in exnTyEq kenv exnTy exnTy' && exnEq kenv exn exn'
@@ -97,26 +98,78 @@ checkDerivType (TypeAnnAbs dt1 (env, kenv, AnnAbs e k tm
                                          , ExnForall e' k' ty, exn)) = boolToColor $
     let (env',kenv',tm',ty',exn') = getJT dt1 -- FIXME: could check kenv
      in e == e' && k == k' && exnEq kenv' exn exn' && exnTyEq kenv'{-!-} ty ty'
-checkDerivType (TypeApp dt1 dt2 jt) = boolToColor $
-    True -- TODO
-checkDerivType (TypeAnnApp jk dt1 jt) = boolToColor $
-    True -- TODO
-checkDerivType (TypeFix dt1 jt) = boolToColor $
-    True -- TODO
-checkDerivType (TypeOp dt1 dt2 jt) = boolToColor $
-    True -- TODO
-checkDerivType (TypeSeq dt1 dt2 jt) = boolToColor $
-    True -- TODO
-checkDerivType (TypeIf dt1 dt2 dt3 jt) = boolToColor $
-    True -- TODO
-checkDerivType (TypeNil jt) = boolToColor $
-    True -- TODO
-checkDerivType (TypeCons dt1 dt2 jt) = boolToColor $
-    True -- TODO
-checkDerivType (TypeCase jse dt1 dt2 dt3 jt) = boolToColor $
-    True -- TODO
-checkDerivType (TypeSub jst jse dt1 jt) = boolToColor $
-    True -- TODO
+checkDerivType (TypeApp dt1 dt2 (env,kenv,App' tm1' tm2',exnTy,exn)) = boolToColor $
+    let (env1,kenv1,tm1,ExnArr ty1' exn1' ty1'' exn1'',exn1) = getJT dt1
+        (env2,kenv2,tm2,exnTy2,exn2) = getJT dt2
+     in exnTyEq kenv ty1'' exnTy && exnEq kenv exn1'' exn
+            &&  exnTyEq kenv ty1' exnTy2 && exnEq kenv exn1' exn2
+            &&  exnEq kenv exn1 exn
+checkDerivType (TypeAnnApp (_,ann',k') dt1
+                    (env,kenv,AnnApp tm ann,exnTy,exn)) = boolToColor $
+    let (env',kenv',tm',ExnForall e k exnTy',exn') = getJT dt1
+     in exnEq kenv exn exn' && exnEq kenv ann ann'
+            && checkKind kenv ann' == Just k'
+            && exnTyEq kenv exnTy (substExnTy' [(e,ann)] exnTy')
+checkDerivType (TypeFix (_,exn1,exn2) (_,exn3,exn4) dt1
+                                        (env,kenv,Fix' tm,exnTy,exn5)) = boolToColor $
+    let (env1, kenv1, tm1', ExnArr exnTy1 exn6 exnTy2 exn7, exn8) = getJT dt1
+     in exnEq kenv exn2 exn5 && exnEq kenv exn4 exn5 && exnEq kenv exn8 exn3 
+            && exnEq kenv exn6 exn1 && exnEq kenv exn7 exn1
+            && exnTyEq kenv exnTy exnTy1 && exnTyEq kenv exnTy exnTy2
+            && isSubeffect kenv exn1 exn2 && isSubeffect kenv exn3 exn4
+            -- && env==env1 && env==env2 && kenv==kenv1 && kenv==kenv2
+            -- && tm1==tm1' && tm2==tm2'
+checkDerivType (TypeOp dt1 dt2 (env,kenv,BinOp' tm1 tm2,ExnBool,exn)) = boolToColor $
+    let (env1, kenv1, tm1', ExnInt, exn1) = getJT dt1
+        (env2, kenv2, tm2', ExnInt, exn2) = getJT dt2
+     in exnEq kenv exn exn1 && exnEq kenv exn exn2
+            -- && env==env1 && env==env2 && kenv==kenv1 && kenv==kenv2
+            -- && tm1==tm1' && tm2==tm2'
+checkDerivType (TypeSeq dt1 dt2 (env,kenv,Seq' tm1 tm2,exnTy,exn)) = boolToColor $
+    let (env1, kenv1, tm1', exnTy1, exn1) = getJT dt1
+        (env2, kenv2, tm2', exnTy2, exn2) = getJT dt2
+     in exnEq kenv exn exn1 && exnEq kenv exn exn2
+            && exnTyEq kenv exnTy exnTy2
+            -- && env==env1 && env==env2 && kenv==kenv1 && kenv==kenv2
+            -- && tm1==tm1' && tm2==tm2'
+checkDerivType (TypeIf dt1 dt2 dt3 (env,kenv,If' tm1 tm2 tm3,exnTy,exn)) = boolToColor$
+    let (env1, kenv1, tm1', ExnBool, exn1) = getJT dt1
+        (env2, kenv2, tm2', exnTy2,  exn2) = getJT dt2
+        (env3, kenv3, tm3', exnTy3,  exn3) = getJT dt3
+     in exnEq kenv exn exn1 && exnEq kenv exn exn2 && exnEq kenv exn exn3
+            && exnTyEq kenv exnTy exnTy2 && exnTyEq kenv exnTy exnTy3
+            -- && env==env1 && env==env2 && env==env3
+            -- && kenv==kenv1 && kenv==kenv2 && kenv==kenv3
+            -- && tm1==tm1' && tm2==tm2' && tm3==tm3'
+checkDerivType (TypeNil (env,kenv,Nil' ty,ExnList exnTy exn',exn)) = boolToColor $
+    exnEq kenv exn ExnEmpty && exnEq kenv exn' ExnEmpty -- FIXME: could check exnTy
+checkDerivType (TypeCons dt1 dt2 (env,kenv,Cons' tm1 tm2,ExnList exnTy exn',exn))
+    = boolToColor $
+        let (env1, kenv1, tm1', exnTy1,               exn1) = getJT dt1
+            (env2, kenv2, tm2', ExnList exnTy2 exn2', exn2) = getJT dt2
+         in exnEq kenv exn exn2 && exnEq kenv exn' exn1 && exnEq kenv exn' exn2'
+                && exnTyEq kenv exnTy exnTy1 && exnTyEq kenv exnTy exnTy2
+                -- && env==env1 && env==env2 && kenv==kenv1 && kenv==kenv2
+                -- && tm1==tm1' && tm2==tm2'
+checkDerivType (TypeCase (kenv',exn1'',exn') dt1 dt2 dt3
+                            (env,kenv,Case' tm1 tm2 _ _ tm3,exnTy,exn)) = boolToColor $
+    let (env1, kenv1, tm1', ExnList exnTy1 exn1, exn1') = getJT dt1
+        (env2, kenv2, tm2', exnTy2,              exn2 ) = getJT dt2
+        (env3, kenv3, tm3', exnTy3,              exn3 ) = getJT dt3
+     in exnEq kenv exn exn' && exnEq kenv exn exn2 && exnEq kenv exn exn3
+            && exnTyEq kenv exnTy exnTy2 && exnTyEq kenv exnTy exnTy3
+            && exnEq kenv exn1' exn1'' && isSubeffect kenv exn1'' exn'
+            -- && env==env1 && env==env2 && env==env3
+            -- && kenv==kenv1 && kenv==kenv2 && kenv==kenv3
+            -- && tm1==tm1' && tm2==tm2' && tm3==tm3'
+checkDerivType (TypeSub (kenvT,exnTy1',exnTy') (kenvE,exn1',exn') dt1
+                                        (env, kenv, tm, exnTy, exn)) = boolToColor $
+    let (env1, kenv1, tm1, exnTy1, exn1) = getJT dt1
+     in exnEq kenv exn exn' && exnEq kenv exn1 exn1'
+            && exnTyEq kenv exnTy exnTy' && exnTyEq kenv exnTy1 exnTy1'
+            && isSubeffect kenv exn1' exn' && isSubtype kenv exnTy1' exnTy'
+            -- && env==env1 && env==env2 && kenv==kenv1 && kenv==kenv2
+            -- && tm1==tm1' && tm2==tm2'
 
 instance ToMarkup DerivElab where
     toMarkup (ElabVar je)
@@ -149,20 +202,20 @@ instance ToMarkup DerivElab where
 
 judgeType :: JudgeType -> H.Html
 judgeType (tyEnv, kiEnv, elabTm, exnTy, exn)
---    = H.toHtml $ "$" ++ latex tyEnv ++ " ; " ++ latex kiEnv ++ " \\vdash " ++ latex tm ++ " \\leadsto " ++ latex elabTm ++ " : " ++ latex exnTy ++ " \\ \\&\\  " ++ latex exn ++ "$"
-    = H.toHtml $ "$" ++ "\\Gamma" ++ " ; " ++ "\\Delta" ++ " \\vdash "
-        ++ latex elabTm ++ " : " ++ latex exnTy ++ " \\ \\&\\  " ++ latex exn ++ "$"
+    = H.toHtml $ "$" ++ latex tyEnv ++ " ; " ++ latex kiEnv ++ " \\vdash " ++ latex elabTm ++ " : " ++ latex exnTy ++ " \\ \\&\\  " ++ latex exn ++ "$"
+--    = H.toHtml $ "$" ++ "\\Gamma" ++ " ; " ++ "\\Delta" ++ " \\vdash "
+--        ++ latex elabTm ++ " : " ++ latex exnTy ++ " \\ \\&\\  " ++ latex exn ++ "$"
 
 judgeElab :: JudgeElab -> H.Html
 judgeElab (tyEnv, kiEnv, tm, elabTm, exnTy, exn)
 --    = H.toHtml $ "$" ++ latex tyEnv ++ " ; " ++ latex kiEnv ++ " \\vdash " ++ latex tm ++ " \\leadsto " ++ latex elabTm ++ " : " ++ latex exnTy ++ " \\ \\&\\  " ++ latex exn ++ "$"
     = H.toHtml $ "$" ++ "\\Gamma" ++ " ; " ++ "\\Delta" ++ " \\vdash "
-        ++ latex tm ++ " \\leadsto " ++ latex elabTm ++ " : " ++ latex exnTy
+        ++ latex tm ++ " \\hookrightarrow " ++ latex elabTm ++ " : " ++ latex exnTy
         ++ " \\ \\&\\  " ++ latex exn ++ "$"
 
 judgeKind :: JudgeKind -> H.Html
 judgeKind (kiEnv, exn, kind)
-    = H.toHtml $ "$" ++ "\\Delta" ++ " \\vdash " ++ latex exn ++ " : "
+    = H.toHtml $ "$" ++ latex kiEnv ++ " \\vdash " ++ latex exn ++ " : "
         ++ latex kind ++ "$"
 
 judgeSubTy :: JudgeSubTy -> H.Html

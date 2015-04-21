@@ -23,21 +23,21 @@ type JudgeSubTy  = (KindEnv, ExnTy, ExnTy)
 type JudgeSubEff = (KindEnv, Exn, Exn)
 
 data DerivType
-    = TypeVar                                                         JudgeType
-    | TypeCon                                                         JudgeType
-    | TypeCrash                                                       JudgeType
-    | TypeAbs                           DerivType                     JudgeType
-    | TypeAnnAbs                        DerivType                     JudgeType
-    | TypeApp                           DerivType DerivType           JudgeType
-    | TypeAnnApp JudgeKind              DerivType                     JudgeType
-    | TypeFix                           DerivType                     JudgeType
-    | TypeOp                            DerivType DerivType           JudgeType
-    | TypeSeq                           DerivType DerivType           JudgeType
-    | TypeIf                            DerivType DerivType DerivType JudgeType
-    | TypeNil                                                         JudgeType
-    | TypeCons                          DerivType DerivType           JudgeType
-    | TypeCase   JudgeSubEff            DerivType DerivType DerivType JudgeType
-    | TypeSub    JudgeSubTy JudgeSubEff DerivType                     JudgeType
+    = TypeVar                                                          JudgeType
+    | TypeCon                                                          JudgeType
+    | TypeCrash                                                        JudgeType
+    | TypeAbs                            DerivType                     JudgeType
+    | TypeAnnAbs                         DerivType                     JudgeType
+    | TypeApp                            DerivType DerivType           JudgeType
+    | TypeAnnApp JudgeKind               DerivType                     JudgeType
+    | TypeFix    JudgeSubEff JudgeSubEff DerivType                     JudgeType
+    | TypeOp                             DerivType DerivType           JudgeType
+    | TypeSeq                            DerivType DerivType           JudgeType
+    | TypeIf                             DerivType DerivType DerivType JudgeType
+    | TypeNil                                                          JudgeType
+    | TypeCons                           DerivType DerivType           JudgeType
+    | TypeCase   JudgeSubEff             DerivType DerivType DerivType JudgeType
+    | TypeSub    JudgeSubTy  JudgeSubEff DerivType                     JudgeType
     
 getJT :: DerivType -> JudgeType
 getJT (TypeVar            jt) = jt
@@ -47,7 +47,7 @@ getJT (TypeAbs    _       jt) = jt
 getJT (TypeAnnAbs _       jt) = jt
 getJT (TypeApp    _ _     jt) = jt
 getJT (TypeAnnApp _ _     jt) = jt
-getJT (TypeFix    _       jt) = jt
+getJT (TypeFix    _ _ _   jt) = jt
 getJT (TypeOp     _ _     jt) = jt
 getJT (TypeSeq    _ _     jt) = jt
 getJT (TypeIf     _ _ _   jt) = jt

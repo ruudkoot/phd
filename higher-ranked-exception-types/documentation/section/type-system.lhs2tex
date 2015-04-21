@@ -268,8 +268,12 @@
              {\JudgeExnTy{\TyEnv}
                          {\KiEnv}
                          {\Tm}
-                         {\ExnTyArr{\ExnTy}{\Exn}{\ExnTy}{\Exn}}
-                         {\Exn}
+                         {\ExnTyArr{\ExnTy}{\Exn^\prime}{\ExnTy}{\Exn^\prime}}
+                         {\Exn^{\prime\prime}}
+              \quad
+              \JudgeSubExn{\KiEnv}{\Exn^\prime}{\Exn}
+              \quad
+              \JudgeSubExn{\KiEnv}{\Exn^{\prime\prime}}{\Exn}
              }
              {\JudgeExnTy{\TyEnv}
                          {\KiEnv}

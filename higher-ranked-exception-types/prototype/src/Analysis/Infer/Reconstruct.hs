@@ -12,6 +12,7 @@ import           Analysis.Names
 import           Analysis.Common
 import qualified Analysis.Completion as C
 
+import           Analysis.Infer.Common
 import           Analysis.Infer.Types
 import           Analysis.Infer.Join
 import           Analysis.Infer.Match
@@ -55,8 +56,8 @@ reconstruct env kenv tm@(Abs x ty tm') -- TODO: common subexpression elimination
          let env' = (x, (t1', ExnVar exn1)) : env
          re@((dt,de,_), etm', t2', exn2) <- reconstruct env' (kenv1 ++ kenv) tm'
          let t' = C.forallFromEnv kenv1 (ExnArr t1' (ExnVar exn1) t2' exn2)
-         return $ (\_ _ _ -> typeAnnAbsFromEnv env' kenv (reverse kenv1) $
-                        TypeAbs dt (env', kenv1++kenv, Abs' x t1' (ExnVar exn1) etm'
+         return $ (\_ _ _ -> typeAnnAbsFromEnv env kenv (reverse kenv1) $
+                        TypeAbs dt (env, kenv1++kenv, Abs' x t1' (ExnVar exn1) etm'
                                    ,ExnArr t1' (ExnVar exn1) t2' exn2, ExnEmpty)
                   ,ElabAbs (kenv1++kenv, t1', ty) (kenv1++kenv, ExnVar exn1, EXN) de ##
                         (env,kenv,tm)
@@ -72,7 +73,15 @@ reconstruct env kenv tm@(App e1 e2)
          let subst = [(exn2', exn2)] <.> subst'
          let exn = ExnUnion (substExn' subst exn') exn1
          return $ (TypeApp (
-                        typeAnnAppFromEnv subst dt1
+                        let exnC = simplifyExn   kenv $ exn
+                            tyC  = simplifyExnTy kenv $
+                                        ExnArr t2 exn2 (substExnTy' subst t') exnC
+                            tyD  = simplifyExnTy kenv $ substExnTy' subst (fst ins)
+                        in TypeSub
+                            (kenv,tyD,tyC)
+                            (kenv,exn1,exnC)
+                            (typeAnnAppFromEnv kenv' subst dt1)
+                            (env,kenv,annAppFromEnv kenv' subst etm1,tyC,exnC)
                     ) dt2 #= (env, kenv)
                   ,ElabApp (kenv, t2,   simplifyExnTy kenv $ substExnTy' subst t'  )
                            (kenv, exn2, simplifyExn   kenv $ substExn'   subst exn')
@@ -116,7 +125,11 @@ reconstruct env kenv tm@(Fix e1)
          let exn0 = ExnEmpty
          km@(_, t_w, exn_w, subst_w) <- kleeneMycroft [] t0 exn0
 
-         return $ (TypeFix (typeAnnAppFromEnv subst_w dt) #= (env,kenv)
+         return $ (TypeFix
+                    (kenv, exn_w,simplifyExn kenv (ExnUnion exn_w exn1))
+                    (kenv, exn1, simplifyExn kenv (ExnUnion exn_w exn1))
+                    (typeAnnAppFromEnv kenv' subst_w dt)
+                     #= (env,kenv)
                   ,ElabFix (kenv
                            , simplifyExnTy kenv $ substExnTy' subst_w t''
                            , simplifyExnTy kenv $ substExnTy' subst_w t'           )
@@ -166,7 +179,7 @@ reconstruct env kenv tm@(Seq e1 e2)
                             (kenv,t2,t2)
                             (kenv,exn2,exn)
                             dt2
-                            (env,kenv,ee2,t2,exn2)
+                            (env,kenv,ee2,t2,exn)
                         ) #= (env,kenv)
                   , ElabSeq de1 de2 ## (env,kenv,tm)
                   , ReconstructSeq env kenv tm re1 re2) #
@@ -222,10 +235,10 @@ reconstruct env kenv tm@(Cons e1 e2)
                             (env, kenv, ee1, t, exn)
                         )
                         (TypeSub
-                            (kenv, t2, t')
+                            (kenv, ExnList t2 exn2', t')
                             (kenv, exn2, exn2)
                             dt2
-                            (env, kenv, ee2, t, exn)
+                            (env, kenv, ee2, t', exn2)
                         ) #= (env,kenv)
                   , ElabCons de1 de2 ## (env,kenv,tm)
                   , ReconstructCons env kenv tm re1 re2 t) #
@@ -287,27 +300,28 @@ typeAnnAbsFromEnv env kenv [] dt' = dt'
 typeAnnAbsFromEnv env kenv ((e,k):kenv') dt'
     = let (dt, jt@(_,_,tm,ty,exn)) =
             case typeAnnAbsFromEnv env ((e,k):kenv) kenv' dt' of
-                    TypeAbs    dt jt -> (dt, jt)
-                    TypeAnnAbs dt jt -> (dt, jt)
-       in TypeAnnAbs dt (env,kenv,AnnAbs e k tm,ExnForall e k ty,exn)
+                    dt@(TypeAbs    _ jt) -> (dt, jt)
+                    dt@(TypeAnnAbs _ jt) -> (dt, jt)
+       in TypeAnnAbs dt (env, kenv, AnnAbs e k tm, ExnForall e k ty, exn)
 
 annAppFromEnv :: KindEnv -> Subst -> ElabTm -> ElabTm
 annAppFromEnv []            _     tm = tm
 annAppFromEnv ((e, _):kenv) subst tm
     = annAppFromEnv kenv subst (AnnApp tm (substExn' subst (ExnVar e)))
-    
-typeAnnAppFromEnv :: Subst -> DerivType -> DerivType -- FIXME: not really from env
-typeAnnAppFromEnv subst dt
-    = case getJT dt of
-        (env, kenv, tm, ExnForall e k t, exn) ->
-            let ann = substExn' subst (ExnVar e)
-            in typeAnnAppFromEnv subst
-                    (TypeAnnApp (kenv, ann, k) dt (env, kenv, AnnApp tm ann, t, exn))
-        _ -> dt
-    
+
+typeAnnAppFromEnv :: KindEnv -> Subst -> DerivType -> DerivType
+typeAnnAppFromEnv []            _     dt = dt
+typeAnnAppFromEnv ((e,k):kenv') subst dt
+    = let (env, kenv, tm, ExnForall e' k' exnTy, exn) = getJT dt
+          -- FIXME: e /= e' ?!
+          ann    = substExn' subst (ExnVar e)
+          exnTy' = simplifyExnTy kenv' $ substExnTy' [(e',ann)] exnTy
+       in typeAnnAppFromEnv kenv' subst
+            (TypeAnnApp (kenv, ann, k) dt (env, kenv, AnnApp tm ann, exnTy', exn))
+
 judgeKindFromEnv :: KindEnv -> (Name, Kind) -> JudgeKind
 judgeKindFromEnv kenv (exn, kind) = (kenv, ExnVar exn, kind)
-    
+
 -- | Type checking of elaborated terms
 
 -- TODO: move to Common? (only here because we need bottomExnTy...)
@@ -435,55 +449,3 @@ checkElabTm' tyEnv kiEnv (Case' tm1 tm2 x1 x2 tm3)
                             _ -> error "type (Case', 3)"
                     _ -> error "type (Case', 2)"
             _ -> error "type (Case', 1)"
-            
--- * Checking of subtyping and subeffecting
-
--- TODO: "merge" with exnEq and exnTyEq?
-
-isSubeffect :: KindEnv -> Exn -> Exn -> Bool
-isSubeffect env ann1 ann2 = exnEq env (ExnUnion ann1 ann2) ann2
-
-isSubtype :: KindEnv -> ExnTy -> ExnTy -> Bool
-isSubtype env ExnBool ExnBool = True
-isSubtype env ExnInt  ExnInt  = True
-isSubtype env (ExnArr ty1 ann1 ty2 ann2) (ExnArr ty1' ann1' ty2' ann2')
-    = isSubtype env ty1' ty1 && isSubeffect env ann1' ann1
-        && isSubtype env ty2 ty2' && isSubeffect env ann2 ann2'
-isSubtype env (ExnList ty ann) (ExnList ty' ann')
-    = isSubtype env ty ty' && isSubeffect env ann ann'
-isSubtype env (ExnForall e k ty) (ExnForall e' k' ty')
-    = k == k' && isSubtype ((e,k):env) ty (substExnTy e' e ty')
-    
--- * Kind checking of annotation
-
--- TODO: move somewhere else
-
-checkKind :: KindEnv -> Exn -> Maybe Kind
-checkKind env ExnEmpty
-    = return EXN
-checkKind env (ExnUnion exn1 exn2)
-    = do k1 <- checkKind env exn1
-         k2 <- checkKind env exn2
-         if k1 == k2 then
-            return k1
-         else
-            error "kind (ExnUnion)"
-checkKind env (ExnCon _)
-    = return EXN
-checkKind env (ExnVar e)
-    = case lookup e env of
-        Just k -> return k
-        _      -> error "unbound (ExnVar)"
-checkKind env (ExnApp exn1 exn2)
-    = do (k2' :=> k1) <- checkKind env exn1
-         k2           <- checkKind env exn2
-         if k2 == k2' then
-            return k1
-         else
-            error "kind (ExnApp)"
-checkKind env (ExnAbs e k exn)
-    = do () <- case lookup e env of
-                 Nothing -> return ()
-                 _       -> error "shadowing (ExnAbs)"
-         k2 <- checkKind ((e,k):env) exn
-         return (k :=> k2)
