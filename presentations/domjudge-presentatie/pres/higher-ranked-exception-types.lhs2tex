@@ -156,9 +156,73 @@
 
 \end{frame}
 
-\begin{frame}
+\begin{frame}{Assistentie}
 
+    \begin{itemize}
     
+        \item Er is een wekelijks vragenuurtje.
+        
+        \item Je kunt een ``clarification'' verzoek sturen via \DOMjudge.
+        
+            \begin{itemize}
+            
+                \item Stuur je code altijd in, dan kunnen wij die bekijken.
+            
+            \end{itemize}
+        
+        \item We proberen die tijdig te beantwoorden, maar niet op de dag van de deadline.
+    
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Tips \& truuks}
+
+    \begin{itemize}
+    
+        \item Test je programma ook lokaal, voordat je hem instuurt.
+        
+            \begin{itemize}
+            
+                \item Er staat soms testinvoer in de opgavebeschrijving.
+                
+            \end{itemize}
+        
+        \item Verzin en maak je eigen testinvoer:
+        
+            \begin{itemize}
+            
+                \item Randgevallen
+                
+                \item Worst-case gevallen
+            
+            \end{itemize}
+        
+        \item We zijn ge\"intereseerd in de asymptotische looptijd van je programma, maar kunnen dit niet nauwkeurig meten:
+        
+            \begin{itemize}
+            
+                \item Doe geen onnodig langzame dingen, zoals een enorm aantal objecten aanmaken, waar een primitief type of array volstaat.
+            
+            \end{itemize}
+
+        \item \DOMjudge is geen gokkast: maak geen willekeurige aanpassingen, maar beredeneer waarom je programma wel/niet werkt.
+
+        \item Gebruik een versiebeheersysteem, bijvoorbeeld \texttt{git}.
+    
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Technische details}
+
+    \begin{description}
+    
+        \item[C$\sharp$] Mono 3.2.8
+        
+        \item[Java] Oracle Java 7
+    
+    \end{description}
 
 \end{frame}
 
