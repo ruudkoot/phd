@@ -465,7 +465,7 @@
                         {\ExnTy}
                         {\Exn}
              }
-        \\[1.5em]
+        \\[1.5ex]
         \Rule{T-Con}
              {}
              {\JudgeElab{\TyEnv}
@@ -913,7 +913,7 @@
         \Rule{S-Int}
              {}
              {\JudgeSubTy{\KiEnv}{\ExnInt}{\ExnInt}}
-        \\[1.5em]
+        \\[1.5ex]
         \Rule{S-Arr}
              {\JudgeSubTy{\KiEnv}{\ExnTy_1^\prime}{\ExnTy_1}
                 \quad
@@ -927,7 +927,7 @@
                          {\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}}
                          {\ExnTyArr{\ExnTy_1^\prime}{\Exn_1^\prime}{\ExnTy_2^\prime}{\Exn_2^\prime}}
              }
-        \\[1.5em]
+        \\[1.5ex]
         \Rule{S-List}
              {\JudgeSubTy{\KiEnv}{\ExnTy}{\ExnTy^\prime}
                 \quad

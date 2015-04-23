@@ -1,0 +1,4 @@
+\newcommand{\Interp}[1]{\llbracket #1 \rrbracket}
+
+% Judgements
+\newcommand{\JudgeEval}[2]{{#1 \longrightarrow #2}}

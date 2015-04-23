@@ -21,6 +21,7 @@
 %include definitions/lambda-union.lhs2tex
 %include definitions/completion.lhs2tex
 %include definitions/type-system.lhs2tex
+%include definitions/operational-semantics.lhs2tex
 
 \begin{document}
 
@@ -31,6 +32,7 @@
 %include section/lambda-union.lhs2tex
 %include section/completion.lhs2tex
 %include section/type-system.lhs2tex
+%include section/operational-semantics.lhs2tex
 %include section/interesting-observations.lhs2tex
 
 \end{document}

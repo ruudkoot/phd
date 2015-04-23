@@ -1,0 +1,144 @@
+\section{Operational semantics}
+
+\subsection{Evaluation}
+
+\begin{itemize}
+
+    \item The reduction relation is non-deterministic.
+    
+    \item We do not have a Haskell-style imprecise exception semantics (e.g. \textsc{E-If}).
+    
+    \item We either need to omit the type annotations on $\TmCrash{\Ty}{\ExnLbl}$, or add them to $\TmIf{}{}{}$ and $\TmCase{}{}{}{}{}$.
+
+\end{itemize}
+
+\begin{figure}[h]
+    \begin{gather*}
+        \Rule{E-AnnApp}
+             {\JudgeEval{\Tm}
+                        {\Tm^\prime}
+             }
+             {\JudgeEval{\TmAnnApp{\Tm}{\Exn}}
+                        {\TmAnnApp{\Tm^\prime}{\Exn}}
+             }
+        \quad
+        \Rule{E-AnnAbs}
+             {}
+             {\JudgeEval{\TmAnnApp{(\TmAnnAbs{\TmExnVar}{\Kind}{\Tm})}{\Exn}}
+                        {\Subst{\Exn}{\TmExnVar}{\Tm}}
+             }
+        \\[1.5ex]
+        \Rule{E-App}
+             {\JudgeEval{\Tm_1}
+                        {\Tm_1^\prime}
+             }
+             {\JudgeEval{\TmApp{\Tm_1}{\Tm_2}}
+                        {\TmApp{\Tm_1^\prime}{\Tm_2}}
+             }
+        \quad
+        \Rule{E-AppAbs}
+             {}
+             {\JudgeEval{\TmApp{(\TmAbs{\TmVar}{\Ty}{\Tm})}{\Tm_2}}
+                        {\Subst{\Tm_2}{\TmVar}{\Tm_1}}
+             }
+        \\[1.5ex]
+        \Rule{E-Fix}
+             {\JudgeEval{\Tm}
+                        {\Tm^\prime}
+             }
+             {\JudgeEval{\TmFix{\Tm}}
+                        {\TmFix{\Tm^\prime}}
+             }
+        \quad
+        \Rule{E-FixAbs}
+             {}
+             {\JudgeEval{\TmFix{(\TmAbs{\TmVar}{\Ty}{\Tm})}}
+                        {\Subst{\TmFix{(\TmAbs{\TmVar}{\Ty}{\Tm})}}{\TmVar}{\Tm}}
+             }
+        \\[1.5ex]
+        \Rule{E-AppExn}
+             {}
+             {\JudgeEval{\TmApp{\TmCrash{}{\ExnLbl}}{\Tm_2}}
+                        {\TmCrash{}{\ExnLbl}}
+             }
+        \quad
+        \Rule{E-FixExn}
+             {}
+             {\JudgeEval{\TmFix{\TmCrash{}{\ExnLbl}}}
+                        {\TmCrash{}{\ExnLbl}}
+             }
+        \\[1.5ex]
+        \Rule{E-Op$_1$}
+             {\JudgeEval{\Tm_1}{\Tm_1^\prime}}
+             {\JudgeEval{\TmOp{\Tm_1}{\Tm_2}}{\TmOp{\Tm_1^\prime}{\Tm_2}}}
+        \quad
+        \Rule{E-Op$_2$}
+             {\JudgeEval{\Tm_2}{\Tm_2^\prime}}
+             {\JudgeEval{\TmOp{\Tm_1}{\Tm_2}}{\TmOp{\Tm_1}{\Tm_2^\prime}}}
+        \\[1.5ex]
+        \Rule{E-Op}
+             {}
+             {\JudgeEval{\TmOp{\TmVal_1}{\TmVal_2}}{\Interp{\TmOp{\TmVal_1}{\TmVal_2}}}}
+        \\[1.5ex]
+        \Rule{E-OpExn$_1$}
+             {}
+             {\JudgeEval{\TmOp{\TmCrash{}{\ExnLbl}}{\Tm_2}}{\TmCrash{}{\ExnLbl}}}
+        \quad
+        \Rule{E-OpExn$_2$}
+             {}
+             {\JudgeEval{\TmOp{\Tm_1}{\TmCrash{}{\ExnLbl}}}{\TmCrash{}{\ExnLbl}}}
+        \\[1.5ex]
+        \Rule{E-Seq$_1$}
+             {\JudgeEval{\Tm_1}{\Tm_1^\prime}}
+             {\JudgeEval{\TmSeq{\Tm_1}{\Tm_2}}{\TmSeq{\Tm_1^\prime}{\Tm_2}}}
+        \quad
+        \Rule{E-Seq$_2$}
+             {}
+             {\JudgeEval{\TmSeq{\TmVal_1}{\Tm_2}}{\Tm_2}}
+        \\[1.5ex]
+        \Rule{E-SeqExn}
+             {}
+             {\JudgeEval{\TmSeq{\TmCrash{}{\ExnLbl}}{\Tm_2}}{\TmCrash{}{\ExnLbl}}}
+        \\[1.5ex]
+        \Rule{E-If}
+             {\JudgeEval{\Tm_1}{\Tm_1^\prime}}
+             {\JudgeEval{\TmIf{\Tm_1}{\Tm_2}{\Tm_3}}{\TmIf{\Tm_1^\prime}{\Tm_2}{\Tm_3}}}
+        \\[1.5ex]
+        \Rule{E-IfTrue}
+             {}
+             {\JudgeEval{\TmIf{\TmTrue}{\Tm_2}{\Tm_3}}{\Tm_2}}
+        \\[1.5ex]
+        \Rule{E-IfFalse}
+             {}
+             {\JudgeEval{\TmIf{\TmFalse}{\Tm_2}{\Tm_3}}{\Tm_3}}
+        \\[1.5ex]
+        \Rule{E-IfExn}
+             {}
+             {\JudgeEval{\TmIf{\TmCrash{}{\ExnLbl}}{\Tm_2}{\Tm_3}}{\TmCrash{}{\ExnLbl}}}
+        \\[1.5ex]
+        \Rule{E-Case}
+             {\JudgeEval{\Tm_1}{\Tm_1^\prime}}
+             {\JudgeEval{\TmCase{\Tm_1}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}}
+                        {\TmCase{\Tm_1^\prime}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}}
+             }
+        \\[1.5ex]
+        \Rule{E-CaseNil}
+             {}
+             {\JudgeEval{\TmCase{\TmNil{}}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}}
+                        {\Tm_2}
+             }
+        \\[1.5ex]
+        \Rule{E-CaseNil}
+             {}
+             {\JudgeEval{\TmCase{\TmCons{\Tm_1}{\Tm_1^\prime}}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}}
+                        {\SubstTwo{\Tm_1}{\TmVar_1}{\Tm_1^\prime}{\TmVar_2}{\Tm_3}}
+             }
+        \\[1.5ex]
+        \Rule{E-CaseExn}
+             {}
+             {\JudgeEval{\TmCase{\TmCrash{}{\ExnLbl}}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}}
+                        {\TmCrash{}{\ExnLbl}}
+             }
+    \end{gather*}
+    \caption{Operational semantics ($\JudgeEval{\Tm_1}{\Tm_2}$)}    
+\end{figure}

@@ -3,7 +3,11 @@
 
 \newcommand{\Tm}{t}
 \newcommand{\TmVar}{x}
+\newcommand{\TmVal}{v}
+\newcommand{\TmExnVar}{e}
 \newcommand{\TmCon}[1]{c_{#1}}
+\newcommand{\TmTrue}{\mathbf{true}}
+\newcommand{\TmFalse}{\mathbf{false}}
 \newcommand{\TmAbs}[3]{\lambda #1 : #2. #3}
 \newcommand{\TmAbsExn}[4]{\lambda #1 : #2\ \&\ #3. #4}
 \newcommand{\TmAnnAbs}[3]{\Lambda #1 : #2. #3}
