@@ -35,6 +35,7 @@
 \newcommand{\TyJoin}[2]{#1 \sqcup #2}
 
 \newcommand{\TyEnv}{\Gamma}
+\newcommand{\BindTy}[3]{#1 : #2\ \&\ #3}
 \newcommand{\KiEnv}{\Delta}
 
 \newcommand{\BottomTy}[1]{\bot_{#1}}

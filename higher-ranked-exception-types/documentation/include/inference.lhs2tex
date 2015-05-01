@@ -2,10 +2,12 @@
 \newcommand{\Rule}[3]{\frac{#2}{#3}\mbox{\ [\textsc{#1}]}}
 \newcommand{\CiteRule}[1]{\mbox{[\textsc{#1}]}}
 
+\newcommand{\CaseRule}[1]{Case \textsc{#1}: }
+
 % Environments
 \newcommand{\EmptyEnv}{\cdot}
 
 % Substitutions
-\newcommand{\Subst}[3]{\left[#1/#2\right]#3}
-\newcommand{\SubstTwo}[5]{\left[#1/#2;#3/#4\right]#5}
-\newcommand{\SubstS}[3]{\left[\overline{#1}/\overline{#2}\right]#3}
+\newcommand{\Subst}[3]{#3\left[#1/#2\right]}
+\newcommand{\SubstTwo}[5]{#5\left[#1;#3/#2;#4\right]}
+\newcommand{\SubstS}[3]{#3\left[\overline{#1}/\overline{#2}\right]}

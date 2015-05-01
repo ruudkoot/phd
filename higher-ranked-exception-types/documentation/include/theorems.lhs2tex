@@ -1,3 +1,4 @@
 \newtheorem{conjecture}{Conjecture}
 \newtheorem{corollary}{Corollary}
 \newtheorem{definition}{Definition}
+\newtheorem{lemma}{Lemma}

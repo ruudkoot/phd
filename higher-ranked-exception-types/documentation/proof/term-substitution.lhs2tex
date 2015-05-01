@@ -1,0 +1,9 @@
+\begin{proof}
+By induction on the derivation of $\JudgeExnTy{\TyEnv,\BindTy{\TmVar}{\ExnTy^\prime}{\Exn}}{\KiEnv}{\Tm}{\ExnTy}{\Exn}$.
+
+    \CaseRule{T-Var} We either have $\Tm = \TmVar$ or $\Tm = \TmVar^\prime$ with $\TmVar \neq \TmVar^\prime$.
+    In the first case we need to show that $\JudgeExnTy{\TyEnv}{\KiEnv}{\Subst{\Tm^\prime}{\TmVar}{\TmVar}}{\ExnTy}{\Exn}$, which by definition of substitution is equal to $\JudgeExnTy{\TyEnv}{\KiEnv}{\TmVar}{\ExnTy}{\Exn}$, but this is one of our assumptions.
+    In the second case we need to show that $\JudgeExnTy{\TyEnv,\BindTy{\TmVar^\prime}{\ExnTy}{\Exn}}{\KiEnv}{\Subst{\Tm}{\TmVar}{\TmVar^\prime}}{\ExnTy}{\Exn}$, which by definition of substitution is equal to $\JudgeExnTy{\TyEnv,\BindTy{\TmVar^\prime}{\ExnTy}{\Exn}}{\KiEnv}{\TmVar^\prime}{\ExnTy}{\Exn}$. This follows immediately from \CiteRule{T-Var}.
+    
+
+\end{proof}

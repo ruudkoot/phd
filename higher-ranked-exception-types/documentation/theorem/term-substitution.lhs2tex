@@ -1,0 +1,3 @@
+\begin{lemma}[Term substitution]\label{thm-term-substitution}
+If $\JudgeExnTy{\TyEnv,\BindTy{\TmVar}{\ExnTy^\prime}{\Exn}}{\KiEnv}{\Tm}{\ExnTy}{\Exn}$ and $\JudgeExnTy{\TyEnv}{\KiEnv}{\Tm^\prime}{\ExnTy^\prime}{\Exn^\prime}$ then $\JudgeExnTy{\TyEnv}{\KiEnv}{\Subst{\Tm^\prime}{\TmVar}{\Tm}}{\ExnTy}{\Exn}$.
+\end{lemma}

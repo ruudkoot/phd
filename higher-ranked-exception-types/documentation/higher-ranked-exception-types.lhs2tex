@@ -35,4 +35,9 @@
 %include section/operational-semantics.lhs2tex
 %include section/interesting-observations.lhs2tex
 
+\section{Metatheory}
+
+%include theorem/term-substitution.lhs2tex
+%include proof/term-substitution.lhs2tex
+
 \end{document}
