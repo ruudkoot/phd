@@ -1,9 +1,50 @@
 \begin{proof}
 By induction on the derivation of $\JudgeExnTy{\TyEnv,\BindTy{\TmVar}{\ExnTy^\prime}{\Exn}}{\KiEnv}{\Tm}{\ExnTy}{\Exn}$.
 
+    \def\currentprefix{term-substitution:T-App}
     \CaseRule{T-Var} We either have $\Tm = \TmVar$ or $\Tm = \TmVar^\prime$ with $\TmVar \neq \TmVar^\prime$.
     In the first case we need to show that $\JudgeExnTy{\TyEnv}{\KiEnv}{\Subst{\Tm^\prime}{\TmVar}{\TmVar}}{\ExnTy}{\Exn}$, which by definition of substitution is equal to $\JudgeExnTy{\TyEnv}{\KiEnv}{\TmVar}{\ExnTy}{\Exn}$, but this is one of our assumptions.
     In the second case we need to show that $\JudgeExnTy{\TyEnv,\BindTy{\TmVar^\prime}{\ExnTy}{\Exn}}{\KiEnv}{\Subst{\Tm}{\TmVar}{\TmVar^\prime}}{\ExnTy}{\Exn}$, which by definition of substitution is equal to $\JudgeExnTy{\TyEnv,\BindTy{\TmVar^\prime}{\ExnTy}{\Exn}}{\KiEnv}{\TmVar^\prime}{\ExnTy}{\Exn}$. This follows immediately from \CiteRule{T-Var}.
-    
 
+    \def\currentprefix{term-substitution:T-Abs}
+    \CaseRule{T-Abs} Our assumptions are
+        \begin{align}
+            & \JudgeExnTy{\TyEnv,\BindTy{x}{\ExnTy^\prime}{\Exn^\prime},\BindTy{y}{\ExnTy_1}{\Exn_1}}{\KiEnv}{\Tm}{\ExnTy_2}{\Exn_2} \labell{ass1} \\
+            & \JudgeExnTy{\TyEnv}{\KiEnv}{\Tm^\prime}{\ExnTy^\prime}{\Exn^\prime}. \labell{ass2}
+        \end{align}
+    By the Barendregt convention we may assume that $y \neq x$ and $y \notin \fv{\Tm^\prime}$. We need to show that $\JudgeExnTy{\TyEnv}{\KiEnv}{\Subst{\Tm^\prime}{x}{(\TmAbsExn{y}{\ExnTy_1}{\Exn_1}{\Tm})}}{\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}}{\ExnEmpty}$, which by definition of substitution is equal to
+        \begin{align}
+            & \JudgeExnTy{\TyEnv}{\KiEnv}{\TmAbsExn{y}{\ExnTy_1}{\Exn_1}{\Subst{\Tm^\prime}{x}{\Tm}}}{\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}}{\ExnEmpty}. \labell{ts}
+        \end{align}
+    We weaken \eqrefl{ass2} to $\JudgeExnTy{\TyEnv,\BindTy{y}{\ExnTy_1}{\Exn_1}}{\KiEnv}{\Tm^\prime}{\ExnTy^\prime}{\Exn^\prime}$ and apply the induction hypothesis on this and \eqrefl{ass1} to obtain
+        \begin{align}
+            & \JudgeExnTy{\TyEnv,\BindTy{y}{\ExnTy_1}{\Exn_1}}{\KiEnv}{\Subst{\Tm^\prime}{x}{\Tm}}{\ExnTy_2}{\Exn_2}. \labell{ih}
+        \end{align}
+    The desired result \eqrefl{ts} can be constructed from \eqrefl{ih} using \CiteRule{T-Abs}.
+
+    \def\currentprefix{term-substitution:T-AnnAbs}
+    \CaseRule{T-AnnAbs} Our assumptions are $\JudgeExnTy{\TyEnv,\BindTy{x}{\ExnTy^\prime}{\Exn^\prime}}{\KiEnv,\BindKi{\ExnVar}{\Kind}}{\Tm}{\ExnTy}{\Exn}$ and $\JudgeExnTy{\TyEnv}{\KiEnv}{\Tm^\prime}{\ExnTy^\prime}{\Exn^\prime}$.
+    By the Barendregt convention we may assume that $\ExnVar \notin \fv{\Tm^\prime}$.
+    We need to show that $\JudgeExnTy{\TyEnv}{\KiEnv}{\Subst{\Tm^\prime}{x}{\left(\TmAnnAbs{\ExnVar}{\Kind}{\Tm}\right)}}{\ExnTy}{\Exn}$, which is equal to $\JudgeExnTy{\TyEnv}{\KiEnv}{\TmAnnAbs{\ExnVar}{\Kind}{\Subst{\Tm^\prime}{\Kind}{\Tm}}}{\ExnTy}{\Exn}$ by definition of substitution.
+    By applying the induction hypothesis we obtain $\JudgeExnTy{\TyEnv}{\KiEnv,\BindKi{\ExnVar}{\Kind}}{\Subst{\Tm^\prime}{x}{\Tm}}{\ExnTy}{\Exn}$.
+    The desired result can be constructed using \CiteRule{T-AnnAbs}.
+
+    \def\currentprefix{term-substitution:T-App}
+    \CaseRule{T-App} Our assumptions are
+        \begin{align}
+           & \JudgeExnTy{\TyEnv,\BindTy{x}{\ExnTy^\prime}{\Exn^\prime}}{\KiEnv}{\Tm_1}{\ExnTyArr{\ExnTy_2}{\Exn_2}{\ExnTy}{\Exn}}{\Exn} \labell{ass1} \\
+           & \JudgeExnTy{\TyEnv,\BindTy{x}{\ExnTy^\prime}{\Exn^\prime}}{\KiEnv}{\Tm_2}{\ExnTy_2}{\Exn_2}. \labell{ass2}
+        \end{align}
+    We need to show that $\JudgeExnTy{\TyEnv}{\KiEnv}{\Subst{\Tm^\prime}{x}{(\TmApp{\Tm_1}{\Tm_2})}}{\ExnTy}{\Exn}$, which by definition of substitution is equal to
+        \begin{align}
+            & \JudgeExnTy{\TyEnv}{\KiEnv}{\TmApp{\left(\Subst{\Tm^\prime}{x}{\Tm_1}\right)}{\left(\Subst{\Tm^\prime}{x}{\Tm_2}\right)}}{\ExnTy}{\Exn}. \labell{ts}
+        \end{align}
+    By applying the induction hypothesis to \eqrefl{ass1} respectively \eqrefl{ass2} we obtain
+        \begin{align}
+            & \JudgeExnTy{\TyEnv}{\KiEnv}{\Subst{\Tm^\prime}{x}{\Tm_1}}{\ExnTyArr{\ExnTy_2}{\Exn_2}{\ExnTy}{\Exn}}{\Exn} \labell{ass1ih} \\
+            & \JudgeExnTy{\TyEnv}{\KiEnv}{\Subst{\Tm^\prime}{x}{\Tm_2}}{\ExnTy_2}{\Exn_2}. \labell{ass2ih}
+        \end{align}
+    The desired result \eqrefl{ts} can be constructed by applying \CiteRule{T-App} to \eqrefl{ass1ih} and \eqrefl{ass2ih}.
+    
+    All other cases are either immediate or analogous to the case of \CiteRule{T-App}.
 \end{proof}

@@ -11,12 +11,19 @@
 \usepackage{amsthm}
 \usepackage{mathtools}
 \usepackage{stmaryrd}
+\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
 
 %include polycode.fmt
 %include forall.fmt
 
+\newcommand{\TODO}{\textcolor{red}{\textsc{To do.}}}
+%include include/definitions.lhs2tex
 %include include/theorems.lhs2tex
 %include include/inference.lhs2tex
+
+\newcommand\labell[1]{\label{\currentprefix:#1}}
+\newcommand\refl[1]{\ref{\currentprefix:#1}}
+\newcommand\eqrefl[1]{\eqref{\currentprefix:#1}}
 
 %include definitions/lambda-union.lhs2tex
 %include definitions/completion.lhs2tex
@@ -36,6 +43,11 @@
 %include section/interesting-observations.lhs2tex
 
 \section{Metatheory}
+
+%include figure/substitution.lhs2tex
+
+%include theorem/annotation-substitution.lhs2tex
+%include proof/annotation-substitution.lhs2tex
 
 %include theorem/term-substitution.lhs2tex
 %include proof/term-substitution.lhs2tex

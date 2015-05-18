@@ -1,0 +1,17 @@
+\begin{proof}
+1. By induction on the derivation of $\JudgeExn{\KiEnv,\BindKi{\ExnVar}{\Kind^\prime}}{\Exn}{\Kind}$.
+The cases \CiteRule{A-Var}, \CiteRule{A-Abs} and \CiteRule{A-App} are analogous to the respective cases in the proof of term substitution below.
+In the case \CiteRule{A-Con} one can strengthen the assumption $\JudgeExn{\KiEnv,\BindKi{\ExnVar}{\Kind^\prime}}{\ExnCon{\ExnLbl}}{\KindEXN}$ to $\JudgeExn{\KiEnv}{\ExnCon{\ExnLbl}}{\KindEXN}$ as $\ExnVar \notin \fv{\ExnCon{\ExnLbl}}$, the result is then immediate; similarly for \CiteRule{A-Empty}. The case \CiteRule{A-Union} goes analogous to \CiteRule{A-App}.
+
+2. \TODO
+
+3. \TODO
+
+4. By induction on the derivation of $\JudgeExnTy{\TyEnv}{\KiEnv,\BindKi{\ExnVar}{\Kind^\prime}}{\Tm}{\ExnTy}{\Exn}$. Most cases can be discarded by a straightforward application of the induction hypothesis; we show only the interesting case.
+
+    \def\currentprefix{annotation-substitution:T-AnnApp}
+    \CaseRule{T-AnnApp} \TODO
+    
+\TODO
+
+\end{proof}
