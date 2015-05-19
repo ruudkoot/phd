@@ -9,25 +9,13 @@
     \item We do not have a Haskell-style imprecise exception semantics (e.g. \textsc{E-If}).
     
     \item We either need to omit the type annotations on $\TmCrash{\Ty}{\ExnLbl}$, or add them to $\TmIf{}{}{}$ and $\TmCase{}{}{}{}{}$.
+    
+    \item We do not have a rule \CiteRule{E-AnnAppExn}. Check that the canonical forms lemma gives us that terms of universally quantified type cannot be exceptional values.
 
 \end{itemize}
 
 \begin{figure}[h]
     \begin{gather*}
-        \Rule{E-AnnApp}
-             {\JudgeEval{\Tm}
-                        {\Tm^\prime}
-             }
-             {\JudgeEval{\TmAnnApp{\Tm}{\Exn}}
-                        {\TmAnnApp{\Tm^\prime}{\Exn}}
-             }
-        \quad
-        \Rule{E-AnnAbs}
-             {}
-             {\JudgeEval{\TmAnnApp{(\TmAnnAbs{\TmExnVar}{\Kind}{\Tm})}{\Exn}}
-                        {\Subst{\Exn}{\TmExnVar}{\Tm}}
-             }
-        \\[1.5ex]
         \Rule{E-App}
              {\JudgeEval{\Tm_1}
                         {\Tm_1^\prime}
@@ -40,6 +28,20 @@
              {}
              {\JudgeEval{\TmApp{(\TmAbs{\TmVar}{\Ty}{\Tm})}{\Tm_2}}
                         {\Subst{\Tm_2}{\TmVar}{\Tm_1}}
+             }
+        \\[1.5ex]
+        \Rule{E-AnnApp}
+             {\JudgeEval{\Tm}
+                        {\Tm^\prime}
+             }
+             {\JudgeEval{\TmAnnApp{\Tm}{\Exn}}
+                        {\TmAnnApp{\Tm^\prime}{\Exn}}
+             }
+        \quad
+        \Rule{E-AnnAbsAbs}
+             {}
+             {\JudgeEval{\TmAnnApp{(\TmAnnAbs{\TmExnVar}{\Kind}{\Tm})}{\Exn}}
+                        {\Subst{\Exn}{\TmExnVar}{\Tm}}
              }
         \\[1.5ex]
         \Rule{E-Fix}

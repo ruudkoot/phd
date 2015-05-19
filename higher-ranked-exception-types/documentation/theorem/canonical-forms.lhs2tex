@@ -1,0 +1,9 @@
+\begin{lemma}[Canonical forms]\label{thm-canonical-forms}\ 
+    \begin{enumerate}
+        \item If $\ExnVal$ is a possibly exceptional value of type $\ExnBool$, then $\ExnVal$ is either $\TmTrue$, $\TmFalse$, or~$\TmCrash{}{\ExnLbl}$.
+        \item If $\ExnVal$ is a possibly exceptional value of type $\ExnInt$, then $\ExnVal$ is either some integer $n$, or an exceptional value $\TmCrash{}{\ExnLbl}$.
+        \item If $\ExnVal$ is a possibly exceptional value of type $\ExnTyList{\ExnTy}{\Exn}$, then $\ExnVal$ is either $\TmNil{}$, $\TmCons{\Tm}{\Tm^\prime}$, or~$\TmCrash{}{\ExnLbl}$.
+        \item If $\ExnVal$ is a possibly exceptional value of type $\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}$, then $\ExnVal$ is either $\TmAbsExn{x}{\ExnTy_1}{\Exn_1}{\Tm^\prime}$ or $\TmCrash{}{\ExnLbl}$.
+        \item If $\ExnVal$ is a possibly exceptional value of type $\ExnTyForall{\ExnVar}{\Kind}{\ExnTy}$, then $\ExnVal$ is $\TmAnnAbs{\ExnVar}{\Kind}{\Tm}$
+    \end{enumerate}
+\end{lemma}

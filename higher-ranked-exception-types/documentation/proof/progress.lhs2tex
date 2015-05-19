@@ -1,0 +1,9 @@
+\begin{proof}
+By induction on the typing derivation $\JudgeExnTy{\TyEnv}{\KiEnv}{\Tm}{\ExnTy}{\Exn}$.
+
+    The case \CiteRule{T-Var} can be discarded, as a variable is not a closed term. The cases \CiteRule{T-Con}, \CiteRule{T-Crash}, \CiteRule{T-Abs}, \CiteRule{T-AnnAbs}, \CiteRule{T-Nil} and \CiteRule{T-Cons} are immediate as they are values.
+
+    \CaseRule{T-App} We can immediately apply the induction hypothesis to $\JudgeExnTy{\TyEnv}{\KiEnv}{\Tm_1}{\ExnTyArr{\ExnTy_2}{\Exn_2}{\ExnTy}{\Exn}}{\Exn}$, giving us either a $\Tm_1^\prime$ such that $\JudgeEval{\Tm_1}{\Tm_1^\prime}$ or that $\Tm_1 = \ExnVal$. In the former case we can make progress using \CiteRule{E-App}. In the latter case the canonical forms lemma tells us that either $\Tm_1 = \TmAbsExn{x}{\ExnTy_2}{\Exn_2}{\Tm_1^\prime}$ or $\Tm_1 = \TmCrash{}{\ExnLbl}$, in which case we can make progress using \CiteRule{E-AppAbs} or \CiteRule{E-AppExn}, respectively.
+    
+    The remaining cases follow by analogous reasoning.
+\end{proof}

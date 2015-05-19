@@ -1,0 +1,4 @@
+\begin{proof}
+    For each part, inspect all forms of $\ExnVal$ and discard the unwanted cases by inversion of the typing relation. Note that $\BottomTy{\Ty}$ cannot give us a type of the form $\ExnTyForall{\ExnVar}{\Kind}{\ExnTy}$.
+\end{proof}
+\TODO: Say something about \CiteRule{T-Sub}?

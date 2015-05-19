@@ -1,0 +1,3 @@
+\begin{theorem}[Progress]\label{thm-progress}
+    If $\JudgeExnTy{\TyEnv}{\KiEnv}{\Tm}{\ExnTy}{\Exn}$ with $\Tm$ a closed term, then $\Tm$ is either a possibly exceptional value $\ExnVal$ or there is a closed term $\Tm^\prime$ such that $\JudgeEval{\Tm}{\Tm^\prime}$.
+\end{theorem}

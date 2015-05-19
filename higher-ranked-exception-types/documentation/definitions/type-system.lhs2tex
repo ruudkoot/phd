@@ -1,6 +1,9 @@
 \newcommand{\ClassVar}{\mathbf{Var}}
 \newcommand{\ClassCon}{\mathbf{Con}}
 
+\newcommand{\Val}{v}
+\newcommand{\ExnVal}{\widehat{v}}
+
 \newcommand{\Tm}{t}
 \newcommand{\TmVar}{x}
 \newcommand{\TmVal}{v}
