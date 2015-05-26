@@ -1,0 +1,3 @@
+\begin{theorem}[Termination]\label{thm-termination}
+    $\Reconstruct\ \TyEnv\ \KiEnv\ \Tm$ terminates.
+\end{theorem}

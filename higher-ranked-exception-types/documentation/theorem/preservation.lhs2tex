@@ -1,0 +1,3 @@
+\begin{theorem}[Preservation]\label{thm-preservation}
+    If $\JudgeExnTy{\TyEnv}{\KiEnv}{\Tm}{\ExnTy}{\Exn}$ and $\JudgeEval{\Tm}{\Tm^\prime}$, then $\JudgeExnTy{\TyEnv}{\KiEnv}{\Tm^\prime}{\ExnTy}{\Exn}$.
+\end{theorem}

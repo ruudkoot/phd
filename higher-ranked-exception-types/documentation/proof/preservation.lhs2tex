@@ -1,0 +1,7 @@
+\begin{proof}
+    By induction on the typing derivation $\JudgeExnTy{\TyEnv}{\KiEnv}{\Tm}{\ExnTy}{\Exn}$.
+
+    The cases for \CiteRule{T-Var}, \CiteRule{T-Con}, \CiteRule{T-Crash}, \CiteRule{T-Abs}, \CiteRule{T-AnnAbs}, \CiteRule{T-Nil}, and \CiteRule{T-Cons} can be discarded immediately, as they have no applicable evaluation rules.
+
+    \TODO
+\end{proof}

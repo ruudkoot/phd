@@ -411,22 +411,22 @@
              {\JudgeExnTy{\TyEnv}
                          {\KiEnv}
                          {\Tm}
-                         {\ExnTy}
-                         {\Exn}
+                         {\ExnTy^\prime}
+                         {\Exn^\prime}
               \quad
               \JudgeSubTy{\KiEnv}
-                         {\ExnTy}
                          {\ExnTy^\prime}
+                         {\ExnTy}
               \quad
               \JudgeSubExn{\KiEnv}
-                          {\Exn}
                           {\Exn^\prime}
+                          {\Exn}
              }
              {\JudgeExnTy{\TyEnv}
                          {\KiEnv}
                          {\Tm}
-                         {\ExnTy^\prime}
-                         {\Exn^\prime}
+                         {\ExnTy}
+                         {\Exn}
              }
     \end{gather*}
     \caption{Declarative type system ($\JudgeExnTy{\TyEnv}{\KiEnv}{\Tm}{\ExnTy}{\Exn}$)}    
@@ -904,8 +904,23 @@
 
 \subsection{Subtyping}
 
+\begin{itemize}
+    \item Is \CiteRule{S-Refl} an admissable/derivable rule, or should we drop \CiteRule{S-Bool} and \CiteRule{S-Int}?
+\end{itemize}
+
 \begin{figure}
     \begin{gather*}
+        \Rule{S-Refl}
+             {}
+             {\JudgeSubTy{\KiEnv}{\ExnTy}{\ExnTy}}
+        \quad
+        \Rule{S-Trans}
+             {\JudgeSubTy{\KiEnv}{\ExnTy_1}{\ExnTy_2}
+              \quad
+              \JudgeSubTy{\KiEnv}{\ExnTy_2}{\ExnTy_3}
+             }
+             {\JudgeSubTy{\KiEnv}{\ExnTy_1}{\ExnTy_3}}
+        \\[1.5ex]
         \Rule{S-Bool}
              {}
              {\JudgeSubTy{\KiEnv}{\ExnBool}{\ExnBool}}

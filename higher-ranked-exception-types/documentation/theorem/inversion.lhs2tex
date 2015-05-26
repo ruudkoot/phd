@@ -1,0 +1,10 @@
+\begin{lemma}[Inversion]\label{thm-inversion}\ 
+    \begin{enumerate}
+        \item If $\JudgeExnTy{\TyEnv}{\KiEnv}{\TmAbsExn{x}{\ExnTy}{\Exn}{\Tm}}{\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}}{\Exn_3}$, then
+            \begin{itemize}
+                \item $\JudgeExnTy{\TyEnv,\BindTy{x}{\ExnTy}{\Exn}}{\KiEnv}{\Tm}{\ExnTy_2^\prime}{\Exn_2^\prime}$,
+                \item $\JudgeSubTy{}{}{}$
+            \end{itemize}
+        \item \TODO
+    \end{enumerate}
+\end{lemma}

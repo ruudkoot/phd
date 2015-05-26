@@ -1,0 +1,3 @@
+\begin{theorem}[Syntactic soundness]\label{thm-syntactic-soundness}
+    If $\Reconstruct\ \TyEnv\ \KiEnv\ \Tm = \langle \ExnTy; \Exn \rangle$, then $\JudgeExnTy{\TyEnv}{\KiEnv}{\Tm}{\ExnTy}{\Exn}$.
+\end{theorem}

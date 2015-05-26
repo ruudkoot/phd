@@ -26,7 +26,7 @@
         \quad
         \Rule{E-AppAbs}
              {}
-             {\JudgeEval{\TmApp{(\TmAbs{\TmVar}{\Ty}{\Tm})}{\Tm_2}}
+             {\JudgeEval{\TmApp{(\TmAbsExn{\TmVar}{\ExnTy}{\Exn}{\Tm})}{\Tm_2}}
                         {\Subst{\Tm_2}{\TmVar}{\Tm_1}}
              }
         \\[1.5ex]
@@ -54,8 +54,8 @@
         \quad
         \Rule{E-FixAbs}
              {}
-             {\JudgeEval{\TmFix{(\TmAbs{\TmVar}{\Ty}{\Tm})}}
-                        {\Subst{\TmFix{(\TmAbs{\TmVar}{\Ty}{\Tm})}}{\TmVar}{\Tm}}
+             {\JudgeEval{\TmFix{(\TmAbsExn{\TmVar}{\ExnTy}{\Exn}{\Tm})}}
+                        {\Subst{\TmFix{(\TmAbsExn{\TmVar}{\ExnTy}{\Exn}{\Tm})}}{\TmVar}{\Tm}}
              }
         \\[1.5ex]
         \Rule{E-AppExn}
