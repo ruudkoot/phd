@@ -218,6 +218,8 @@
                          {\Tm}
                          {\ExnTy}
                          {\Exn}
+              \quad
+              \ExnVar \notin \fv{\Exn}
              }
              {\JudgeExnTy{\TyEnv}
                          {\KiEnv}

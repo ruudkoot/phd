@@ -49,8 +49,6 @@
 
 \subsection{Declarative type system}
 
-\TODO Inversion lemmas?
-
 %include theorem/canonical-forms.lhs2tex
 %include proof/canonical-forms.lhs2tex
 
@@ -71,14 +69,14 @@
 %include theorem/preservation.lhs2tex
 %include proof/preservation.lhs2tex
 
+\subsection{Syntax-directed type elaboration}
+
+\subsection{Type inference algorithm}
+
 %include theorem/syntactic-soundness.lhs2tex
 %include proof/syntactic-soundness.lhs2tex
 
 %include theorem/termination.lhs2tex
 %include proof/termination.lhs2tex
-
-\subsection{Syntax-directed type elaboration}
-
-\subsection{Type inference algorithm}
 
 \end{document}
