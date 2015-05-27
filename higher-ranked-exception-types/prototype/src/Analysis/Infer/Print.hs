@@ -98,6 +98,7 @@ checkDerivType (TypeAnnAbs dt1 (env, kenv, AnnAbs e k tm
                                          , ExnForall e' k' ty, exn)) = boolToColor $
     let (env',kenv',tm',ty',exn') = getJT dt1 -- FIXME: could check kenv
      in e == e' && k == k' && exnEq kenv' exn exn' && exnTyEq kenv'{-!-} ty ty'
+        && not (e `elem` fevExn exn)
 checkDerivType (TypeApp dt1 dt2 (env,kenv,App' tm1' tm2',exnTy,exn)) = boolToColor $
     let (env1,kenv1,tm1,ExnArr ty1' exn1' ty1'' exn1'',exn1) = getJT dt1
         (env2,kenv2,tm2,exnTy2,exn2) = getJT dt2
