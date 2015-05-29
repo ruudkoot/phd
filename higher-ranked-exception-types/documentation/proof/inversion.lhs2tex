@@ -1,5 +1,19 @@
 \begin{proof}
-1. By induction on the derivation of \TODO
+1. By induction on the typing derivation.
+
+    \CaseRule{T-Abs} We have $\ExnTy = \ExnTy_1$, $\Exn = \Exn_1$, $\ExnTy^\prime = \ExnTy_2$ and $\Exn^\prime = \Exn_2$, thus the result follows immediately from the assumption $\JudgeExnTy{\TyEnv,\BindTy{x}{\ExnTy}{\Exn}}{\KiEnv}{\Tm}{\ExnTy_2}{\Exn_2}$ and reflexivity of the subtyping and subeffecting relations.
+    
+    \def\currentprefix{inversion:T-Sub}
+    \CaseRule{T-Sub} We are given the additional assumptions
+        \begin{align}
+            & \JudgeExnTy{\TyEnv}{\KiEnv}{\TmAbsExn{x}{\ExnTy}{\Exn}{\Tm}}{\ExnTyArr{\ExnTy_1^\prime}{\Exn_1^\prime}{\ExnTy_2^\prime}{\Exn_2^\prime}}{\Exn_3^\prime}, \labell{ass1} \\
+            & \JudgeSubExn{\KiEnv}{\ExnTyArr{\ExnTy_1^\prime}{\Exn_1^\prime}{\ExnTy_2^\prime}{\Exn_2^\prime}}{\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}}, \\
+            & \JudgeSubExn{\KiEnv}{\Exn_3^\prime}{\Exn_3}.
+        \end{align}
+    By applying the induction hypothesis to \eqrefl{ass1} we obtain
+        \begin{align}
+            zzz
+        \end{align}
     
 2. By induction on the derivation of \TODO
 \end{proof}

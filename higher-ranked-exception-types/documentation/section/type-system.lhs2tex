@@ -20,7 +20,7 @@
 
 \subsection{Underlying type system}
 
-\begin{figure}[h]
+%\begin{figure}[h!]
     \begin{gather*}
         \Rule{T-Var}
              {}
@@ -164,12 +164,12 @@
                       {\Ty}
              }
     \end{gather*}
-    \caption{Underlying type system ($\JudgeTy{\TyEnv}{\Tm}{\Ty}$)}    
-\end{figure}
+    %\caption{Underlying type system ($\JudgeTy{\TyEnv}{\Tm}{\Ty}$)}    
+%\end{figure}
 
 \subsection{Declarative exception type system}
 
-\begin{figure}[h]
+%\begin{figure}[h!]
     \begin{gather*}
         \Rule{T-Var}
              {}
@@ -431,8 +431,8 @@
                          {\Exn}
              }
     \end{gather*}
-    \caption{Declarative type system ($\JudgeExnTy{\TyEnv}{\KiEnv}{\Tm}{\ExnTy}{\Exn}$)}    
-\end{figure}
+    %\caption{Declarative type system ($\JudgeExnTy{\TyEnv}{\KiEnv}{\Tm}{\ExnTy}{\Exn}$)}    
+%\end{figure}
 
 \begin{itemize}
 
@@ -456,7 +456,13 @@
 
 \subsection{Type elaboration system}
 
-\begin{figure}[h]
+\begin{itemize}
+
+    \item In \CiteRule{T-App} and {T-Fix}, note that there are substitutions in the premises of the rules. Are these inductive? (Probably, as these premises are not ``recursive'' ones.)
+
+\end{itemize}
+
+%\begin{figure}[h!]
     \begin{gather*}
         \Rule{T-Var}
              {}
@@ -728,8 +734,8 @@
               \end{multlined}
              }
     \end{gather*}
-    \caption{Syntax-directed type elaboration system ($\JudgeElab{\TyEnv}{\KiEnv}{\Tm}{\Tm^\prime}{\ExnTy}{\Exn}$)}    
-\end{figure}
+    %\caption{Syntax-directed type elaboration system ($\JudgeElab{\TyEnv}{\KiEnv}{\Tm}{\Tm^\prime}{\ExnTy}{\Exn}$)}    
+%\end{figure}
 
 \begin{itemize}
 
@@ -832,7 +838,7 @@
 %format Case                        = "\TmCase{\Tm_1}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}"
 %format Var_1
 %format Var_2
-\begin{figure}[h]
+%\begin{figure}[h!]
 \begin{code}
     reconstruct : Product ClassTyEnv (Product ClassKiEnv ClassTm) -> Product ClassExnTy ClassExn
 
@@ -887,8 +893,8 @@
                                              Tuple ExnTy_3 Exn_3                    = reconstruct env kenv tm_3
                                         in   Tuple (simplify kenv (ExnTyJoin ExnTy_2 ExnTy_3)) (simplify kenv (ExnUnion Exn_1 (ExnUnion Exn_2 Exn_3)))
 \end{code}
-\caption{Type inference algorithm}
-\end{figure}
+%\caption{Type inference algorithm}
+%\end{figure}
 
 \begin{itemize}
 
@@ -910,7 +916,7 @@
     \item Is \CiteRule{S-Refl} an admissable/derivable rule, or should we drop \CiteRule{S-Bool} and \CiteRule{S-Int}?
 \end{itemize}
 
-\begin{figure}
+%\begin{figure}[h!]
     \begin{gather*}
         \Rule{S-Refl}
              {}
@@ -962,8 +968,8 @@
                          {\ExnForall{\ExnVar : \Kind}{\ExnTy_2}}
              }
     \end{gather*}
-\caption{Subtyping}
-\end{figure}
+%\caption{Subtyping}
+%\end{figure}
 
 \begin{itemize}
 

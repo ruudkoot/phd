@@ -2,9 +2,15 @@
     \begin{enumerate}
         \item If $\JudgeExnTy{\TyEnv}{\KiEnv}{\TmAbsExn{x}{\ExnTy}{\Exn}{\Tm}}{\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}}{\Exn_3}$, then
             \begin{itemize}
-                \item $\JudgeExnTy{\TyEnv,\BindTy{x}{\ExnTy}{\Exn}}{\KiEnv}{\Tm}{\ExnTy_2^\prime}{\Exn_2^\prime}$,
-                \item $\JudgeSubTy{}{}{}$
+                \item $\JudgeExnTy{\TyEnv,\BindTy{x}{\ExnTy}{\Exn}}{\KiEnv}{\Tm}{\ExnTy^\prime}{\Exn^\prime}$,
+                \item $\JudgeSubTy{\KiEnv}{\ExnTy_1}{\ExnTy}$ and $\JudgeSubExn{\KiEnv}{\Exn_1}{\Exn}$,
+                \item $\JudgeSubTy{\KiEnv}{\ExnTy^\prime}{\ExnTy_2}$ and $\JudgeSubExn{\KiEnv}{\Exn^\prime}{\Exn_2}$.
             \end{itemize}
-        \item \TODO
+        \item If $\JudgeExnTy{\TyEnv}{\KiEnv}{\TmAnnAbs{\ExnVar}{\Kind}{\Tm}}{\ExnTyForall{\ExnVar}{\Kind}{\ExnTy}}{\Exn}$, then
+            \begin{itemize}
+                \item $\JudgeExnTy{\TyEnv}{\KiEnv,\BindKi{\ExnVar}{\Kind}}{\Tm}{\ExnTy^\prime}{\Exn^\prime}$,
+                \item $\JudgeSubTy{\KiEnv,\BindKi{\ExnVar}{\Kind}}{\ExnTy^\prime}{\ExnTy}$,
+                \item $\JudgeSubExn{\KiEnv}{\Exn^\prime}{\Exn}$.
+            \end{itemize}
     \end{enumerate}
 \end{lemma}
