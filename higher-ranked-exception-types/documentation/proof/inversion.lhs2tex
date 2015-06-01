@@ -1,19 +1,32 @@
 \begin{proof}
 1. By induction on the typing derivation.
 
-    \CaseRule{T-Abs} We have $\ExnTy = \ExnTy_1$, $\Exn = \Exn_1$, $\ExnTy^\prime = \ExnTy_2$ and $\Exn^\prime = \Exn_2$, thus the result follows immediately from the assumption $\JudgeExnTy{\TyEnv,\BindTy{x}{\ExnTy}{\Exn}}{\KiEnv}{\Tm}{\ExnTy_2}{\Exn_2}$ and reflexivity of the subtyping and subeffecting relations.
+    \CaseRule{T-Abs} We have $\ExnTy = \ExnTy_1$, $\Exn = \Exn_1$ and take $\ExnTy^\prime = \ExnTy_2$, $\Exn^\prime = \Exn_2$, the result then follows immediately from the assumption $\JudgeExnTy{\TyEnv,\BindTy{x}{\ExnTy}{\Exn}}{\KiEnv}{\Tm}{\ExnTy_2}{\Exn_2}$ and reflexivity of the subtyping and subeffecting relations.
     
     \def\currentprefix{inversion:T-Sub}
     \CaseRule{T-Sub} We are given the additional assumptions
         \begin{align}
             & \JudgeExnTy{\TyEnv}{\KiEnv}{\TmAbsExn{x}{\ExnTy}{\Exn}{\Tm}}{\ExnTyArr{\ExnTy_1^\prime}{\Exn_1^\prime}{\ExnTy_2^\prime}{\Exn_2^\prime}}{\Exn_3^\prime}, \labell{ass1} \\
-            & \JudgeSubExn{\KiEnv}{\ExnTyArr{\ExnTy_1^\prime}{\Exn_1^\prime}{\ExnTy_2^\prime}{\Exn_2^\prime}}{\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}}, \\
+            & \JudgeSubExn{\KiEnv}{\ExnTyArr{\ExnTy_1^\prime}{\Exn_1^\prime}{\ExnTy_2^\prime}{\Exn_2^\prime}}{\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}}, \labell{ass2}\\
             & \JudgeSubExn{\KiEnv}{\Exn_3^\prime}{\Exn_3}.
         \end{align}
-    By applying the induction hypothesis to \eqrefl{ass1} we obtain
+    Applying the induction hypothesis to \eqrefl{ass1} gives us
         \begin{align}
-            zzz
+            & \JudgeExnTy{\TyEnv,\BindTy{x}{\ExnTy}{\Exn}}{\KiEnv}{\Tm}{\ExnTy_2^{\prime\prime}}{\Exn_2^{\prime\prime}}, \labell{ih1}\\
+            & \JudgeSubTy{\KiEnv}{\ExnTy_1^\prime}{\ExnTy}, \quad \JudgeSubExn{\KiEnv}{\Exn_1^\prime}{\Exn}, \labell{ih2}\\
+            & \JudgeSubTy{\KiEnv}{\ExnTy_2^{\prime\prime}}{\ExnTy_2^\prime}, \quad \JudgeSubExn{\KiEnv}{\Exn_2^{\prime\prime}}{\Exn_2^\prime}. \labell{ih3}
         \end{align}
+    Inversion of the subtyping relation on \eqrefl{ass2} gives us
+        \begin{align}
+            & \JudgeSubTy{\KiEnv}{\ExnTy_1^\prime}{\ExnTy}, \quad \JudgeSubExn{\KiEnv}{\Exn_1^\prime}{\Exn}, \labell{inv1}\\
+            & \JudgeSubTy{\KiEnv}{\ExnTy_2^{\prime\prime}}{\ExnTy_2^\prime}, \quad \JudgeSubExn{\KiEnv}{\Exn_2^{\prime\prime}}{\Exn_2^\prime}. \labell{inv2}
+        \end{align}
+    The result follows from \eqrefl{ih1} and combining \eqrefl{inv1} with \eqrefl{ih2} and \eqrefl{ih3} with \eqrefl{inv2} using the transitivity of the subtyping and subeffecting relations.
+
+2. By induction on the typing derivation.
+
+    \CaseRule{T-AnnAbs} We need to show that $\JudgeExnTy{\TyEnv}{\KiEnv,\BindKi{\ExnVar}{\Kind}}{\Tm}{\ExnTy}{\Exn}$, which is one of our assumptions, and that $\JudgeSubTy{\KiEnv,\BindKi{\ExnVar}{\Kind}}{\ExnTy}{\ExnTy}$ and $\JudgeSubExn{\KiEnv}{\Exn}{\Exn}$; this follows from the reflexivity of the subtyping, respectively subeffecting, relation (noting that $\ExnVar \notin \fv{\Exn}$).
     
-2. By induction on the derivation of \TODO
+    \CaseRule{T-Sub} Similar to the case \CiteRule{T-Sub} in part 1.
+
 \end{proof}
