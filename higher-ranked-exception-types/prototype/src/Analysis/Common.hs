@@ -55,6 +55,7 @@ data Expr
     | Crash Lbl Ty
     | Seq Expr Expr
     | Fix Expr
+    | FIX Name Ty Expr
     | Nil Ty
     | Cons Expr Expr
     | Case Expr Expr Name Name Expr
@@ -69,6 +70,7 @@ data ElabTm
     | App' ElabTm ElabTm
     | AnnApp ElabTm Exn
     | Fix' ElabTm
+    | FIX' Name ExnTy Exn ElabTm
     | BinOp' ElabTm ElabTm
     | Seq' ElabTm ElabTm
     | If' ElabTm ElabTm ElabTm
@@ -115,6 +117,11 @@ checkExpr env (Fix e)
     = case checkExpr env e of
         Just (t1 :-> t2) -> if t1 == t2 then return t1 else error "type (Fix, type 2)"
         _                -> error $ "type (Fix, type 1)"
+checkExpr env (FIX x t e)
+    = case lookup x env of
+        Nothing -> do t' <- checkExpr ((x,t):env) e
+                      if t == t' then return t else error "type (FIX)"
+        _       -> error "shadowing (FIX)"
 checkExpr env (Nil t)
     = return (List t)
 checkExpr env (Cons e1 e2)
@@ -161,6 +168,8 @@ instance Latex Expr where
         = "(" ++ latex e1 ++ "\\ \\mathbf{seq}\\ " ++ latex e2 ++ ")"
     latex (Fix e)
         = "(\\mathbf{fix}\\ " ++ latex e ++ ")"
+    latex (FIX x t e)
+        = "(\\mathbf{FIX}\\ x_{" ++ show x ++ "}:" ++ latex t ++ "." ++ latex e ++ ")"
     latex (Nil t)
         = "(\\varepsilon:" ++ latex t ++ ")"
     latex (Cons e1 e2)

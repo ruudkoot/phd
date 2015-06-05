@@ -11,6 +11,7 @@
                 \item $\JudgeExnTy{\TyEnv}{\KiEnv,\BindKi{\ExnVar}{\Kind}}{\Tm}{\ExnTy^\prime}{\Exn^\prime}$,
                 \item $\JudgeSubTy{\KiEnv,\BindKi{\ExnVar}{\Kind}}{\ExnTy^\prime}{\ExnTy}$,
                 \item $\JudgeSubExn{\KiEnv}{\Exn^\prime}{\Exn}$.
+                \item \TODO\ $e \notin \fv{\Exn}$ and/or $e \notin \fv{\Exn^\prime}$.
             \end{itemize}
     \end{enumerate}
 \end{lemma}

@@ -3,6 +3,8 @@
         \item If $\JudgeExn{\KiEnv,\BindKi{\ExnVar}{\Kind^\prime}}{\Exn}{\Kind}$ and $\JudgeExn{\KiEnv}{\Exn^\prime}{\Kind^\prime}$ then $\JudgeExn{\KiEnv}{\Subst{\Exn^\prime}{\ExnVar}{\Exn}}{\Kind}$.
         \item If $\JudgeSubExn{\KiEnv,\BindKi{\ExnVar}{\Kind^\prime}}{\Exn_1}{\Exn_2}$ and $\JudgeKind{\KiEnv}{\Exn^\prime}{\Kind^\prime}$ then $\JudgeSubExn{\KiEnv}{\Subst{\Exn^\prime}{\ExnVar}{\Exn_1}}{\Subst{\Exn^\prime}{\ExnVar}{\Exn_2}}$.
         \item If $\JudgeSubTy{\KiEnv,\BindKi{\ExnVar}{\Kind^\prime}}{\ExnTy_1}{\ExnTy_2}$ and $\JudgeKind{\KiEnv}{\Exn^\prime}{\Kind^\prime}$ then $\JudgeSubExn{\KiEnv}{\Subst{\Exn^\prime}{\ExnVar}{\ExnTy_1}}{\Subst{\Exn^\prime}{\ExnVar}{\ExnTy_2}}$.
-        \item If $\JudgeExnTy{\TyEnv}{\KiEnv,\BindKi{\ExnVar}{\Kind^\prime}}{\Tm}{\ExnTy}{\Exn}$ and $\JudgeExn{\KiEnv}{\Exn^\prime}{\Kind^\prime}$ then $\JudgeExnTy{\TyEnv}{\KiEnv}{\Subst{\Exn^\prime}{\ExnVar}{\Tm}}{\ExnTy}{\Exn}$.
+        \item If $\JudgeExnTy{\TyEnv}{\KiEnv,\BindKi{\ExnVar}{\Kind^\prime}}{\Tm}{\ExnTy}{\Exn}$ and $\JudgeExn{\KiEnv}{\Exn^\prime}{\Kind^\prime}$ then $\JudgeExnTy{\TyEnv}{\KiEnv}{\Subst{\Exn^\prime}{\ExnVar}{\Tm}}{\Subst{\Exn^\prime}{\ExnVar}{\ExnTy}}{\Exn}$.
     \end{enumerate}
 \end{lemma}
+
+\TODO: In part 4, either we need the assumption $e \notin \fv{\Exn}$ (which seems to be satisfied everywhere we want to apply this lemma), or we also need to apply the substitution to $\Exn$ (is this expected or not in a type-and-effect system)? \CiteRule{T-Fix} seems to be to only rule where an exception variable can flow from $\ExnTy$ to $\Exn$.... 

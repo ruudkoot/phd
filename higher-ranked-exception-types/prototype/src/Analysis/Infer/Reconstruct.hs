@@ -142,7 +142,58 @@ reconstruct env kenv tm@(Fix e1)
             , simplifyExnTy kenv t_w
             , simplifyExn kenv (ExnUnion exn_w exn1)
             )
+{-
+reconstruct env kenv tm@(FIX x ty e1)
+    = do re@((dt,de,_), ee1, t1, exn1) <- reconstruct env kenv e1
+         ins@(ExnArr t' (ExnVar exn') t'' exn'', kenv') <- instantiate t1
+                                                -- ^    only used for elaboration
+         let f t_i exn_i = do
+                -- ins@(ExnArr t' (ExnVar exn') t'' exn'', kenv') <- instantiate t1
+                subst' <- match [] t_i t'
+                let subst = [(exn', exn_i)] <.> subst'
+                return ( t_i
+                       , exn_i
+                       , t'      -- not constant if I inside the loop
+                       , exn'    -- not constant if I inside the loop
+                       , t''     -- not constant if I inside the loop
+                       , exn''   -- not constant if I inside the loop
+                       , kenv'   -- not constant if I inside the loop
+                       , subst'
+                       , subst
+                       , substExnTy' subst t''
+                       , simplifyExnTy kenv $ substExnTy' subst t''
+                       , substExn' subst exn''
+                       , simplifyExn   kenv $ substExn' subst exn''
+                       )
 
+         let kleeneMycroft trace t_i exn_i = do    -- TODO: abstract to fixpointM
+                tr@(_,_,_,_,_,_,_,_,subst_i,_,t_j,_,exn_j) <- f t_i exn_i
+                if exnTyEq kenv t_i t_j && exnEq kenv exn_i exn_j
+                then return (trace, t_i, exn_i, subst_i)
+                else kleeneMycroft (trace ++ [tr]) t_j exn_j
+
+         t0 <- C.bottomExnTy (underlying t')
+         let exn0 = ExnEmpty
+         km@(_, t_w, exn_w, subst_w) <- kleeneMycroft [] t0 exn0
+
+         return $ (TypeFIX
+                    (kenv, exn_w,simplifyExn kenv (ExnUnion exn_w exn1))
+                    (kenv, exn1, simplifyExn kenv (ExnUnion exn_w exn1))
+                    (typeAnnAppFromEnv kenv' subst_w dt)
+                     #= (env,kenv)
+                  ,ElabFIX (kenv
+                           , simplifyExnTy kenv $ substExnTy' subst_w t''
+                           , simplifyExnTy kenv $ substExnTy' subst_w t'           )
+                           (kenv
+                           , simplifyExn   kenv $ substExn'   subst_w         exn''
+                           , simplifyExn   kenv $ substExn'   subst_w (ExnVar exn' ) )
+                           (map (judgeKindFromEnv kenv) kenv') de ## (env, kenv, tm)
+                  ,ReconstructFIX env kenv tm re ins t0 exn0 km) #
+            ( FIX' (annAppFromEnv kenv' subst_w ee1)
+            , simplifyExnTy kenv t_w
+            , simplifyExn kenv (ExnUnion exn_w exn1)
+            )
+-}
 reconstruct env kenv tm@(BinOp e1 e2) {- TODO: comparisons only; add AOp, BOp -}
     = do re1@((dt1,de1,_), ee1, ExnInt, exn1) <- reconstruct env kenv e1
          re2@((dt2,de2,_), ee2, ExnInt, exn2) <- reconstruct env kenv e2

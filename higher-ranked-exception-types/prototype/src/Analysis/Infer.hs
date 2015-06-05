@@ -53,7 +53,8 @@ inferenceExamples = map (\(l,x) -> (l, show x, mathjax' x)) [
     "" # Abs 1 Bool $ Seq (Var 1) (Abs 2 Bool $ Var 1),
 
     -- * recursive functions
-    "" # Fix (Abs 1 (Bool :-> Bool) (Abs 2 Bool (App (Var 1) (Var 2)))),
+    "fix" # Fix (Abs 1 (Bool :-> Bool) (Abs 2 Bool (App (Var 1) (Var 2)))),
+    "FIX" # FIX 1 (Bool :-> Bool) (Abs 2 Bool (App (Var 1) (Var 2))),
 
     -- * Dussart, Henglein & Mossin (soundness)
     -- fix (\f -> \x -> \y -> if x then True else f y x)
