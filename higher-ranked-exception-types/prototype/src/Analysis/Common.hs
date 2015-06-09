@@ -205,6 +205,8 @@ instance Latex ElabTm where
         = "(" ++ latex e1 ++ "\\ \\mathbf{seq}\\ " ++ latex e2 ++ ")"
     latex (Fix' e)
         = "(\\mathbf{fix}\\ " ++ latex e ++ ")"
+    latex (FIX' x ty exn e)
+        = "(\\mathbf{FIX}\\ x_{" ++ show x ++ "}:" ++ latex ty ++ "\\ \\&\\ " ++ latex exn ++ "." ++ latex e ++ ")"
     latex (Nil' t)
         = "(\\varepsilon:" ++ latex t ++ ")"
     latex (Cons' e1 e2)

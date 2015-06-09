@@ -55,6 +55,9 @@ instance ToMarkup DerivType where
     toMarkup dt@(TypeFix jse1 jse2 dt1 jt)
         = derive (checkDerivType dt) "T-Fix"
             [H.toMarkup dt1, judgeSubEff jse1, judgeSubEff jse2] (judgeType jt)
+    toMarkup dt@(TypeFIX dt1 jt)
+        = derive (checkDerivType dt) "T-FIX"
+            [H.toMarkup dt1] (judgeType jt)
     toMarkup dt@(TypeOp dt1 dt2 jt)
         = derive (checkDerivType dt) "T-Op"
             (map H.toMarkup [dt1, dt2]) (judgeType jt)
@@ -79,7 +82,7 @@ instance ToMarkup DerivType where
 
 boolToColor :: Bool -> Color
 boolToColor True  = Green
-boolToColor False = error "Red"
+boolToColor False = Red -- error "Red"
 
 checkDerivType :: DerivType -> Color -- FIXME: could check env/kenv, tm
 checkDerivType (TypeVar (env, kenv, Var' x, exnTy, exn)) = boolToColor $
@@ -120,6 +123,12 @@ checkDerivType (TypeFix (_,exn1,exn2) (_,exn3,exn4) dt1
             && isSubeffect kenv exn1 exn2 && isSubeffect kenv exn3 exn4
             -- && env==env1 && env==env2 && kenv==kenv1 && kenv==kenv2
             -- && tm1==tm1' && tm2==tm2'
+checkDerivType (TypeFIX dt1 (env,kenv,FIX' x exnTy exn tm,exnTy',exn')) = boolToColor $
+    let (env1, kenv1, tm1', exnTy1, exn1) = getJT dt1
+     in exnTyEq kenv exnTy exnTy' && exnEq kenv exn exn'
+            && exnTyEq kenv exnTy exnTy1 && exnEq kenv exn exn1
+            -- && env
+            -- && tm
 checkDerivType (TypeOp dt1 dt2 (env,kenv,BinOp' tm1 tm2,ExnBool,exn)) = boolToColor $
     let (env1, kenv1, tm1', ExnInt, exn1) = getJT dt1
         (env2, kenv2, tm2', ExnInt, exn2) = getJT dt2
@@ -188,6 +197,8 @@ instance ToMarkup DerivElab where
     toMarkup (ElabFix jst jse jks de je)
         = derive Black "TE-Fix" (map H.toMarkup [de] ++ map judgeKind jks
             ++ [judgeSubTy jst, judgeSubEff jse]) (judgeElab je)
+    toMarkup (ElabFIX de je)
+        = derive Black "TE-FIX" (map H.toMarkup [de]) (judgeElab je)
     toMarkup (ElabOp de1 de2 je)
         = derive Black "TE-Op" (map H.toMarkup [de1, de2]) (judgeElab je)
     toMarkup (ElabSeq de1 de2 je)
@@ -374,6 +385,14 @@ reconstructHtml (ReconstructFix env kenv tm re ins t_0 exn_0 km@(trace, t_w, exn
         -- RESULT
         htmlResult kenv result
       ) ++ recurse [re]
+reconstructHtml (ReconstructFIX env kenv tm _ _ _ _ result)   -- FIXME: IMPLEMENT!
+    = (return $ H.table $ do
+        htmlHeader env kenv tm
+        H.tr $ do
+            H.td $ ""
+            H.td ! A.colspan "4" $ "TODO!"
+        htmlResult kenv result
+      )
 reconstructHtml (ReconstructNil env kenv tm result)
     = (return $ H.table $ do
         htmlHeader env kenv tm

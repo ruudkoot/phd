@@ -31,6 +31,7 @@ data DerivType
     | TypeApp                            DerivType DerivType           JudgeType
     | TypeAnnApp JudgeKind               DerivType                     JudgeType
     | TypeFix    JudgeSubEff JudgeSubEff DerivType                     JudgeType
+    | TypeFIX                            DerivType                     JudgeType
     | TypeOp                             DerivType DerivType           JudgeType
     | TypeSeq                            DerivType DerivType           JudgeType
     | TypeIf                             DerivType DerivType DerivType JudgeType
@@ -48,6 +49,7 @@ getJT (TypeAnnAbs _       jt) = jt
 getJT (TypeApp    _ _     jt) = jt
 getJT (TypeAnnApp _ _     jt) = jt
 getJT (TypeFix    _ _ _   jt) = jt
+getJT (TypeFIX        _   jt) = jt
 getJT (TypeOp     _ _     jt) = jt
 getJT (TypeSeq    _ _     jt) = jt
 getJT (TypeIf     _ _ _   jt) = jt
@@ -68,6 +70,7 @@ data DerivElab
     | ElabAbs   JudgeTyWff JudgeKind               DerivElab           JudgeElab
     | ElabApp   JudgeSubTy JudgeSubEff [JudgeKind] DerivElab DerivElab JudgeElab
     | ElabFix   JudgeSubTy JudgeSubEff [JudgeKind] DerivElab           JudgeElab
+    | ElabFIX                                      DerivElab           JudgeElab
     | ElabOp                                       DerivElab DerivElab JudgeElab
     | ElabSeq                                      DerivElab DerivElab JudgeElab
     | ElabIf                            DerivElab  DerivElab DerivElab JudgeElab
@@ -83,6 +86,7 @@ type Reconstruct'   = ((DerivType, DerivElab, Reconstruct), ElabTm, ExnTy, Exn)
 type Instantiate'   = (ExnTy, KindEnv)
 type KleeneMycroft' = ([(ExnTy, Exn, ExnTy, Name, ExnTy, Exn, KindEnv,
                          Subst, Subst, ExnTy, ExnTy, Exn, Exn)], ExnTy, Exn, Subst)
+type KleeneMycroft'' = ([(Env,Reconstruct')], Reconstruct')
 
 data Reconstruct
     = ReconstructVar   Env KindEnv Expr
@@ -109,6 +113,9 @@ data Reconstruct
                        Result
     | ReconstructFix   Env KindEnv Expr
                        Reconstruct' Instantiate' ExnTy Exn KleeneMycroft'
+                       Result
+    | ReconstructFIX   Env KindEnv Expr
+                       Reconstruct' ExnTy Exn KleeneMycroft''
                        Result
     | ReconstructNil   Env KindEnv Expr
                        Result
