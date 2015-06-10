@@ -61,6 +61,16 @@ Values $\LuVal$ are terms of the form \[ \LuAbs{\LuVar_1}{\LuTy_1}{\cdots\LuAbs{
 
 \subsection{Reduction relation}
 
+\begin{itemize}
+
+    \item \TODO Do not match the rules in the prototype (those are sensitive to the order in which they are tried).
+    
+    \item \TODO In the second rule only one term is applied; contrast this with the other rules involing applications.
+    
+    \item \TODO Should make use of the fact the everything is fully applied (and $\eta$-expanded/-long?): all atoms are of the form $k\ \overline{t_i}$, where $k$ is $c$ or $x$ and the number of arguments fixed by the arity of $k$. Then try to factor out the commutativity rules by taking ``sets'' of these atoms. That might simplify stuff a whole lot...
+    
+\end{itemize}
+
 \begin{definition}
     Let $\LuOrder{}{}$ be a strict total order on $\ClassLuCon \cup \ClassLuVar$, with $\LuOrder{\LuCON}{\LuVar}$ for all $\LuCON \in \ClassLuCon$ and $\LuVar \in \ClassLuVar$.
 \end{definition}

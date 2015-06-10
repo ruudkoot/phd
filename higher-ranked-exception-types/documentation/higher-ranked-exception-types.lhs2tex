@@ -39,6 +39,7 @@
 \author{Ruud Koot}
 \maketitle
 
+%include section/motivation.lhs2tex
 %include section/lambda-union.lhs2tex
 %include section/completion.lhs2tex
 %include section/type-system.lhs2tex
