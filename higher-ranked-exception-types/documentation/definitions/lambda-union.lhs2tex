@@ -29,7 +29,7 @@
 \newcommand{\LuVar}{x}
 \newcommand{\LuVarY}{y}
 
-\newcommand{\LuAPPLIED}[1][]{\LuVar#1\ \LuTm_1#1 \cdots \LuTm_n#1}
+\newcommand{\LuAPPLIED}[1][]{\LuVar\ \LuTm_1#1 \cdots \LuTm_n#1}
 
 \newcommand{\JudgeLuTy}[3][\LuEnv]{#1 \vdash #2 : #3}
 

@@ -377,7 +377,7 @@ checkElabTm' tyEnv kiEnv (AnnAbs e k tm)
          case mty of
             Just (ty, ann) -> return $ Just (ExnForall e k ty, ann)
             _ -> error "type (AnnAbs)"
-checkElabTm' tyEnv kiEnv (App' tm1 tm2)
+checkElabTm' tyEnv kiEnv tm@(App' tm1 tm2)
     = do mty1 <- checkElabTm' tyEnv kiEnv tm1
          case mty1 of
             Just (ExnArr ty1 ann1 ty ann, ann') -> do
@@ -387,7 +387,12 @@ checkElabTm' tyEnv kiEnv (App' tm1 tm2)
                         if isSubtype kiEnv ty2 ty1 && isSubeffect kiEnv ann2 ann1 then
                             return $ Just (ty, simplifyExn kiEnv $ ExnUnion ann ann')
                         else
-                            error "subtype (App')"
+                            error $ "subtype (App'): "
+                                    ++ "tm = "   ++ show tm   ++ "; "
+                                    ++ "ty1 = "  ++ show ty1  ++ "; "
+                                    ++ "ty2 = "  ++ show ty2  ++ "; "
+                                    ++ "ann1 = " ++ show ann1 ++ "; "
+                                    ++ "ann2 = " ++ show ann2
                     _ -> error "type (App', 2)"
             _ -> error "type (App', 1)"
 checkElabTm' tyEnv kiEnv (AnnApp tm ann2)

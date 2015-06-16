@@ -63,11 +63,13 @@ Values $\LuVal$ are terms of the form \[ \LuAbs{\LuVar_1}{\LuTy_1}{\cdots\LuAbs{
 
 \begin{itemize}
 
-    \item \TODO Do not match the rules in the prototype (those are sensitive to the order in which they are tried).
+    \item \TODO\ Do not match the rules in the prototype (those are sensitive to the order in which they are tried).
     
-    \item \TODO In the second rule only one term is applied; contrast this with the other rules involing applications.
+    \item \TODO\ In the second rule only one term is applied; contrast this with the other rules involing applications.
     
-    \item \TODO Should make use of the fact the everything is fully applied (and $\eta$-expanded/-long?): all atoms are of the form $k\ \overline{t_i}$, where $k$ is $c$ or $x$ and the number of arguments fixed by the arity of $k$. Then try to factor out the commutativity rules by taking ``sets'' of these atoms. That might simplify stuff a whole lot...
+    \item \TODO\ Should make use of the fact the everything is fully applied (and $\eta$-expanded/-long?): all atoms are of the form $k\ \overline{t_i}$, where $k$ is $c$ or $x$ and the number of arguments fixed by the arity of $k$. Then try to factor out the commutativity rules by taking ``sets'' of these atoms. That might simplify stuff a whole lot...
+    
+    \item \TODO\ Can we restrict the typing rule T-Union to only allow sets and not functions on both sides? This would remove the 2nd and 3rd rewrite rules and make the system a more traditional higher-order rewrite system: it's ``just'' higher-order pattern E-unification (decidable), boolean rings are easy to integrate, and higher-ranked dimension types becomes higher-order E-unification (semi-decidable). Open question: how to represent e.g. $U(e_2(e_1), e_1) = \left[e_2\mapsto \lambda e_1. e_1\right]$ without abstractions? (Reinterpret $e_1$ as $f(e_1)$ with $f = id$?)
     
 \end{itemize}
 

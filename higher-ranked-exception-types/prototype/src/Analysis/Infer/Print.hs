@@ -82,7 +82,7 @@ instance ToMarkup DerivType where
 
 boolToColor :: Bool -> Color
 boolToColor True  = Green
-boolToColor False = Red -- error "Red"
+boolToColor False = {- Red -} error "Red"
 
 checkDerivType :: DerivType -> Color -- FIXME: could check env/kenv, tm
 checkDerivType (TypeVar (env, kenv, Var' x, exnTy, exn)) = boolToColor $
