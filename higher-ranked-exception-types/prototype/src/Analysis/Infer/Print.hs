@@ -354,9 +354,6 @@ reconstructHtml (ReconstructFix env kenv tm re ins t_0 exn_0 km@(trace, t_w, exn
         -- Kleene-Mycroft iteration
         H.tr $ do
             H.td $ ""
-            H.td ! A.colspan "4" $ "--- METHOD 2"
-        H.tr $ do
-            H.td $ ""
             H.td $ ""
             H.td ! A.colspan "3" $ "-- initialization"
         rowRes $ mathjax' t_0
@@ -385,14 +382,28 @@ reconstructHtml (ReconstructFix env kenv tm re ins t_0 exn_0 km@(trace, t_w, exn
         -- RESULT
         htmlResult kenv result
       ) ++ recurse [re]
-reconstructHtml (ReconstructFIX env kenv tm _ _ _ _ result)   -- FIXME: IMPLEMENT!
+reconstructHtml (ReconstructFIX env kenv tm re t_0 exn_0 km@(trace, re_w) result)     -- FIXME: IMPLEMENT!
     = (return $ H.table $ do
         htmlHeader env kenv tm
+        -- initialization
         H.tr $ do
             H.td $ ""
-            H.td ! A.colspan "4" $ "TODO!"
+            H.td $ "t_0"
+            H.td ! A.colspan "3" $ "= bottomExnTy ty"
+        rowRes $ mathjax' t_0
+        H.tr $ do
+            H.td $ ""
+            H.td $ "exn_0"
+            H.td ! A.colspan "3" $ "= emptyset"
+        -- iterations
+        forM trace $ \(env_i, re_i@(_,_,_,_)) -> do
+            H.tr $ do
+                H.td $ ""
+                H.td $ ""
+                H.td ! A.colspan "3" $ "-- iteration"
+        -- result
         htmlResult kenv result
-      )
+      ) ++ recurse [re]
 reconstructHtml (ReconstructNil env kenv tm result)
     = (return $ H.table $ do
         htmlHeader env kenv tm

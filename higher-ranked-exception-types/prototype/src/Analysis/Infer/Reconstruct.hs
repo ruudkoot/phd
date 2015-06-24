@@ -388,11 +388,13 @@ checkElabTm' tyEnv kiEnv tm@(App' tm1 tm2)
                             return $ Just (ty, simplifyExn kiEnv $ ExnUnion ann ann')
                         else
                             error $ "subtype (App'): "
-                                    ++ "tm = "   ++ show tm   ++ "; "
-                                    ++ "ty1 = "  ++ show ty1  ++ "; "
-                                    ++ "ty2 = "  ++ show ty2  ++ "; "
-                                    ++ "ann1 = " ++ show ann1 ++ "; "
-                                    ++ "ann2 = " ++ show ann2
+                                    ++ "tm = "    ++ show tm    ++ "; "
+                                    ++ "ty1 = "   ++ show ty1   ++ "; "
+                                    ++ "ty2 = "   ++ show ty2   ++ "; "
+                                    ++ "ann1 = "  ++ show ann1  ++ "; "
+                                    ++ "ann2 = "  ++ show ann2  ++ "; "
+                                    ++ "tyEnv = " ++ show tyEnv ++ "; "
+                                    ++ "kiEnv = " ++ show kiEnv
                     _ -> error "type (App', 2)"
             _ -> error "type (App', 1)"
 checkElabTm' tyEnv kiEnv (AnnApp tm ann2)
@@ -423,7 +425,7 @@ checkElabTm' tyEnv kiEnv (FIX' x ty ann tm)
                 if isSubtype kiEnv ty' ty && isSubeffect kiEnv ann' ann then
                     return $ Just (ty, ann)
                 else
-                    error "fixpoint (Fix')"
+                    error "fixpoint (FIX')"
             _ -> error "type (FIX')"
 checkElabTm' tyEnv kiEnv (BinOp' tm1 tm2)
     = do mty1 <- checkElabTm' tyEnv kiEnv tm1

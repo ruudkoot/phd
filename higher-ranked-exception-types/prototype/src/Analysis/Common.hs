@@ -466,6 +466,7 @@ substExn e e' (ExnVar e'')
     | e == e''  = ExnVar e'
     | otherwise = ExnVar e''
 substExn e e' (ExnAbs n k e'')
+    -- FIXME: check for possibility of variable capture
     | e == n    = ExnAbs n k e''
     | otherwise = ExnAbs n k (substExn e e' e'')
 substExn e e' (ExnApp exn1 exn2)
@@ -507,7 +508,12 @@ substExn' subst exn@(ExnVar x)
 substExn' subst (ExnCon c)
     = ExnCon c
 substExn' subst (ExnAbs x k e)
-    = ExnAbs x k (substExn' (deleteKey x subst) e)
+    = let fvs = concatMap (\(_,exn) -> fevExn exn) subst
+       in if x `elem` fvs then
+            -- FIXME: alpha-rename to avoid capture
+            error "substExn': variable captured"
+          else
+            ExnAbs x k (substExn' (deleteKey x subst) e)
 substExn' subst (ExnApp e1 e2)
     = ExnApp (substExn' subst e1) (substExn' subst e2)
 substExn' subst ExnEmpty
@@ -519,8 +525,12 @@ substExn' subst e
 
 substExnTy' :: Subst -> ExnTy -> ExnTy
 substExnTy' subst (ExnForall e k t)
-    -- FIXME: check for possibility of variable capture
-    = ExnForall e k (substExnTy' (deleteKey e subst) t)
+    = let fvs = concatMap (\(_,exn) -> fevExn exn) subst
+       in if e `elem` fvs then
+            substExnTy' subst $
+                ExnForall (e+1000) k (substExnTy' [(e,ExnVar (e+1000))] t)
+          else
+            ExnForall e k (substExnTy' (deleteKey e subst) t)
 substExnTy' subst (ExnBool)
     = ExnBool
 substExnTy' subst (ExnInt)
