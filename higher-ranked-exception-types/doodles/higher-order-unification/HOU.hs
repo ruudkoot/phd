@@ -34,10 +34,12 @@ data Ty
 data Ty' 
     = Base' Idx
     | Arr'  [Ty'] Idx
+    | Unknown
     deriving (Eq, Read)
     
 instance Show Ty' where
     show (Base' t) = "T" ++ show t
+    show (Unknown) = "?"
 
 data Tm
     = Var Name
@@ -59,6 +61,12 @@ rigid :: Nf' -> Bool
 rigid (Nf' _ (Free  _) _) = False
 rigid (Nf' _ (Bound _) _) = True
 rigid (Nf' _ (Con   _) _) = True
+
+constant :: Nf' -> Bool
+constant (Nf' _ (Free  _) _) = False
+constant (Nf' _ (Bound _) _) = False
+constant (Nf' _ (Con   _) _) = True
+
 
 -- Huet's higher-order unification algorithm
 
@@ -108,6 +116,19 @@ type Unifier = [(Idx, Nf')]
 
 match :: Nf' -> Nf' -> [Unifier]
 match (Nf' us f e1s) (Nf' vs r e2s)
-    | length us /= length vs = error "length us /= length vs"
+    | length us > length vs = error "length us > length vs"
     | otherwise = 
-        
+        let n1 = length us
+            n2 = length vs
+            n  = n2 - n1
+            p1 = length e1s
+            p2 = length e2s
+            ws = replicate p1 Unknown
+         in -- imitation
+            case r of
+                Free  _               -> []
+                Bound idx | idx < n   -> []
+                          | otherwise -> []
+                Con   idx             -> []
+            -- projection
+            
