@@ -22,7 +22,8 @@ data Name
     deriving (Eq, Read)
     
 instance Show Name where
-    show (Free  x) = [chr $ ord 'a' + x - 1]
+    show (Free  x) | x <= 26   = [chr $ ord 'a' + x - 1]
+                   | otherwise = "?" ++ show x
     show (Bound x) = show x
     show (Con   x) = [chr $ ord 'A' + x - 1]
 
@@ -112,23 +113,29 @@ ex3 = [(Nf' [Base' 0, Base' 0] (Con 1) [Nf' [] (Bound 1) [], Nf' [Base' 0] (Boun
 
 -- * Matching
 
-type Unifier = [(Idx, Nf')]
+type Unifier = (Idx, Nf')
 
-match :: Nf' -> Nf' -> [Unifier]
-match (Nf' us f e1s) (Nf' vs r e2s)
+match :: Nf' -> Nf' -> Idx -> [Unifier]
+match (Nf' us (Free f) e1s) e2@(Nf' vs r e2s) v
     | length us > length vs = error "length us > length vs"
     | otherwise = 
         let n1 = length us
             n2 = length vs
-            n  = n2 - n1
+            n  = n2 - n1            -- eta: n1 = n2 => n = 0
             p1 = length e1s
             p2 = length e2s
             ws = replicate p1 Unknown
-         in -- imitation
-            case r of
-                Free  _               -> []
-                Bound idx | idx < n   -> []
-                          | otherwise -> []
-                Con   idx             -> []
+            -- imitation
+            sI = if constant e2 then
+                    [(f, Nf' ws r (map (\x -> Nf' [] (Free (v+x)) (map (\y -> Nf' [] (Bound y) []) [p1-1..0])) [1..p2]))]
+                 else
+                    []
             -- projection
-            
+            -- FIXME: we do not check the typing condition (2) yet
+            sP = [ (f, Nf' ws (Bound i) (map (\x -> Nf' [] (Free (v+x)) (map (\y -> Nf' [] (Bound y) []) [p1-1..0])) [1..p2]))
+                 | i <- [p1-1..0]
+                 ]
+         in sI ++ sP
+         
+mEx1 = match (Nf' [] (Free 6) [Nf' [] (Free 24) [], Nf' [] (Con 2) []])
+             (Nf' [] (Con 1) [Nf' [] (Con 2) []]) 100
