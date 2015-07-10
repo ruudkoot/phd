@@ -2,14 +2,8 @@
 
 module Main where
 
-import Control.Monad
-
 import Data.Char
 import Data.List
-
--- | The 'concatMapM' function generalizes 'concatMap' to arbitrary monads.
-concatMapM        :: (Monad m) => (a -> m [b]) -> [a] -> m [b]
-concatMapM f xs   =  liftM concat (mapM f xs)
 
 -- Types
 
@@ -33,14 +27,20 @@ data Ty
     deriving (Eq, Read, Show)
 
 data Ty' 
-    = Base' Idx
-    | Arr'  [Ty'] Idx
-    | Unknown
+    = Arr'  [Ty'] Idx
     deriving (Eq, Read)
-    
+
+base' :: Idx -> Ty'
+base' b = Arr' [] b
+
 instance Show Ty' where
-    show (Base' t) = "T" ++ show t
-    show (Unknown) = "?"
+    show (Arr' _ t) = "T"       -- FIXME
+
+arity :: Ty' -> Int
+arity (Arr' as b) = length as
+
+args :: Ty' -> [Ty']
+args (Arr' as b) = as
 
 data Tm
     = Var Name
@@ -107,16 +107,17 @@ step1 = step1' [] where
               else
                 Nothing
                      
-ex1 = [(Nf' [] (Con 1) [Nf' [Base' 0] (Con 2) [Nf' [] (Free 24) [], Nf' [] (Bound 0) []],Nf' [] (Con 3) []], Nf' [] (Con 1) [Nf' [Base' 0] (Con 2) [Nf' [] (Free 25) [], Nf' [] (Bound 0) []],Nf' [] (Free 6) [Nf' [] (Con 3) []]])] {- Node [(\T0.x,\T0.y),(f(C),C)] [] -}
-ex2 = [(Nf' [] (Con 1) [Nf' [Base' 0] (Con 2) [Nf' [] (Free 24) [], Nf' [] (Bound 0) []]], Nf' [] (Con 1) [Nf' [Base' 0] (Con 2) [Nf' [] (Free 25) [], Nf' [] (Bound 0) []]])] {- S -}
-ex3 = [(Nf' [Base' 0, Base' 0] (Con 1) [Nf' [] (Bound 1) [], Nf' [Base' 0] (Bound 1) []], Nf' [Base' 0, Base' 0] (Con 1) [Nf' [] (Bound 1) [], Nf' [Base' 0] (Bound 2) []])] {- F -}
+ex1 = [(Nf' [] (Con 1) [Nf' [base' 0] (Con 2) [Nf' [] (Free 24) [], Nf' [] (Bound 0) []],Nf' [] (Con 3) []], Nf' [] (Con 1) [Nf' [base' 0] (Con 2) [Nf' [] (Free 25) [], Nf' [] (Bound 0) []],Nf' [] (Free 6) [Nf' [] (Con 3) []]])] {- Node [(\T0.x,\T0.y),(f(C),C)] [] -}
+ex2 = [(Nf' [] (Con 1) [Nf' [base' 0] (Con 2) [Nf' [] (Free 24) [], Nf' [] (Bound 0) []]], Nf' [] (Con 1) [Nf' [base' 0] (Con 2) [Nf' [] (Free 25) [], Nf' [] (Bound 0) []]])] {- S -}
+ex3 = [(Nf' [base' 0, base' 0] (Con 1) [Nf' [] (Bound 1) [], Nf' [base' 0] (Bound 1) []], Nf' [base' 0, base' 0] (Con 1) [Nf' [] (Bound 1) [], Nf' [base' 0] (Bound 2) []])] {- F -}
 
 -- * Matching
 
+type Env     = [Ty']
 type Unifier = (Idx, Nf')
 
-match :: Nf' -> Nf' -> Idx -> [Unifier]
-match (Nf' us (Free f) e1s) e2@(Nf' vs r e2s) v
+match :: Env -> Nf' -> Nf' -> Idx -> [Unifier]
+match env (Nf' us (Free f) e1s) e2@(Nf' vs r e2s) v
     | length us > length vs = error "length us > length vs"
     | otherwise = 
         let n1 = length us
@@ -124,18 +125,21 @@ match (Nf' us (Free f) e1s) e2@(Nf' vs r e2s) v
             n  = n2 - n1            -- eta: n1 = n2 => n = 0
             p1 = length e1s
             p2 = length e2s
-            ws = replicate p1 Unknown
+            ws = args (env !! (f-1))
             -- imitation
             sI = if constant e2 then
-                    [(f, Nf' ws r (map (\x -> Nf' [] (Free (v+x)) (map (\y -> Nf' [] (Bound y) []) [p1-1..0])) [1..p2]))]
+                    [(f, Nf' ws r (map (\x -> Nf' [] (Free (v+x)) (map (\y -> Nf' [] (Bound y) []) (reverse [0..p1-1]))) [1..p2]))]
                  else
                     []
             -- projection
-            -- FIXME: we do not check the typing condition (2) yet
-            sP = [ (f, Nf' ws (Bound i) (map (\x -> Nf' [] (Free (v+x)) (map (\y -> Nf' [] (Bound y) []) [p1-1..0])) [1..p2]))
-                 | i <- [p1-1..0]
+            sP = [ (f, Nf' ws (Bound i) (map (\x -> Nf' [] (Free (v+x)) (map (\y -> Nf' [] (Bound y) []) (reverse [0..p1-1]))) [1..arity t]))
+                 | (i,t) <- zip (reverse [0..p1-1]) ws
                  ]
-         in sI ++ sP
+         in nub (sI ++ sP)
          
-mEx1 = match (Nf' [] (Free 6) [Nf' [] (Free 24) [], Nf' [] (Con 2) []])
+mEx1 = match (replicate 5 undefined
+                ++ [Arr' [Arr' [base' 3, base' 3] 3, base' 3] 3]
+                ++ replicate 17 undefined
+                ++ [Arr' [base' 3, base' 3] 3])
+             (Nf' [] (Free 6) [Nf' [] (Free 24) [], Nf' [] (Con 2) []])
              (Nf' [] (Con 1) [Nf' [] (Con 2) []]) 100
