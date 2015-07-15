@@ -1,9 +1,13 @@
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE TupleSections, ViewPatterns #-}
 
 module Main where
 
-import Data.Char
-import Data.List
+import Control.Applicative ((<$>))
+import Control.Arrow       ((***))
+
+import           Data.Char
+import           Data.List
+import qualified Data.Tree as T
 
 -- Types
 
@@ -48,6 +52,10 @@ data Tm
     | App Tm Tm
     deriving (Eq, Read, Show)
 
+data Tm'
+    = Tm' [Ty'] (Either Name Tm') [Tm']
+    deriving (Eq, Read, Show)
+
 data Nf'
     = Nf' [Ty'] Name [Nf']
     deriving (Eq, Read)
@@ -72,7 +80,7 @@ constant (Nf' _ (Con   _) _) = True
 -- Huet's higher-order unification algorithm
 
 type DisagreementSet  = [(Nf',Nf')]
-type SubstitutionPair = (Idx, Tm)
+type SubstitutionPair = (Idx, Nf')
 
 data MatchingTree
     = S
@@ -114,9 +122,8 @@ ex3 = [(Nf' [base' 0, base' 0] (Con 1) [Nf' [] (Bound 1) [], Nf' [base' 0] (Boun
 -- * Matching
 
 type Env     = [Ty']
-type Unifier = (Idx, Nf')
 
-match :: Env -> Nf' -> Nf' -> Idx -> [Unifier]
+match :: Env -> Nf' -> Nf' -> Idx -> [SubstitutionPair]
 match env (Nf' us (Free f) e1s) e2@(Nf' vs r e2s) v
     | length us > length vs = error "length us > length vs"
     | otherwise = 
@@ -143,3 +150,74 @@ mEx1 = match (replicate 5 undefined
                 ++ [Arr' [base' 3, base' 3] 3])
              (Nf' [] (Free 6) [Nf' [] (Free 24) [], Nf' [] (Con 2) []])
              (Nf' [] (Con 1) [Nf' [] (Con 2) []]) 100
+             
+-- * Matching trees
+
+matchingTree :: Env -> [Nf'] -> MatchingTree
+matchingTree env es = head (matchingTrees env es)
+
+matchingTrees :: Env -> [Nf'] -> [MatchingTree]
+matchingTrees env (e0:es) = matchingTrees' $ simpl (map (e0,) es) where
+    matchingTrees' :: MatchingTree -> [MatchingTree]
+    matchingTrees' S            = return S
+    matchingTrees' F            = return F
+    matchingTrees' (Node ds []) = do
+        (e1,e2) <- filter (rigid . snd) ds
+        case match env e1 e2 (length env) of
+            []     -> return F
+            sigmas -> Node ds <$> map f sigmas where
+                f sigma = do
+                    let ds' = map (applySubst sigma *** applySubst sigma) ds
+                    m <- matchingTrees' (simpl ds')
+                    return (sigma, m)
+                    
+-- Example 3.2
+
+-- * Substitution and beta-reduction
+
+nf2tm :: Nf' -> Tm'
+nf2tm (Nf' bs x as) = Tm' bs (Left x) (map nf2tm as)
+
+tm2nf :: Tm' -> Nf'
+tm2nf (Tm' bs (Left x) as) = Nf' bs x (map tm2nf as)
+
+normalize :: Tm' -> Tm'
+normalize (Tm' bs (Left x) as)
+    = Tm' bs (Left x) (map normalize as)
+normalize (Tm' bs (Right (Tm' bs' x as')) as)
+    | length bs' < length as 
+        = error $ "normalize: not eta-long?"
+    | otherwise
+        = let n = length bs - length as
+           in normalize (Tm' bs (bind n as x) (map (normalize . bindR n as) as'))
+
+bind :: Int -> [Tm'] -> Either Name Tm' -> Either Name Tm'
+bind n as (Left (Free x)) = Left (Free x)
+bind n as (Left (Con x))  = Left (Con x)
+bind n as (Left (Bound x))
+    | x >= n    = Right (reverse as !! (x - n))
+    | otherwise = Left (Bound (x - length as))
+bind n as (Right tm) = Right (bindR n as tm)
+
+bindR :: Int -> [Tm'] -> Tm' -> Tm'
+bindR n ss (Tm' bs x as) = Tm' bs (bind n ss x) (map (bindR n ss) as)
+
+substFree :: Idx -> Tm' -> Tm' -> Tm'
+substFree x tm (Tm' bs (Left (Free x')) as) | x == x'
+    = Tm' bs (Right tm) (map (substFree x tm) as)
+substFree x tm (Tm' bs (Left y) as)
+    = Tm' bs (Left y) (map (substFree x tm) as)
+substFree x tm (Tm' bs (Right y) as)
+    = Tm' bs (Right (substFree x tm y)) (map (substFree x tm) as)
+
+applySubst :: SubstitutionPair -> Nf' -> Nf'
+applySubst (x, nf2tm -> tm') (nf2tm -> tm)
+    = tm2nf (normalize (substFree x tm' tm))
+
+-- test
+
+nfId = Nf' [base' 0] (Bound 0) []
+tmIdId = Tm' 
+
+
+test1 = applySubst (0, nfId) (Nf' [] (Free 0) [nfId])
