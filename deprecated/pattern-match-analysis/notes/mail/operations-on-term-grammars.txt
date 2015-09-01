@@ -1,0 +1,23 @@
+Hi Ruud, that paper did not survive the publication process. My
+recollection is that we found an error in a critical proof, and then
+found that a theorem was wrong, and withdrew it.
+
+Justin
+
+On Wed, Mar 21, 2012 at 11:41:38AM +0100, Ruud Koot wrote:
+# Dear Prof. Topor, Dear Prof. Zobel,
+#
+# I'm currently doing a literature review for my Master's thesis and am
+# trying to follow up on the following reference:
+#
+# Rodney Topor and Justin Zobel.
+# Operations on regular term grammars.
+# To appear in Acta Informatica., June 1991.
+#
+# As far as I'm able to determine this paper did not make it to
+# publication. Do you know if it is available as a technical report or
+# would you otherwise be able to provide me with a copy?
+#
+# Kind regards,
+#
+# Ruud Koot

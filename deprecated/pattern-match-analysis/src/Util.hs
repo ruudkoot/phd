@@ -1,0 +1,12 @@
+module Util where
+
+-- | Fixed point
+
+fix f x = fix' (iterate f x)
+    where fix' (a1:as@(a2:_)) | a1 == a2  = a1
+                              | otherwise = fix' as
+
+-- | Show
+
+listPerLine :: Show a => [a] -> String
+listPerLine = concatMap ((++ "\n") . show)

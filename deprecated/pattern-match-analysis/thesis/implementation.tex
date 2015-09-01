@@ -1,0 +1,31 @@
+\chapter{Implementation}\label{chapimplementation}
+
+An implementation of the analysis has been implemented in Haskell. It has been built on top of the \texttt{haskell-src-exts} library, which is used for both parsing of the input and representation of the abstract syntax tree.
+
+Refinements and other extensions on Haskell's type system that are required for the analysis are represented using the annotation fields available in the abstract syntax of \texttt{Language.Haskell.Exts.Annotated}.
+
+An overview of the modules that comprise the implementation can be found in Figure \ref{moduleoverview}.
+
+Additionally, we have build a collection of example functions that where used for regression testing purposes during the development of the analysis and its implementation.
+
+A demonstration of the implementation can be found in Appendix \ref{appx}.
+
+\vspace{5em}
+
+\begin{figure}[h]
+\centering
+\begin{tabular}{lrl}
+Module & Lines & Description \\
+\hline
+\texttt{Main}          &  134 & Main \\
+\texttt{TypeInference} &  391 & Constraint generation \\
+\texttt{PatternTyping} &  153 & Typing of patterns \\
+\texttt{Solver}        &  263 & Constraint solving \\
+\texttt{Common}        &  342 & Substitution and unification \\
+\texttt{Refinements}   &  152 & Refinements (representation and operations) \\
+\texttt{Abstract.*}    &  355 & Abstract values (unit, booleans, integers, lists)\\
+\texttt{Util.*}        &   48 & Miscellaneous
+\end{tabular}
+\caption{Module overview}
+\label{moduleoverview}
+\end{figure}

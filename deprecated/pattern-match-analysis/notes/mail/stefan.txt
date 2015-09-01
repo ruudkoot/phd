@@ -1,0 +1,22 @@
+> Ik ben voor mijn master scriptie bezig de Pattern-Match Analysis for
+> Higher-Order Languages. Wat ik uit jou papers en presentaties in the
+> scriptcom repository opmaak is dat voor onder andere recursieve data
+> types en polymorphisme nog veel gedaan moet worden.
+
+Ondersteuning voor recursieve datatypes lijkt me essentieel. Ik zou hopen dat polymorfie een grotendeels orthogonaal aspect is en dat het mogelijk is om eerst een bruikbare theorie voor patroonherkenning in een monomorf getypeerde taal op te stellen en die dan daarna uit te breiden met ondersteuning voor polymorfie.
+
+> Heb jij Tim
+> Freemans "Refinement Types for ML" gelezen en wat vond je van de
+> manier hoe hij met deze twee zaken omgaat (Voornamelijk met behulp van
+> intersection types. In je presentatie op de Dutch HUG haal je dit aan
+> als de challenge "More expressive types", maar noteert dit als een
+> union type.) Had jij hier zelf al wat ideeën over ontwikkelt of is dit
+> nog totaal onontgonnen gebied?
+
+Ik denk dat je er moeilijk aan ontkomt om intersectie-types (of iets dat daarop lijkt) te gebruiken als je een type-systeem wilt opstellen dat krachtig genoeg is om bijvoorbeeld te kunnen uitdrukken dat map uit de Haskell Prelude de structuur van zijn lijstargument in stand houdt.
+
+De introductie van een intersectie-type lijkt dan plaats te vinden bij constructies voor patroonherkenning; in die zin zouden intersectie-types dus fundamenteel voor de analyse zijn. Opmerkelijk genoeg gaan abstracte interpretaties zulke constructies typisch te lijf met de join-operatie van een tralie. In ons geval zou zo'n join juist overeen komen met een vereniging van refinements: nog een aanwijzing dat we hier wellicht het hart van de benodigde analyse raken.
+
+Intersectie-types worden over het algemeen als alternatief voor polymorfe (d.i. universeel gekwantificeerde) types gebruikt. In een groot gedeelte van ons eerdere werk gebruiken Jur en ik zulke types om analyses contextgevoelig te maken. De gewenste aanpak van constructies voor patroonherkenning kun je, in zekere zin, ook als zodanig aanmerken.
+
+Waar we vooral voor bedacht moeten zijn is dat het te definiëren typesysteem een (efficiënt) reconstructiealgoritme toestaat. Dit betekent wellicht dat we ons moeten beperken tot eersterangs intersectie-types. (Uit mijn hoofd: reconstructie voor intersectie-types van rank 2 is beslisbaar, maar alleen bij absentie van algemene recursie.)

@@ -1,0 +1,31 @@
+> - Are you aware of Freeman and Pfenning's work on refinement types for
+> ML and what where/are you thoughts on this?
+
+I hadn't seen that work before. It does seem interesting, but I think
+I was unaware of it when I wrote my PhD.
+
+> - You noted that RE-constraints scale badly. Is this always a problem
+> as programs get larger, or are there more specific conditions under
+> which this happens?
+
+It's not just size of the programs (that seems almost unrelated to the
+constraint sizes), but more a property of how complex the constraints
+are, and how far away the part of the program that generates the
+constraint and discharges it is. I was never able to tie down the
+reasons, only observe it happens significantly more for some programs
+than others.
+
+> - I had some difficulty figuring out exactly how RE and MP constraints
+> are generated and solved. Are Figure 6.12 and 6.13 really all I need?
+> I also tried looking where this was implemented in the source code.
+> The most relevant module seemed Analyse.Req, but that didn't quite
+> match with what was happening in the thesis. Do you have any advice on
+> where I should look?
+
+6.12 and 6.13 are basically implementations of the three operators <-,
+<| and |>. Those three operators are called (and thus the constraints
+generated/solved) by 6.7 and 6.9. If you start at 6.7/6.9 thinking of
+them in the abstract, and then move on to 6.12/6.13 for more concrete
+implementations, that should be easier. The code is a mess, and
+probably doesn't still work, so unless you have any particular desire
+I'd stay away from it and stick to the thesis.

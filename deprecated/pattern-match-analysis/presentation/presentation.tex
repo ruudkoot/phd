@@ -1,0 +1,336 @@
+\documentclass{beamer}
+
+%% Packages %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{xspace}
+
+\usepackage{graphicx}
+\usepackage{tikz}
+
+\usepackage{alltt}                      %% Replace by lhs2TeX...
+
+
+%% Theme %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usetheme{Darmstadt}
+
+%% lhs2TeX %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%include polycode.fmt
+
+%format undefined = "\ensuremath{undefined}"
+
+%format leadsto = "\ensuremath{\leadsto}"
+%format ldots = "\ensuremath{\xspace\ldots\xspace}"
+%format x_1 = "\ensuremath{x_1}"
+%format x_2 = "\ensuremath{x_2}"
+%format x_i = "\ensuremath{x_i}"
+%format x_j = "\ensuremath{x_j}"
+%format x_1 = "\ensuremath{x_1}"
+%format xr  = "\ensuremath{x_\mathrm{r}}"
+%format pi_i = "\ensuremath{\mathbf{\pi}_i}"
+%format pi_j = "\ensuremath{\pi_j}"
+%format letrec = "\ensuremath{\mathbf{letrec}}"
+
+\newcommand{\tauhat}{\widehat{\tau}}
+
+\newcommand{\fresh}{\mbox{\ fresh}}
+\newcommand{\also}{\ \&\ }
+\newcommand{\TypeRel}[5][\widehat\Gamma]{#1 \vdash #2 : #3 \leadsto #4 \also #5}
+
+\newcommand{\Bool}{\textbf{Bool}}
+\newcommand{\TTrue}{\textbf{True}}
+\newcommand{\FFalse}{\textbf{False}}
+\newcommand{\TTr}{\textbf{T}}
+\newcommand{\FFa}{\textbf{F}}
+\newcommand{\Int}{\textbf{Int}}
+\newcommand{\TupleOf}[2]{\textbf{(}#1, #2\textbf{)}}
+\newcommand{\ListOf}[1]{\textbf{[}#1\textbf{]}}
+
+\newcommand{\Top}{\top}
+
+\newcommand{\Nill}{\textbf{[]}}
+\newcommand{\Conss}[1]{\textbf{(\,\_\,:}#1\textbf{)}}
+
+\newcommand{\id}{\mathrm{id}}
+\newcommand{\leet}{\mathbf{let}\ }
+\newcommand{\iin}{\mathbf{in}\ }
+
+\newcommand{\ftv}{\mathrm{ftv}}
+\newcommand{\unify}{\widehat{\mathcal{U}}}
+\newcommand{\uniphi}{\mathcal{V}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Document %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\title{Pattern Match Analysis}
+\subtitle{For Higher-Order Languages}
+\author{Ruud Koot}
+\date {28 August 2012}
+
+\maketitle
+
+\section{Introduction} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Right?} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}%{What's new? (Compared to ordinary ADTs)}
+\begin{quote}
+Well-typed programs cannot ``go wrong''.
+
+\par\noindent\hfill ---Robin Milner, 1978
+\end{quote}
+\end{frame}
+
+\subsection{Wrong!} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]
+\begin{verbatim}
+*** Exception: Non-exhaustive patterns in function f
+\end{verbatim}
+\end{frame}
+
+\subsection{Examples} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Partial Functions}
+\begin{code}
+head (x : xs) = x
+\end{code}
+\pause
+\begin{code}
+main =  let xs = if length "foo" > 5 then [1,2,3] else []
+        in head xs
+\end{code}
+\pause
+\begin{verbatim}
+On line 2 you applied the function "head" to the empty
+list "xs". The function "head" expects a non-empty list
+as its first argument.
+\end{verbatim}
+\end{frame}
+
+\begin{frame}{Compiler Construction}
+\begin{code}
+desugar :: ComplexAST -> SimpleAST
+\end{code}
+\pause
+\begin{code}
+desugar :: AST -> AST
+\end{code}
+\end{frame}
+
+\begin{frame}{Invariants (1)}
+\begin{code}
+type Bitstring = [Int]
+
+add :: Bitstring -> Bitstring -> Bitstring
+add []      y      = y
+add x       []     = x
+add (0:x)   (0:y)  = 0 : add x y
+add (0:x)   (1:y)  = 1 : add x y
+add (1:x)   (0:y)  = 1 : add x y
+add (1:x)   (1:y)  = 0 : add (add [1] x) y
+\end{code}
+\end{frame}
+
+\begin{frame}{Invariants (2)}
+\begin{code}
+risers :: Ord a => [a] -> [[a]]
+risers []            =  []
+risers [x]           =  [[x]]
+risers (x_1:x_2:xs)  =  let (s:ss) = risers (x_2:xs)
+                        in if x_1 <= x_2  then  (x_1:s):ss
+                                          else  [x_1]:(s:ss)
+\end{code}
+
+\begin{block}{Computes monotonically increasing segments}
+\centering
+\begin{code}
+risers [1,3,5,1,2] leadsto [[1,3,5],[1,2]]
+\end{code}
+\end{block}
+\end{frame}
+
+\subsection{Related Work} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Related Work}
+\begin{description}
+\item[Dependent ML (Xi)] \hfill\\ Dependent-types over a decidable domain
+\pause
+\item[Static Contract Checking (Xu)] \hfill\\ Contracts specified in Haskell
+\pause
+\item[Catch (Mitchell)] \hfill\\Constraint-based, first-order language only
+\end{description}
+\end{frame}
+
+\section{Overview} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Refinements} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Examples}
+\begin{eqnarray*}
+\TTrue &:& \Bool^{\{\TTrue\}} \\ \pause
+42 &:& \Int^{\{42\}} \\ \pause
+\TupleOf{7}{\FFalse} &:& \TupleOf{\Int^{\{7\}}}{\Bool^{\{\FFalse\}}}^\top \\\pause
+\textbf{[}3,2,1\textbf{]} &:& \textbf{[}\Int^{\{1,2,3\}}\textbf{]}^{\{\textbf{(\_\,:\,\_\,:\,\_\,:\,[])}\}} \\ \pause
+\lambda x.\ x + 1 &:& \Int^\top \overset{\top}{\to} \Int^\top
+\end{eqnarray*}
+\end{frame}
+
+\begin{frame}{Higher-Order Functions}
+\begin{block}{Program}
+\begin{code}
+main b f =  if b then
+                if  f 42  then  100  else  200
+            else
+                if  f 43  then  300  else  400
+\end{code}
+\end{block}
+\pause
+\begin{block}{Type}
+\begin{overlayarea}{\textwidth}{.2\textheight}
+    \only<2>{\[ \Bool \to (\Int \to \Bool) \to \Int \]}
+    \only<3>{\[ \Bool^{\{\TTr, \FFa\}} \to (\Int^{\{42, 43\}}\to\Bool^{\{\TTr,\FFa\}})_{-}\to \Int^{\{100,200,300,400\}}\]}
+    \only<4>{\[ \Bool^{\{\TTr, \FFa\}}_{-} \to (\Int^{\{42, 43\}}_{+}\to\Bool^{\{\TTr,\FFa\}}_{-})_{-}\to \Int^{\{100,200,300,400\}}_{+}\]}
+    \only<5>{\[ \Bool^{\{\TTr\}}_{-} \to (\Int^{\{41, 42, 43\}}_{+}\to\Bool^{\{\FFa\}}_{-})_{-}\to \Int^{\{100,200,300,400,500\}}_{+}\]}
+\end{overlayarea}
+\end{block}
+\end{frame}
+
+\subsection{Abstract Values}
+
+\begin{frame}{Integers}
+\[ \mathsf{Sign} ::= +\ ||\ 0\ ||\ - \]
+\pause
+\[ \mathsf{Parity} ::= \mathsf{Even}\ ||\ \mathsf{Odd} \]
+
+\[ \ldots \]
+\end{frame}
+
+\begin{frame}{Lists}
+\[ \mathsf{Shape} ::= \Nill\ ||\ \Conss{\mathsf{Shape}}\ ||\ \star \]
+\pause
+\[ \top_\mathsf{Shape} = \{ \Nill, \Conss{\Nill}, \Conss{\Conss{\Nill}}, \Conss{\Conss{\star}} \} \]
+\end{frame}
+
+\section{Analysis} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Overview}
+
+\begin{frame}{Overview}
+\begin{enumerate}
+\item Generate constraints
+\item Solve constraints
+\item ???
+\item Profit!
+\end{enumerate}
+\end{frame}
+
+\subsection{Generate Constraints}
+
+\begin{frame}{Typing relation}
+\begin{block}{Relation}
+\vfill
+\[ \TypeRel{e}{\tauhat}{C}{R} \]
+\vfill
+\end{block}
+\begin{block}{Legend}
+\vfill
+\begin{description}
+\item[$\widehat\Gamma$] \quad Annotated type environment
+\item[$e$]              \quad Expression being typed
+\item[$\tauhat$]        \quad Type of the expression
+\item[$C$]              \quad Equality constraints (e.g. $\alpha = \Bool^\varphi \to \Bool^\psi$)
+\item[$R$]              \quad Subset constraints (e.g. $\{ \Nill, \Conss{\ \varphi} \} \subseteq \psi$)
+\end{description}
+\vfill
+\end{block}
+\end{frame}
+
+\begin{frame}{Constructing Values}
+\[\frac
+    {\begin{gathered}\beta_1, \beta_2 \fresh\\\TypeRel{e_1}{\alpha_1}{C_1}{R_1} \quad\quad\quad\quad \TypeRel{e_2}{\alpha_2}{C_2}{R_2} \\ 
+    C = C_1 \cup C_2 \cup \{\alpha_2 = \ListOf{\alpha_1}^{\beta_2}\}\\
+    R = R_1 \cup R_2 \cup \{ \Conss{\beta_2} \subseteq \beta_1 \}
+    \end{gathered}}
+    {\begin{gathered}\TypeRel{(e_1 \textbf{\ :\ } e_2)}{\ListOf{\alpha_1}^{\beta_1}}{C}{R}\end{gathered}}
+    \mbox{\ [T-Cons]}\]
+\end{frame}
+
+\begin{frame}{Pattern Matching}
+\[\frac
+    {\begin{gathered}\TypeRel{g}{\tauhat_\mathrm{g}}{C_\mathrm{g}}{R_\mathrm{g}}\quad\quad\quad\quad
+    \beta \fresh\\
+     \TypeRel{e_1}{\tauhat_1}{C_1}{R_1} \quad\quad\quad\quad
+     \TypeRel{e_2}{\tauhat_2}{C_2}{R_2} \\
+     C = C_\mathrm{g} \cup C_1 \cup C_2 \cup \{\tauhat_\mathrm{g} = \Bool^\beta, \tauhat_1 = \tauhat_2\} \\
+     R = R_\mathrm{g} \cup R_1 \cup R_2 \cup \{\beta \subseteq \{\TTrue, \FFalse\}\}
+     \end{gathered}}
+    {\TypeRel{\textbf{if\ }g\textbf{\ then\ }e_1\textbf{\ else\ }e_2}{\tauhat_1}{C}{R}}
+    \mbox{\ [T-If]}\]
+\end{frame}
+
+\subsection{Solve Constraints}
+
+\begin{frame}{Overview}
+\begin{itemize}
+\item Solve $C$ using unification
+    \begin{itemize}
+    \item Includes unifying annotation variables
+    \item Apply resulting substitution $\theta$ to $\tauhat$ and $R$
+    \end{itemize}
+\item Solve $R$ using worklist algorithm
+    \begin{itemize}
+    \item Do dependency analysis
+    \item Determine input-independent $R' \subseteq R$
+    \item Solve $R'$ using worklist algorithm
+    \begin{itemize}
+        \item Determines lowerbound $L$ and upperbound $U$ for all $\beta$
+    \end{itemize}
+    \item Check for pattern match failures ($L \subseteq U$)
+    \end{itemize}
+\item Generalize over $\mathsf{ftv}(\tauhat)-\mathsf{ftv}(\widehat\Gamma)$ and $R - R'$
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Example}
+\begin{description}
+\item[Intermediate result] \begin{eqnarray*} \beta_1 &=& (\{\Nill, \Conss{\Nill}, \Conss{\Conss{\Nill}}\}, \top) \\ \beta_2 &=& (\bot, \top)\end{eqnarray*}\pause
+\item[Constraint\quad\quad] \[ \beta_1 \subseteq \{\Conss{\beta_2}\} \]\pause
+\item[Substitute LHS] \[ \{\Nill, \Conss{\Conss{\Nill}}, \Conss{\Conss{\Conss{\Nill}}}\} \subseteq \{\Conss{\beta_2}\} \]\pause
+\item[Project out fields] \begin{eqnarray*}  \{\Nill\} &\subseteq& \emptyset \\ \{\Conss{\Nill}, \Conss{\Conss{\Nill}}\} &\subseteq& \beta_2 \end{eqnarray*}
+\end{description}
+\end{frame}
+
+\begin{frame}{Example}
+\begin{description}
+\item[Intermediate result] \begin{eqnarray*} \beta_1 &=& (\{\Nill, \Conss{\Nill}, \Conss{\Conss{\Nill}}\}, \top) \\ \beta_2 &=& (\bot, \top)\end{eqnarray*}
+\item[Project out fields] \begin{eqnarray*}  \{\Nill\} &\subseteq& \emptyset \\ \{\Conss{\Nill}, \Conss{\Conss{\Nill}}\} &\subseteq& \beta_2 \end{eqnarray*}
+\item[Update intermediate results] \begin{eqnarray*}L(\beta_2) &:=& L(\beta_2) \sqcup \{\Conss{\Nill}, \Conss{\Conss{\Nill}}\} \\&=& \{\Conss{\Nill}, \Conss{\Conss{\Nill}}\}\end{eqnarray*}
+\end{description}
+\end{frame}
+
+\section{Conclusions}
+
+\subsection{Conclusions}
+
+\begin{frame}{Conclusions}
+So, does it work?
+\end{frame}
+
+\begin{frame}{Further Research}
+Sometimes, but there's a lot of room for improvement.
+\begin{itemize}
+\item Unnatural type for |map|
+\item Principal types for operators
+\end{itemize}
+\end{frame}
+
+\end{document}

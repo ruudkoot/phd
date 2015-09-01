@@ -1,0 +1,105 @@
+\documentclass[a4paper]{book}
+
+%% Packages %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{makeidx}
+
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{xspace}
+
+\usepackage{graphicx}
+\usepackage{tikz}
+
+\usepackage{alltt}                      %% Replace by lhs2TeX...
+
+\usepackage{bbm}
+\usepackage[greek,english]{babel}
+\usepackage{ucs}
+\usepackage[utf8x]{inputenc}
+\usepackage{autofe}
+\usepackage{fancyvrb}
+
+\DeclareUnicodeCharacter{8614}{\ensuremath{\mapsto}}
+ 
+%% Font Configuration %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{palatino}                   %% Palatino for roman and math
+\linespread{1.05}                       %% Suggested line-spacing for Palatino
+\renewcommand{\ttdefault}{lmtt}         %% Latin Modern for teletype
+
+
+%% lhs2TeX %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%include polycode.fmt
+
+%format undefined = "\ensuremath{undefined}"
+
+%format ldots = "\ensuremath{\xspace\ldots\xspace}"
+%format x_1 = "\ensuremath{x_1}"
+%format x_2 = "\ensuremath{x_2}"
+%format x_i = "\ensuremath{x_i}"
+%format x_j = "\ensuremath{x_j}"
+%format x_1 = "\ensuremath{x_1}"
+%format xr  = "\ensuremath{x_\mathrm{r}}"
+%format pi_i = "\ensuremath{\mathbf{\pi}_i}"
+%format pi_j = "\ensuremath{\pi_j}"
+%format letrec = "\ensuremath{\mathbf{letrec}}"
+
+\newcommand{\tauhat}{\widehat{\tau}}
+
+\newcommand{\fresh}{\mbox{\ fresh}}
+\newcommand{\also}{\ \&\ }
+\newcommand{\TypeRel}[5][\widehat\Gamma]{#1 \vdash #2 : #3 \leadsto #4 \also #5}
+
+\newcommand{\Bool}{\textbf{Bool}}
+\newcommand{\TTrue}{\textbf{True}}
+\newcommand{\FFalse}{\textbf{False}}
+\newcommand{\Int}{\textbf{Int}}
+\newcommand{\TupleOf}[2]{\textbf{(}#1, #2\textbf{)}}
+\newcommand{\ListOf}[1]{\textbf{[}#1\textbf{]}}
+
+\newcommand{\Top}{\top}
+
+\newcommand{\Nill}{\textbf{[]}}
+\newcommand{\Conss}[1]{\textbf{(\,\_\,:}#1\textbf{)}}
+
+\newcommand{\id}{\mathrm{id}}
+\newcommand{\leet}{\mathbf{let}\ }
+\newcommand{\iin}{\mathbf{in}\ }
+
+\newcommand{\ftv}{\mathrm{ftv}}
+\newcommand{\unify}{\widehat{\mathcal{U}}}
+\newcommand{\uniphi}{\mathcal{V}}
+
+
+%% Document %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\makeindex
+
+\begin{document}
+
+%include titlepage.tex
+%include abstract.tex
+%include acknowledgments.tex
+
+\tableofcontents
+\listoffigures
+
+%include introduction.tex
+%include context.tex
+%include typesystem.tex
+%include evaluation.tex
+%include implementation.tex
+%include relatedwork.tex
+%include furtherresearch.tex
+\include{appendix}
+
+\bibliography{thesis}
+\bibliographystyle{plain}
+
+\printindex
+
+\end{document}

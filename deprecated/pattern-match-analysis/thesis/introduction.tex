@@ -1,0 +1,81 @@
+\chapter{Introduction}\label{chapintroduction}
+
+In 1978, Robin Milner \cite{Milner78atheory} famously wrote---and proved---that:
+\begin{quotation}
+Well-typed programs cannot ``go wrong''. 
+\end{quotation}
+This observation is sometimes
+%\footnote{Especially by professors wishing to impress their audience of undergraduate students with the power of types.}
+optimistically overstated as ``if your Haskell program type checks and compiles it will work.'' Even if we ignore logic errors, such a strong interpretation of Milner's statement does not hold, as anyone who has seen the dreaded:
+\begin{verbatim}
+*** Exception: Non-exhaustive patterns in function f
+\end{verbatim}
+can attest to. To correctly interpret Milner we need to distinguish between three kinds of ``wrongness'':
+\begin{description}
+\item[Getting stuck] If a program tries to evaluate a non-sensical expression---such as |3 + true|---it cannot possibly make any further progress and is said to be ``stuck''. This is the ``go wrong'' Milner referred to. He proved that a sound type system can statically guarantee such expressions will never occur or need to be evaluated at run-time.
+\item[Diverging] If we have a function definition |f = f|, the evaluation of |f| $\leadsto$ |f| $\leadsto ...$ will fail to terminate. We might be making progress in a technical sense, but it will have no useful observable result.
+\item[Undefinedness] Another source of ``wrongness'' are partial functions: functions which are not defined on all the elements of their domain. Prime examples are case-statements with missing constructors and functions defined by pattern matching but which do not cover all possible patterns. 
+\end{description}
+
+Unlike Milner, who spoke about the first kind of wrongness and the work on termination checking, which concerns itself with the second, we shall focus on the third: a pattern-match analysis which determines if functions are only invoked on values for which they are defined.
+
+% split error and partial definedness?
+% loop and crash
+
+\section{Examples}\label{secexamples} % test-driven development
+
+\paragraph{Partial functions} Haskell programmers often work with partial functions, the most common one possibly being |head|:
+
+\begin{code}
+main =  let xs = if length "foo" > 5 then [1,2,3] else []
+        in head xs
+
+head (x : xs) = x
+\end{code}
+
+This program is guaranteed to crash at run-time, so we would like to be warned beforehand by the compiler or a tool:
+
+\begin{verbatim}
+    On line 2 you applied the function "head" to the empty
+    list "xs". The function "head" expects a non-empty list
+    as its first argument.
+\end{verbatim}
+
+If the guard of the if-statement had read |length "foo" < 5| the program would have run without crashing and we would like the compiler or tool not to warn us spuriously. In case it is not possible to determine statically whether or not a program will crash, a warning should still be raised.
+
+\paragraph{Compiler construction}
+Compilers work with large and complex data types to represent the abstract syntax tree. These data structures must be able to represent all syntactic constructs the parser is able to recognize. This results in an abstract syntax tree that is unnecessarily complex and too cumbersome for the later stages of the compiler---such as the optimizer---to work with. This problem is resolved by \emph{desugaring} the original abstract syntax tree into a simpler---but semantically equivalent---abstract syntax tree than does not use all of the constructors available in the original abstract syntax tree.
+
+The compiler writer now has a choice between two different options: either write a desugaring stage |desugar :: ComplexAST -> SimpleAST|---duplicating most of the data type representing and functions operating on the abstract syntax tree---or take the easy route |desugar :: AST -> AST| and assume certain constructors will no longer be present in the abstract syntax tree at stages of the compiler executed after the desugaring step. The former has all the usual downsides of code duplication---such as having to manually keep the two or more data types synchronized---while the latter forgoes many of the advantages of strong typing and type safety: if the compiler pipeline is restructured and one of the stages that was originally assumed to run only after the desugaring suddenly runs before that point the error might only be detected at run-time by a pattern match failure. A pattern match analysis should be able to detect such errors statically.
+
+\paragraph{Maintaining invariants}
+Many algorithms and data structures maintain invariants that cannot easily be encoded into their type. These invariants often ensure that certain incomplete case-statements are guaranteed not to cause a pattern match failure. An example is the |risers| function from \cite{DBLP:conf/sfp/MitchellR05}, calculating monotonically increasing segments of a list (e.g., |risers [1,3,5,1,2]| $\leadsto$ |[[1,3,5],[1,2]]|):
+
+\begin{code}
+risers :: Ord a => [a] -> [[a]]
+risers []            =  []
+risers [x]           =  [[x]]
+risers (x_1:x_2:xs)  =  let (s:ss) = risers (x_2:xs)
+                        in if x_1 <= x_2 then (x_1:s):ss else  [x_1]:(s:ss)
+\end{code}
+
+The let-binding in the third alternative of |risers| expects the recursive call to return a non-empty list. A naive analysis might raise a warning here. If we think a bit longer, however, we see that we also pass the recursive call to |risers| a non-empty list. This means we will end up in either the second or third alternative in the recursive call. Both the second alternative and both branches of the if-statement in the third alternative result in a non-empty list, satisfying the assumption we made earlier.
+
+Another example might be a collection of mathematical operations working on bitstrings (integers encoded as lists of binary digits):
+\begin{code}
+type Bitstring = [Int]
+
+add :: Bitstring -> Bitstring -> Bitstring
+add []      y      = y
+add x       []     = x
+add (0:x)   (0:y)  = 0 : add x y
+add (0:x)   (1:y)  = 1 : add x y
+add (1:x)   (0:y)  = 1 : add x y
+add (1:x)   (1:y)  = 0 : add (add [1] x) y
+\end{code}
+
+The patterns in |add| are far from complete, but maintain the invariant if passed arguments that satisfy the invariant. So if we are careful to only pass valid bitstrings into a complex mathematical expression of bitstring-operations it will result in a valid bitstring without crashing due to a pattern match failure.
+
+% Examples from Refinement Types for ML:
+% * Binary encoded numbers
+% * Variable substitutions in Boolean expressions

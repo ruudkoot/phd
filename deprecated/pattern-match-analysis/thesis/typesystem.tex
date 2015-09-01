@@ -1,0 +1,544 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% PATTERN MATCH ANALYSIS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Pattern Match Analysis}\label{chappma}
+
+\section{Overview}
+
+The key idea behind the analysis is to keep track of the possible values each variable and expression can have. When pattern matching with an if-then-else or case-expression, we verify that the values the scrutinee can have are covered by the patterns in each of the alternatives.
+
+The set of possible values associated with each variable and expression is called a \emph{refinement}\index{refinement} and placed as an annotation on the type of that variable or expression. We call the type without such an annotation the \emph{underlying type}\index{underlying type} of an expression and the type with such an annotation the \emph{annotated type}\index{annotated type} or \emph{refinement type}\index{refinement type}.
+
+\paragraph{Examples}
+\begin{eqnarray}
+\TTrue &:& \Bool^{\{\TTrue\}} \\
+42 &:& \Int^{\{42\}} \\
+\TupleOf{7}{\FFalse} &:& \TupleOf{\Int^{\{7\}}}{\Bool^{\{\FFalse\}}}^\top \\
+\textbf{[}3,2,1\textbf{]} &:& \textbf{[}\Int^{\{1,2,3\}}\textbf{]}^{\{\textbf{(\_\,:\,\_\,:\,\_\,:\,[])}\}} \\
+\lambda x.\ x + 1 &:& \Int^\top \overset{\top}{\to} \Int^\top
+\end{eqnarray}
+
+Similarly, by analyzing the patterns of case-statements we infer the maximal set of values each variable can have without causing a pattern-match failure. Thus, if the set of values a variable can have is not a subset of the values it is allowed to have, we have statically detected a potential source of pattern-match failures.
+
+\section{Higher-Order Functions}\label{sec31}
+
+The analysis should be able to handle higher-order functions. Let us take a moment to review what the refinements type should look like for higher-order functions and how they should be interpreted. 
+
+Consider the function:
+
+\begin{code}
+main b f =  if b then
+                if  f 42  then  100  else  200
+            else
+                if  f 43  then  300  else  400
+\end{code}
+
+The function |main| takes a boolean and a function as its arguments. The argument |f| is applied to an integer constant in the body of main and---because it is used as the scrutinee of an if-then-else expression---should return a boolean as its result. Depending on the values of |b| and |f|, the latter after having been applied to either |42| or |43|, the function |main| will return one of four different integer values.
+
+From this we can infer the underlying type of |main| should be: \[ \Bool \to (\Int \to \Bool) \to \Int \]
+
+Under what conditions is this function guaranteed not to crash due to a pattern match failure? The argument |b| and function |f|, after having been applied to an integer, can evaluate to arbitrary boolean values. The function |f|, however, might also cause a pattern match failure while being evaluated. We need to be sure it does not do so if passed one of the values |42| or |43|. An appropriate choice for the refined type would thus be: \[ \Bool^{\{\TTrue, \FFalse\}} \to (\Int^{\{42, 43\}}\to\Bool^{\{\TTrue,\FFalse\}})\to \Int^{\{100,200,300,400\}}\]
+
+Note the difference in meaning of the refinement depending on whether it appears on an underlying type in a \emph{covariant}\index{covariant} or \emph{contravariant}\index{contravariant} position. For clarity, we give the type once more with variance annotations (where + means covariant and - means contravariant):
+\[ \Bool^{\{\TTrue, \FFalse\}}_{-} \to (\Int^{\{42, 43\}}_{+}\to\Bool^{\{\TTrue,\FFalse\}}_{-})\to \Int^{\{100,200,300,400\}}_{+}\]
+
+Refinements appearing on types in a covariant position give either the minimal set of values that a function can return, or---in the case of arguments passed to a functional parameter---a minimal set of values that function should be able to accept without failing due to a pattern match. In all cases the set of values appearing in the refinement can safely be enlarged.
+
+Refinements appearing on types in a contravariant position give either the maximal set of values that can be passed to an argument, or---in the case of a return value of a functional parameter---a maximal set of values which that function is allowed to return without causing a pattern match failure in the caller. In all cases the set of values appearing in the refinement can safely be reduced.
+
+Another valid refinement type for |main| would be: \[ \Bool^{\{\TTrue\}} \to (\Int^{\{41, 42, 43\}}\to\Bool^{\{\FFalse\}})\to \Int^{\{100,200,300,400,500\}}\]
+
+This type is less desirable than the previous refinement type: it accepts fewer values for the parameter |b|, the functions satisfying the type $\Int^{\{41, 42, 43\}}\to\Bool^{\{\FFalse\}}$ form a subset of the functions satisfying $\Int^{\{42, 43\}}\to\Bool^{\{\TTrue,\FFalse\}}$ and the larger refinement on the result type may prevent |main| from being passed as an argument to another higher-order function.
+
+The analysis should strive to infer refinement types with the smallest possible refinements on types in covariant positions and the largest possible refinement on types in contravariant positions.
+
+\section{Analysis}\label{sec33}
+
+The analysis is \emph{constraint-based}\index{constraint-based} and \emph{type-directed}\index{type-directed}, meaning it is formulated as a two part process.
+
+The first is a type system that generates a set of constraints from the abstract syntax tree. It generates two distinct set of constraints: one set allows us to infer the underlying type of expressions, the other allows us to construct the refinements belonging those types.
+
+The second part consists of solving the generated constraints. The first set of constraints---representing the underlying types---can be solved using unification. The second set requires a more complex solver based on a worklist algorithm.
+
+The generation of constraints and the unification algorithm are described in Chapter \ref{chapcg}. The constraint solver for the second constraint set is described in Chapter \ref{chapcs}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% CONSTRAINT GENERATION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Constraint Generation}\label{chapcg}
+
+\section{Overview}
+
+The constraint generation phase of the analysis is built on top of a constraint-based version of the Hindley--Milner type system \cite{Milner78atheory,Pierce:2002:TPL:509043} extended to handle annotations and generate constraints on and between those annotations.
+
+As mentioned in Section \ref{sec33} the type system generating the constraints produces two distinct sets of constraints. The first is a set of equality constraints between \emph{simply annotated types}\index{simply annotated type} as given in Figure \ref{AnnotatedTypes}. Simply annotated types are annotated, except that all annotations are restricted to be plain annotation variables. The reason for this is restriction is to make annotated types into a free algebra, so the constraint set can be solved by a unification algorithm presented in Section \ref{unifi}. The result of the unification algorithm is a substitution from type variables to simply annotated types, that is applied to both the inferred type and the second constraint set. The second constraint set consists of subtype constraints (Figure \ref{figsubtype}) between annotations (Figure \ref{Annotations}).
+
+\section{Types and Annotations}
+
+Throughout this and the next chapter we will assume the following naming conventions for variables:
+
+\begin{figure}[h!t]
+\begin{align*}
+        x, f    & \in          \mathbf{Var}   &&\textrm{variables} \\
+%       e       & \in          \mathbf{Expr}  &&\textrm{expressions} \\
+\widehat\tau    & \in \widehat{\mathbf{Type}} &&\textrm{annotated types} \\
+        \alpha  & \in          \mathbf{TVar}  &&\textrm{type variables} \\
+\widehat\Gamma  & \in \widehat{\mathbf{TEnv}} &&\textrm{annotated type environments} \\
+        \varphi & \in          \mathbf{Ann}   &&\textrm{annotations/refinements} \\
+        \beta   & \in          \mathbf{AVar}  &&\textrm{annotation variables}
+\end{align*}
+\caption{Naming conventions}
+\label{NonTerminals}
+\end{figure}
+
+An \emph{annotated type}\index{annotated type} (Figure \ref{AnnotatedTypes}) can be a plain type variable $\alpha$, a type constant such as $\Bool$ or $\Int$ with an annotation $\varphi$, a tuple of two annotated types, a list with elements of an annotated type, or a function with the domain and range being given by annotated types.
+
+\begin{figure}[h!t]
+\begin{eqnarray*}
+\widehat\tau &::=& \alpha                                       \\
+             &||&  \textbf{Bool}^\varphi                        \\
+             &||&  \textbf{Int}^\varphi                         \\
+             &||&  \TupleOf{\widehat\tau}{\widehat\tau}^\varphi \\
+             &||&  \ListOf{\widehat\tau}^\varphi                \\
+             &||&  \tauhat_1 \overset{\varphi}{\to} \tauhat_2
+\end{eqnarray*}
+\caption{Annotated types}
+\label{AnnotatedTypes}
+\end{figure}
+
+There is no annotation on the type variable as it gains one when it is substituted by a type constant or constructor. In any other case, we are dealing with a polymorphic argument of a polymorphic function. As we are not able to pattern match on such values, it is not useful to keep track of the values such a variable can have.
+
+The annotations on tuples and functions are not genuinely used, in the sense that in the current implementation of the analysis their elements are always picked from the trivial one element lattice. We have included them here for uniformity and to make the framework more general for future work.
+
+Lists indirectly have an annotation both on the type of its elements and on the list as a whole. This allows for more flexible ways of specifying the possible values a list may have. Recall the |add| example from Section \ref{secexamples}. While we could attempt to precisely represent all possible lists that might occur---remembering both the shape of the list and which values each element at each each position in the list can have---this approach is unlikely to scale in practice. The only information necessary for determining that the |add| function does not fail due to a pattern match is that its inputs should be lists of integers where each elements in the lists is an integer in the set $\{0, 1\}$. We can also infer it will always produce such a list. An appropriate type for |add| would thus be \[\ListOf{\Int^{\{0, 1\}}}^{\{\star\}} \to \ListOf{\Int^{\{0, 1\}}}^{\{\star\}} \to \ListOf{\Int^{\{0, 1\}}}^{\{\star\}}\]
+where the refinement $\star$ represents a list of any shape.
+
+When analyzing polymorphic functions working on lists of any type of elements, we are likely only interested in the shape of the list and not in the values of its elements. For example, an appropriate type for |head| would be: \[\ListOf{\alpha}^{\{\Conss{\star}\}} \to \alpha\]
+
+\begin{figure}[h!t]
+\begin{eqnarray*}
+\widehat\sigma &::=& \forall \overline{\alpha} \overline{\beta}.\ R \Rightarrow \tauhat
+\end{eqnarray*}
+\caption{Annotated type schemes}
+\label{AnnotatedTypeSchemes}
+\end{figure}
+
+Like in the Hindley--Milner type system, we represent polymorphic types by a \emph{type scheme}\index{type scheme} (Figure \ref{AnnotatedTypeSchemes}). The difference here is that we are also able to quantify over, not only type variables, but also over annotation variables. Furthermore, we associate a set $R$ of subtype constraints (Figure \ref{figsubtype}) with each type scheme. These are constraints the constraint solver was unable to discharge when the type was generalized and should be verified to hold when the type is later instantiated.
+
+Type schemes can be associated with variables using a type environment (Figure \ref{AnnotatedTypeEnv}).
+
+\begin{figure}[h!t]
+\begin{eqnarray*}
+\widehat\Gamma &::=& \epsilon\ ||\ \widehat\Gamma,\ x : \widehat\sigma
+\end{eqnarray*}
+\caption{Annotated type environments}
+\label{AnnotatedTypeEnv}
+\end{figure}
+
+\emph{Annotations}\index{annotation} hold the refinements belonging to the underlying type. Refinements form a set of annotation variables and abstract values (Section \ref{secabstractvalues}).
+
+\begin{figure}[h!t]
+\begin{eqnarray*}
+\varphi &::=& \beta                 \\
+     &||&  \{\pi_\tau\}             \\
+     &||&  \varphi_1 \cup \varphi_2
+\end{eqnarray*}
+\caption{Annotations/refinements}
+\label{Annotations}
+\end{figure}
+
+The type system generates a set of \emph{equality constraints}\index{constraint!equality} between annotated types and a set of \emph{subset constraints}\index{constraint!subset} between refinements:
+\begin{figure}[h!t]
+\begin{eqnarray*}
+C &::=& \{\tauhat_1 = \tauhat_2\} \\
+  &||&  C_1 \cup C_2
+\end{eqnarray*}
+\caption{Equality constraints}
+\label{figeqc}
+\end{figure}
+
+\begin{figure}[h!t]
+\begin{eqnarray*}
+R &::=& \{\varphi_1 \subseteq \varphi_2\} \\
+  &||&  R_1 \cup R_2
+\end{eqnarray*}
+\caption{Subset constraints}
+\label{figsubtype}
+\end{figure}
+
+\section{Refinements and Lattices}\label{secabstractvalues}
+
+In the examples we have seen so far, we have used the actual values of a type as refinements. This approach will at best fail to scale up when analyzing larger programs, but worse, will likely cause the constraint solver to diverge: while the refinements naturally form a lattice under subset inclusion with the meet and join operations given by intersection and union, it will not satisfy the ascending chain condition for infinite types, such as integers and list. As a result the refinements can grow infinitely large.
+
+To overcome this problem we abstract from the concrete values of a type in its refinement and apply widening to deal with recursive data types.
+
+\subsection{Booleans}
+
+Booleans are a finite type and thus a set of booleans forms finite lattice under subset inclusion. Finite lattices always satisfy the ascending chain condition, thus there is little need to abstract the values of a boolean in a refinement.
+
+\begin{figure}[h!t]
+\begin{eqnarray*}
+\pi_\mathbf{Bool} &::=& \textbf{True}  \\
+                  &||&  \textbf{False}
+\end{eqnarray*}
+\caption{Trivial abstraction for $\Bool$}
+\label{LatticeBool}
+\end{figure}
+
+\subsection{Integers}
+
+Integers form an infinite set, so will need to abstract from them. Possible choices include taking only the sign of an integer into account:
+
+\begin{figure}[h!t]
+\begin{eqnarray*}
+\pi_\mathbf{Int} &::=& \textbf{+} \\
+                 &||&  \textbf{0} \\
+                 &||&  \textbf{-}
+\end{eqnarray*}
+\caption{Sign abstraction for $\Int$}
+\label{LatticeIntSign}
+\end{figure}
+
+or only its parity:
+
+\begin{figure}[h!t]
+\label{LatticeIntParity}
+\begin{eqnarray*}
+\pi_\mathbf{Int} &::=& \textbf{Odd}  \\
+                 &||&  \textbf{Even}
+\end{eqnarray*}
+\caption{Parity abstraction for $\Int$}
+\end{figure}
+
+More complicated alternatives are possible. We could take the product of the sign and parity lattices or partition the integers into a finite number of intervals with the cuts determined by concrete integers appearing in the program text.
+
+The type system producing the constraints and constraint solver are agnostic towards the actual choice. They only require a number of operations to be defined: abstracting a concrete value (\ref{r41}), computing the greatest lower and least upper bound of two refinements (\ref{r42} and \ref{r43}) and determining whether one refinement is contained in (smaller than) another (\ref{r43}).
+
+\begin{figure}[h!t]
+\begin{eqnarray}
+\iota       &:& \tau \to \pi_\tau               \\ \label{r41}
+\sqcup      &:& \varphi \to \varphi \to \varphi \\ \label{r42}
+\sqcap      &:& \varphi \to \varphi \to \varphi \\ \label{r43}
+\sqsubseteq &:& \varphi \to \varphi \to \Bool      \label{r44}
+\end{eqnarray}
+\caption{Operations on refinements}
+\label{LatticeOperations}
+\end{figure}
+
+\subsection{Lists}
+
+Lists, being a recursive data type, require a more complicated abstraction. We might choose to abstract to only the shape of the list, remembering the nesting of nil and cons constructors, but forgetting the elements of the list stored in the cons constructors:
+
+\begin{figure}[h!t]
+\begin{eqnarray*}
+\pi_\mathbf{List} &::=& \beta                             \\
+                  &||&  \Nill                             \\
+                  &||&  \textbf{(\ \_\ :\ }\pi_\mathbf{List}\textbf{)} \\
+                  &||&  \star
+\end{eqnarray*}
+\caption{Shape abstraction for lists}
+\label{LatticeList}
+\end{figure}
+
+In order to represent constraints generated by pattern-matching and applying a cons constructor to another expression, we need to be able to store annotation variables ($\beta$) in the recursive positions of the cons constructor.
+
+As lists can be of infinite length, this is not yet sufficient to guarantee that the lattice formed by sets of abstracted lists satisfies the ascending chain condition. The constraint solver will thus use widening operators $\nabla : \varphi \to \varphi \to \varphi$ and $\Delta : \varphi \to \varphi \to \varphi$ to calculate the greatest lower and least upper bounds after instantiating annotation variables in an abstracted lists (see Section \ref{r532}), that will limit the depth of an abstract list by replacing the recursive position of the cons constructor at a user-specified depth by the wildcard $\star$. %%% TODO: explain semantics of \star, examples %%%
+
+\section{Type System}
+
+The analysis is defined by the \emph{constraint typing relation}\index{constraint typing relation} \[ \TypeRel{e}{\tauhat}{C}{R}. \] The relations says that expression $e$ has the annotated type $\tauhat$ in the typing environment $\widehat\Gamma$ if the type constraints $C$ and refinements constraints $R$ are satisfied.
+
+The relation is defined by the typing rules given in Figure \ref{DeclarativeTypeSystem} and \ref{DeclarativeTypeSystem2}.
+
+\paragraph{Implementation notes} The implementation of this analysis is also capable of handling simultaneous and mutually recursive functions and bindings. For each binding group, we build a graph with a vertex for each binding and edges from each usage of a particular binding to its definition. We determine the strongly connected components of this graph---each component being a group of mutually recursive bindings---and topologically sort the condensed graph to determine the order in which the let-bindings should be nested. Each mutually recursive group
+\begin{code}
+let  x_1 =  ldots  x_i  ldots  x_j  ldots
+     x_2 =  ldots  x_i  ldots  x_j  ldots
+     ldots
+in   ldots
+\end{code}
+is then treated as a single recursive binding
+\begin{code}
+letrec  xr = (ldots pi_i xr ldots pi_j xr ldots, ldots pi_i xr ldots pi_j xr ldots, ldots)
+in ldots
+\end{code}
+where $\pi_k$ projects the $k$th element from an $n$-tuple.
+
+The implementation also supports tuples of arbitrary arity and list literals. Their type rules subsume T-Tuple and T-Nil.
+%\clearpage
+
+\section{Instantiation and Generalization}
+
+As in the Hindley--Milner type system, we need to instantiate type schemes in the T-Var type rule and generalize types to a type scheme in the T-Let and \mbox{T-LetRec} type rules. This last process is called \emph{let-generalization}\index{generalization!let-generalization} and is what makes our analysis polyvariant. The addition of constraints---and necessity to quantify over them---makes the instantiation and generalization slight more complicated than it is in a plain Hindley--Milner type system.
+
+When instantiating a type scheme we replace all type variables and annotation variables in a type scheme and which are bound by a quantifier with fresh variables and drop the quantifiers from the type scheme, resulting in a tuple containing an annotated type and its associated constraint set.
+
+\begin{figure}[h!t]
+\[ \frac{\theta = [\overline{\alpha \mapsto \alpha'}][\overline{\beta \mapsto \beta'}] \quad \overline{\alpha'},\overline{\beta'} \fresh }{inst(\forall \overline{\alpha}\overline{\beta}.\ R \Rightarrow \tauhat) = (\theta\tauhat, \theta R)} \]
+\caption{Instantiation}
+\end{figure}
+
+During generalization we will unify the constraint set $C$ and apply the resulting substitution $\theta_\mathrm{C}$ to both $\tauhat$ and $R$ (as some of the annotation variables present in constraints in $R$ may have been unified as well.) Next, we invoke the constraint solver to solve or simplify a part of the constraint set $\theta_\mathrm{C} R$. We quantify over all annotation variables and type variables that are free in the environment and store the remaining constraints from $\theta_\mathrm{C} R$---those which were not solved---in the type scheme.
+
+The essential detail here is choosing which constraints in $\theta_\mathrm{C} R$ to solve. We would like our analysis to be as polyvariant as possible and thus not prematurely fix the values of any annotation variables about which we can learn more later---where ``later'' should be taken to mean ``at the call site of a let-bound function,'' as we gain more information by applying arguments to it.
+
+We thus exclude any constraints that directly or indirectly---through any transitive constraints, as determined by the dependency analysis (Section~\ref{depanal})---depend on annotation variables appearing in $\theta_\mathrm{C} \tauhat$ from being solved and store them in the type scheme instead, to be solved only at their call sites after having been instantiated again. We will call such constraints \emph{input-dependent constraints}.
+
+\mathchardef\mhyphen="2D
+
+\begin{figure}[h!t]
+\[ \frac{\begin{gathered}\theta_\mathrm{C} = \widehat{\mathcal{U}}(C) \\ R' = input\mhyphen dependent(\theta_\mathrm{C} R, \theta_\mathrm{C} \tauhat)\quad \theta_\mathrm{R} = solve(\theta_\mathrm{C}R - R') \\ \overline{\alpha} = ftv(\theta_\mathrm{R}\theta_\mathrm{C}\tauhat) - ftv(\widehat\Gamma) \quad \overline{\beta} = fav(\theta_\mathrm{R}\theta_\mathrm{C}\tauhat) \cup fav(\theta_\mathrm{R}R') \end{gathered}}{gen(\widehat\Gamma, \tauhat, C, R) = \forall \overline{\alpha}\overline{\beta}.\ \theta_\mathrm{R}R' \Rightarrow \theta_\mathrm{R}\theta_\mathrm{C}\tauhat} \]
+\caption{Generalization}
+\end{figure}
+
+\clearpage
+ 
+\begin{figure}[h!t]
+\begin{gather*}
+\frac
+    {\widehat\Gamma(x) = \widehat\sigma\quad inst(\widehat\sigma)=(\tauhat, R)}
+    {\TypeRel{x}{\tauhat}{\emptyset}{R}}
+    \mbox{\ [T-Var]} \\ \\  %%%%%%%%%%%%% CHECKED AGAINST CODE
+\frac
+    {\TypeRel[\widehat\Gamma, x:\alpha]{e}{\tauhat}{C}{R} \quad \alpha, \beta \fresh}
+    {\TypeRel{\lambda x.\ e}{\alpha \overset{\beta}{\to} \tauhat}{C}{R\cup\{\top \subseteq \beta\}}}
+    \mbox{\ [T-Abs]}\\ \\   %%%%%%%%%%%%  CHECKED AGAINST CODE
+\frac
+    {\TypeRel{f}{\tauhat_\mathrm{f}}{C_\mathrm{f}}{R_\mathrm{f}}\quad
+     \TypeRel{x}{\tauhat_\mathrm{x}}{C_\mathrm{x}}{R_\mathrm{x}}\quad
+     \alpha_\mathrm{r}, \beta \fresh}
+    {\TypeRel{f\ x}{\alpha_\mathrm{r}}{C_\mathrm{f} \cup C_\mathrm{x} \cup \{\tauhat_\mathrm{f} = \tauhat_\mathrm{x} \overset{\beta}{\to} \alpha_\mathrm{r}\}}{R_\mathrm{f} \cup R_\mathrm{x} \cup \{\beta \subseteq \top\}}}
+    \mbox{\ [T-App]}\\ \\  %%%%%%% CHECKED AGAINST CODE (MORE ELEGANT)
+\frac
+    {\beta \fresh}
+    {\TypeRel{n}{\textbf{Int}^\beta}{\emptyset}{\{\{\iota(n)\} \subseteq \beta\}}}
+    \mbox{\ [T-Int]} \\ \\ %%%%%%% CHECKED AGAINST CODE 
+\frac
+    {\beta \fresh}
+    {\TypeRel{\textbf{True}}{\textbf{Bool}^\beta}{\emptyset}{\{\{\iota(\mathbf{True})\} \subseteq \beta\}}}
+    \mbox{\ [T-True]} \\ \\%%%%%%% CHECKED AGAINST CODE 
+\frac
+    {\beta \fresh}
+    {\TypeRel{\textbf{False}}{\textbf{Bool}^\beta}{\emptyset}{\{\{\iota(\mathbf{False})\} \subseteq \beta\}}}
+    \mbox{\ [T-False]}\\ \\ %%%%%%% CHECKED AGAINST CODE 
+\frac
+    {\begin{gathered}\TypeRel{g}{\tauhat_\mathrm{g}}{C_\mathrm{g}}{R_\mathrm{g}} \quad     
+     \beta \fresh \\
+     \TypeRel{e_1}{\tauhat_1}{C_1}{R_1} \quad
+     \TypeRel{e_2}{\tauhat_2}{C_2}{R_2} \\
+     C = C_\mathrm{g} \cup C_1 \cup C_2 \cup \{\tauhat_\mathrm{g} = \Bool^\beta, \tauhat_1 = \tauhat_2\} \\
+     R = R_\mathrm{g} \cup R_1 \cup R_2 \cup \{\beta \subseteq \{\TTrue, \FFalse\}\}
+     \end{gathered}}
+    {\TypeRel{\textbf{if\ }g\textbf{\ then\ }e_1\textbf{\ else\ }e_2}{\tauhat_1}{C}{R}}
+    \mbox{\ [T-If]}\\ \\ %%%%%%% CHECKED AGAINST CODE 
+\frac
+    {\TypeRel{e_1}{\tauhat_1}{C_1}{R_1} \quad \TypeRel{e_2}{\tauhat_2}{C_2}{R_2} \quad \beta \fresh}
+    {\TypeRel{\TupleOf{e_1}{e_2}}{\TupleOf{\tauhat_1}{\tauhat_2}^\beta}{C_1 \cup C_2}{R_1 \cup R_2 \cup \{ \Top \subseteq \beta \}}}
+    \mbox{\ [T-Tuple]}\\ \\  %%%%%%% CHECKED AGAINST CODE 
+\frac
+    {\TypeRel{e}{\TupleOf{\tauhat_1}{\tauhat_2}^\beta}{C}{R}}
+    {\TypeRel{\textbf{fst}\ e}{\tauhat_1}{C}{R \cup \{ \beta \subseteq \Top \}}}
+    \mbox{\ [T-Fst]}\\ \\ %%%%%%% CHECKED (MORE ELOBARATE IN  CODE) 
+\frac
+    {\TypeRel{e}{\TupleOf{\tauhat_1}{\tauhat_2}^\beta}{C}{R}}
+    {\TypeRel{\textbf{snd}\ e}{\tauhat_2}{C}{R \cup \{ \beta \subseteq \Top \}}}
+    \mbox{\ [T-Snd]}  %%%%%%% CHECKED (MORE ELOBARATE IN  CODE)
+\end{gather*}
+\vfill
+\caption{Type system (part 1)}
+\label{DeclarativeTypeSystem}
+\end{figure}
+\begin{figure}[h!t]
+\begin{gather*}
+\frac
+    {\alpha \fresh  \quad  \beta \fresh}
+    {\TypeRel{\textbf{[]}}{\textbf{[}\alpha\textbf{]}^\beta}{\emptyset}{\{\{\textbf{[]}\}\subseteq\beta\}}}
+    \mbox{\ [T-Nil]}\\ \\ %%%%%%% CHECKED (MORE ELEBORATE IN CODE, LIST LITERALS)
+\frac
+    {\begin{gathered}\TypeRel{e_\mathrm{h}}{\tauhat_\mathrm{h}}{C_\mathrm{h}}{R_\mathrm{h}} \quad \TypeRel{e_\mathrm{t}}{\tauhat_\mathrm{t}}{C_\mathrm{t}}{R_\mathrm{t}} \quad \beta_1, \beta_2 \fresh\\C = C_\mathrm{h} \cup C_\mathrm{t} \cup \{\ListOf{\tauhat_\mathrm{h}}^{\beta_2} = \tauhat_\mathrm{t}\}\quad R = R_\mathrm{h} \cup R_\mathrm{t} \cup \{ \{\Conss{\beta_2}\} \subseteq \beta_1 \}\end{gathered}}
+    {\TypeRel{e_\mathrm{h} \textbf{\ :\ } e_\mathrm{t}}{\ListOf{\tauhat_\mathrm{h}}^{\beta_1}}{C}{R}}
+    \mbox{\ [T-Cons]}\\ \\  %%%%%%%%%%%% CHECKED AGAINST CODE
+%\frac
+%    {\begin{gathered}\TypeRel{g}{\ListOf{\alpha}^\varphi}{C_\mathrm{g}}{R_\mathrm{g}} \quad \overline{\TypeRel[\widehat\Gamma,\overline{x_{ij}:\kappa_{ij}}]{e_i}{\tauhat_i}{C_i}{R_i}}\\C = C_\mathrm{g} \cup \left(\bigcup C_i\right)\cup\left(\bigcup \{\tauhat = \tauhat_i\}\right)\quad R = R_\mathrm{g} \cup \left(\bigcup R_i\right)\cup \{ \varphi \subseteq \bigcup K_i(\overline{x_{ij}})\}\end{gathered}}
+%    {\TypeRel{|case|\ g\ |of|\ \{ \overline{K_i(\overline{x_{ij}}) \to e_i} \}}{\tauhat}{C}{R}}
+%    \mbox{\ [T-Case]}\\ \\
+\frac
+    {\begin{gathered}\TypeRel{g}{\tauhat_\mathrm{g}}{C_\mathrm{g}}{R_\mathrm{g}}\quad \TypeRel{e_\mathrm{n}}{\tauhat_\mathrm{n}}{C_\mathrm{n}}{R_\mathrm{n}} \quad \alpha, \beta_1 \fresh \\ C = C_\mathrm{g} \cup C_\mathrm{n}\cup \{\tauhat_\mathrm{g} = \ListOf{\alpha}^{\beta_1}\} \quad R = R_\mathrm{g} \cup R_\mathrm{n} \cup \{ \beta_1 \subseteq \{\Nill\} \}\end{gathered}}
+    {\TypeRel{|case|\ g\ |of|\ \{ \Nill \to e_\mathrm{n}\}}{\tauhat_\mathrm{n}}{C}{R}}
+    \mbox{\ [T-Case-N]}\\ \\
+\frac
+    {\begin{gathered}\alpha, \beta_1, \beta_2 \fresh\\\TypeRel{g}{\tauhat_\mathrm{g}}{C_\mathrm{g}}{R_\mathrm{g}} \quad \TypeRel[\widehat\Gamma, h:\alpha,\,t:\ListOf{\alpha}^{\beta_2}]{e_\mathrm{c}}{\tauhat_\mathrm{c}}{C_\mathrm{c}}{R_\mathrm{c}} \\ C = C_\mathrm{g} \cup C_\mathrm{c}\cup \{\tauhat_\mathrm{g} = \ListOf{\alpha}^{\beta_1}\} \quad R = R_\mathrm{g} \cup R_\mathrm{c} \cup \{ \beta_1 \subseteq \{\Conss{\beta_2}\} \}\end{gathered}}
+    {\TypeRel{|case|\ g\ |of|\ \{ \textbf{(\,}h\textbf{\,:\,}t\textbf{\,)} \to e_\mathrm{c} \}}{\tauhat_\mathrm{c}}{C}{R}}
+    \mbox{\ [T-Case-C]}\\ \\
+\frac
+    {\begin{gathered}\TypeRel{g}{\tauhat_\mathrm{g}}{C_\mathrm{g}}{R_\mathrm{g}} \quad \alpha, \beta_1, \beta_2 \fresh \\\TypeRel{e_\mathrm{n}}{\tauhat_\mathrm{n}}{C_\mathrm{n}}{R_\mathrm{n}} \quad \TypeRel[\widehat\Gamma, h:\alpha,\,t:\ListOf{\alpha}^{\beta_2}]{e_\mathrm{c}}{\tauhat_\mathrm{c}}{C_\mathrm{c}}{R_\mathrm{c}}\\C = C_\mathrm{g} \cup C_\mathrm{n}\cup C_\mathrm{c}\cup \{\tauhat_\mathrm{g} = \ListOf{\alpha}^{\beta_1}, \tauhat_\mathrm{n} = \tauhat_\mathrm{c}\} \\ R = R_\mathrm{g} \cup R_\mathrm{n} \cup R_\mathrm{c} \cup \{ \beta_1 \subseteq \{\Nill, \Conss{\beta_2}\} \}\end{gathered}}
+    {\TypeRel{|case|\ g\ |of|\ \{ \Nill \to e_\mathrm{n}; \textbf{(\,}h\textbf{\,:\,}t\textbf{\,)} \to e_\mathrm{c} \}}{\tauhat_\mathrm{n}}{C}{R}}
+    \mbox{\ [T-Case-NC]}\\ \\
+\frac
+    {\begin{gathered}\TypeRel{e_1}{\tauhat_1}{C_1}{R_1}\quad gen(\widehat\Gamma, \tauhat_1, C_1, R_1) = \widehat\sigma \\ \TypeRel[\widehat\Gamma, x:\widehat\sigma]{e_2}{\tauhat_2}{C_2}{R_2}\end{gathered}}
+    {\TypeRel{|let|\ x = e_1\ |in|\ e_2}{\tauhat_2}{C_2}{R_2}}
+    \mbox{\ [T-Let]}\\ \\
+\frac
+    {\begin{gathered}\TypeRel{\lambda f.\ e_1}{\tauhat_\mathrm{r}}{C_1}{R_1}\quad gen(\widehat\Gamma, \tauhat_1, C_1\cup\{\tauhat_1\to\tauhat_1=\tauhat_\mathrm{r}\}, R_1) = \widehat\sigma \\ \TypeRel[\widehat\Gamma, x:\widehat\sigma]{e_2}{\tauhat_2}{C_2}{R_2}\end{gathered}}
+    {\TypeRel{|let|\ f = e_1\ |in|\ e_2}{\tauhat_2}{C_2}{R_2}}
+    \mbox{\ [T-LetRec]}\\ \\
+\end{gather*}
+\caption{Type system (part 2)}
+\label{DeclarativeTypeSystem2}
+\end{figure}
+
+\clearpage
+
+\section{Unification}\label{unifi}
+
+To solve the constraint set $C$ we use a unification algorithm $\widehat{\mathcal{U}}$ that either computes a substitution $\theta$, such that $\theta C$ contains only trivial equalities of the form $\tauhat = \tauhat$ or fails if the constraint set is unsolvable and the program is type incorrect.
+
+\begin{eqnarray*}
+\unify &:& \mathcal{P}(\textbf{Constr}) \to \textbf{Subst} \\
+\unify (\emptyset) &=& \id \\
+\unify (\{\alpha = \tauhat\} \cup C) &=& \leet \theta =
+    \begin{dcases*}
+            \left[\alpha \mapsto \tauhat\right] & if $\alpha \notin \ftv(\tauhat)$ \\ 
+            \textbf{fail} & otherwise
+    \end{dcases*}\\
+    & & \iin \unify(\theta C) \circ \theta \\
+\unify (\{\tauhat = \alpha\} \cup C) &=& \leet \theta =
+    \begin{dcases*}
+            \left[\alpha \mapsto \tauhat\right] & if $\alpha \notin \ftv(\tauhat)$ \\ 
+            \textbf{fail} & otherwise
+    \end{dcases*}\\
+    & & \iin \unify(\theta C) \circ \theta \\
+\unify (\{\tauhat_1 \overset{\varphi_1}{\to} \tauhat_2 = \tauhat_1' \overset{\varphi_2}{\to} \tauhat_2'\} \cup C) &=&
+    \leet \theta = \uniphi(\varphi_1 = \varphi_2)\\
+& & \iin \unify(\theta\{\tauhat_1 = \tauhat_1', \tauhat_2 = \tauhat_2'\} \cup \theta C) \\    
+\unify (\{\Bool^{\varphi_1} = \Bool^{\varphi_2}\} \cup C) &=& \leet \theta = \mathcal{V}(\varphi_1 = \varphi_2)\\& & \iin \unify(\theta C) \circ \theta \\
+\unify (\{\Int^{\varphi_1} = \Int^{\varphi_2}\} \cup C) &=& \leet \theta = \mathcal{V}(\varphi_1 = \varphi_2)\\& & \iin \unify(\theta C) \circ \theta \\
+\unify (\{\TupleOf{\tauhat_1}{\tauhat_2}^{\varphi_1} = \TupleOf{\tauhat_1'}{\tauhat_2'}^{\varphi_2}\} \cup C) &=&
+    \leet \theta = \uniphi(\varphi_1 = \varphi_2)\\
+& & \iin \unify(\theta\{\tauhat_1 = \tauhat_1', \tauhat_2 = \tauhat_2'\} \cup \theta C) \\
+\unify (\{\ListOf{\tauhat}^{\varphi_1} = \ListOf{\tauhat'}^{\varphi_2}\} \cup C) &=&
+    \leet \theta = \uniphi(\varphi_1 = \varphi_2)\\
+& & \iin \unify(\theta\{\tauhat = \tauhat'\} \cup \theta C)\\
+\mbox{otherwise} &=& \textbf{fail}
+\end{eqnarray*}
+
+The unification algorithms $\unify$ relies on a unification algorithm $\uniphi$ that unifies annotations.
+
+\begin{eqnarray*}
+\mathcal{V} (\varphi_1 = \varphi_2) =
+    \begin{dcases*}
+        \id                                      & if $\varphi_1 = \varphi_2$ \\
+        \left[\varphi_1 \mapsto \varphi_2\right] & otherwise
+    \end{dcases*}
+\end{eqnarray*}
+
+This unification algorithm $\uniphi$ is straightforward, because the constraints in $C$ only concern simply annotated types---remember that these are annotated types where the annotations can only be annotation variables and nothing else.
+
+The resulting substitution can contain both mappings $\left[\alpha \mapsto \tauhat\right]$ from type variables to annotated types and mappings $\left[\beta_1 \mapsto \beta_2\right]$ from annotation variables to annotation variables.
+
+%\subsection{Algorithm $\widehat{\mathcal{W}}$}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% CONSTRAINT SOLVING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Constraint Solving}\label{chapcs}
+
+\section{Overview}
+
+The constraint generation phase of the analysis generates two constraint sets: a constraint set $C$ containing equality constraints between simply annotated types and a constraint set $R$ containing subtype constraints between the annotations. As we have seen the constraint set $C$ can be solved by a slightly modified, but fairly traditional unification algorithm, resulting in a substitution $\theta_C$ from type variables to annotated types and from annotation variables to annotation variables.
+
+The first step in solving the constraints set $R$ is to apply the substitution $\theta_C$ to it, making sure any annotation variables that have been unified while solving $C$ are also unified in $R$.
+
+The constraints in $R$ can have various forms, for example: producing a $\TTrue$ will introduce a constraint \[ \{\TTrue\} \subseteq \beta \] for a fresh annotation variable $\beta$. Pattern matching on an empty list (and nothing else) will generate a constraint \[ \beta \subseteq \{\Nill\} \]
+
+Recursive data types, such as lists, give rise to a more complicated form of \emph{transitive constraints}. For example, pattern matching on a list will generate a constraint \[ \beta_1 \subseteq \{\Nill, \Conss{\beta_2}\} \] where $\beta_1$ is the annotation variable on the scrutinee of the case-expression and $\beta_2$ the annotation on the tail of the list. Intuitively, if we learn something about $\beta_1$ this might influence what we know about $\beta_2$ and vice versa.
+
+To solve the constraint set $R$ we need to find for each annotation variable $\beta$ on a type $\tau$ an (as large as possible) interval $I = (l, u) \in \mathcal{L}^2$ of the lattice $\mathcal{L}$ abstracting the underlying type of the annotation variable that is consistent with the constraint set. As the starting interval we take the whole of the lattice $(\bot_\mathcal{L}, \top_\mathcal{L})$. We then apply a worklist algorithm that will have constraints of the form $\{\TTrue\} \subseteq \beta_1$ push the lowerbound $l$ of the interval $I_1$ belonging to $\beta_1$ upwards and constraints of the form $\beta_2 \subseteq \{\Nill\}$ the upperbound $u$ of the interval $I_2$ belonging to $\beta_2$ downwards. Transitive constraints such as $\beta_1 \subseteq \{\Nill, \Conss{\beta_2}\}$ will affect the upper- and lowerbounds of both $\beta_1$ and $\beta_2$.
+
+\section{Dependency Analysis}\label{depanal}
+
+\emph{Transitive constraints}\index{constraint!transitive}---such as $\beta_1 \subseteq \beta_2$---which contain annotation variables on both the left- and right-hand side of the constraint introduce dependencies between constraints.
+
+The dependency analysis phase of the analysis determines the dependencies between subset constraints and annotation variables by building two dependency graphs. One between annotation variables and one from annotation variables to subset constraints. These two graphs are used when determining the input-independent constraints and by the worklist algorithm described next.
+
+\section{Worklist Algorithm}
+
+\subsection{Generic Worklist Algorithm}
+
+The constraints solver for the constraint set $R$ is built on top of a generic worklist algorithm:
+
+\begin{code}
+worklist :: (a -> b -> ([a], b)) -> b -> [a] -> b
+worklist _  r  []      = r
+worklist f  r  (x:xs)  = let (ys, r') = f x r in worklist f r' (xs ++ ys)
+\end{code}
+
+The function argument |f| takes a takes a constraint |x :: a| and intermediate result |r :: b| and returns a new intermediate result |r' :: b| and an additional set of constraints |ys :: [a]| the worklist algorithm has to add to its current working set.
+
+In our application of this generic worklist algorithm these additional constraints will be constraints that have been previously processed, but for which the dependency checker has determined they may need to be looked at again, because one or more of their dependent variables have been updated.
+
+While the generic worklist algorithm does not necessarily terminate, it will in our application. Abstract values are modelled by lattices satisfying the ascending chain condition, meaning the dependency analysis will eventually stop feeding constraints into the worklist when all dependent variables have reached their fixed points.
+
+\subsection{Resolving Individual Constraints}\label{r532}
+
+The function we pass as the argument |f| to |worklist| will---after having assisted with dependency checking and updating---invoke the function |resolveConstr|, which updates the intermediate result by making it consistent with an individual constraint.
+
+In its most generic shape such a constraint will be of the form \[\beta_1 \cup \beta_2 \cup ... \cup \beta_m \cup \{K_1,K_2,...,K_n\} \subseteq \beta'_1 \cup\beta'_2 \cup ... \cup \beta'_{m'} \cup \{K'_1,K'_2,...,K'_{n'}\} \] where $\beta_i, \beta_{i'}$ are annotation variables and $K_j, K_{j'}$ are elements of some lattice $\pi_\tau$---they can be thought of as constructors---possibly containing more annotation variables within them.
+
+In order to make the intermediate result consistent with this constraint we may need to do two things:
+\begin{enumerate}
+    \item Raise the lowerbound of refinement variables present---either directly as one of the $\beta_{i'}$s or inside one of the constructors $K'_{j'}$---in the right-hand side of the constraint;
+    \item Lower the upperbound of refinement variables present in the left-hand side of the constraint.
+\end{enumerate}
+
+In order to accomplish the first |resolveConstr| will:
+\begin{enumerate}
+    \item Instantiate all refinement variables on the left-hand side of the constraint---including those inside constructors---with the current lowerbound recorded in the intermediate result. Call this $L$. (For constructors we assume a widening operator is applied during instantiation if this is required to maintain the ascending chain condition of their corresponding lattice.)
+    \item For each refinement variable $\beta'_{i'}$ on the right-hand side |resolveConstr| will update $\theta_\mathrm{L}(\beta'_{i'})$, the lowerbound for that variable as recorded in the intermediate result, to $\theta_\mathrm{L}(\beta'_{i'}) \sqcup L$.
+    \item For each constructor $K'_{j'}$ on the right-hand side |resolveConstr| will make new constraints \[ \Pi_{K_{j'}}^p(L) \subseteq \Pi_{K_{j'}}^p(\{K'_{j'}\}) \] where $\Pi_{K}^p$ projects out the $p$th field of a $K$-constructor or gives an empty result if its input is not a $K$-constructor. This whole procedure will then be recursively applied to the newly generated constraints.
+\end{enumerate}
+
+In order to accomplish the second we can apply the same procedure \emph{mutatis mutandis}; in particular the updated value of the intermediate result in the second step should now become $\theta_\mathrm{U}(\beta_i) \sqcap R$.
+
+\paragraph{Example} Assume $\theta(\beta_1) = (\{\Nill, \Conss{\Nill}, \Conss{\Conss{\Nill}}\}, \top)$ and $\theta(\beta_2) = (\bot, \top)$. Given the constraint
+\begin{eqnarray}
+\{\beta_1\} \subseteq \{\Conss{\beta_2}\}\label{eqco}
+\end{eqnarray}
+|resolveConstr| will instantiate the left-hand side to 
+\begin{eqnarray}
+\{\Nill, \Conss{\Nill}, \Conss{\Conss{\Nill}}\} \subseteq \{\Conss{\beta_2}\}
+\end{eqnarray}
+
+As there is both a $\Nill$-constructor and a $\Conss{\cdot}$-constructor on the right-hand side, |resolveConstr| will partition the constraint into two constraints
+\begin{eqnarray}
+\{ \Nill \} &\subseteq& \emptyset \label{eq1} \\
+\{ \Conss{\Nill}, \Conss{\Conss{\Nill}} \} &\subseteq& \{ \Conss{\beta_2} \} \label{eq2}
+\end{eqnarray}
+As the right-hand side of (\ref{eq1}) is empty this constraint is discarded. Both left and right-hand side of (\ref{eq2}) have top-level $\Conss{\cdot}$-constructors. We project out their fields, resulting in the constraint
+\begin{eqnarray}
+\{ \Nill, \Conss{\Nill} \} &\subseteq& \{ \beta_2 \} \label{eq3}
+\end{eqnarray}
+
+To solve this constraint |resolveConstr| will be recursively called on it. As there is only a refinement variable on the right-hand side of (\ref{eq3}) |resolveConstr| will update $\theta_\mathrm{L}(\beta_2)$ to \[\bot \sqcup \{\Conss{\Nill}, \Conss{\Conss{\Nill}}\} = \{\Conss{\Nill}, \Conss{\Conss{\Nill}}\}\]
+
+We have now ``pushed up'' the lowerbound of $\beta_2$. Next, we ``push down'' the upperbound of $\beta_1$. We begin by instantiating the right-hand side of (\ref{eqco}) to
+\begin{eqnarray}
+\{\beta_1\} &\subseteq& \{\Conss{\Nill}, \Conss{\Conss{\Nill}}, ..., \Conss{...\Conss{\Nill}...},  \Conss{...\Conss{\star}...}\}
+\end{eqnarray}
+We immediately end up with a constraint of the form $\beta \subseteq \{ ... \}$, so we do not need to recurse and can update $\theta_\mathrm{U}(\beta_1)$ to
+\begin{multline*}
+\top \sqcap \{\Conss{\Nill}, \Conss{\Conss{\Nill}}, ..., \Conss{...\Conss{\Nill}...},  \Conss{...\Conss{\star}...}\} \\ = \{\Conss{\Nill}, \Conss{\Conss{\Nill}}, ..., \Conss{...\Conss{\Nill}...},  \Conss{...\Conss{\star}...}\}
+\end{multline*}
+
+The resulting intervals are now
+\begin{eqnarray*}
+\theta(\beta_1) &=& (\{\Nill, \Conss{\Nill}, \Conss{\Conss{\Nill}}\}, \{\Conss{\Nill}, \Conss{\Conss{\Nill}}, ...,  \Conss{...\Conss{\star}...}\}) \\
+\theta(\beta_2) &=& (\{\Conss{\Nill}, \Conss{\Conss{\Nill}}\}, \top)
+\end{eqnarray*}
+
+As the lowerbound of $\beta_1$ is no longer contained in its upperbound---the lowerbound includes a $\Nill$-constructor, while the upperbound does not---we have detected a possible pattern match failure.
+
+% Note that {[]} <= {(_:[])} does not occur

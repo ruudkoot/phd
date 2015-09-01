@@ -1,0 +1,116 @@
+\chapter{Context}\label{chapcontext}
+
+% halting problem
+% well-typed programs can't go wrong
+% smaller types log form presentation
+
+\section{Haskell}
+
+Haskell is statically-typed functional programming language with non-strict evaluation semantics \cite{Haskell98}. As a functional language it has first-class and higher-order functions and features a rich type system supporting parametric polymorphism and type classes. Programmers can define custom types in the form of algebraic data types and write functions over them using pattern matching.
+
+Like most functional languages, Haskell can be easily translated into a typed $\lambda$-calculus (System $F_C$). From the point-of-view of the programmer it offers a wealth of syntactic sugar over a plain $\lambda$-calculus---such as guards and list comprehensions---allowing programs to be expressed concisely and in a readable fashion.
+
+The following example demonstrates the syntax of Haskell and some features mentioned previously:
+
+\begin{code}
+data Tree a  =  Branch (Tree a) (Tree a)
+             |  Leaf a
+             
+mapTree :: (a -> b) -> Tree a -> Tree b
+mapTree f (Branch t1 t2)  = Branch (mapTree f t1) (mapTree f t2)
+mapTree f (Leaf a)        = Leaf (f a)
+
+instance Functor Tree where
+    fmap = mapTree
+\end{code}
+Lines 1--2 define an algebraic data type (ADT) representing a tree. A tree can be constructed by either a |Branch| containing a left and a right subtree or by a |Leaf| containing a value. The ADT is parameterized by a type |a| giving the type of the value stored in the |Leaf|.
+
+Lines 4--5 define a higher-order function |mapTree| which applies a given function |f :: a -> b| to all the values stored in all the leaves of a given |Tree| resulting in a new |Tree|. As the domain and the range of |f| need not coincide, the type parameter of the tree changes as well. The body of the function is defined by pattern matching over the constructors of |Tree| and recurses in the case of a |Branch| and applies the argument |f| to the field of type |a| in |Leaf| otherwise.
+
+Lines 8--9 declare the type constructor |Tree| to be an instance of the type class |Functor|, expressing it to be an endofunctor in the category of data types with its mapping on morphisms given by |mapTree|.
+
+\subsection{Pattern Matching}
+
+Particularly relevant to our analysis are Haskell's pattern matching abilities. We demonstrate some of them in the following function:
+
+\begin{code}
+rotate (Branch b@(Branch (Leaf x) (Leaf y)) (Leaf z))
+           | z < x      = Branch (Leaf z) b
+           | z < y      = Branch (Branch (Leaf x) (Leaf z)) (Leaf y)
+           | otherwise  = undefined
+\end{code}
+
+The function will rotate a tree |(Branch (Branch (Leaf 2) (Leaf 3)) (Leaf 1))| into |Branch (Leaf 1) (Branch (Leaf 2) (Leaf 3))|. It accomplishes this through the use of \emph{nested pattern matching}\index{pattern matching!nested}, \emph{as-patterns}\index{as-pattern} and \emph{guards}\index{guard}.
+
+This function only works on trees of a very specific shape. Feeding the function a tree of a different shape will cause a pattern match failure. Similarly, an error will be raised if the function reaches the |otherwise| branch, containing an |undefined| value. This would also happen if the branch had called |error| or the branch and its guard were left out entirely.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Type and Effect Systems}
+
+Type and effect systems are approaches to program analysis suitable for typed languages \cite{Nielson:1999:PPA:555142}. In this formalism we take the \emph{underlying type system}\index{underlying type!underlying type system} of the language and (conservatively) extend it by adding \emph{annotations}\index{annotation} to the types (base, function and other) of the system.
+
+\begin{figure}[p]
+\[\frac{}{\Gamma \vdash_{\mathrm{UL}} c : \tau_c}\ \textrm{[T-Con]} \quad\quad\quad\quad
+\frac{\Gamma(x) = \tau}{\Gamma \vdash_{\mathrm{UL}} x : \tau}\ \textrm{[T-Var]}\]
+\[\frac{\Gamma[x \mapsto \tau_1] \vdash_{\mathrm{UL}} e : \tau_2}{\Gamma \vdash_{\mathrm{UL}} \lambda x. e : \tau_1 \to \tau_2}\ \textrm{[T-Abs]}\]
+\[\frac{\Gamma \vdash_{\mathrm{UL}} e_1 : \tau_2 \to \tau_1 \quad \Gamma \vdash_{\mathrm{UL}} e_2 : \tau_2}{\Gamma \vdash_{\mathrm{UL}} e_1\ e_2 : \tau_1}\ \textrm{[T-App]}\]
+\[\frac{\Gamma \vdash_{\mathrm{UL}} e_1 : \tau_1 \quad \Gamma[x\mapsto \tau_1] \vdash_{\mathrm{UL}} e_2 : \tau_2}{\Gamma \vdash_{\mathrm{UL}} \mathbf{let\ } x = e_1 \mathbf{\ in\ } e_2 : \tau_2}\ \textrm{[T-Let]}\]
+\[\frac{\Gamma \vdash_{\mathrm{UL}} e_1 : \mathrm{bool} \quad \Gamma \vdash_{\mathrm{UL}} e_2 : \tau \quad \Gamma \vdash_{\mathrm{UL}} e_2 : \tau}{\Gamma \vdash \mathbf{if\ } e_0 \mathbf{\ then\ } e_1 \mathbf{\ else \ } e_2 : \tau}\ \textrm{[T-If]}\]
+\caption{Underlying type system}
+\label{underlying}
+\end{figure}
+
+\begin{figure}[p]
+\[\frac{}{\Gamma \vdash_{\mathrm{AN}} n : \mathrm{Int}^{\{n\}}}\ \textrm{[T-Con]} \quad\quad\quad\quad
+\frac{\Gamma(x) = \widehat\tau}{\Gamma \vdash_{\mathrm{AN}} x : \widehat\tau}\ \textrm{[T-Var]}\]
+\[\frac{\Gamma[x \mapsto \widehat\tau_1] \vdash_{\mathrm{AN}} e : \widehat\tau_2}{\Gamma \vdash_{\mathrm{AN}} \lambda x. e : \widehat\tau_1 \to \widehat\tau_2}\ \textrm{[T-Abs]}\]
+\[\frac{\Gamma \vdash_{\mathrm{AN}} e_1 : \widehat\tau_2 \to \widehat\tau_1 \quad \Gamma \vdash_{\mathrm{AN}} e_2 : \widehat\tau_2}{\Gamma \vdash_{\mathrm{AN}} e_1\ e_2 : \widehat\tau_1}\ \textrm{[T-App]}\]
+\[\frac{\Gamma \vdash_{\mathrm{AN}} e_1 : \widehat\tau_1 \quad \Gamma[x\mapsto \widehat\tau_1] \vdash_{\mathrm{AN}} e_2 : \widehat\tau_2}{\Gamma \vdash_{\mathrm{AN}} \mathbf{let\ } x = e_1 \mathbf{\ in\ } e_2 : \widehat\tau_2}\ \textrm{[T-Let]}\]
+\[\frac{\Gamma \vdash_{\mathrm{AN}} e_1 : \mathrm{bool} \quad \Gamma \vdash_{\mathrm{AN}} e_2 : \tau^{\varphi_2} \quad \Gamma \vdash_{\mathrm{AN}} e_2 : \tau^{\varphi_3}}{\Gamma \vdash_{\mathrm{AN}} \mathbf{if\ } e_0 \mathbf{\ then\ } e_1 \mathbf{\ else \ } e_2 : \tau^{\varphi_2 \cup \varphi_3}}\ \textrm{[T-If]}\]
+\[\frac{
+\Gamma \vdash_{\mathrm{AN}} e : \tau^{\varphi}
+}{
+\Gamma \vdash_{\mathrm{AN}} e : \tau^{\varphi \cup \varphi'}
+}\ \textrm{[T-Sub]}\]
+\caption{Annotated type system}
+\label{annotated}
+\end{figure}
+
+\subsection{Example}
+
+As an example we give an analysis which determines, in the form of an annotation, which values an expression can evaluate to. The language is the simply-typed $\lambda$-calculus with let-bindings and an if-statement. The underlying type systems is standard and given in Figure \ref{underlying}.
+
+The annotated type system is given in Figure \ref{annotated}. It does little more than collecting all constants in the annotations. The only interesting rule is for the if-statement. We need to take the union over the values collected in both branches of the if-statement. We could have chosen to make the rule depend on the annotation of the guard expression, passing on only the values collected in the then-branch along if we knew it could only be |True| or only the values collected in the else-branch if we knew it could only be |False| from its annotation. This would make the analysis more precise.
+
+We have also added an inference rule for \emph{subeffecting}\index{subeffecting}. This allows us to make the annotation less precise. This is sometimes necessary when applying a value about which we have very accurate information to a function which requires a more general argument.
+
+\subsection{Type Inference}
+
+An analysis specified as an inference system does not allow us to compute the result of the analysis directly, as the premises of several of the inference rules usually require us to guess the correct type annotations for the type and annotation variables (e.g., in the presence of subeffecting). To overcome this problem we need a \emph{type reconstruction algorithm}\index{type reconstruction!algorithm}.
+
+If the underlying type system is Hindley--Milner, then Algorithm W can be used to infer the types. Algorithm W works bottom-up and can compute types in a single pass by unifying type variables. This may not always be possible for the annotations in an annotated type system, however. Here we can use a variant of Algorithm W to gather a set of constraints on the annotation variables and solve these constraints with a worklist algorithm in a second phase.
+
+\subsection{Polyvariance}
+
+% 1) precision (poisoning)
+% 2) modularity
+
+% annotation polymorphism
+
+Consider the following program:
+\begin{code}
+main =  let id x = x
+        in (id 1, id 2)
+\end{code}
+
+When performing the analysis given above we would assign the type $\mathit{Int} \to \mathit{Int}^{\{1, 2\}}$ to |id| and as a result the type $\mathit{Int}^{\{1,2\}} \times \mathit{Int}^{\{1,2\}}$ to |f|. Clearly, this result is not optimal. This loss in precision has been caused by the two separate calls to |id| \emph{poisoning}\index{poisoning} each other.
+
+A similar situation occurs at the type-level in the function:
+\begin{code}
+main =  let id x = x
+        in (id 1, id true)
+\end{code}
+Hindley--Milner manages to avoid problems in this situation by a mechanism called \emph{let-generalization}\index{generalization!let-generalization}. The binding |id| has the type $\alpha \to \alpha$. Instead of trying---and failing---to unify $\alpha$ with both |Int| and |Bool| in the body of the let-binding, the type of |id| is generalized to the polymorphic type $\forall \alpha. \alpha \to \alpha$. In the body of the let-binding, |id| can be instantiated twice: once to |Int -> Int| and once to |Bool -> Bool|.
+
+A similar trick can be used for the annotated type system, except that instead of quantifying over type variables, we quantify over annotation variables.

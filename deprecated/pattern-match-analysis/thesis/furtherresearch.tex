@@ -1,0 +1,113 @@
+\chapter{Conclusions and Further Research}\label{chapfurtherresearch}
+
+% undefiend, exceptions
+
+\section{Conclusions}
+
+Using our analysis we are able to statically detect pattern match failures---or the absence of them, where a more naive totality checker would have given us spurious warnings. Using a type and effect system to do pattern match analysis certainly appears to be a viable approach.
+
+As we demonstrated in Chapter \ref{chapevaluation}, there are a number of limitations to our current analysis that may result in reduced accuracy, that is, an increase in the number of false positives. We will present a number of suggestion for further research that may help overcome these limitations.
+
+\section{Improving Precision}
+
+\subsection{Intersection Types}
+
+The analysis sketched so far falls short if we want to analyze functions using common operators such as |(+)|  or |(<=)|. To see the problem here we should ask ourself what type we would like to assign to such expressions. The operator |(<=)| can take any integer arguments---which does not cause a pattern match failure when evaluated---and returns either $\mathbf{True}$ or $\mathbf{False}$ without causing a pattern match failure itself. The most reasonable annotated type for this operator thus seems to be: \[ (\leq) : \Int^\top \to \Int^\top \to \Bool^\top\]
+
+Using the operator in the following situation:
+
+\begin{code}
+f x = if 0 <= 1 then x else crash
+\end{code}
+
+will produce a spurious warning about a pattern-match error occurring. The guard of the if-then-else expression will always evaluate to $\TTrue$, but because of the type we have assigned to $(\leq)$ the analyzer will believe it might evaluate to $\FFalse$ as well.
+
+The root of the problem is that we can assign several different valid refinement types to |(<=)|:
+\begin{eqnarray*}
+(\leq) &:& \Int^{\{-\}} \to \Int^\top \to \Bool^{\{\TTrue\}} \\
+(\leq) &:& \Int^{\{0,+\}} \to \Int^{\{-\}} \to \Bool^{\{\FFalse\}} \\
+(\leq) &:& ...
+\end{eqnarray*}
+neither of which is a \emph{principal type}---that is having as its refinements a strictly minimal set of values on types in a covariant positions and a stricly maximal set of values on types in a contravariant position.
+
+A solution would be to assign this expression a more accurate \emph{intersection type} (see Section \ref{secit}). For example, when using a sign abstraction for integers: \[ (\leq) : \Int^{\{\mathbf{-}\}} \to \Int^\top \to \Bool^{\{\TTrue\}} \land \Int^{\{\mathbf{0}, \mathbf{+}\}} \to \Int^{\{\mathbf{-}\}} \to \Bool^{\{\FFalse\}} \land ... \]
+
+Note that---for our purposes at least---if we assign some expression $e$ the intersection type $\tauhat_1 \land \tauhat_2 \land ... \land \tauhat_n$ then any two annotated types $\tauhat_i$ and $\tauhat_j$ will have the same underlying type $(\lfloor\tauhat_i\rfloor = \lfloor\tauhat_j\rfloor)$ and the two types will thus only differ in their annotations.
+
+To represent intersection types we therefore only have to keep track of the various possible assignments of the annotation variables. We can integrate this concept neatly into our type system by modifying the typing relation $\TypeRel{e}{\tauhat}{C}{R}$ to a typing relation \[ \TypeRel{e}{\tauhat}{C}{\bar R} \] where $\bar R$ is a \emph{set of constraint sets} over the refinements, expressing the various possible assignments of annotations; one constraint set for each components of the intersection type.
+
+All typing judgments will need to be modified to properly propagate the sets of constraint sets. During simplification any constraint sets that are inconsistent can be removed.
+
+\subsection{Implication Constraints}\label{ctxsens}
+
+In $k$-CFA data-flow is used to improve the precision of the control-flow analysis \cite{Shivers:1991:CAH:124950}. Conversely, we can try to improve the precision of our data-flow anlysis by considering the control-flow.
+
+Consider again the program we saw in Section \ref{sec31}:
+
+\begin{code}
+main b f =  if b then
+                if  f 42  then  100  else  200
+            else
+                if  f 43  then  300  else  400
+\end{code}
+
+We assigned this the type:
+\begin{equation}\label{orig9}
+\Bool^{\{\TTrue, \FFalse\}} \to (\Int^{\{42, 43\}}\to\Bool^{\{\TTrue,\FFalse\}})\to \Int^{\{100,200,300,400\}}
+\end{equation}
+
+If we have more knowledge about the exact value of |b|, e.g. |b| being always $\TTrue$ or $\FFalse$, we can infer the more precise types
+\begin{equation}\label{new91}
+\Bool^{\{\TTrue\}} \to (\Int^{\{42\}}\to\Bool^{\{\TTrue,\FFalse\}})\to \Int^{\{100,200\}}
+\end{equation}
+and
+\begin{equation}\label{new92}
+\Bool^{\{\FFalse\}} \to (\Int^{\{43\}}\to\Bool^{\{\TTrue,\FFalse\}})\to \Int^{\{300,400\}}
+\end{equation}
+
+This knowledge can be expressed using \emph{implication constraints} \[ \rho_1 \subseteq \rho_2 \models \rho_3 \subseteq \rho_4 \]
+where the constraint $\rho_3 \subseteq \rho_4$ on the right-hand side only has to hold if the constraint $\rho_1 \subseteq \rho_2$ on the left-hand side holds.
+
+The original type (\ref{orig9}) and additional types (\ref{new91}) and (\ref{new92}) can together be represented as a single type using implication constraints:
+\begin{align*}
+\forall \alpha, \beta, \gamma.\ \{&\{\TTrue\} \subseteq \alpha \models \{42\} \subseteq \beta, \{\TTrue\} \subseteq \alpha \models \{100, 200\} \subseteq \gamma,\\ &\{\FFalse\} \subseteq \alpha \models \{43\} \subseteq \beta, \{\FFalse\} \subseteq \alpha \models \{300,400\} \subseteq \gamma,\\ &\alpha \subseteq \{\TTrue, \FFalse\}\} \Rightarrow \Bool^{\alpha} \to (\Int^{\beta}\to\Bool^{\{\TTrue,\FFalse\}})\to \Int^{\gamma}
+\end{align*}
+
+% HOW TO SOLVE GOES HERE
+
+It is not yet clear if implications constraints would be orthogonal to intersection types. We could represent the type equivalently as:
+\begin{align*}
+\Bool^{\{\TTrue, \FFalse\}} &\to (\Int^{\{42, 43\}}&\to\Bool^{\{\TTrue,\FFalse\}})&\to \Int^{\{100,200,300,400\}} \\
+\land\ \Bool^{\{\TTrue\}} &\to (\Int^{\{42\}}&\to\Bool^{\{\TTrue,\FFalse\}})&\to \Int^{\{100,200\}} \\
+\land\ \Bool^{\{\FFalse\}} &\to (\Int^{\{43\}}&\to\Bool^{\{\TTrue,\FFalse\}})&\to \Int^{\{300,400\}}
+\end{align*}
+
+\subsection{Set-based Constraints}
+
+It is worth investigating if the generated constraints can be formulated in terms of \emph{set-based constraints} \cite{aiken,Heintze94setconstraints}. More elaborate solvers (such as BANE) have been developed for this type of constraints and may give more accurate results than our current solver.
+
+\section{Improving Applicability}
+
+\subsection{Handling |undefined|}
+
+While our analysis can detect pattern match failures due to missing alternatives in case-expressions, we would also like to detect failures occurring due to evaluating |undefined| or |error|.
+
+A straightforward approach would seem to add an additional value $\bot$---not to be confused with the least element of a lattice---to the language of refinements $\varphi$, representing a value the diverges if evaluated. The type rules for constructs that perform pattern matching already, such as T-If and T-App, already ensure that such values would not be allowed as the scrutinee of a pattern match.
+
+There are still two hurdles that need to be overcome, however:
+\begin{enumerate}
+\item While the type constructors for lists, tuples and functions already come prepared with an annotation in which the diverging value $\bot$ can be stored, |undefined| itself has the polymorphic type $\forall \alpha.\ \alpha$. Type variables, however, do not come equipped with an annotation, so we cannot assign it the obvious type $\forall \alpha.\ \alpha^{\{\bot\}}$.
+\item Without context-sensitivity in the type rules T-If and T-Case, they will simply propagate the diverging value forward if it occurs in any one of the branches of an if-then-else or case-expression. Adding context-sensitivity as described Section \ref{ctxsens} would be a prerequisite.
+\end{enumerate}
+
+%\section{Improving Feedback}
+%
+%\section{Improving Applicability}
+%
+%\begin{enumerate}
+%    \item Guards
+%    \item Algebraic data types
+%\end{enumerate}
+%
+%\section{Evaluation}
+

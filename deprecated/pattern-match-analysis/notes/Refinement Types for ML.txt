@@ -1,0 +1,27 @@
+\begin{small} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Describe how this algorithms works once I get my head around it (rewriting into union/intersection normal form + subtyping while taking co-/contravariance into account)
+
+Also note that:
+\begin{enumerate}
+\item The constructors of a data type need to be ALL covariant or ALL contravariant, otherwise the data type becomes invariant and as a result can't be subtyped (although the authors didn't know of any realistic examples).
+\item Left-hand sides of function types (in constructors only?) are assumed not to be a refinement type (altough agian the authors didn't know of any intersting situations where this would be a problem.)
+\item Case-statement are also given some interesting and huge types
+\item Huge type can become a problem, especially in te presence of higher-order functions ($O(n^n)$). Authors suggest using some adaptation of \emph{binary decision diagrams} for a practical implementation.
+\item Polymorphism can interfere with refinement types (but e.g. {\tt map} is fine).
+\end{enumerate}
+\end{small} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% As we will see later, we also require a form of union types so we can assign moe accurate types to case statements. (Freeman & Pfennig, 1991)
+
+% restricted from of subtyping (coercion = identity)
+
+% The operations needed to determine the meaning of a declaration can be computed exactly for regular tree automata [GS84]. The algorithms given for regular tree automata in [DZ92] seem practical, and assuming they are sound, they are more accurate than the type system given in Chapter 3. An example where the current specification is weak is on page 193. Finding a practical algorithm that works well in the general case and is exact in the case when there are no function objects is future work.
+
+% we instantiate polymorphic refinement types using a novel unproven strategy that appears to yield correct answers in practice.
+
+% This inference system is only valid because our con-structors are eager; if they were lazy, the type bev & g398 would contain the infinite value cons (true (), cons (true (), ...)), which could be constructed by using a fixed point
+
+% Since it is possible to decide whether the language recognized by one regular tree automaton is a subset of the language recognized by another ([GS84]), and statements that do not contain “ ” are essentially descriptions of regular tree automata, it is in principle possible to make a practical system that is complete in the first-order case.
+% The ARROW-RECSUB rule is motivated by Lemma 2.83 ( Gives an Upper Bound) on page 111. It would probably be possible to take the approach of Chapter 2 and have simple axioms defining recursive type inference and then restructure the system completely to find a practical algorithm that uses ARROW-RECSUB, but such an analysis might be as long as Chapter 2.
+
+%%% It is not clear how to make an efficient algorithm for this inference system. The implementation attempts to use a brute-force search to find the principal splits directly; I do not know if that strategy is sound.
