@@ -1,0 +1,35 @@
+digraph C {
+ "?1 = {True}/{}" [fontcolor=black];
+ "?2 = {+}/{}" [fontcolor=black];
+ "?3 = {-}/{}" [fontcolor=black];
+ "?4 = {+}/{}" [fontcolor=blue];
+ "fromList [True]" -> "?1 = {True}/{}";
+ "fromList [-]" -> "?3 = {-}/{}";
+ "fromList [+]" -> "?2 = {+}/{}";
+ "?1 = {True}/{}" -> "?4 = {+}/{}" [color=red];
+ "C (fromList [True]) :<: ?1" [style=filled];
+ "C (fromList [-]) :<: ?3" [style=filled];
+ "C (fromList [+]) :<: ?2" [style=filled];
+ "I (fromList [False]) ?1 (fromList [?3]) :<: ?4" [style=filled];
+ "I (fromList [True]) ?1 (fromList [?2]) :<: ?4" [style=filled];
+ "C (fromList [?1]) :<: ?4" [style=filled,fillcolor=lightpink];
+ "I (fromList [False]) ?1 (fromList [?3]) :<: ?4" [style=filled,fillcolor=lightpink];
+ "I (fromList [True]) ?1 (fromList [?2]) :<: ?4" [style=filled,fillcolor=lightpink];
+ "?1 = {True}/{}" -> "I (fromList [False]) ?1 (fromList [?3]) :<: ?4";
+ "?3 = {-}/{}" -> "I (fromList [False]) ?1 (fromList [?3]) :<: ?4";
+ "?1 = {True}/{}" -> "I (fromList [True]) ?1 (fromList [?2]) :<: ?4";
+ "?2 = {+}/{}" -> "I (fromList [True]) ?1 (fromList [?2]) :<: ?4";
+ "?1 = {True}/{}" -> "C (fromList [?1]) :<: ?4"[color=red];
+ "?1 = {True}/{}" -> "I (fromList [False]) ?1 (fromList [?3]) :<: ?4"[color=red];
+ "?3 = {-}/{}" -> "I (fromList [False]) ?1 (fromList [?3]) :<: ?4"[color=red];
+ "?1 = {True}/{}" -> "I (fromList [True]) ?1 (fromList [?2]) :<: ?4"[color=red];
+ "?2 = {+}/{}" -> "I (fromList [True]) ?1 (fromList [?2]) :<: ?4"[color=red];
+ "C (fromList [True]) :<: ?1" -> "?1 = {True}/{}";
+ "C (fromList [-]) :<: ?3" -> "?3 = {-}/{}";
+ "C (fromList [+]) :<: ?2" -> "?2 = {+}/{}";
+ "I (fromList [False]) ?1 (fromList [?3]) :<: ?4" -> "?4 = {+}/{}";
+ "I (fromList [True]) ?1 (fromList [?2]) :<: ?4" -> "?4 = {+}/{}";
+ "C (fromList [?1]) :<: ?4" -> "?4 = {+}/{}"[color=red];
+ "I (fromList [False]) ?1 (fromList [?3]) :<: ?4" -> "?4 = {+}/{}"[color=red];
+ "I (fromList [True]) ?1 (fromList [?2]) :<: ?4" -> "?4 = {+}/{}"[color=red];
+}

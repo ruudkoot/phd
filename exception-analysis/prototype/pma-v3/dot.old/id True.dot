@@ -1,0 +1,20 @@
+digraph C {
+ "?3 = {True}/{}" [fontcolor=blue];
+ "?4 = --/{}" [fontcolor=black];
+ "?5 = {True}/{}" [fontcolor=black];
+ "?5 = {True}/{}" -> "?3 = {True}/{}";
+ "fromList [True]" -> "?5 = {True}/{}";
+ "?5 = {True}/{}" -> "?3 = {True}/{}" [color=red];
+ "?4 = --/{}" -> "?3 = {True}/{}" [color=red];
+ "V ?5 :<: ?3" [style=filled];
+ "C (fromList [True]) :<: ?5" [style=filled];
+ "V ?5 :<: ?3" [style=filled,fillcolor=lightpink];
+ "C (fromList [?4]) :<: ?3" [style=filled,fillcolor=lightpink];
+ "?5 = {True}/{}" -> "V ?5 :<: ?3";
+ "?5 = {True}/{}" -> "V ?5 :<: ?3"[color=red];
+ "?4 = --/{}" -> "C (fromList [?4]) :<: ?3"[color=red];
+ "V ?5 :<: ?3" -> "?3 = {True}/{}";
+ "C (fromList [True]) :<: ?5" -> "?5 = {True}/{}";
+ "V ?5 :<: ?3" -> "?3 = {True}/{}"[color=red];
+ "C (fromList [?4]) :<: ?3" -> "?3 = {True}/{}"[color=red];
+}

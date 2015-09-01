@@ -1,0 +1,38 @@
+digraph C {
+ "?10 = {False}/{}" [fontcolor=black];
+ "?5 = {+}/{}" [fontcolor=blue];
+ "?6 = {False}/{}" [fontcolor=black];
+ "?7 = --/{}" [fontcolor=black];
+ "?8 = --/{}" [fontcolor=black];
+ "?9 = {+}/{}" [fontcolor=black];
+ "?10 = {False}/{}" -> "?6 = {False}/{}";
+ "?9 = {+}/{}" -> "?5 = {+}/{}";
+ "fromList [False]" -> "?10 = {False}/{}";
+ "fromList [+]" -> "?9 = {+}/{}";
+ "?10 = {False}/{}" -> "?6 = {False}/{}" [color=red];
+ "?9 = {+}/{}" -> "?5 = {+}/{}" [color=red];
+ "?7 = --/{}" -> "?5 = {+}/{}" [color=red];
+ "?8 = --/{}" -> "?7 = --/{}" [color=red];
+ "V ?10 :<: ?6" [style=filled];
+ "V ?9 :<: ?5" [style=filled];
+ "C (fromList [False]) :<: ?10" [style=filled];
+ "C (fromList [+]) :<: ?9" [style=filled];
+ "V ?10 :<: ?6" [style=filled,fillcolor=lightpink];
+ "V ?9 :<: ?5" [style=filled,fillcolor=lightpink];
+ "C (fromList [?7]) :<: ?5" [style=filled,fillcolor=lightpink];
+ "C (fromList [?8]) :<: ?7" [style=filled,fillcolor=lightpink];
+ "?10 = {False}/{}" -> "V ?10 :<: ?6";
+ "?9 = {+}/{}" -> "V ?9 :<: ?5";
+ "?10 = {False}/{}" -> "V ?10 :<: ?6"[color=red];
+ "?9 = {+}/{}" -> "V ?9 :<: ?5"[color=red];
+ "?7 = --/{}" -> "C (fromList [?7]) :<: ?5"[color=red];
+ "?8 = --/{}" -> "C (fromList [?8]) :<: ?7"[color=red];
+ "V ?10 :<: ?6" -> "?6 = {False}/{}";
+ "V ?9 :<: ?5" -> "?5 = {+}/{}";
+ "C (fromList [False]) :<: ?10" -> "?10 = {False}/{}";
+ "C (fromList [+]) :<: ?9" -> "?9 = {+}/{}";
+ "V ?10 :<: ?6" -> "?6 = {False}/{}"[color=red];
+ "V ?9 :<: ?5" -> "?5 = {+}/{}"[color=red];
+ "C (fromList [?7]) :<: ?5" -> "?5 = {+}/{}"[color=red];
+ "C (fromList [?8]) :<: ?7" -> "?7 = --/{}"[color=red];
+}

@@ -1,0 +1,22 @@
+digraph C {
+ "?1 = {+}/{}" [fontcolor=black];
+ "?2 = {+}/{}" [fontcolor=black];
+ "?3 = {False,True}/{}" [fontcolor=blue];
+ "fromList [False,True]" -> "?3 = {False,True}/{}";
+ "fromList [+]" -> "?1 = {+}/{}";
+ "fromList [+]" -> "?2 = {+}/{}";
+ "?1 = {+}/{}" -> "?3 = {False,True}/{}" [color=red];
+ "?2 = {+}/{}" -> "?3 = {False,True}/{}" [color=red];
+ "C (fromList [False,True]) :<: ?3" [style=filled];
+ "C (fromList [+]) :<: ?1" [style=filled];
+ "C (fromList [+]) :<: ?2" [style=filled];
+ "V ?1 :<: ?3" [style=filled,fillcolor=lightpink];
+ "V ?2 :<: ?3" [style=filled,fillcolor=lightpink];
+ "?1 = {+}/{}" -> "V ?1 :<: ?3"[color=red];
+ "?2 = {+}/{}" -> "V ?2 :<: ?3"[color=red];
+ "C (fromList [False,True]) :<: ?3" -> "?3 = {False,True}/{}";
+ "C (fromList [+]) :<: ?1" -> "?1 = {+}/{}";
+ "C (fromList [+]) :<: ?2" -> "?2 = {+}/{}";
+ "V ?1 :<: ?3" -> "?3 = {False,True}/{}"[color=red];
+ "V ?2 :<: ?3" -> "?3 = {False,True}/{}"[color=red];
+}

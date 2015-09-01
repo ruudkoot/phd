@@ -1,0 +1,6 @@
+digraph C {
+ "?3 = --/--" [fontcolor=green];
+ "?4 = --/--" [fontcolor=red];
+ "?5 = --/--" [fontcolor=blue];
+ "?6 = --/--" [fontcolor=blue];
+}

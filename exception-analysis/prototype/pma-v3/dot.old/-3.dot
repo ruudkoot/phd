@@ -1,0 +1,6 @@
+digraph C {
+ "?1 = {-}/--" [fontcolor=blue];
+ "fromList [-]" -> "?1 = {-}/--";
+ "C (fromList [-]) :<: ?1" [style=filled];
+ "C (fromList [-]) :<: ?1" -> "?1 = {-}/--";
+}

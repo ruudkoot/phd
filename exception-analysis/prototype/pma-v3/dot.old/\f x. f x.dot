@@ -1,0 +1,20 @@
+digraph C {
+ "?4 = {}/{}" [fontcolor=blue];
+ "?5 = --/{}" [fontcolor=green];
+ "?6 = --/{}" [fontcolor=red];
+ "?7 = {}/{}" [fontcolor=red];
+ "?8 = --/--" [fontcolor=blue];
+ "?9 = --/--" [fontcolor=blue];
+ "?7 = {}/{}" -> "?4 = {}/{}";
+ "?7 = {}/{}" -> "?4 = {}/{}" [color=red];
+ "?6 = --/{}" -> "?5 = --/{}" [color=red];
+ "V ?7 :<: ?4" [style=filled];
+ "V ?7 :<: ?4" [style=filled,fillcolor=lightpink];
+ "C (fromList [?6]) :<: ?5" [style=filled,fillcolor=lightpink];
+ "?7 = {}/{}" -> "V ?7 :<: ?4";
+ "?7 = {}/{}" -> "V ?7 :<: ?4"[color=red];
+ "?6 = --/{}" -> "C (fromList [?6]) :<: ?5"[color=red];
+ "V ?7 :<: ?4" -> "?4 = {}/{}";
+ "V ?7 :<: ?4" -> "?4 = {}/{}"[color=red];
+ "C (fromList [?6]) :<: ?5" -> "?5 = --/{}"[color=red];
+}

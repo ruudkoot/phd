@@ -1,0 +1,8 @@
+digraph C {
+ "?2 = --/--" [fontcolor=red];
+ "?3 = {False}/--" [fontcolor=blue];
+ "?4 = --/--" [fontcolor=blue];
+ "fromList [False]" -> "?3 = {False}/--";
+ "C (fromList [False]) :<: ?3" [style=filled];
+ "C (fromList [False]) :<: ?3" -> "?3 = {False}/--";
+}
