@@ -35,3 +35,5 @@
 *~
 *.o
 *.hi
+higher-ranked-exception-types/prototype/dist/
+higher-ranked-exception-types/documentation/**/*.tex
