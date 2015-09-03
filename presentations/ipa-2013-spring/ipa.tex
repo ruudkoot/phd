@@ -2,6 +2,7 @@
 
 \usepackage{amsfonts}
 \usepackage{amssymb}
+\usepackage{stmaryrd}
 
 \usetheme{Darmstadt}
 
@@ -24,6 +25,7 @@
 \newcommand{\C}[1]{[#1]^{\mathbf{C}}}
 \newcommand{\NC}[1]{[#1]^{\mathbf{N}\sqcup\mathbf{C}}}
 \newcommand{\POLYV}[2]{[#1]^{#2}}
+\newcommand{\tdvd}{\AFun{\left(\AFun{\tauhat}{x_4}{\tauhat}\right)}{x_3}{\left(\AFun{\tauhat}{x_4}{\tauhat}\right)}}
 
 \begin{document}
 
@@ -220,9 +222,9 @@
 	\begin{equation*}
 	%\hspace{-2em}
 		\frac{\frac{\frac{\frac{\frac{\vdots}
-		                             {\Judge[x_1 : \AFun{\left(\AFun{\tauhat}{x_4}{\tauhat}\right)}{x_3}{\AFun{\tauhat}{x_4}{\tauhat}}, x_2 : \AFun{\tauhat}{x_4}{\tauhat}]{\App{x_1}{x_2}}{\tauhat}}}
-		                       {\Judge[x_1 : \AFun{\left(\AFun{\tauhat}{x_4}{\tauhat}\right)}{x_3}{\AFun{\tauhat}{x_4}{\tauhat}}]{\Abs{x_2}{\App{x_1}{x_2}}}{\TFun{\tauhat}{\tauhat}}}}
-		                 {\Judge[]{\Abs{x_1}{\Abs{x_2}{\App{x_1}{x_2}}}}{...}}
+		                             {\Judge[x_1 : \AFun{...}{x_3}{...}, x_2 : \AFun{\tauhat}{x_4}{\tauhat}]{\App{x_1}{x_2}}{\tauhat}}}
+		                       {\Judge[x_1 : \AFun{...}{x_3}{...}]{\Abs{x_2}{\App{x_1}{x_2}}}{\AFun{\left(\AFun{\tauhat}{x_4}{\tauhat}\right)}{x_2}{\AFun{\tauhat}{x_4}{\tauhat}}}}}
+		                 {\Judge[]{\Abs{x_1}{\Abs{x_2}{\App{x_1}{x_2}}}}{\AFun{...}{x_1}{...}}}
 		            %\quad
 		            \frac{\frac{}{\Judge[x_3 : \AFun{\tauhat}{x_4}{\tauhat}]{x_3}{\AFun{\tauhat}{x_4}{\tauhat}}}}
 		                 {\Judge[]{\Abs{x_3}{x_3}}{\AFun{\left(\AFun{\tauhat}{x_4}{\tauhat}\right)}{x_3}{\AFun{\tauhat}{x_4}{\tauhat}}}}}
@@ -342,10 +344,40 @@
 	\end{itemize}
 \end{frame}
 
-\section{Higher-ranked polyvariance}
-
-\begin{frame}{Aap}
-Aap
+\begin{frame}{Conditional constraints}
+	\begin{itemize}
+		\item Exception flow depends on data flow
+		\item (And in case of an \emph{imprecise exception semantics} data flow will depend on exception flow)
+		\item Expressed using conditional constraints / types: \[ \mathbf{N} \sqsubseteq_{\text{D}} \beta_1 \Longrightarrow \lightning_{\text{PMF}} \sqsubseteq_{\text{E}} \beta_2 \]
+		\item Algorithmic complications in combination with polyvariant recursion:
+		\begin{itemize}
+			\item Need to solve the constraint entailment problem
+			\item Dussart, Henglein \& Mossin's method does not seem applicable
+			\item But we can do an additional approximation
+		\end{itemize}
+	\end{itemize}
 \end{frame}
+
+%\section{Higher-ranked polyvariance}
+%
+%\subsection{Future research}
+%
+%\begin{frame}{Problem}
+%	\begin{itemize}
+%		\item When analyzing higher-order functions \emph{prenex polyvariance} cannot always prevent poisoning: \[ \Abs{f}{\ITE{\left(\App{f}{\BTrue}\right)}{\left(\App{f}{\BFalse}\right)}{\BFalse}} \]
+%		\item 
+%	\end{itemize}
+%\end{frame}
+
+\section{}
+
+\begin{frame}
+	\begin{center}
+		Intentionally left blank
+	\end{center}
+\end{frame}
+
+%\begin{frame}{Formal type system}
+%\end{frame}
 
 \end{document}
