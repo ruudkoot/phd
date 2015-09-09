@@ -13,13 +13,13 @@ import Text.Blaze.Html5.Attributes (action, enctype, href, name, size, type_, va
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 
-import qualified Analysis.Names       as An
-import qualified Analysis.Common      as An
-import qualified Analysis.Completion  as An
-import qualified Analysis.Infer       as An
-import qualified Analysis.Infer.Print as An
-import qualified Analysis.Infer.Match as An
-import qualified Analysis.LambdaUnion as LU
+import qualified Analysis.Names          as An
+import qualified Analysis.Common         as An
+import qualified Analysis.Completion     as An
+import qualified Analysis.Infer          as An
+import qualified Analysis.Infer.Print    as An
+import qualified Analysis.Infer.Match    as An
+import qualified Analysis.LambdaUnionOld as LU
 import           Analysis.Print
 
 main :: IO ()

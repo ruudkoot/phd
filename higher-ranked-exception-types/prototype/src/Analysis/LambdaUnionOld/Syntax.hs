@@ -1,4 +1,4 @@
-module Analysis.LambdaUnion.Syntax (
+module Analysis.LambdaUnionOld.Syntax (
     module Analysis.Names,
     Env,
     Sort(..),

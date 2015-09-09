@@ -1,4 +1,4 @@
-module Analysis.LambdaUnion.Reduce (
+module Analysis.LambdaUnionOld.Reduce (
     NormalizeTm(..),
     reduce,
     normalize,
@@ -6,7 +6,7 @@ module Analysis.LambdaUnion.Reduce (
     etaExpand
 ) where
 
-import Analysis.LambdaUnion.Syntax
+import Analysis.LambdaUnionOld.Syntax
 
 -- | Reduction (1-step, top-level)
 

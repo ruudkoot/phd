@@ -32,7 +32,7 @@ module Analysis.Common (
 -- FIXME: make all functions total (and remove dead errors)
 
 import           Analysis.Names
-import qualified Analysis.LambdaUnion as LU
+import qualified Analysis.LambdaUnionOld as LU
 import           Analysis.Print
 
 import Data.List (delete)
