@@ -146,7 +146,7 @@ reconstruct env kenv tm@(Fix e1)
 -- TODO: try alternative method that uses completion+matching instead of
 --       calling reconstruct recursively.
 reconstruct env kenv tm@(FIX x ty e)
-    = do -- METHOD 1 ("bottom-up", unaccelerated)
+    = do -- METHOD 1 ("bottom-up")
          let f t_i exn_i = do
                 let env' = (x, (t_i, exn_i)) : env
                 re@((dt,de,_), ee, ty', exn') <- reconstruct env' kenv e
@@ -167,29 +167,8 @@ reconstruct env kenv tm@(FIX x ty e)
                    ,ReconstructFIX env kenv tm re_w t0 exn0 km) #
                         (FIX' x t_w exn_w ee_w, t_w, exn_w)
          
-         -- METHOD 1' ("bottom-up", accelerated)
-         -- TODO
-         
-         -- METHOD 2 ("top-down", unaccelerated)  -- freshness/non-termination issues?
-         {-
-         co@(dt2_0, t2_0, exn2_0, kenv2_0) <- C.complete [] ty
-
-         let f t_i exn_i = do
-                let env' = (x, (t_i, exn_i)) : env
-                re@((dt,de,_), ee, ty', exn') <- reconstruct env' (kenv2_0 ++ kenv) e
-                return (env', re)
-
-         let kleeneMycroft trace t_i exn_i = do
-                tr@(env_j, re_j@(_, _, t_j, exn_j)) <- f t_i exn_i
-                if exnTyEq (kenv2_0 ++ kenv) t_i t_j && exnEq (kenv2_0 ++ kenv) exn_i exn_j
-                then return (trace, re_j)
-                else kleeneMycroft (trace ++ [tr]) t_j exn_j
-
-         km2@(tr2,re2_w@((dt2_w,de2_w,_),ee2_w,t2_w,exn2_w)) <- kleeneMycroft [] t2_0 exn2_0
-         () <- error $ show t2_w 
-         -}
-         
-         -- METHOD 3 ("top-down", accelerated)
+         -- METHOD 2 ("top-down")
+         -- FIXME: doesn't work yet!
          co@(dt1', t0, ExnVar exn0, kenv1) <- C.complete [] ty
          let env'  = (x, (t0, ExnVar exn0)) : env
          let kenv' = kenv1 ++ kenv
@@ -214,17 +193,18 @@ reconstruct env kenv tm@(FIX x ty e)
                 then return (trace, t_i, exn_i, subst_i)
                 else kleeneMycroft (trace ++ [tr]) t_j exn_j
 
-         km@(_, t_w3, exn_w, subst_w) <- kleeneMycroft [] t0 (ExnVar exn0)
+         km@(_, t_w2, exn_w, subst_w) <- kleeneMycroft [] t0 (ExnVar exn0)
 
          return $ res
-         if exnTyEq kenv' t_w t_w3 then
+         {-
+         if exnTyEq kenv' t_w t_w2 then
             return $ res
          else
             error $
-                "reconstruct_FIX: METHOD 1 and 3 did not give the same result!\n"
+                "reconstruct_FIX: METHOD 1 and 2 did not give the same result!\n"
                 ++ "METHOD 1: " ++ show t_w ++ "\n"
-                ++ "METHOD 3: " ++ show t_w3 ++ " / " ++ show subst_w
-                
+                ++ "METHOD 2: " ++ show t_w2 ++ " / " ++ show subst_w
+         -}
 
 reconstruct env kenv tm@(BinOp e1 e2) {- TODO: comparisons only; add AOp, BOp -}
     = do re1@((dt1,de1,_), ee1, ExnInt, exn1) <- reconstruct env kenv e1
