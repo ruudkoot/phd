@@ -1,0 +1,3 @@
+\newcommand\labell[1]{\label{\currentprefix:#1}}
+\newcommand\refl[1]{\ref{\currentprefix:#1}}
+\newcommand\eqrefl[1]{\eqref{\currentprefix:#1}}
