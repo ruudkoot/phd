@@ -20,7 +20,7 @@ tm2nf (Tm tys tms) = Nf tys (map tm2nf' tms)
   where tm2nf' :: (Either Name Tm, [Tm]) -> (Name, [Nf])
         tm2nf' (Left x, args) = (x, map tm2nf args)
 
--- * rewrite "set" into normal form
+-- * rewrite "set" into normal form 
 setRewrite :: [(Either Name Tm, [Tm])] -> [(Either Name Tm, [Tm])]
 setRewrite as =
     let (ns, ts) = partition (isLeft . fst) as
@@ -42,7 +42,7 @@ setRewrite as =
             | otherwise    = error "combineArgs"                    -- new redices?
 
 -- * reduction of terms to normal form (big-step)
-reduce :: Tm -> Tm  -- FIXME: Tm -> Nf?
+reduce :: Tm -> Tm  -- FIXME: Tm -> Nf? (setRewrite expects Nf!)
 reduce (Tm tys tms) = Tm tys (setRewrite (concatMap reduce' tms))
 
 reduce' :: (Either Name Tm, [Tm]) -> [(Either Name Tm, [Tm])]

@@ -19,7 +19,7 @@ import qualified Analysis.Completion     as An
 import qualified Analysis.Infer          as An
 import qualified Analysis.Infer.Print    as An
 import qualified Analysis.Infer.Match    as An
-import qualified Analysis.LambdaUnionOld as LU
+import qualified Analysis.LambdaUnionOld as LUO
 import           Analysis.Print
 
 main :: IO ()
@@ -106,10 +106,10 @@ lambdaUnion = msum [ viewForm, processForm ] where
     processForm :: ServerPart Response
     processForm = do
         method POST
+        
+        expr :: LUO.Tm () <- read . unpack <$> lookText "expr"
 
-        expr :: LU.Tm () <- read . unpack <$> lookText "expr"
-
-        let (normalizationTree, _) = LU.normalize' expr
+        let (normalizationTree, _) = LUO.normalize' expr
 
         ok $ template "lambda-union" $ do
             H.h2 "Expression"

@@ -37,7 +37,7 @@ data Tm = Tm [Ty] [(Either Name Tm, [Tm])]
     deriving Show
 
 data Nf = Nf [Ty] [(       Name,    [Nf])]
-    deriving Show
+    deriving (Eq, Show)
 
 type Env = [Ty]
 
