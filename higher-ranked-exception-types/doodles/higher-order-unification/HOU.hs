@@ -182,25 +182,39 @@ tm2nf :: Tm' -> Nf'
 tm2nf (Tm' bs (Left x) as) = Nf' bs x (map tm2nf as)
 
 normalize :: Tm' -> Tm'
-normalize (Tm' bs (Left x) as)
-    = Tm' bs (Left x) (map normalize as)
-normalize (Tm' bs (Right (Tm' bs' x as')) as)
-    | length bs' < length as 
-        = error $ "normalize: not eta-long?"
-    | otherwise
-        = let n = length bs - length as
-           in normalize (Tm' bs (bind n as x) (map (normalize . bindR n as) as'))
+normalize (Tm' xs (Left f) ts)
+    = Tm' xs (Left f) (map normalize ts)
+normalize (Tm' xs (Right (Tm' ys f ss)) ts)
+    = let n = length ys
+          q = length ts
+       in if q <= n then    -- FIXME: recurse
+            Tm' (xs ++ drop q ys) (bind (n-q) ts f) (map (bindR (n-q) ts) ss)
+          else
+            error "normalize: not eta-long?"
+
+maxBoundIndex :: [Tm'] -> Idx
+maxBoundIndex ts = maximum (0 : map maxBoundIndex' ts) where
+    maxBoundIndex' (Tm' xs (Left (Bound x)) ts)
+        = max 0 (max x (maxBoundIndex ts) - length xs)
+    maxBoundIndex' (Tm' xs (Left _        ) ts) 
+        = max 0 (maxBoundIndex ts - length xs)
+    maxBoundIndex' (Tm' xs (Right t       ) ts)
+        = max 0 (maxBoundIndex (t:ts) - length xs)
 
 bind :: Int -> [Tm'] -> Either Name Tm' -> Either Name Tm'
-bind n as (Left (Free x)) = Left (Free x)
-bind n as (Left (Con x))  = Left (Con x)
-bind n as (Left (Bound x))
-    | x >= n    = Right (reverse as !! (x - n))
-    | otherwise = Left (Bound (x - length as))
-bind n as (Right tm) = Right (bindR n as tm)
+bind n ts (Left (Free  x)) = Left (Free x)
+bind n ts (Left (Con   x)) = Left (Con  x)
+bind n ts (Left (Bound x))
+    | x >= n + length ts = error "bind: bound outside term"
+    | x >= n             = if maxBoundIndex ts > 0 then
+                             error "bind: bound outside term (in ts)"
+                           else
+                             Right (reverse ts !! (x - n))
+    | otherwise          = Left (Bound x)
+bind n ts (Right t) = Right (bindR n ts t)
 
 bindR :: Int -> [Tm'] -> Tm' -> Tm'
-bindR n ss (Tm' bs x as) = Tm' bs (bind n ss x) (map (bindR n ss) as)
+bindR n ts (Tm' ys f ss) = Tm' ys (bind n ts f) (map (bindR n ts) ss)
 
 substFree :: Idx -> Tm' -> Tm' -> Tm'
 substFree x tm (Tm' bs (Left (Free x')) as) | x == x'
@@ -217,7 +231,7 @@ applySubst (x, nf2tm -> tm') (nf2tm -> tm)
 -- test
 
 nfId = Nf' [base' 0] (Bound 0) []
-tmIdId = Tm' 
+--  tmIdId = Tm' 
 
 
 test1 = applySubst (0, nfId) (Nf' [] (Free 0) [nfId])
