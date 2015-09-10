@@ -6,26 +6,25 @@ There is a good excuse why this feature is missing from the type systems of cont
 
 \begin{description}
 
-    \item [Higher-order functions] The set of exceptions that may be raised by a higher-order function are not given by a fixed set of exceptions, but depends on the set of exceptions that may be raised by the function that is passed as its functional argument.
+    \item [Higher-order functions] The set of exceptions that may be raised by a higher-order function are not given by a fixed set of exceptions, but depends on the set of exceptions that may be raised by the function that is passed as its functional argument. Higher-order functions will thus end up being \emph{exception polymorphic}.
     
-    Higher-order functions will thus end up being \emph{exception polymorphic}.
+    \TODO{concrete example?}
     
-    \TODO{concrete example}
+    \item [Non-strict evaluation] In non-strictly evaluated languages, exception are not a form of control flow, but a kind of value. Typically the set of values of each type are extended with an \emph{exceptional value} $\bot$ (more commonly denoted $\bot$, but we shall not do so for reasons of ambiguity), or family of exceptional values $\bot^\ell$. This means we do not only need to give all functions an exception-annotated function type, but every expression and exception-annotated type.
     
-    \item [Non-strict evaluation] In non-strictly evaluated languages, exception are not a form of control flow, but a kind of value. Typically the set of values of each type are extended with an \emph{exceptional value} $\bot$ (more commonly denoted $\bot$, but we shall not do so for reasons of ambiguity), or family of exceptional values $\bot^\ell$.
-    
-    This means we do not only need to annotate all functions with a set of exceptions, but each expression.
-    
-    \TODO{concrete example}
+    \TODO{concrete example?}
 \end{description}
 
 Take as an example the |map| function:
 \begin{code}
-map  ::  (a -> b) -> [a] -> [b]
-map  =   \f -> \xs -> case xs of
-            []      -> []
-            (y:ys)  -> f y : map f ys
+map  ::  forall alpha beta. (alpha -> beta) -> [alpha] -> [beta]
+map  =   LAMBDA f (LAMBDA xs (case xs of
+                           []      -|> []
+                           (y:ys)  -|> f y : map f ys))
 \end{code}
+
+
+\subsection{Overview}
 
 \subsection{Contributions}
 

@@ -18,6 +18,7 @@
 %include include/definitions.lhs2tex
 %include include/theorems.lhs2tex
 %include include/inference.lhs2tex
+%include include/code.lhs2tex
 %include include/refs.lhs2tex
 
 %include definitions/lambda-union.lhs2tex
