@@ -10,7 +10,7 @@ There is a good excuse why this feature is missing from the type systems of cont
     
     \TODO{concrete example?}
     
-    \item [Non-strict evaluation] In non-strictly evaluated languages, exception are not a form of control flow, but a kind of value. Typically the set of values of each type are extended with an \emph{exceptional value} $\bot$ (more commonly denoted $\bot$, but we shall not do so for reasons of ambiguity), or family of exceptional values $\bot^\ell$. This means we do not only need to give all functions an exception-annotated function type, but every expression and exception-annotated type.
+    \item [Non-strict evaluation] In non-strictly evaluated languages, exception are not a form of control flow, but a kind of value. Typically the set of values of each type are extended with an \emph{exceptional value} $\bot$ (more commonly denoted $\bot$, but we shall not do so for reasons of ambiguity), or family of exceptional values $\bot^\ell$. This means we do not only need to give all functions an exception-annotated function type, but every expression an exception-annotated type.
     
     \TODO{concrete example?}
 \end{description}
@@ -22,6 +22,15 @@ map  =   LAMBDA f (LAMBDA xs (case xs of
                            []      -|> []
                            (y:ys)  -|> f y : map f ys))
 \end{code}
+
+For each type $\tau$, we denote its exception-annotated type by~$\tau\langle\xi\rangle$. For function types we will write $\tau_1\langle\xi_1\rangle \xrightarrow{\xi} \tau_2\langle\xi_2\rangle$ instead of $\left(\tau_1\langle\xi_1\rangle \rightarrow \tau_2\langle\xi_2\rangle\right)\langle\xi\rangle$.
+
+The fully exception-polymorphic and exception-annotated type, or \emph{exception type}, of |map| is given by\ThesisPaper{\TODO{cramped formatting}}{}
+\begin{code}
+forall alpha beta e_1 e_2 e_3 e_4.
+  ThrowsArr ((ThrowsArr (Throws alpha e_1) (Throws beta (e_1 # e_2)) e_3)) (ThrowsArr (Throws ([Throws alpha e_1]) e_4) (Throws ([Throws beta (e_1 # e_2 # e_3)]) e_4) noexn) noexn
+\end{code}
+
 
 
 \subsection{Overview}

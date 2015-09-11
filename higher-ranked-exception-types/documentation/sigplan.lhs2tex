@@ -1,5 +1,15 @@
 \documentclass[preprint,authoryear]{sigplanconf}
 
+% Math Times
+%\usepackage[T1]{fontenc}
+%\usepackage{times}
+%\usepackage[mtbold,mtplusscr,mtpluscal,slantedgreek,T1]{mathtime}
+%\usepackage{bm}
+
+% MTPro2
+%\usepackage[lite,subscriptcorrection,slantedGreek,nofontinfo]{mtpro2}
+\usepackage[lite,subscriptcorrection,slantedGreek,nofontinfo]{mtpro2}
+
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsthm}
@@ -56,9 +66,12 @@
 \title{Higher-ranked Exception Types}
 %\subtitle{Subtitle Text, if any}
 
-\authorinfo{Ruud Koot \and Jurriaan Hage}
+\authorinfo{Ruud Koot}
            {Utrecht University}
-           {\{r.koot,j.hage\}@@uu.nl}
+           {inbox@@ruudkoot.nl}
+\authorinfo{Jurriaan Hage}
+           {Utrecht University}
+           {j.hage@@uu.nl}
 
 \maketitle
 

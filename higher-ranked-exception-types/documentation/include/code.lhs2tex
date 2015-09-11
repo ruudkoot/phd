@@ -65,9 +65,9 @@
 %format chi'_2 = "\chi^\prime_{2}"
 
 %format throws                  = "\mathbf{throws}\xspace"
-%format #                       = "\ \cup\ "
+%format #                       = "\!\cup\!"
 %format Throws (t) (e)          = t "\langle " e " \rangle"
-%format ThrowsArr (t1) (t2) (e) = t1 "\xrightarrow{ " e "}" t2
+%format ThrowsArr (t1) (t2) (e) = t1 "\!\xrightarrow{ " e "}\!" t2
 %format noexn                   = "\emptyset"
 
 %format Set (a) = "\left\{" a "\right\}"

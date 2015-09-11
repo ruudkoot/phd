@@ -2,7 +2,8 @@ higher-ranked-exception-types.pdf: *.lhs2tex definitions/*.lhs2tex include/*.lhs
 	lhs2tex -o higher-ranked-exception-types.tex higher-ranked-exception-types.lhs2tex
 	latexmk -pdf higher-ranked-exception-types.tex
 	lhs2tex -o sigplan.tex sigplan.lhs2tex
-	latexmk -pdf sigplan.tex
+	pdflatex sigplan.tex > /dev/null
+	pdflatex sigplan.tex > /dev/null
 	evince higher-ranked-exception-types.pdf sigplan.pdf
 
 *.lhs2tex:
