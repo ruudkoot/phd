@@ -9,6 +9,7 @@
 % MTPro2
 %\usepackage[lite,subscriptcorrection,slantedGreek,nofontinfo]{mtpro2}
 \usepackage[lite,subscriptcorrection,slantedGreek,nofontinfo]{mtpro2}
+% slantedGreek..?
 
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -19,7 +20,7 @@
 
 \newcommand{\ThesisPaper}[2]{#2}
 
-\def\labelitemi{--}
+%\def\labelitemi{--}
 
 %include polycode.fmt
 %include forall.fmt

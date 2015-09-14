@@ -23,17 +23,44 @@ map  =   LAMBDA f (LAMBDA xs (case xs of
                            (y:ys)  -|> f y : map f ys))
 \end{code}
 
-For each type $\tau$, we denote its exception-annotated type by~$\tau\langle\xi\rangle$. For function types we will write $\tau_1\langle\xi_1\rangle \xrightarrow{\xi} \tau_2\langle\xi_2\rangle$ instead of $\left(\tau_1\langle\xi_1\rangle \rightarrow \tau_2\langle\xi_2\rangle\right)\langle\xi\rangle$.
+For each type $\tau$, we denote its exception-annotated type by~$\tau\langle\xi\rangle$. For function types we will write $\tau_1\langle\xi_1\rangle \xrightarrow{\xi} \tau_2\langle\xi_2\rangle$ instead of $\left(\tau_1\langle\xi_1\rangle \rightarrow \tau_2\langle\xi_2\rangle\right)\langle\xi\rangle$. If $\xi$ is the empty exception set, then we will omit it completely.
 
-The fully exception-polymorphic and exception-annotated type, or \emph{exception type}, of |map| is given by\ThesisPaper{\TODO{cramped formatting}}{}
+The fully exception-polymorphic and exception-annotated type, or \emph{exception type}, of |map| is\ThesisPaper{\TODO{cramped formatting}}{}
 \begin{code}
-forall alpha beta e_1 e_2 e_3 e_4.
-  ThrowsArr ((ThrowsArr (Throws alpha e_1) (Throws beta (e_1 # e_2)) e_3)) (ThrowsArr (Throws ([Throws alpha e_1]) e_4) (Throws ([Throws beta (e_1 # e_2 # e_3)]) e_4) noexn) noexn
+forall alpha beta e_2 e_3. (forall e_1. ThrowsArr (Throws alpha e_1) (Throws beta (e_2 e_1)) (e_3))
+                                           -> (forall e_4 e_5. Throws ([Throws alpha e_4]) e_5 -> Throws ([Throws beta (e_2 e_4 # e_3)]) e_5)
 \end{code}
 
+\TODO{Why not |ThrowsArr (Throws alpha e_1) (Throws beta (e_2)) e_3|?!} Give some examples why higher-rankedness is needed. The example on the poster/|map| isn't sufficient. Postpone to a later section?
 
+The exception type of the first argument |forall e_1. ThrowsArr (Throws alpha e_1) (Throws beta (e_2 e_1)) (e_3)| states that it can be instantiated with a function that accepts any exceptional value as its argument (as the exception set |e_1| is universally quantified) and returns a possibly exceptional value. In case the return value is exceptional, then it will be one from the exception set |e_2 e_1|. Here |e_2| is an \emph{exception operator}, a function that takes an exception set, in this case and transforms it into another exception set, for example by adding a number of new elements to it, or discarding it and returning the empty set. Furthermore, the function itself may be an exceptional value from the exception set |e_3|.
+
+The exception type of the second argument |Throws ([Throws alpha e_4]) e_5| states it should be a list. Any of the elements in the lists may be exception values from the exception set |e_4|. Any of the constructors that form the spine of the list mat be exceptional values from the exception set |e_5|.
+
+The result of |map| will be a list with the exception type |Throws ([Throws beta (e_2 e_4 # e_3)]) e_5|. Any constructors in the spine of this list may be exceptional values from the exception set |e_5|, the same exception set as where exceptional values in the spine of the input list could come from. By looking at the definition of |map| we can see why this is the case: |map| will only produce non-exceptional constructors, but the pattern-match on the input list will propagate any exceptional values encountered there. The elements of the list are produced by the function application |f y|. Recall that |f| has the exception type |forall e_1. ThrowsArr (Throws alpha e_1) (Throws beta (e_2 e_1)) (e_3)|. Now one of two things can happen:
+    \begin{enumerate}
+
+        \item If |f| is an exceptional function value, then it must be one from the exception set |e_3|. Applying an argument to an exceptional value will cause the exceptional value to be propagated.
+        
+        \item Otherwise |f| is a non-exceptional value. The argument |y| has exception type |Throws alpha e_4|---it is an element from the input list---and so can only be applied to |f| if we instantiate |e_1| to |e_4| first. If |f y| will produce an exceptional value it will thus be on from the exception set |e_2 e_4|.
+        
+    \end{enumerate}
+To account for both cases we need to take the union of the two exception sets, giving us a value with the exception type \mbox{|Throws beta (e_2 e_4 # e_3)|}.
+
+The get a better feeling of how these exception type and exception operators behave let us see what happens when we apply two different functions to |map|: the identity function |id| and the constant exceptional values |const bottom_E|. These two functions can be given the exception types:
+    \begin{code}
+                    id              : forall e_1. ThrowsArr (Throws alpha e_1) (Throws alpha e_1) noexn
+                    const bottom_E  : forall e_1. ThrowsArr (Throws alpha e_1) (Throws beta e_E) noexn
+    \end{code}
+The term |id| simply propagates its input, so it will also propagate any exceptional values. The term |const bottom_E| discards it input and will always return the exceptional value |bottom_E|. This behavior is also reflected in their exception types.
+
+If we apply |map| to |id| we need to unify the exception type of the formal parameter |forall e_1. ThrowsArr (Throws alpha e_1) (Throws beta (e_2 e_1)) (e_3)| with the exception type of the actual parameter |forall e_1. ThrowsArr (Throws alpha e_1) (Throws alpha e_1) noexn|.
 
 \subsection{Overview}
+
+\LORUMIPSUM
+
+\LORUMIPSUM
 
 \subsection{Contributions}
 
