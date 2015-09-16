@@ -1,5 +1,7 @@
 \section{The $\LambdaUnion$-calculus}
 
+The $\LambdaUnion$-calculus is simply typed $\lambda$-calculus extended with a set-union operator and singleton-set and empty-set constants at the term level.
+
 \paragraph{Types}
 
 \begin{align}
@@ -18,11 +20,6 @@
                          &&||  \quad &\LuUnion{\LuTm_1}{\LuTm_2} \tag{union}
 \end{align}
 
-\paragraph{Values}
-
-Values $\LuVal$ are terms of the form \[ \LuAbs{\LuVar_1}{\LuTy_1}{\cdots\LuAbs{\LuVar_i}{\LuTy_i}{\LuUnion{\LuCon[\LuCON_1]}{(
-\LuUnion{\cdots}{(\LuUnion{\LuCon[\LuCON_j]}{(\LuUnion{\LuApp{\LuVar_1}{\LuVal_{11}\cdots\LuVal_{1m}}}{(\LuUnion{\cdots}{\LuApp{x_k}{v_{k1} \cdots v_{kn}}})})})})}}} \]
-
 \paragraph{Environments}
 
 \begin{align*}
@@ -30,6 +27,8 @@ Values $\LuVal$ are terms of the form \[ \LuAbs{\LuVar_1}{\LuTy_1}{\cdots\LuAbs{
 \end{align*}
 
 \subsection{Typing relation}
+
+The typing relation of the $\LambdaUnion$-calculus is an extension of the simply types $\lambda$-calculus' typing relation.
 
 \begin{gather*}
     \Rule{T-Var}
@@ -39,7 +38,7 @@ Values $\LuVal$ are terms of the form \[ \LuAbs{\LuVar_1}{\LuTy_1}{\cdots\LuAbs{
     \Rule{T-Abs}
          {\JudgeLuTy[\LuEnv, \LuVar : \LuTy_1]{\LuTm}{\LuTy_2}}
          {\JudgeLuTy{\LuAbs{\LuVar}{\LuTy_1}{\LuTm}}{\LuArr{\LuTy_1}{\LuTy_2}}}
-    \quad
+    \\\\
     \Rule{T-App}
          {\JudgeLuTy{\LuTm_1}{\LuArr{\LuTy_1}{\LuTy_2}} \quad \JudgeLuTy{\LuTm_2}{\LuTy_1}}
          {\JudgeLuTy{\LuApp{\LuTm_1}{\LuTm_2}}{\LuTy_2}}
@@ -51,86 +50,31 @@ Values $\LuVal$ are terms of the form \[ \LuAbs{\LuVar_1}{\LuTy_1}{\cdots\LuAbs{
     \Rule{T-Con}
          {}
          {\JudgeLuTy{\LuCon}{\LuBase}}
-    \quad
+    \\\\
     \Rule{T-Union}
          {\JudgeLuTy{\LuTm_1}{\LuTy} \quad \JudgeLuTy{\LuTm_2}{\LuTy}}
          {\JudgeLuTy{\LuUnion{\LuTm_1}{\LuTm_2}}{\LuTy}}
 \end{gather*}
 
+The empty-set and singleton-set constants are of base type and we cab inly take the set-union of two terms if they have the same type.
+
 \subsection{Semantics}
 
-\subsection{Reduction relation}
+\TODO
 
-\begin{itemize}
+\subsection{Normalization}
+\TODOX{Do we \emph{need} to distribute unions over applications? Is a performace optimization? Do we lose any precision? If not, because terms can't inspect their arguments?}
 
-    \item \TODO\ Do not match the rules in the prototype (those are sensitive to the order in which they are tried).
-    
-    \item \TODO\ In the second rule only one term is applied; contrast this with the other rules involing applications.
-    
-    \item \TODO\ Should make use of the fact the everything is fully applied (and $\eta$-expanded/-long?): all atoms are of the form $k\ \overline{t_i}$, where $k$ is $c$ or $x$ and the number of arguments fixed by the arity of $k$. Then try to factor out the commutativity rules by taking ``sets'' of these atoms. That might simplify stuff a whole lot...
-    
-    \item \TODO\ Can we restrict the typing rule T-Union to only allow sets and not functions on both sides? This would remove the 2nd and 3rd rewrite rules and make the system a more traditional higher-order rewrite system: it's ``just'' higher-order pattern E-unification (decidable), boolean rings are easy to integrate, and higher-ranked dimension types becomes higher-order E-unification (semi-decidable). Open question: how to represent e.g. $U(e_2(e_1), e_1) = \left[e_2\mapsto \lambda e_1. e_1\right]$ without abstractions? (Reinterpret $e_1$ as $f(e_1)$ with $f = id$?)
-    
-\end{itemize}
+To reduce $\LambdaUnion$-terms to a normal form we combine the $\beta$-reduction rule of the simply typed $\lambda$-calculus with rewrite rules that deal with the associativity, commutativity, idempotence and identity (ACI1) properties of set-union operator.
 
-\begin{definition}
-    Let $\LuOrder{}{}$ be a strict total order on $\ClassLuCon \cup \ClassLuVar$, with $\LuOrder{\LuCON}{\LuVar}$ for all $\LuCON \in \ClassLuCon$ and $\LuVar \in \ClassLuVar$.
-\end{definition}
+If a term $t$ is $\eta$-long it can be written in the form
+\begin{align*}
+    t = \lambda x_1 \cdots x_n. \{ f_1(t_{11}, ..., t_{1q_1}), ..., f_p(t_{p1}, ..., t_{pq_p}) \}
+\end{align*}
+where $f_i$ can be a free or bound variable, a singleton-set constant, or another $\eta$-long term; and $q_i$ is equal to the arity of $f_i$ (for all $1 \leq i \leq p$). The notation $\{ f_1(t_{11}, ..., t_{1q_1}), ..., f_p(t_{p1}, ..., t_{pq_p}) \}$ is a shorthand for $f_1(t_{11}, ..., t_{1q_1}) \cup \cdots \cup f_p(t_{p1}, ..., t_{pq_p}) \}$, where we forget the associativity of the set-union operator and any empty-set constants. Note that despite the suggestive notation, this is not a true set, as there may still be duplicate elements $f_i(t_{i1}, ..., t_{iq_i})$.
 
-\begin{align}
-    {\LuApp{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_1}\right)}{\LuTm_2}} &\REDUCE {\Subst{\LuTm_2}{\LuVar}{\LuTm_1}} \tag{$\beta$-reduction} \\
-    \begin{split}
-    {\LuApp{\left(\LuUnion{\LuTm_1}{\LuTm_2}\right)}{\LuTm_3}} &\REDUCE {\LuUnion{\LuApp{\LuTm_1}{\LuTm_3}}{\LuApp{\LuTm_2}{\LuTm_3}}} \\
-    {\LuUnion{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_1}\right)}{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_2}\right)}}
-        &\REDUCE {\LuAbs{\LuVar}{\LuTy}{\left(\LuUnion{\LuTm_1}{\LuTm_2}\right)}} \\
-    {\LuUnion{\LuAPPLIED}{\LuAPPLIED[']}}
-        &\REDUCE {\LuVar\ \left(\LuUnion{\LuTm_1}{\LuTm_1'}\right) \cdots \left(\LuUnion{\LuTm_n}{\LuTm_n'}\right)}
-    \end{split} \tag{congruences} \\
-    {\LuUnion{\left(\LuUnion{\LuTm_1}{\LuTm_2}\right)}{\LuTm_3}}
-        &\REDUCE {\LuUnion{\LuTm_1}{\left(\LuUnion{\LuTm_2}{\LuTm_3}\right)}} \tag{associativity} \\
-    \begin{split}
-    {\LuUnion{\LuEmpty}{\LuTm}} &\REDUCE {\LuTm} \\
-    {\LuUnion{\LuTm}{\LuEmpty}} &\REDUCE {\LuTm}
-    \end{split} \tag{unit} \\
-    \begin{split}
-    {\LuUnion{\LuVar}{\LuVar}} &\REDUCE {\LuVar} \\
-    {\LuUnion{\LuVar}{\left(\LuUnion{\LuVar}{\LuTm}}\right)} &\REDUCE {\LuUnion{\LuVar}{\LuTm}} \\
-    {\LuUnion{\LuCon}{\LuCon}} &\REDUCE {\LuCon} \\
-    {\LuUnion{\LuCon}{\left(\LuUnion{\LuCon}{\LuTm}\right)}} &\REDUCE {\LuUnion{\LuCon}{\LuTm}}
-    \end{split} \tag{idempotence} \\
-    %\begin{split}
-    {\LuUnion{\LuAPPLIED}{\LuCon}} &\REDUCE {\LuUnion{\LuCon}{\LuAPPLIED}} \\
-    {\LuUnion{\LuAPPLIED}{\left(\LuUnion{\LuCon}{\LuTm}\right)}} &\REDUCE {\LuUnion{\LuCon}{\left(\LuUnion{\LuAPPLIED}{\LuTm}\right)}} \\
-    {\LuUnion{\LuAPPLIED}{\LuAPPLIED[']}} &\REDUCE {\LuUnion{\LuAPPLIED[']}{\LuAPPLIED}} &&\text{if $\LuOrder{\LuVar'}{\LuVar}$}\quad\quad\quad\quad \\
-    {\LuUnion{\LuAPPLIED}{\left(\LuUnion{\LuAPPLIED[']}{\LuTm}\right)}} &\REDUCE {\LuUnion{\LuAPPLIED[']}{\left(\LuUnion{\LuAPPLIED}{\LuTm}\right)}} &&\text{if $\LuOrder{\LuVar'}{\LuVar}$} \\
-    {\LuUnion{\LuCon}{\LuCon[\LuCON']}} &\REDUCE {\LuUnion{\LuCon[\LuCON']}{\LuCon}} &&\text{if $\LuOrder{\LuCON'}{\LuCON}$} \\
-    {\LuUnion{\LuCon}{\left(\LuUnion{\LuCon[\LuCON']}{\LuTm}\right)}} &\REDUCE {\LuUnion{\LuCon[\LuCON']}{\left(\LuUnion{\LuCon}{\LuTm}\right)}} &&\text{if $\LuOrder{\LuCON'}{\LuCON}$}
-    %\end{split} \tag{commutativity}
-\end{align}
-
-\begin{conjecture}
-    The reduction relation $\Reduce{}{}$ preserves meaning.
-\end{conjecture}
-
-\begin{conjecture}
-    The reduction relation $\Reduce{}{}$ is strongly normalizing.
-\end{conjecture}
-
-\begin{conjecture}
-    The reduction relation $\Reduce{}{}$ is locally confluent.
-\end{conjecture}
-
-\begin{corollary}
-    The reduction relation $\Reduce{}{}$ is confluent.
-\end{corollary}
-\begin{proof}
-    Follows from SN, LC and Newman's Lemma.
-\end{proof}
-
-\begin{corollary}
-    The $\LambdaUnion$-calculus has unique normal forms.
-\end{corollary}
-
-\begin{corollary}
-    Equality of $\LambdaUnion$-terms can be decided by normalization.
-\end{corollary}
+A normal form $v$ of a term $t$ can be written as
+\begin{align*}
+    v = \lambda x_1 \cdots x_n. \{ k_1(v_{11}, ..., v_{1q_1}), ..., k_p(v_{p1}, ..., v_{pq_p}) \}
+\end{align*}
+where $k_i$ can be a free or bound variable, or a singleton-set constant, but not a term as this would form a $\beta$-redex.\footnote{Technically, terms that bind at least one variable would form a $\beta$-redex. Terms that do not bind any variables do not occur either as they merely form a subsequence of $k_1(v_{11}, ..., v_{1q_1}), ..., k_p(v_{p1}, ..., v_{pq_p})$ in this notation.}

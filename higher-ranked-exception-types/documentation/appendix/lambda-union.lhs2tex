@@ -1,0 +1,84 @@
+\section{$\LambdaUnion$-calculus}
+
+\paragraph{Values}
+
+Values $\LuVal$ are terms of the form \[ \LuAbs{\LuVar_1}{\LuTy_1}{\cdots\LuAbs{\LuVar_i}{\LuTy_i}{\LuUnion{\LuCon[\LuCON_1]}{(
+\LuUnion{\cdots}{(\LuUnion{\LuCon[\LuCON_j]}{(\LuUnion{\LuApp{\LuVar_1}{\LuVal_{11}\cdots\LuVal_{1m}}}{(\LuUnion{\cdots}{\LuApp{x_k}{v_{k1} \cdots v_{kn}}})})})})}}} \]
+
+\subsection{Reduction relation}
+
+
+
+\begin{itemize}
+
+    \item \TODO\ Do not match the rules in the prototype (those are sensitive to the order in which they are tried).
+    
+    \item \TODO\ In the second rule only one term is applied; contrast this with the other rules involing applications.
+    
+    \item \TODO\ Should make use of the fact the everything is fully applied (and $\eta$-expanded/-long?): all atoms are of the form $k\ \overline{t_i}$, where $k$ is $c$ or $x$ and the number of arguments fixed by the arity of $k$. Then try to factor out the commutativity rules by taking ``sets'' of these atoms. That might simplify stuff a whole lot...
+    
+    \item \TODO\ Can we restrict the typing rule T-Union to only allow sets and not functions on both sides? This would remove the 2nd and 3rd rewrite rules and make the system a more traditional higher-order rewrite system: it's ``just'' higher-order pattern E-unification (decidable), boolean rings are easy to integrate, and higher-ranked dimension types becomes higher-order E-unification (semi-decidable). Open question: how to represent e.g. $U(e_2(e_1), e_1) = \left[e_2\mapsto \lambda e_1. e_1\right]$ without abstractions? (Reinterpret $e_1$ as $f(e_1)$ with $f = id$?)
+    
+\end{itemize}
+
+\begin{definition}
+    Let $\LuOrder{}{}$ be a strict total order on $\ClassLuCon \cup \ClassLuVar$, with $\LuOrder{\LuCON}{\LuVar}$ for all $\LuCON \in \ClassLuCon$ and $\LuVar \in \ClassLuVar$.
+\end{definition}
+
+\begin{align}
+    {\LuApp{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_1}\right)}{\LuTm_2}} &\REDUCE {\Subst{\LuTm_2}{\LuVar}{\LuTm_1}} \tag{$\beta$-reduction} \\
+    \begin{split}
+    {\LuApp{\left(\LuUnion{\LuTm_1}{\LuTm_2}\right)}{\LuTm_3}} &\REDUCE {\LuUnion{\LuApp{\LuTm_1}{\LuTm_3}}{\LuApp{\LuTm_2}{\LuTm_3}}} \\
+    {\LuUnion{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_1}\right)}{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_2}\right)}}
+        &\REDUCE {\LuAbs{\LuVar}{\LuTy}{\left(\LuUnion{\LuTm_1}{\LuTm_2}\right)}} \\
+    {\LuUnion{\LuAPPLIED}{\LuAPPLIED[']}}
+        &\REDUCE {\LuVar\ \left(\LuUnion{\LuTm_1}{\LuTm_1'}\right) \cdots \left(\LuUnion{\LuTm_n}{\LuTm_n'}\right)}
+    \end{split} \tag{congruences} \\
+    {\LuUnion{\left(\LuUnion{\LuTm_1}{\LuTm_2}\right)}{\LuTm_3}}
+        &\REDUCE {\LuUnion{\LuTm_1}{\left(\LuUnion{\LuTm_2}{\LuTm_3}\right)}} \tag{associativity} \\
+    \begin{split}
+    {\LuUnion{\LuEmpty}{\LuTm}} &\REDUCE {\LuTm} \\
+    {\LuUnion{\LuTm}{\LuEmpty}} &\REDUCE {\LuTm}
+    \end{split} \tag{unit} \\
+    \begin{split}
+    {\LuUnion{\LuVar}{\LuVar}} &\REDUCE {\LuVar} \\
+    {\LuUnion{\LuVar}{\left(\LuUnion{\LuVar}{\LuTm}}\right)} &\REDUCE {\LuUnion{\LuVar}{\LuTm}} \\
+    {\LuUnion{\LuCon}{\LuCon}} &\REDUCE {\LuCon} \\
+    {\LuUnion{\LuCon}{\left(\LuUnion{\LuCon}{\LuTm}\right)}} &\REDUCE {\LuUnion{\LuCon}{\LuTm}}
+    \end{split} \tag{idempotence} \\
+    %\begin{split}
+    {\LuUnion{\LuAPPLIED}{\LuCon}} &\REDUCE {\LuUnion{\LuCon}{\LuAPPLIED}} \\
+    {\LuUnion{\LuAPPLIED}{\left(\LuUnion{\LuCon}{\LuTm}\right)}} &\REDUCE {\LuUnion{\LuCon}{\left(\LuUnion{\LuAPPLIED}{\LuTm}\right)}} \\
+    {\LuUnion{\LuAPPLIED}{\LuAPPLIED[']}} &\REDUCE {\LuUnion{\LuAPPLIED[']}{\LuAPPLIED}} &&\text{if $\LuOrder{\LuVar'}{\LuVar}$}\quad\quad\quad\quad \\
+    {\LuUnion{\LuAPPLIED}{\left(\LuUnion{\LuAPPLIED[']}{\LuTm}\right)}} &\REDUCE {\LuUnion{\LuAPPLIED[']}{\left(\LuUnion{\LuAPPLIED}{\LuTm}\right)}} &&\text{if $\LuOrder{\LuVar'}{\LuVar}$} \\
+    {\LuUnion{\LuCon}{\LuCon[\LuCON']}} &\REDUCE {\LuUnion{\LuCon[\LuCON']}{\LuCon}} &&\text{if $\LuOrder{\LuCON'}{\LuCON}$} \\
+    {\LuUnion{\LuCon}{\left(\LuUnion{\LuCon[\LuCON']}{\LuTm}\right)}} &\REDUCE {\LuUnion{\LuCon[\LuCON']}{\left(\LuUnion{\LuCon}{\LuTm}\right)}} &&\text{if $\LuOrder{\LuCON'}{\LuCON}$}
+    %\end{split} \tag{commutativity}
+\end{align}
+
+\begin{conjecture}
+    The reduction relation $\Reduce{}{}$ preserves meaning.
+\end{conjecture}
+
+\begin{conjecture}
+    The reduction relation $\Reduce{}{}$ is strongly normalizing.
+\end{conjecture}
+
+\begin{conjecture}
+    The reduction relation $\Reduce{}{}$ is locally confluent.
+\end{conjecture}
+
+\begin{corollary}
+    The reduction relation $\Reduce{}{}$ is confluent.
+\end{corollary}
+\begin{proof}
+    Follows from SN, LC and Newman's Lemma.
+\end{proof}
+
+\begin{corollary}
+    The $\LambdaUnion$-calculus has unique normal forms.
+\end{corollary}
+
+\begin{corollary}
+    Equality of $\LambdaUnion$-terms can be decided by normalization.
+\end{corollary}

@@ -80,4 +80,8 @@
 %include theorem/termination.lhs2tex
 %include proof/termination.lhs2tex
 
+\appendix
+
+%include appendix/lambda-union.lhs2tex
+
 \end{document}

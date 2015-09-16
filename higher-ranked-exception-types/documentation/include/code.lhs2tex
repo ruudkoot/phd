@@ -79,3 +79,5 @@
 %format DenoteEnv (t) (e) = "\llbracket " t "\rrbracket_{" e "}"
 
 %format ApplySubst (s) (t) = s "{}" t
+
+%format ... = "\cdots "
