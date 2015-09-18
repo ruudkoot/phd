@@ -1,4 +1,4 @@
-\documentclass[preprint,authoryear]{sigplanconf}
+\documentclass[authoryear]{sigplanconf}
 
 % Math Times
 %\usepackage[T1]{fontenc}
@@ -64,7 +64,7 @@
 \titlebanner{banner above paper title}        % These are ignored unless
 \preprintfooter{short description of paper}   % 'preprint' option specified.
 
-\title{Higher-ranked Exception Types}
+\title{Higher-ranked Exception Types\titlenote{This material is based upon work supported by the Netherlands Organisation for Scientific Research (NWO) under the project \emph{Higher-ranked Polyvariance Explored} (612.001.120).}}
 %\subtitle{Subtitle Text, if any}
 
 \authorinfo{Ruud Koot}

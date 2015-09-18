@@ -77,4 +77,38 @@ A normal form $v$ of a term $t$ can be written as
 \begin{align*}
     v = \lambda x_1 \cdots x_n. \{ k_1(v_{11}, ..., v_{1q_1}), ..., k_p(v_{p1}, ..., v_{pq_p}) \}
 \end{align*}
-where $k_i$ can be a free or bound variable, or a singleton-set constant, but not a term as this would form a $\beta$-redex.\footnote{Technically, terms that bind at least one variable would form a $\beta$-redex. Terms that do not bind any variables do not occur either as they merely form a subsequence of $k_1(v_{11}, ..., v_{1q_1}), ..., k_p(v_{p1}, ..., v_{pq_p})$ in this notation.}
+where $k_i$ can be a free or bound variable, or a singleton-set constant, but not a term as this would form a $\beta$-redex.\footnote{Technically, terms that bind at least one variable would form a $\beta$-redex. Terms that do not bind any variables do not occur either as they merely form a subsequence of $k_1(v_{11}, ..., v_{1q_1}), ..., k_p(v_{p1}, ..., v_{pq_p})$ in this notation.} For each $k_i, k_j$ with $i < j$ we must also have that $k_i < k_j$ for some total order on $\ClassVar \cup \ClassCon$. Not only does this imply that each term $k_i(v_{i1}, ..., v_{iq_i})$ occurs only once in $k_1(v_{11}, ..., v_{1q_1}), ..., k_p(v_{p1}, ..., v_{pq_p})$, but also the stronger condition that $k_i \neq k_j$ for all $i\neq j$.
+
+%format reduce  (t)    = "\llfloor " t "\rrfloor "
+%format reduce' (t)    = "\lfloor " t "\rfloor "
+%format setRewrite (t) = "\Lbag " t "\Rbag "
+%format ClassNf        = "\mathbf{Nf}"
+%format x_1n           = " x_1 \cdots x_n"
+%format y_1q           = " y_1 \cdots y_q"
+%format atom           = "f_i(t_{i1}, ..., t_{iq_i})"
+%format atomReduce     = "f_i(\llfloor t_{i1} \rrfloor, ..., \llfloor t_{iq_i} \rrfloor)"
+%format atomStuck      = "k(v_{1}, ..., v_{q})"
+%format unionize       = "\bigcup"
+\begin{figure}
+\begin{code}
+-- normalization of terms
+reduce : ClassTm -> ClassNf
+reduce (LAMBDA x_1n T) =
+    LAMBDA x_1n (setRewrite ({ reduce' atomReduce | atom `elem` T }))
+
+-- $\beta$-reduction
+reduce' (atomStuck)
+    = atomStuck
+reduce' ((LAMBDA y_1q T)(v_1, ..., v_q))
+    = SUBST x y z
+    
+-- set-rewriting
+setRewrite ({ ..., k_i(...), ..., k_j(...), ...})
+    | k_j < k_i = setRewrite ({ ..., k_i(...), ..., k_j(...), ...})
+setRewrite ({ ..., k(...), k(...), ...})
+    = setRewrite ({ ..., k(...), ...})
+setRewrite T
+    = T
+\end{code}
+\caption{Normalization algorithm for $\LambdaUnion$-terms.}
+\end{figure}
