@@ -1,4 +1,4 @@
-\documentclass[b5paper]{article}
+\documentclass[b5paper]{book}
 %\documentclass[serif,professionalfont]{beamer}
 
 %\usepackage{fullpage}                  % FIXME: geometry
@@ -14,6 +14,8 @@
 \usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
 
 \newcommand{\ThesisPaper}[2]{#1}
+
+\allowdisplaybreaks[1]                  % BAD IDEA?!
 
 \def\labelitemi{--}
 
@@ -39,11 +41,18 @@
 \author{Ruud Koot}
 \maketitle
 
+\tableofcontents
+\listoffigures
+%\listoftables
+
+\chapter{Higher-ranked Exception Types}
+
 %include section/motivation.lhs2tex
 %include section/lambda-union.lhs2tex
+%include section/source-language.lhs2tex
+%include section/exception-type-system.lhs2tex
 %include section/completion.lhs2tex
-%include section/type-system.lhs2tex
-%include section/operational-semantics.lhs2tex
+%include section/type-inference.lhs2tex
 %include section/interesting-observations.lhs2tex
 
 \section{Metatheory}
@@ -81,6 +90,7 @@
 %include proof/termination.lhs2tex
 
 \appendix
+\chapter{Old stuff}
 
 %include appendix/lambda-union.lhs2tex
 

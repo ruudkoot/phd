@@ -2,6 +2,7 @@
 
 The $\LambdaUnion$-calculus is simply typed $\lambda$-calculus extended with a set-union operator and singleton-set and empty-set constants at the term level.
 
+\begin{figure}[h]
 \paragraph{Types}
 
 \begin{align}
@@ -25,11 +26,14 @@ The $\LambdaUnion$-calculus is simply typed $\lambda$-calculus extended with a s
 \begin{align*}
     \LuEnv \in \ClassLuEnv ::= \quad \EmptyEnv \quad || \quad \LuEnv, \LuVar : \LuTy
 \end{align*}
+\caption{$\LambdaUnion$-calculus: syntax}
+\end{figure}
 
 \subsection{Typing relation}
 
 The typing relation of the $\LambdaUnion$-calculus is an extension of the simply types $\lambda$-calculus' typing relation.
 
+\begin{figure}[h]
 \begin{gather*}
     \Rule{T-Var}
          {}
@@ -55,6 +59,8 @@ The typing relation of the $\LambdaUnion$-calculus is an extension of the simply
          {\JudgeLuTy{\LuTm_1}{\LuTy} \quad \JudgeLuTy{\LuTm_2}{\LuTy}}
          {\JudgeLuTy{\LuUnion{\LuTm_1}{\LuTm_2}}{\LuTy}}
 \end{gather*}
+\caption{$\LambdaUnion$-calculus: type system}
+\end{figure}
 
 The empty-set and singleton-set constants are of base type and we cab inly take the set-union of two terms if they have the same type.
 
@@ -77,7 +83,7 @@ A normal form $v$ of a term $t$ can be written as
 \begin{align*}
     v = \lambda x_1 \cdots x_n. \{ k_1(v_{11}, ..., v_{1q_1}), ..., k_p(v_{p1}, ..., v_{pq_p}) \}
 \end{align*}
-where $k_i$ can be a free or bound variable, or a singleton-set constant, but not a term as this would form a $\beta$-redex.\footnote{Technically, terms that bind at least one variable would form a $\beta$-redex. Terms that do not bind any variables do not occur either as they merely form a subsequence of $k_1(v_{11}, ..., v_{1q_1}), ..., k_p(v_{p1}, ..., v_{pq_p})$ in this notation.} For each $k_i, k_j$ with $i < j$ we must also have that $k_i < k_j$ for some total order on $\ClassVar \cup \ClassCon$. Not only does this imply that each term $k_i(v_{i1}, ..., v_{iq_i})$ occurs only once in $k_1(v_{11}, ..., v_{1q_1}), ..., k_p(v_{p1}, ..., v_{pq_p})$, but also the stronger condition that $k_i \neq k_j$ for all $i\neq j$.
+where $k_i$ can be a free or bound variable, or a singleton-set constant, but not a term as this would form a $\beta$-redex.\footnote{Technically, terms that bind at least one variable would form a $\beta$-redex. Terms that do not bind any variables do not occur either as they merely form a subsequence of $k_1(v_{11}, ..., v_{1q_1}), ..., k_p(v_{p1}, ..., v_{pq_p})$ in this notation.} For each $k_i, k_j$ with $i < j$ we must also have that $k_i < k_j$ for some total order on $\ClassVar \cup \ClassCon$. Not only does this imply that each ter      m $k_i(v_{i1}, ..., v_{iq_i})$ occurs only once in $k_1(v_{11}, ..., v_{1q_1}), ..., k_p(v_{p1}, ..., v_{pq_p})$, but also the stronger condition that $k_i \neq k_j$ for all $i\neq j$.
 
 %format reduce  (t)    = "\llfloor " t "\rrfloor "
 %format reduce' (t)    = "\lfloor " t "\rfloor "
@@ -89,7 +95,7 @@ where $k_i$ can be a free or bound variable, or a singleton-set constant, but no
 %format atomReduce     = "f_i(\llfloor t_{i1} \rrfloor, ..., \llfloor t_{iq_i} \rrfloor)"
 %format atomStuck      = "k(v_{1}, ..., v_{q})"
 %format unionize       = "\bigcup"
-\begin{figure}
+\begin{figure}[h]
 \begin{code}
 -- normalization of terms
 reduce : ClassTm -> ClassNf

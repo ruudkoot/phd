@@ -1,5 +1,6 @@
 \section{Completion}
 
+\begin{figure}[h]
 \begin{align}
     \Kind \in \ClassKind &&::= \quad &\KindEXN \tag{exception} \\
                          &&||  \quad &\Kind_1 \KindArr \Kind_2 \tag{exception operator}
@@ -13,10 +14,12 @@
                  &&||  \quad &\ExnTyList{\ExnTy}{\Exn} \tag{list type} \\
                  &&||  \quad &\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2} \tag{function type}
 \end{align}
+\caption{Exception types}
+\end{figure}
 
 The completion procedure as a set of inference rules:
 
-\begin{figure}[h]
+\begin{figure*}[h]
     \begin{gather*}
         \Rule{C-Bool}
              {}
@@ -26,7 +29,7 @@ The completion procedure as a set of inference rules:
                             {\ExnVar\ \overline{\ExnVar_i}}
                             {\ExnVar :: \overline{\Kind_i\KindArr}\KindEXN}
              }
-        \\\\
+        \HOR
         \Rule{C-List}
              {\JudgeComplete{\KindEnv{i}}
                             {\Ty}
@@ -41,7 +44,7 @@ The completion procedure as a set of inference rules:
                             {\ExnVar :: \overline{\Kind_i\KindArr}%
                                 \KindEXN, \KindEnv{j}}
              }
-        \\\\
+        \VER
         \Rule{C-Arr}
              {\JudgeComplete{}
                             {\Ty_1}
@@ -64,7 +67,7 @@ The completion procedure as a set of inference rules:
              }
     \end{gather*}
     \caption{Type completion ($\JudgeComplete{\KindENV}{\Ty}{\ExnTy}{\Exn}{\KindENV'}$)}
-\end{figure}
+\end{figure*}
 
 The completion procedure as an algorithm:
 

@@ -1,3 +1,7 @@
+% Alignments
+\newcommand{\HOR}{\quad}
+\newcommand{\VER}{\\[1.5ex]}
+
 % Inference rules
 \newcommand{\Rule}[3]{\frac{#2}{#3}\mbox{\ [\textsc{#1}]}}
 \newcommand{\CiteRule}[1]{\mbox{\textsc{#1}}}

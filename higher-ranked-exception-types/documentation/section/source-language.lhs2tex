@@ -1,0 +1,317 @@
+\section{Source language}
+
+Our analysis is applicable to a simple non-strict functional language that supports Boolean and list data types. In section we'll give its syntax and semantics.
+
+\begin{figure}[ht]
+\paragraph{Terms}
+\begin{align}
+    \Tm \in \ClassTm &&::=  \quad &\TmVar                   \tag{term variable}     \\
+                     &&||   \quad &\TmCon{\Ty}              \tag{term constant}     \\
+                     &&||   \quad &\TmAbs{\TmVar}{\Ty}{\Tm} \tag{term abstraction}  \\
+                     &&||   \quad &\TmApp{\Tm_1}{\Tm_2}     \tag{term application}  \\
+                     &&||   \quad &\TmOp{\Tm_1}{\Tm_2}      \tag{operator}          \\
+                     &&||   \quad &\TmIf{\Tm_1}{\Tm_2}{\Tm_3}\tag{conditional}      \\
+                     &&||   \quad &\TmCrash{\Ty}{\ExnLbl}   \tag{exception constant}\\
+                     &&||   \quad &\TmSeq{\Tm_1}{\Tm_2}     \tag{forcing}           \\
+                     &&||   \quad &\TmFix{\Tm}              \tag{anonymous fixpoint}\\
+                     &&||   \quad &\TmNil{\Ty}              \tag{nil constructor}   \\
+                     &&||   \quad &\TmCons{\Tm_1}{\Tm_2}    \tag{cons constructor}  \\
+                     &&||   \quad &\TmCase{\Tm_1}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}
+                                                            \tag{list eliminator}
+\end{align}
+\caption{Source language: syntax}
+\end{figure}
+
+\subsection{Underlying type system}
+
+\begin{figure*}[ht]
+    \begin{gather*}
+        \Rule{T-Var}
+             {}
+             {\JudgeTy{\TyEnv, \TmVar : \Ty}
+                      {\TmVar}
+                      {\Ty}
+             }
+        \quad
+        \Rule{T-Con}
+             {}
+             {\JudgeTy{\TyEnv}
+                      {\TmCon{\Ty}}
+                      {\Ty}
+             }
+        \quad
+        \Rule{T-Crash}
+             {}
+             {\JudgeTy{\TyEnv}
+                      {\TmCrash{\Ty}{\ExnLbl}}
+                      {\Ty}
+             }
+        \quad
+        \Rule{T-Abs}
+             {\JudgeTy{\TyEnv, \TmVar : \Ty_1}
+                      {\Tm}
+                      {\Ty_2}
+             }
+             {\JudgeTy{\TyEnv}
+                      {\TmAbs{\TmVar}{\Ty_1}{\Tm}}
+                      {\TyArr{\Ty_1}{\Ty_2}}
+             }
+        \\[1.5ex]
+        \Rule{T-App}
+             {\JudgeTy{\TyEnv}
+                      {\Tm_1}
+                      {\TyArr{\Ty_2}{\Ty}}
+              \quad
+              \JudgeTy{\TyEnv}
+                      {\Tm_2}
+                      {\Ty_2}
+             }
+             {\JudgeTy{\TyEnv}
+                      {\TmApp{\Tm_1}{\Tm_2}}
+                      {\Ty}
+             }
+        \quad
+        \Rule{T-Fix}
+             {\JudgeTy{\TyEnv}
+                      {\Tm}
+                      {\TyArr{\Ty}{\Ty}}
+             }
+             {\JudgeTy{\TyEnv}
+                      {\TmFix{\Tm}}
+                      {\Ty}
+             }
+        \quad
+        \Rule{T-Op}
+             {\JudgeTy{\TyEnv}
+                      {\Tm_1}
+                      {\TyInt}
+              \quad
+              \JudgeTy{\TyEnv}
+                      {\Tm_2}
+                      {\TyInt}
+             }
+             {\JudgeTy{\TyEnv}
+                      {\TmOp{\Tm_1}{\Tm_2}}
+                      {\TyBool}
+             }
+        \\[1.5ex]
+        \Rule{T-Seq}
+             {\JudgeTy{\TyEnv}
+                      {\Tm_1}
+                      {\Ty_1}
+              \quad
+              \JudgeTy{\TyEnv}
+                      {\Tm_2}
+                      {\Ty_2}
+             }
+             {\JudgeTy{\TyEnv}
+                      {\TmSeq{\Tm_1}{\Tm_2}}
+                      {\Ty_2}
+             }
+        \quad
+        \Rule{T-If}
+             {\JudgeTy{\TyEnv}
+                      {\Tm_1}
+                      {\TyBool}
+              \quad
+              \JudgeTy{\TyEnv}
+                      {\Tm_2}
+                      {\Ty}
+              \quad
+              \JudgeTy{\TyEnv}
+                      {\Tm_3}
+                      {\Ty}
+             }
+             {\JudgeTy{\TyEnv}
+                      {\TmIf{\Tm_1}{\Tm_2}{\Tm_3}}
+                      {\Ty}
+             }             
+        \\[1.5ex]
+        \Rule{T-Nil}
+             {}
+             {\JudgeTy{\TyEnv}
+                      {\TmNil{\Ty}}
+                      {\TyList{\Ty}}
+             }
+        \quad
+        \Rule{T-Cons}
+             {\JudgeTy{\TyEnv}
+                      {\Tm_1}
+                      {\Ty}
+              \quad
+              \JudgeTy{\TyEnv}
+                      {\Tm_2}
+                      {\TyList{\Ty}}
+             }
+             {\JudgeTy{\TyEnv}
+                      {\TmCons{\Tm_1}{\Tm_2}}
+                      {\TyList{\Ty}}
+             }
+        \quad
+        \Rule{T-Case}
+             {%\begin{gathered}
+                  \JudgeTy{\TyEnv}
+                          {\Tm_1}
+                          {\TyList{\Ty_1}}
+                  \quad
+                  \JudgeTy{\TyEnv}
+                          {\Tm_2}
+                          {\Ty}
+                  \quad
+                  \JudgeTy{\TyEnv, \TmVar_1 : \Ty_1, \TmVar_2 : \TyList{\Ty_1}}
+                          {\Tm_3}
+                          {\Ty}
+              %\end{gathered}
+             }
+             {\JudgeTy{\TyEnv}
+                      {\TmCase{\Tm_1}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}}
+                      {\Ty}
+             }
+    \end{gather*}
+    \caption{Underlying type system ($\JudgeTy{\TyEnv}{\Tm}{\Ty}$)}    
+\end{figure*}
+
+\subsection{Operational semantics}
+
+\begin{itemize}
+
+    \item The reduction relation is non-deterministic.
+    
+    \item We do not have a Haskell-style imprecise exception semantics (e.g. \textsc{E-If}).
+    
+    \item We either need to omit the type annotations on $\TmCrash{\Ty}{\ExnLbl}$, or add them to $\TmIf{}{}{}$ and $\TmCase{}{}{}{}{}$.
+    
+    \item We do not have a rule \CiteRule{E-AnnAppExn}. Check that the canonical forms lemma gives us that terms of universally quantified type cannot be exceptional values.
+
+\end{itemize}
+
+\begin{figure*}[ht]
+    \begin{gather*}
+        \Rule{E-App}
+             {\JudgeEval{\Tm_1}
+                        {\Tm_1^\prime}
+             }
+             {\JudgeEval{\TmApp{\Tm_1}{\Tm_2}}
+                        {\TmApp{\Tm_1^\prime}{\Tm_2}}
+             }
+        \quad
+        \Rule{E-AppAbs}
+             {}
+             {\JudgeEval{\TmApp{(\TmAbsExn{\TmVar}{\ExnTy}{\Exn}{\Tm})}{\Tm_2}}
+                        {\Subst{\Tm_2}{\TmVar}{\Tm_1}}
+             }
+        \quad
+        \Rule{E-AnnApp}
+             {\JudgeEval{\Tm}
+                        {\Tm^\prime}
+             }
+             {\JudgeEval{\TmAnnApp{\Tm}{\Exn}}
+                        {\TmAnnApp{\Tm^\prime}{\Exn}}
+             }
+        \\[1.5ex]
+        \Rule{E-AnnAbsAbs}
+             {}
+             {\JudgeEval{\TmAnnApp{(\TmAnnAbs{\TmExnVar}{\Kind}{\Tm})}{\Exn}}
+                        {\Subst{\Exn}{\TmExnVar}{\Tm}}
+             }
+        \quad
+        \Rule{E-Fix}
+             {\JudgeEval{\Tm}
+                        {\Tm^\prime}
+             }
+             {\JudgeEval{\TmFix{\Tm}}
+                        {\TmFix{\Tm^\prime}}
+             }
+        \quad
+        \Rule{E-FixAbs}
+             {}
+             {\JudgeEval{\TmFix{(\TmAbsExn{\TmVar}{\ExnTy}{\Exn}{\Tm})}}
+                        {\Subst{\TmFix{(\TmAbsExn{\TmVar}{\ExnTy}{\Exn}{\Tm})}}{\TmVar}{\Tm}}
+             }
+        \\[1.5ex]
+        \Rule{E-AppExn}
+             {}
+             {\JudgeEval{\TmApp{\TmCrash{}{\ExnLbl}}{\Tm_2}}
+                        {\TmCrash{}{\ExnLbl}}
+             }
+        \quad
+        \Rule{E-FixExn}
+             {}
+             {\JudgeEval{\TmFix{\TmCrash{}{\ExnLbl}}}
+                        {\TmCrash{}{\ExnLbl}}
+             }
+        \quad
+        \Rule{E-Op$_1$}
+             {\JudgeEval{\Tm_1}{\Tm_1^\prime}}
+             {\JudgeEval{\TmOp{\Tm_1}{\Tm_2}}{\TmOp{\Tm_1^\prime}{\Tm_2}}}
+        \quad
+        \Rule{E-Op$_2$}
+             {\JudgeEval{\Tm_2}{\Tm_2^\prime}}
+             {\JudgeEval{\TmOp{\Tm_1}{\Tm_2}}{\TmOp{\Tm_1}{\Tm_2^\prime}}}
+        \\[1.5ex]
+        \Rule{E-Op}
+             {}
+             {\JudgeEval{\TmOp{\TmVal_1}{\TmVal_2}}{\Interp{\TmOp{\TmVal_1}{\TmVal_2}}}}
+        \quad
+        \Rule{E-OpExn$_1$}
+             {}
+             {\JudgeEval{\TmOp{\TmCrash{}{\ExnLbl}}{\Tm_2}}{\TmCrash{}{\ExnLbl}}}
+        \quad
+        \Rule{E-OpExn$_2$}
+             {}
+             {\JudgeEval{\TmOp{\Tm_1}{\TmCrash{}{\ExnLbl}}}{\TmCrash{}{\ExnLbl}}}
+        \\[1.5ex]
+        \Rule{E-Seq$_1$}
+             {\JudgeEval{\Tm_1}{\Tm_1^\prime}}
+             {\JudgeEval{\TmSeq{\Tm_1}{\Tm_2}}{\TmSeq{\Tm_1^\prime}{\Tm_2}}}
+        \quad
+        \Rule{E-Seq$_2$}
+             {}
+             {\JudgeEval{\TmSeq{\TmVal_1}{\Tm_2}}{\Tm_2}}
+        \quad
+        \Rule{E-SeqExn}
+             {}
+             {\JudgeEval{\TmSeq{\TmCrash{}{\ExnLbl}}{\Tm_2}}{\TmCrash{}{\ExnLbl}}}
+        \\[1.5ex]
+        \Rule{E-If}
+             {\JudgeEval{\Tm_1}{\Tm_1^\prime}}
+             {\JudgeEval{\TmIf{\Tm_1}{\Tm_2}{\Tm_3}}{\TmIf{\Tm_1^\prime}{\Tm_2}{\Tm_3}}}
+        \quad
+        \Rule{E-IfTrue}
+             {}
+             {\JudgeEval{\TmIf{\TmTrue}{\Tm_2}{\Tm_3}}{\Tm_2}}
+        \\[1.5ex]
+        \Rule{E-IfFalse}
+             {}
+             {\JudgeEval{\TmIf{\TmFalse}{\Tm_2}{\Tm_3}}{\Tm_3}}
+        \quad
+        \Rule{E-IfExn}
+             {}
+             {\JudgeEval{\TmIf{\TmCrash{}{\ExnLbl}}{\Tm_2}{\Tm_3}}{\TmCrash{}{\ExnLbl}}}
+        \\[1.5ex]
+        \Rule{E-Case}
+             {\JudgeEval{\Tm_1}{\Tm_1^\prime}}
+             {\JudgeEval{\TmCase{\Tm_1}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}}
+                        {\TmCase{\Tm_1^\prime}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}}
+             }
+        \\[1.5ex]
+        \Rule{E-CaseNil}
+             {}
+             {\JudgeEval{\TmCase{\TmNil{}}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}}
+                        {\Tm_2}
+             }
+        \quad
+        \Rule{E-CaseCons}
+             {}
+             {\JudgeEval{\TmCase{\TmCons{\Tm_1}{\Tm_1^\prime}}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}}
+                        {\SubstTwo{\Tm_1}{\TmVar_1}{\Tm_1^\prime}{\TmVar_2}{\Tm_3}}
+             }
+        \\[1.5ex]
+        \Rule{E-CaseExn}
+             {}
+             {\JudgeEval{\TmCase{\TmCrash{}{\ExnLbl}}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}}
+                        {\TmCrash{}{\ExnLbl}}
+             }
+    \end{gather*}
+    \caption{Operational semantics ($\JudgeEval{\Tm_1}{\Tm_2}$)}    
+\end{figure*}

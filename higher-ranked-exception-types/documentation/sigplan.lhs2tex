@@ -20,6 +20,8 @@
 
 \newcommand{\ThesisPaper}[2]{#2}
 
+\allowdisplaybreaks[1]
+
 %\def\labelitemi{--}
 
 %include polycode.fmt
@@ -92,15 +94,16 @@
 \TODO{term1, term2}
 
 \keywords
-\TODO{keyword1, keyword2}
+\TODO higher-ranked types, exception analysis, type inference
 
 %END sigplanconf-template.tex
 
 %include section/motivation.lhs2tex
 %include section/lambda-union.lhs2tex
+%include section/source-language.lhs2tex
+%include section/exception-type-system.lhs2tex
 %include section/completion.lhs2tex
-%include section/type-system.lhs2tex
-%include section/operational-semantics.lhs2tex
+%include section/type-inference.lhs2tex
 %include section/interesting-observations.lhs2tex
 
 \section{Metatheory}

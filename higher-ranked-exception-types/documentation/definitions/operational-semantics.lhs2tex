@@ -2,3 +2,4 @@
 
 % Judgements
 \newcommand{\JudgeEval}[2]{{#1 \longrightarrow #2}}
+\newcommand{\JudgeEvalT}[2]{\begin{multlined}#1 \\ \longrightarrow #2\end{multlined}}
