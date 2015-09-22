@@ -440,14 +440,25 @@
 
 \end{frame}
 
-\begin{frame}{Constraint language}
+\begin{frame}{Types and constraints}
+
+    \begin{itemize}
+
+        \item Annotated types:
+
+    \end{itemize}
+    
+        \begin{eqnarray*}
+        \Sh    &::=& \alpha
+               \quad || \quad \TyFun{\Sh_1}{\Sh_2}{\alpha}
+               \quad || \quad \TyPair{\Sh_1}{\Sh_2}{\alpha}
+               \quad || \quad \TyList{\Sh}{\alpha}
+        \end{eqnarray*}
 
     \begin{itemize}
     
-        \item \emph{Conditional constraints} and \emph{indices} model dependence between data flow and exception flow
-
-        \item Asymmetric to keep solving tractable
-            
+        \item \emph{Conditional constraints} and \emph{indices} model dependence between data flow and exception flow:
+           
     \end{itemize}
 
     \begin{eqnarray*}
@@ -461,6 +472,12 @@
       \quad || \quad \alpha_1 \sqsubseteq_\iota \alpha_2
       \quad || \quad \Sh_1 \leq_\iota \Sh_2
     \end{eqnarray*}
+
+    \begin{itemize}
+    
+        \item Asymmetric to keep solving tractable.
+    
+    \end{itemize}
 
 \end{frame}
 
@@ -480,12 +497,6 @@
               \end{gathered}}
              {\Judge{\Case{e_1}{e_2}{x_1}{x_2}{e_3}}{\tau}}
     \end{gather*}
-
-\end{frame}
-
-\begin{frame}\center
-
-    Questions?
 
 \end{frame}
 
@@ -558,6 +569,12 @@ An operator constraint set $\omega_\oplus$ is \emph{monotonic} if, whenever $\Ce
         \item The \emph{ad hoc} nature of the constraint language comes back to bite us; currently looking at more well-behaved constraint languages (Boolean rings).
     
     \end{itemize}
+
+\end{frame}
+
+\begin{frame}\center
+
+    Questions?
 
 \end{frame}
 

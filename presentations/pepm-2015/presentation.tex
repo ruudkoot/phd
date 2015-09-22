@@ -1,0 +1,1001 @@
+\documentclass[serif,professionalfont]{beamer}
+
+\usepackage[sc,osf]{mathpazo}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{stmaryrd}
+\usepackage{bm}
+\usepackage{xspace}
+
+%% ODER: format ==         = "\mathrel{==}"
+%% ODER: format /=         = "\neq "
+%
+%
+\makeatletter
+\@ifundefined{lhs2tex.lhs2tex.sty.read}%
+  {\@namedef{lhs2tex.lhs2tex.sty.read}{}%
+   \newcommand\SkipToFmtEnd{}%
+   \newcommand\EndFmtInput{}%
+   \long\def\SkipToFmtEnd#1\EndFmtInput{}%
+  }\SkipToFmtEnd
+
+\newcommand\ReadOnlyOnce[1]{\@ifundefined{#1}{\@namedef{#1}{}}\SkipToFmtEnd}
+\usepackage{amstext}
+\usepackage{amssymb}
+\usepackage{stmaryrd}
+\DeclareFontFamily{OT1}{cmtex}{}
+\DeclareFontShape{OT1}{cmtex}{m}{n}
+  {<5><6><7><8>cmtex8
+   <9>cmtex9
+   <10><10.95><12><14.4><17.28><20.74><24.88>cmtex10}{}
+\DeclareFontShape{OT1}{cmtex}{m}{it}
+  {<-> ssub * cmtt/m/it}{}
+\newcommand{\texfamily}{\fontfamily{cmtex}\selectfont}
+\DeclareFontShape{OT1}{cmtt}{bx}{n}
+  {<5><6><7><8>cmtt8
+   <9>cmbtt9
+   <10><10.95><12><14.4><17.28><20.74><24.88>cmbtt10}{}
+\DeclareFontShape{OT1}{cmtex}{bx}{n}
+  {<-> ssub * cmtt/bx/n}{}
+\newcommand{\tex}[1]{\text{\texfamily#1}}	% NEU
+
+\newcommand{\Sp}{\hskip.33334em\relax}
+
+
+\newcommand{\Conid}[1]{\mathit{#1}}
+\newcommand{\Varid}[1]{\mathit{#1}}
+\newcommand{\anonymous}{\kern0.06em \vbox{\hrule\@width.5em}}
+\newcommand{\plus}{\mathbin{+\!\!\!+}}
+\newcommand{\bind}{\mathbin{>\!\!\!>\mkern-6.7mu=}}
+\newcommand{\rbind}{\mathbin{=\mkern-6.7mu<\!\!\!<}}% suggested by Neil Mitchell
+\newcommand{\sequ}{\mathbin{>\!\!\!>}}
+\renewcommand{\leq}{\leqslant}
+\renewcommand{\geq}{\geqslant}
+\usepackage{polytable}
+
+%mathindent has to be defined
+\@ifundefined{mathindent}%
+  {\newdimen\mathindent\mathindent\leftmargini}%
+  {}%
+
+\def\resethooks{%
+  \global\let\SaveRestoreHook\empty
+  \global\let\ColumnHook\empty}
+\newcommand*{\savecolumns}[1][default]%
+  {\g@addto@macro\SaveRestoreHook{\savecolumns[#1]}}
+\newcommand*{\restorecolumns}[1][default]%
+  {\g@addto@macro\SaveRestoreHook{\restorecolumns[#1]}}
+\newcommand*{\aligncolumn}[2]%
+  {\g@addto@macro\ColumnHook{\column{#1}{#2}}}
+
+\resethooks
+
+\newcommand{\onelinecommentchars}{\quad-{}- }
+\newcommand{\commentbeginchars}{\enskip\{-}
+\newcommand{\commentendchars}{-\}\enskip}
+
+\newcommand{\visiblecomments}{%
+  \let\onelinecomment=\onelinecommentchars
+  \let\commentbegin=\commentbeginchars
+  \let\commentend=\commentendchars}
+
+\newcommand{\invisiblecomments}{%
+  \let\onelinecomment=\empty
+  \let\commentbegin=\empty
+  \let\commentend=\empty}
+
+\visiblecomments
+
+\newlength{\blanklineskip}
+\setlength{\blanklineskip}{0.66084ex}
+
+\newcommand{\hsindent}[1]{\quad}% default is fixed indentation
+\let\hspre\empty
+\let\hspost\empty
+\newcommand{\NB}{\textbf{NB}}
+\newcommand{\Todo}[1]{$\langle$\textbf{To do:}~#1$\rangle$}
+
+\EndFmtInput
+\makeatother
+%
+%
+%
+%
+%
+%
+% This package provides two environments suitable to take the place
+% of hscode, called "plainhscode" and "arrayhscode". 
+%
+% The plain environment surrounds each code block by vertical space,
+% and it uses \abovedisplayskip and \belowdisplayskip to get spacing
+% similar to formulas. Note that if these dimensions are changed,
+% the spacing around displayed math formulas changes as well.
+% All code is indented using \leftskip.
+%
+% Changed 19.08.2004 to reflect changes in colorcode. Should work with
+% CodeGroup.sty.
+%
+\ReadOnlyOnce{polycode.fmt}%
+\makeatletter
+
+\newcommand{\hsnewpar}[1]%
+  {{\parskip=0pt\parindent=0pt\par\vskip #1\noindent}}
+
+% can be used, for instance, to redefine the code size, by setting the
+% command to \small or something alike
+\newcommand{\hscodestyle}{}
+
+% The command \sethscode can be used to switch the code formatting
+% behaviour by mapping the hscode environment in the subst directive
+% to a new LaTeX environment.
+
+\newcommand{\sethscode}[1]%
+  {\expandafter\let\expandafter\hscode\csname #1\endcsname
+   \expandafter\let\expandafter\endhscode\csname end#1\endcsname}
+
+% "compatibility" mode restores the non-polycode.fmt layout.
+
+\newenvironment{compathscode}%
+  {\par\noindent
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \let\hspre\(\let\hspost\)%
+   \pboxed}%
+  {\endpboxed\)%
+   \par\noindent
+   \ignorespacesafterend}
+
+\newcommand{\compaths}{\sethscode{compathscode}}
+
+% "plain" mode is the proposed default.
+% It should now work with \centering.
+% This required some changes. The old version
+% is still available for reference as oldplainhscode.
+
+\newenvironment{plainhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\hspre\(\let\hspost\)%
+   \pboxed}%
+  {\endpboxed%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+\newenvironment{oldplainhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \(\pboxed}%
+  {\endpboxed\)%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+% Here, we make plainhscode the default environment.
+
+\newcommand{\plainhs}{\sethscode{plainhscode}}
+\newcommand{\oldplainhs}{\sethscode{oldplainhscode}}
+\plainhs
+
+% The arrayhscode is like plain, but makes use of polytable's
+% parray environment which disallows page breaks in code blocks.
+
+\newenvironment{arrayhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \(\parray}%
+  {\endparray\)%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+\newcommand{\arrayhs}{\sethscode{arrayhscode}}
+
+% The mathhscode environment also makes use of polytable's parray 
+% environment. It is supposed to be used only inside math mode 
+% (I used it to typeset the type rules in my thesis).
+
+\newenvironment{mathhscode}%
+  {\parray}{\endparray}
+
+\newcommand{\mathhs}{\sethscode{mathhscode}}
+
+% texths is similar to mathhs, but works in text mode.
+
+\newenvironment{texthscode}%
+  {\(\parray}{\endparray\)}
+
+\newcommand{\texths}{\sethscode{texthscode}}
+
+% The framed environment places code in a framed box.
+
+\def\codeframewidth{\arrayrulewidth}
+\RequirePackage{calc}
+
+\newenvironment{framedhscode}%
+  {\parskip=\abovedisplayskip\par\noindent
+   \hscodestyle
+   \arrayrulewidth=\codeframewidth
+   \tabular{@{}|p{\linewidth-2\arraycolsep-2\arrayrulewidth-2pt}|@{}}%
+   \hline\framedhslinecorrect\\{-1.5ex}%
+   \let\endoflinesave=\\
+   \let\\=\@normalcr
+   \(\pboxed}%
+  {\endpboxed\)%
+   \framedhslinecorrect\endoflinesave{.5ex}\hline
+   \endtabular
+   \parskip=\belowdisplayskip\par\noindent
+   \ignorespacesafterend}
+
+\newcommand{\framedhslinecorrect}[2]%
+  {#1[#2]}
+
+\newcommand{\framedhs}{\sethscode{framedhscode}}
+
+% The inlinehscode environment is an experimental environment
+% that can be used to typeset displayed code inline.
+
+\newenvironment{inlinehscode}%
+  {\(\def\column##1##2{}%
+   \let\>\undefined\let\<\undefined\let\\\undefined
+   \newcommand\>[1][]{}\newcommand\<[1][]{}\newcommand\\[1][]{}%
+   \def\fromto##1##2##3{##3}%
+   \def\nextline{}}{\) }%
+
+\newcommand{\inlinehs}{\sethscode{inlinehscode}}
+
+% The joincode environment is a separate environment that
+% can be used to surround and thereby connect multiple code
+% blocks.
+
+\newenvironment{joincode}%
+  {\let\orighscode=\hscode
+   \let\origendhscode=\endhscode
+   \def\endhscode{\def\hscode{\endgroup\def\@currenvir{hscode}\\}\begingroup}
+   %\let\SaveRestoreHook=\empty
+   %\let\ColumnHook=\empty
+   %\let\resethooks=\empty
+   \orighscode\def\hscode{\endgroup\def\@currenvir{hscode}}}%
+  {\origendhscode
+   \global\let\hscode=\orighscode
+   \global\let\endhscode=\origendhscode}%
+
+\makeatother
+\EndFmtInput
+%
+%
+%
+% First, let's redefine the forall, and the dot.
+%
+%
+% This is made in such a way that after a forall, the next
+% dot will be printed as a period, otherwise the formatting
+% of `comp_` is used. By redefining `comp_`, as suitable
+% composition operator can be chosen. Similarly, period_
+% is used for the period.
+%
+\ReadOnlyOnce{forall.fmt}%
+\makeatletter
+
+% The HaskellResetHook is a list to which things can
+% be added that reset the Haskell state to the beginning.
+% This is to recover from states where the hacked intelligence
+% is not sufficient.
+
+\let\HaskellResetHook\empty
+\newcommand*{\AtHaskellReset}[1]{%
+  \g@addto@macro\HaskellResetHook{#1}}
+\newcommand*{\HaskellReset}{\HaskellResetHook}
+
+\global\let\hsforallread\empty
+
+\newcommand\hsforall{\global\let\hsdot=\hsperiodonce}
+\newcommand*\hsperiodonce[2]{#2\global\let\hsdot=\hscompose}
+\newcommand*\hscompose[2]{#1}
+
+\AtHaskellReset{\global\let\hsdot=\hscompose}
+
+% In the beginning, we should reset Haskell once.
+\HaskellReset
+
+\makeatother
+\EndFmtInput
+
+
+%% Double-blind peer-review
+\newcommand{\ANONYMOUS}[2]{#1}
+
+%% Generic formatting stuff
+\newcommand{\BigBreak}{\\[0.5\baselineskip]}
+\newcommand{\MaybeBigBreak}{\\}
+
+%% Generic text stuff
+\newcommand{\ala}{\emph{\`a la}\xspace}
+
+%% Generic math stuff
+\newcommand{\isdef}{\stackrel{\text{def}}{=}}
+\newcommand{\IndCase}[1]{\emph{Case} \CiteRule{#1}:}
+
+%% Types
+\newcommand{\Var}{\textbf{Var}}
+\newcommand{\AnnVar}{\textbf{AnnVar}}
+\newcommand{\Shape}{\textbf{Ty}}
+\newcommand{\ShapeScheme}{\textbf{TySch}}
+
+%% Syntax
+\newcommand{\Crash}[1]{\lightning^{#1}}
+\newcommand{\BTrue}{\textbf{true}}
+\newcommand{\BFalse}{\textbf{false}}
+
+\newcommand{\Abs}[2]{\lambda #1.#2}
+\newcommand{\App}[2]{#1\ #2}
+\newcommand{\Op}[2]{#1 \oplus #2}
+\newcommand{\Let}[3]{\textbf{let}\ #1 = #2\ \textbf{in}\ #3}
+\newcommand{\Fix}[2]{\textbf{fix}\ #1.\ #2}
+\newcommand{\IfThenElse}[3]{\textbf{if}\ #1\ \textbf{then}\ #2\ \textbf{else}\ #3}
+\newcommand{\Pair}[2]{\bm{\left(}#1\bm{,} #2\bm{\right)}}
+\newcommand{\Fst}[1]{\textbf{fst}\ #1}
+\newcommand{\Snd}[1]{\textbf{snd}\ #1}
+\newcommand{\LNil}{\bm{\left[\right]}}
+\newcommand{\LCons}[2]{#1 \bm{::} #2}
+\newcommand{\Case}[5]{\textbf{case}\ #1\ \textbf{of} \left\{ \LNil \mapsto #2; #3 \bm{::} #4 \mapsto #5 \right\}}
+\newcommand{\CaseBREAK}[5]{\textbf{case}\ #1\ \textbf{of}\\\left\{ \LNil \mapsto #2; #3 \bm{::} #4 \mapsto #5 \right\}}
+\newcommand{\Bind}[2]{\textbf{bind}\ #1\ \textbf{in}\ #2}
+\newcommand{\Close}[2]{\textbf{close}\ #1\ \textbf{in}\ #2}
+\newcommand{\CloseEMPH}[2]{\emph{\textbf{close}}\ #1\ \emph{\textbf{in}}\ #2}
+
+\newcommand{\PMF}{\textbf{pattern-match-failure}\xspace}
+
+%% Semantics
+\newcommand{\Eval}[4]{\left<#1; #2\right> \Downarrow \left<#3;#4\right>}
+\newcommand{\Transform}[1]{\widehat{#1}}
+
+\newcommand{\Reduce}[3][\rho]{#1~\vdash~#2 \longrightarrow~#3}
+\newcommand{\InterpretOp}[1]{\llbracket #1 \rrbracket}
+
+%% Typing
+\newcommand{\Rule}[3]{\frac{#2}{#3}\mbox{\ [\textsc{#1}]}}
+\newcommand{\CiteRule}[1]{\mbox{[\textsc{#1}]}}
+\newcommand{\Judge}[3][C; \Gamma]{{#1 \vdash #2 : #3}}              %declarative
+\newcommand{\JudgeUL}[3][C; \Gamma]{{#1 \vdash_{\mathrm{UL}} #2 : #3}}   %underlying
+\newcommand{\Centail}[2][C]{{#1 \Vdash #2}}
+\newcommand{\CM}[2][\theta]{{#1 \vDash #2}}
+\newcommand{\Ref}{\delta}
+\newcommand{\Exn}{\chi}
+\newcommand{\Judgement}[5][\Gamma]{#1 \vdash #2 : #3 \leadsto #4\ \&\ #5} %algo
+\newcommand{\PmSch}{\sigma}
+\newcommand{\PmTy}{\varsigma}
+\newcommand{\Sh}{\tau}
+\newcommand{\ShSch}{\sigma}
+\newcommand{\TopLevel}[1]{\lceil #1\rceil}
+\newcommand{\Fresh}{\ \mathrm{fresh}}
+\newcommand{\SUBST}[1]{#1\!\left[\overline{\beta}/\overline{\alpha}\right]}
+\newcommand{\TyBool}{\mathbb{B}}
+\newcommand{\TyInt}{\mathbb{Z}}
+\newcommand{\TyFun}[3]{#1 \xrightarrow{#3} #2}
+\newcommand{\TyPair}[3]{#1 \bm{\times}^{#3} #2}
+\newcommand{\TyList}[2]{\bm{\left[}#1\bm{\right]}^{#2}}
+\newcommand{\TyForall}[3]{\forall\overline{#1}.\ #2\ \textbf{with}\ #3}
+\newcommand{\TyForallNOOVERLINE}[3]{\forall #1.\ #2\ \textbf{with}\ #3}
+\newcommand{\E}{\textbf{Nil}}
+\newcommand{\NE}{\textbf{Cons}}
+
+\newcommand{\EC}[3][C]{{#1 \vdash #2 \bowtie #3}}
+
+\newcommand{\SingletonTrue}{\textbf{T}}
+\newcommand{\SingletonFalse}{\textbf{F}}
+\newcommand{\SingletonNeg}{\textbf{-}}
+\newcommand{\SingletonZero}{\textbf{0}}
+\newcommand{\SingletonPos}{\textbf{+}}
+\newcommand{\SingletonNil}{\textbf{N}}
+\newcommand{\SingletonCons}{\textbf{C}}
+
+%% Constraints
+\newcommand{\AnnLat}{\Lambda}
+\newcommand{\CC}[5][]{#2 \sqsubseteq_\Ref #3 \Rightarrow #4 \leq_{#1} #5}
+\newcommand{\CCS}[5][]{#2 \sqsubseteq_\Ref #3 \Rightarrow #4 \sqsubseteq_{#1} #5}
+\newcommand{\CCD}[6][]{#2 \sqsubseteq_\Ref #3 \lor #4 \Rightarrow #5 \leq_{#1} #6}
+\newcommand{\CCDO}[6][]{#2 \sqsubseteq_{\Ref_{1}} #3 \lor #4 \Rightarrow #5 \leq_{#1} #6}
+
+%% Extensions
+\newcommand{\MP}[2]{#1~\star~#2}
+
+
+%% Theorems
+\theoremstyle{plain}
+%\newtheorem{theorem}{Theorem}
+\newtheorem{conjecture}{Conjecture}
+%\newtheorem{lemma}{Lemma}
+\newtheorem{conjectured-lemma}{Lemma}
+\theoremstyle{definition}
+\newtheorem{mydef}{Definition}
+
+\setbeamersize{description width=-\labelsep}
+
+\begin{document}
+
+\title{Type-based Exception Analysis}
+\subtitle{for Non-strict Higher-order Functional Languages with Imprecise Exception Semantics}
+\author{Ruud Koot \quad Jurriaan Hage}
+\institute[UU]{Department of Information and Computing Sciences\\Utrecht University}
+\date{January 14, 2015}
+\maketitle
+
+\begin{frame}{Motivation}
+
+    \begin{itemize}
+
+        \item ``Well-typed programs do not go wrong.''
+        
+        \pause
+        
+        \item Except:
+        
+            \begin{itemize}
+            
+                \item \ensuremath{\Varid{reciprocal}\;\Varid{x}\mathrel{=}\mathrm{1}\mathbin{/}\Varid{x}}
+
+                \item \ensuremath{\Varid{head}\;(\Varid{x}\mathbin{:}\Varid{xs})\mathrel{=}\Varid{x}}
+
+                \item ...
+
+            \end{itemize}
+            
+        \item Practical programming languages allow functions to be \emph{partial}.
+
+    \end{itemize}
+    
+\end{frame}
+
+\begin{frame}{Motivation}
+
+    \begin{itemize}
+    
+        \item Requiring all functions to be total may be undesirable.
+        
+            \begin{itemize}
+            
+                \item Dependent types are heavy-weight.
+                
+                \item Running everything in the \ensuremath{\Conid{Maybe}} monad does not solve the problem, only moves it.
+
+                \item Some partial functions are \emph{benign}.
+                
+            \end{itemize}
+
+        \item We do want to warn the programmer something may go wrong at run-time.
+
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Motivation}
+
+    \begin{itemize}
+
+        \item Currently compilers do a local and syntactic analysis.
+
+    \end{itemize}
+
+    \begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{9}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[9]{}\Varid{head}\mathbin{::}[\mskip1.5mu \alpha\mskip1.5mu]\to \alpha{}\<[E]%
+\\
+\>[9]{}\Varid{head}\;\Varid{xs}\mathrel{=}\mathbf{case}\;\Varid{xs}\;\mathbf{of}\;\{\mskip1.5mu (\Varid{y}\mathbin{:}\Varid{ys})\to \Varid{y}\mskip1.5mu\}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+    \pause
+
+    \begin{itemize}
+
+        \item ``The problem is in \ensuremath{\Varid{head}} and \emph{every} place you call it!''
+
+    \end{itemize}
+
+    \begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{9}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[9]{}\Varid{main}\mathrel{=}\Varid{head}\;[\mskip1.5mu \mathrm{1},\mathrm{2},\mathrm{3}\mskip1.5mu]{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+    
+    \begin{itemize}
+    
+        \item Worse are non-escaping local definitions.
+    
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Motivation}
+
+    \begin{itemize}
+
+        \item The canonical example by Mitchell \& Runciman (2008):
+        
+    \end{itemize}
+    
+    \begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{9}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{13}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{17}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{21}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{34}{@{}>{\hspre}c<{\hspost}@{}}%
+\column{34E}{@{}l@{}}%
+\column{37}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[9]{}\Varid{risers}{}\<[17]%
+\>[17]{}\mathbin{::}{}\<[21]%
+\>[21]{}\Conid{Ord}\;\alpha\Rightarrow [\mskip1.5mu \alpha\mskip1.5mu]\to [\mskip1.5mu [\mskip1.5mu \alpha\mskip1.5mu]\mskip1.5mu]{}\<[E]%
+\\
+\>[9]{}\Varid{risers}\;{}\<[17]%
+\>[17]{}[\mskip1.5mu \mskip1.5mu]{}\<[34]%
+\>[34]{}\mathrel{=}{}\<[34E]%
+\>[37]{}[\mskip1.5mu \mskip1.5mu]{}\<[E]%
+\\
+\>[9]{}\Varid{risers}\;{}\<[17]%
+\>[17]{}[\mskip1.5mu \Varid{x}\mskip1.5mu]{}\<[34]%
+\>[34]{}\mathrel{=}{}\<[34E]%
+\>[37]{}[\mskip1.5mu [\mskip1.5mu \Varid{x}\mskip1.5mu]\mskip1.5mu]{}\<[E]%
+\\
+\>[9]{}\Varid{risers}\;(\Varid{x}_{\mathrm{1}}\mathbin{:}\Varid{x}_{\mathrm{2}}\mathbin{:}\Varid{xs}){}\<[34]%
+\>[34]{}\mathrel{=}{}\<[34E]%
+\\
+\>[9]{}\hsindent{4}{}\<[13]%
+\>[13]{}\mathbf{if}\;\Varid{x}_{\mathrm{1}}\leq \Varid{x}_{\mathrm{2}}\;\mathbf{then}\;(\Varid{x}_{\mathrm{1}}\mathbin{:}\Varid{y})\mathbin{:}\Varid{ys}\;\mathbf{else}\;[\mskip1.5mu \Varid{x}_{\mathrm{1}}\mskip1.5mu]\mathbin{:}(\Varid{y}\mathbin{:}\Varid{ys}){}\<[E]%
+\\
+\>[13]{}\hsindent{4}{}\<[17]%
+\>[17]{}\mathbf{where}\;(\Varid{y}\mathbin{:}\Varid{ys})\mathrel{=}\Varid{risers}\;(\Varid{x}_{\mathrm{2}}\mathbin{:}\Varid{xs}){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+    
+    \begin{itemize}
+    
+        \item Computes monotonically increasing subsegments of a list:
+    
+    \end{itemize}
+    
+    \begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{9}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[9]{}\Varid{risers}\;[\mskip1.5mu \mathrm{1},\mathrm{3},\mathrm{5},\mathrm{1},\mathrm{2}\mskip1.5mu]\longrightarrow^{*}[\mskip1.5mu [\mskip1.5mu \mathrm{1},\mathrm{3},\mathrm{5}\mskip1.5mu],[\mskip1.5mu \mathrm{1},\mathrm{2}\mskip1.5mu]\mskip1.5mu]{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+    
+    \begin{itemize}
+    
+        \item Program invariants can ensure incomplete pattern matches never fail.
+        
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Motivation}
+
+    \begin{itemize}
+    
+        \item Instead use a semantic approach: ``where can exceptions flow to?''
+        
+    \end{itemize}
+    
+    \begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{9}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[9]{}\Varid{head}\mathbin{::}[\mskip1.5mu \alpha\mskip1.5mu]\to \alpha{}\<[E]%
+\\
+\>[9]{}\Varid{head}\;\Varid{xs}\mathrel{=}\mathbf{case}\;\Varid{xs}\;\mathbf{of}\;\{\mskip1.5mu [\mskip1.5mu \mskip1.5mu]\to \lightning;(\Varid{y}\mathbin{:}\Varid{ys})\to \Varid{y}\mskip1.5mu\}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+    
+    \begin{itemize}
+        
+        \item Simultaneously need to track data flow to determine which branches are not taken.
+
+        \item Using a type-and-effect system, the analysis is still modular.
+    
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Basic idea: data flow}
+
+    \begin{itemize}
+    
+        \item We can then assign to each of the three individual branches of \ensuremath{\Varid{risers}} the following types:
+
+            \begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{13}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{33}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{73}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[13]{}\Varid{risers}_{\mathrm{1}}{}\<[33]%
+\>[33]{}\mathbin{::}\forall \alpha\hsforall \hsdot{\circ }{.}\Conid{Ord}\;\alpha\Rightarrow \bm{[}\alpha\bm{]}^{\SingletonNil}{}\<[73]%
+\>[73]{}\to \bm{[}\bm{[}\alpha\bm{]}^{\SingletonNil \sqcup \SingletonCons}\bm{]}^{\SingletonNil}{}\<[E]%
+\\
+\>[13]{}\Varid{risers}_{\mathrm{2}},\Varid{risers}_{\mathrm{3}}{}\<[33]%
+\>[33]{}\mathbin{::}\forall \alpha\hsforall \hsdot{\circ }{.}\Conid{Ord}\;\alpha\Rightarrow \bm{[}\alpha\bm{]}^{\SingletonCons}{}\<[73]%
+\>[73]{}\to \bm{[}\bm{[}\alpha\bm{]}^{\SingletonNil \sqcup \SingletonCons}\bm{]}^{\SingletonCons}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+        \only<1>{
+            \rule{25em}{.1pt}
+            \begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{17}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{21}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{25}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{29}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{42}{@{}>{\hspre}c<{\hspost}@{}}%
+\column{42E}{@{}l@{}}%
+\column{45}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[17]{}\Varid{risers}{}\<[25]%
+\>[25]{}\mathbin{::}{}\<[29]%
+\>[29]{}\Conid{Ord}\;\alpha\Rightarrow [\mskip1.5mu \alpha\mskip1.5mu]\to [\mskip1.5mu [\mskip1.5mu \alpha\mskip1.5mu]\mskip1.5mu]{}\<[E]%
+\\
+\>[17]{}\Varid{risers}\;{}\<[25]%
+\>[25]{}[\mskip1.5mu \mskip1.5mu]{}\<[42]%
+\>[42]{}\mathrel{=}{}\<[42E]%
+\>[45]{}[\mskip1.5mu \mskip1.5mu]{}\<[E]%
+\\
+\>[17]{}\Varid{risers}\;{}\<[25]%
+\>[25]{}[\mskip1.5mu \Varid{x}\mskip1.5mu]{}\<[42]%
+\>[42]{}\mathrel{=}{}\<[42E]%
+\>[45]{}[\mskip1.5mu [\mskip1.5mu \Varid{x}\mskip1.5mu]\mskip1.5mu]{}\<[E]%
+\\
+\>[17]{}\Varid{risers}\;(\Varid{x}_{\mathrm{1}}\mathbin{:}\Varid{x}_{\mathrm{2}}\mathbin{:}\Varid{xs}){}\<[42]%
+\>[42]{}\mathrel{=}{}\<[42E]%
+\\
+\>[17]{}\hsindent{4}{}\<[21]%
+\>[21]{}\mathbf{if}\;\Varid{x}_{\mathrm{1}}\leq \Varid{x}_{\mathrm{2}}\;\mathbf{then}\;(\Varid{x}_{\mathrm{1}}\mathbin{:}\Varid{y})\mathbin{:}\Varid{ys}\;\mathbf{else}\;[\mskip1.5mu \Varid{x}_{\mathrm{1}}\mskip1.5mu]\mathbin{:}(\Varid{y}\mathbin{:}\Varid{ys}){}\<[E]%
+\\
+\>[21]{}\hsindent{4}{}\<[25]%
+\>[25]{}\mathbf{where}\;(\Varid{y}\mathbin{:}\Varid{ys})\mathrel{=}\Varid{risers}\;(\Varid{x}_{\mathrm{2}}\mathbin{:}\Varid{xs}){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+        }
+
+        \pause
+        
+        \only<2>{
+
+            \item From the three individual branches we may infer:
+
+                \begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{17}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[17]{}\Varid{risers}\mathbin{::}\forall \alpha\hsforall \hsdot{\circ }{.}\Conid{Ord}\;\alpha\Rightarrow \bm{[}\alpha\bm{]}^{\SingletonNil \sqcup \SingletonCons}\to \bm{[}\bm{[}\alpha\bm{]}^{\SingletonNil \sqcup \SingletonCons}\bm{]}^{\SingletonNil \sqcup \SingletonCons}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+            \item Adding \emph{polyvariance} gives us a more precise result:
+
+                \begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{17}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[17]{}\Varid{risers}\mathbin{::}\forall \alpha\beta\hsforall \hsdot{\circ }{.}\Conid{Ord}\;\alpha\Rightarrow \bm{[}\alpha\bm{]}^{\beta}\to \bm{[}\bm{[}\alpha\bm{]}^{\SingletonNil \sqcup \SingletonCons}\bm{]}^{\beta}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+        }
+
+    \end{itemize}
+
+\end{frame}
+
+
+\begin{frame}{Basic idea: exception flow}
+
+    \begin{itemize}
+    
+        \item A compiler will translate the partial function \ensuremath{\Varid{head}} into:
+
+            \begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{17}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{33}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{43}{@{}>{\hspre}c<{\hspost}@{}}%
+\column{43E}{@{}l@{}}%
+\column{48}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[17]{}\Varid{head}\;\Varid{xs}\mathrel{=}\mathbf{case}\;{}\<[33]%
+\>[33]{}\Varid{xs}\;\mathbf{of}{}\<[E]%
+\\
+\>[33]{}[\mskip1.5mu \mskip1.5mu]{}\<[43]%
+\>[43]{}\mapsto{}\<[43E]%
+\>[48]{}\lightning^{\PMF}{}\<[E]%
+\\
+\>[33]{}(\Varid{y}\mathbin{:}\Varid{ys}){}\<[43]%
+\>[43]{}\mapsto{}\<[43E]%
+\>[48]{}\Varid{y}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+        \item which can be assigned the exception type:
+
+            \begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{17}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[17]{}\Varid{head}\mathbin{::}\forall \tau\alpha\beta\hsforall \hsdot{\circ }{.}\bm{[}\tau^\alpha\bm{]}^{\beta}\xrightarrow{\emptyset}\tau^{\alpha\sqcup\beta\sqcup\PMF}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+        \pause
+
+        \item This type tells us that \ensuremath{\Varid{head}} might always raise a \PMF exception!
+
+        \item Introduce a dependency of the exception flow on the data flow of the program:
+
+            \begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{17}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{42}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[17]{}\Varid{head}\mathbin{::}\forall \tau\alpha\beta\gamma\hsforall \hsdot{\circ }{.}{}\<[42]%
+\>[42]{}\bm{[}\tau^\alpha\bm{]}^{\beta}\xrightarrow{\emptyset}\tau^{\alpha\sqcup\beta\sqcup\gamma}{}\<[E]%
+\\
+\>[42]{}\textbf{with} \left\{\SingletonNil \sqsubseteq \beta \Rightarrow \PMF \sqsubseteq \gamma\right\}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Imprecise exception semantics}
+
+    \begin{itemize}
+    
+        \item Non-strict languages can have an \emph{imprecise exception semantics} (Peyton Jones \emph{et al}, 1999).
+        
+            \begin{itemize}
+            
+                \item Can non-deterministically raise one from a set of exceptions.
+                
+                \item Necessary for the soundness of certain program transformations, e.g. the case-switching transformation:
+            
+            \end{itemize}
+   
+    \end{itemize}
+
+    \begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{9}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{22}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{26}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{30}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{35}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{41}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{46}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{52}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{59}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{63}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{71}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{77}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{82}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{88}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[9]{}\forall \Varid{e}_{\Varid{i}}\hsforall \hsdot{\circ }{.}{}\<[22]%
+\>[22]{}\mathbf{if}\;\Varid{e}_{\mathrm{1}}\;\mathbf{then}{}\<[E]%
+\\
+\>[22]{}\hsindent{4}{}\<[26]%
+\>[26]{}\mathbf{if}\;{}\<[30]%
+\>[30]{}\Varid{e}_{\mathrm{2}}\;{}\<[35]%
+\>[35]{}\mathbf{then}\;{}\<[41]%
+\>[41]{}\Varid{e}_{\mathrm{3}}\;{}\<[46]%
+\>[46]{}\mathbf{else}\;{}\<[52]%
+\>[52]{}\Varid{e}_{\mathrm{4}}{}\<[E]%
+\\
+\>[22]{}\mathbf{else}{}\<[E]%
+\\
+\>[22]{}\hsindent{4}{}\<[26]%
+\>[26]{}\mathbf{if}\;{}\<[30]%
+\>[30]{}\Varid{e}_{\mathrm{2}}\;{}\<[35]%
+\>[35]{}\mathbf{then}\;{}\<[41]%
+\>[41]{}\Varid{e}_{\mathrm{5}}\;{}\<[46]%
+\>[46]{}\mathbf{else}\;{}\<[52]%
+\>[52]{}\Varid{e}_{\mathrm{6}}\mathrel{=}{}\<[59]%
+\>[59]{}\mathbf{if}\;\Varid{e}_{\mathrm{2}}\;\mathbf{then}{}\<[E]%
+\\
+\>[59]{}\hsindent{4}{}\<[63]%
+\>[63]{}\mathbf{if}\;\Varid{e}_{\mathrm{1}}\;{}\<[71]%
+\>[71]{}\mathbf{then}\;{}\<[77]%
+\>[77]{}\Varid{e}_{\mathrm{3}}\;{}\<[82]%
+\>[82]{}\mathbf{else}\;{}\<[88]%
+\>[88]{}\Varid{e}_{\mathrm{5}}{}\<[E]%
+\\
+\>[59]{}\mathbf{else}{}\<[E]%
+\\
+\>[59]{}\hsindent{4}{}\<[63]%
+\>[63]{}\mathbf{if}\;\Varid{e}_{\mathrm{1}}\;{}\<[71]%
+\>[71]{}\mathbf{then}\;{}\<[77]%
+\>[77]{}\Varid{e}_{\mathrm{4}}\;{}\<[82]%
+\>[82]{}\mathbf{else}\;{}\<[88]%
+\>[88]{}\Varid{e}_{\mathrm{6}}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+\end{frame}
+
+\begin{frame}{Imprecise exception semantics}
+
+    \begin{itemize}
+    
+        \item If an exception can be raised by pattern matching, we need to continue evaluating all branches.
+        
+        \item Implication for the analysis: cannot separate data and exception flow phases.
+    
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Algorithm}
+
+    \begin{itemize}
+    
+        \item Assumes program is well-typed in underlying type system.
+    
+        \item Algorithm $\mathcal{W}$-like constraint generation phase.
+        
+        \item Worklist/fixpoint-based constraint solver.
+    
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Types and constraints}
+
+    \begin{itemize}
+
+        \item Annotated types:
+
+    \end{itemize}
+    
+        \begin{eqnarray*}
+        \Sh    &::=& \alpha
+               \quad | \quad \TyFun{\Sh_1}{\Sh_2}{\alpha}
+               \quad | \quad \TyPair{\Sh_1}{\Sh_2}{\alpha}
+               \quad | \quad \TyList{\Sh}{\alpha}
+        \end{eqnarray*}
+
+    \begin{itemize}
+    
+        \item \emph{Conditional constraints} and \emph{indices} model dependence between data flow and exception flow:
+           
+    \end{itemize}
+
+    \begin{eqnarray*}
+    c &::=& g \Rightarrow r                                                   \\
+    g &::=& \AnnLat_\iota \sqsubseteq_\iota \alpha
+    %  \quad || \quad \exists \wp : \Lambda_\iota^\wp \sqsubseteq_\iota \alpha
+      \quad | \quad \exists_\iota \alpha
+      \quad | \quad g_1 \lor g_2
+      \quad | \quad \BTrue                                                   \\
+    r &::=& \AnnLat_\iota \sqsubseteq_\iota \alpha
+      \quad | \quad \alpha_1 \sqsubseteq_\iota \alpha_2
+      \quad | \quad \Sh_1 \leq_\iota \Sh_2
+    \end{eqnarray*}
+
+    \begin{itemize}
+    
+        \item Asymmetric to keep solving tractable.
+    
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{A type rule (case-expressions)}
+
+    \begin{gather*}
+        \Rule{T-Case}
+             {\begin{gathered}
+              \Judge{e_1}{\TyList{\tau_1}{\alpha_1}}
+              \quad \Judge{e_2}{\tau_2}
+              \\ \Judge[C; \Gamma, x_1 : \tau_1, x_2 : \TyList{\tau_1}{\beta}]{e_3}{\tau_3}\\
+              C \Vdash\CCD[\Ref\Exn]{\SingletonNil}{\alpha_1}{\exists_\Exn \alpha_1}{\tau_2}{\tau}
+              \\ C \Vdash\CCD[\Ref\Exn]{\SingletonCons}{\alpha_1}{\exists_\Exn \alpha_1}{\tau_3}{\tau}
+              \\ C \Vdash\alpha_1 \sqsubseteq_\Exn \TopLevel{\tau}
+              \quad C \Vdash\SingletonNil \sqcup \SingletonCons \sqsubseteq_\Ref \beta
+              \quad C \Vdash \alpha_1 \sqsubseteq_\Exn \beta
+              \end{gathered}}
+             {\Judge{\Case{e_1}{e_2}{x_1}{x_2}{e_3}}{\tau}}
+    \end{gather*}
+
+\end{frame}
+
+\begin{frame}{Operators}
+
+    \begin{itemize}
+    
+        \item Operators have a constraint set corresponding to their abstract interpretation:
+
+            \[ \omega_\div(\alpha_1,\alpha_2,\alpha) \isdef \left\{\begin{gathered}\SingletonZero \sqsubseteq_\Ref \alpha_2 \Rightarrow \left\{\textbf{div-by-0}\right\} \sqsubseteq_\Exn \alpha \\
+            \SingletonNeg \sqsubseteq_\Ref \alpha_1 \land \SingletonNeg \sqsubseteq_\Ref \alpha_2 \Rightarrow \SingletonPos \sqsubseteq_\Ref \alpha \\
+            \SingletonNeg \sqsubseteq_\Ref \alpha_1 \land \SingletonPos \sqsubseteq_\Ref \alpha_2 \Rightarrow \SingletonNeg \sqsubseteq_\Ref \alpha \\
+            \SingletonPos \sqsubseteq_\Ref \alpha_1 \land \SingletonNeg \sqsubseteq_\Ref \alpha_2 \Rightarrow \SingletonNeg \sqsubseteq_\Ref \alpha \\
+            \SingletonPos \sqsubseteq_\Ref \alpha_1 \land \SingletonPos \sqsubseteq_\Ref \alpha_2 \Rightarrow \SingletonPos \sqsubseteq_\Ref \alpha \\
+            \SingletonZero \sqsubseteq_\Ref \alpha \end{gathered}\right\} \]
+
+        \item Can make a trade-off between precision and accuracy.
+
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Operators}
+
+    \begin{mydef}\label{operator-consistency}%[Operator consistency]
+An operator constraint set $\omega_\oplus$ is said to be \emph{consistent} with respect to an operator interpretation $\InterpretOp{\ \cdot\oplus\cdot\ }$ if, whenever $\Judge{n_1}{\alpha_1}$, $\Judge{n_2}{\alpha_2}$, and $\Centail{\omega_\oplus(\alpha_1, \alpha_2, \alpha)}$ then $\Judge{\InterpretOp{n_1 \oplus n_2}}{\alpha'}$ with $\Centail{\alpha' \leq_{\Ref\Exn} \alpha}$ for some $\alpha'$.
+\end{mydef}
+%This restriction states that the interpretation of an operator and its abstract interpretation by the operator constraint set should coincide. We need one slightly more technical restriction to be able to prove our system sound:
+\begin{mydef}\label{operator-monotonicity}%[Operator monotonicity]
+An operator constraint set $\omega_\oplus$ is \emph{monotonic} if, whenever $\Centail{\omega_\oplus(\alpha_1, \alpha_2, \alpha)}$ and $\Centail{\alpha_1' \sqsubseteq_{\Ref\Exn} \alpha_1}$, $\Centail{\alpha_2' \sqsubseteq_{\Ref\Exn} \alpha_2}$, $\Centail{\alpha \sqsubseteq_{\Ref\Exn} \alpha'}$ then $\Centail{\omega_\oplus(\alpha_1', \alpha_2', \alpha')}$.
+\end{mydef}
+%Informally this means that operator constraint sets can only let the result of evaluating an operator and its operands depend on the values of those operands and not the other way around: the operator constraint sets must respect the fact that we are defining a \emph{forwards} analysis.
+
+\end{frame}
+
+\begin{frame}{Metatheory}
+
+    \begin{theorem}[Conservative extension]
+    If $e$ is well-typed in the underlying type system, then it can be given a type in the annotated type system.
+    \end{theorem}
+
+    \begin{theorem}[Progress]
+        If $\Judge{e}{\sigma}$ then either $e$ is a value or there exist an $e'$, such that for any $\rho$ with $\EC{\Gamma}{\rho}$ we have $\Reduce{e}{e'}$.
+    \end{theorem}
+
+    \begin{theorem}[Preservation]
+    If $\Judge{e}{\sigma_1}$, $\Reduce{e}{e'}$ and $\EC{\Gamma}{\rho}$ then $\Judge{e'}{\sigma_2}$ with $C \Vdash \sigma_2 \leq_{\Ref\Exn} \sigma_1$.
+    \end{theorem}
+
+\end{frame}
+
+\begin{frame}{Polyvariant recursion}
+
+    \begin{itemize}
+    
+        \item To precisely type \ensuremath{\Varid{risers}} (i.e. infer that no exception can be raised if not already present in input) we need \emph{polyvariant recursion} (i.e. polymorphic recursion restricted to annotations).
+        
+        \item This poses algorithmic difficulties w.r.t. termination.
+        
+            \begin{itemize}
+            
+                \item Variable elimination technique by Dussart, Henglein \& Mossin (1995) does not work due to conditional constraints.
+                
+                \item Restricting the number of fresh variables generated makes the analysis fairly unpredictable.
+                
+                \item Terminating before a fixpoint has been reached invalidates the soundness result, but may not be a problem in practice.
+                
+            \end{itemize}
+            
+        \item The \emph{ad hoc} nature of the constraint language comes back to bite us; currently looking at more well-behaved constraint languages (Boolean rings).
+    
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}\center
+
+    Questions?
+
+\end{frame}
+
+\end{document}
