@@ -66,10 +66,33 @@ The empty-set and singleton-set constants are of base type and we cab inly take 
 
 \subsection{Semantics}
 
-\TODO
+\begin{figure}[h]
+    \paragraph{Values}
+    \begin{align*}
+        V_\LuBase &= \mathcal{P}(\ClassCon) \\
+        V_{\tau_1 \to \tau_2} &= \mathcal{P}(V_{\tau_1} \to V_{\tau_2})
+    \end{align*}
+    \paragraph{Environments}
+    \begin{align*}
+        \rho &: \ClassVar \to \bigcup \left\{V_\tau \mid \tau\ \mathrm{type}\right\}
+    \end{align*}
+    \paragraph{Terms}
+    \begin{align*}
+        \llbracket \LuVar \rrbracket_\rho &= \rho(x) \\
+        \llbracket \LuAbs{\LuVar}{\LuTy}{\LuTm} \rrbracket_\rho &= \left\{ \lambda v \in V_\tau. \llbracket t \rrbracket_{\rho[\LuVar \mapsto v]} \right\} \\
+        \llbracket \LuApp{\LuTm_1}{\LuTm_2} \rrbracket_\rho &= \bigcup \left\{ \varphi(\llbracket \LuTm_2 \rrbracket_\rho) \mid \varphi \in \llbracket \LuTm_1 \rrbracket_\rho \right\}\\
+        \llbracket \LuEmpty \rrbracket_\rho &= \LuEmpty \\
+        \llbracket \LuCon \rrbracket_\rho &= \LuCon \\
+        \llbracket \LuUnion{\LuTm_1}{\LuTm_2} \rrbracket_\rho &= \llbracket \LuTm_1 \rrbracket_\rho \cup \llbracket \LuTm_2 \rrbracket_\rho
+    \end{align*}
+    \caption{$\LambdaUnion$-calculus: denotational semantics}
+\end{figure}
 
 \subsection{Normalization}
-\TODOX{Do we \emph{need} to distribute unions over applications? Is a performace optimization? Do we lose any precision? If not, because terms can't inspect their arguments?}
+\begin{itemize}
+    \item \TODOX{Do we \emph{need} to distribute unions over applications? Is a performace optimization? Do we lose any precision? If not, because terms can't inspect their arguments?}
+    \item \TODOX{We can make union only work on base types. Then the denotation the function space would be simpler and might generalize to other structures..}
+\end{itemize}
 
 To reduce $\LambdaUnion$-terms to a normal form we combine the $\beta$-reduction rule of the simply typed $\lambda$-calculus with rewrite rules that deal with the associativity, commutativity, idempotence and identity (ACI1) properties of set-union operator.
 

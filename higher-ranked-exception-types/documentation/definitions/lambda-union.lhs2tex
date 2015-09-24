@@ -13,7 +13,7 @@
 \newcommand{\LuTyApp}[2]{#1\ \left<#2\right>}       %% Lu?
 \newcommand{\LuArr}[2]{{#1 \to #2}}
 \newcommand{\LuARR}[2]{{#1 \Rightarrow #2}}         %% Lu?
-\newcommand{\LuBase}{\mathcal{P}}
+\newcommand{\LuBase}{\mathcal{C}}
 \newcommand{\LuCON}{c}
 \newcommand{\LuCon}[1][\LuCON]{\{#1\}}
 \newcommand{\LuEmpty}{\emptyset}
