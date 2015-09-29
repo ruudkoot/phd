@@ -22,6 +22,7 @@
 \newcommand{\TmCrash}[2]{\lightning_{#1}^{#2}}
 \newcommand{\TmSeq}[2]{#1\ \mathbf{seq}\ #2}
 \newcommand{\TmFix}[1]{\mathbf{fix}\ #1}
+\newcommand{\TmFIX}[3]{\mathbf{fix}\ #1 : #2. #3}
 \newcommand{\TmNil}[1]{\left[\right]_{#1}}
 \newcommand{\TmCons}[2]{#1 :: #2}
 \newcommand{\TmCase}[5]{\mathbf{case}\ #1\ \mathbf{of}\ \{\left[\right]\mapsto #2; #3 :: #4 \mapsto #5\}}

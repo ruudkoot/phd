@@ -4,27 +4,24 @@ The $\LambdaUnion$-calculus is simply typed $\lambda$-calculus extended with a s
 
 \begin{figure}[h]
 \paragraph{Types}
-
-\begin{align}
-    \LuTy \in \ClassLuTy &&::= \quad &\LuBase                     \tag{base type} \\
-                         &&||  \quad &\LuArr{\LuTy_1}{\LuTy_2}    \tag{function type}
-\end{align}
+\begin{alignat}{2}
+    \LuTy \in \ClassLuTy &\ ::=\   &&\ \LuBase                     \tag{base type} \\
+                         &\quad||  &&\ \LuArr{\LuTy_1}{\LuTy_2}    \tag{function type}
+\end{alignat}
 
 \paragraph{Terms}
-
-\begin{align}
-    \LuTm \in \ClassLuTm &&::= \quad &\LuVar, \LuVarY, ... \tag{variable} \\
-                         &&||  \quad &\LuAbs{\LuVar}{\LuTy}{\LuTm} \tag{abstraction} \\
-                         &&||  \quad &\LuApp{\LuTm_1}{\LuTm_2} \tag{application} \\
-                         &&||  \quad &\LuEmpty \tag{empty} \\
-                         &&||  \quad &\LuCon \tag{singleton} \\
-                         &&||  \quad &\LuUnion{\LuTm_1}{\LuTm_2} \tag{union}
-\end{align}
+\begin{alignat}{2}
+    \LuTm \in \ClassLuTm &\ ::=\    &&\LuVar, \LuVarY, ... \tag{variable} \\
+                         &\quad||   &&\LuAbs{\LuVar}{\LuTy}{\LuTm} \tag{abstraction} \\
+                         &\quad||   &&\LuApp{\LuTm_1}{\LuTm_2} \tag{application} \\
+                         &\quad||   &&\LuEmpty \tag{empty} \\
+                         &\quad||   &&\LuCon \tag{singleton} \\
+                         &\quad||   &&\LuUnion{\LuTm_1}{\LuTm_2} \tag{union}
+\end{alignat}
 
 \paragraph{Environments}
-
 \begin{align*}
-    \LuEnv \in \ClassLuEnv ::= \quad \EmptyEnv \quad || \quad \LuEnv, \LuVar : \LuTy
+    \LuEnv \in \ClassLuEnv\ ::=\ \EmptyEnv \quad || \quad \LuEnv, \LuVar : \LuTy
 \end{align*}
 \caption{$\LambdaUnion$-calculus: syntax}
 \end{figure}
@@ -113,8 +110,7 @@ In the $\LambdaUnion$-calculus terms are interpreted as sets and types as powers
 
 \subsection{Normalization}
 \begin{itemize}
-    \item \TODOX{Do we \emph{need} to distribute unions over applications? Is a performace optimization? Do we lose any precision? If not, because terms can't inspect their arguments?}
-    \item \TODOX{We can make union only work on base types. Then the denotation the function space would be simpler and might generalize to other structures..}
+    \item \TODOX{We can make union only work on base types (as we not longer \emph{need} to distribute unions over applications)? Then the denotation of the function space would be simpler and might generalize to other structures..}
 \end{itemize}
 
 To reduce $\LambdaUnion$-terms to a normal form we combine the $\beta$-reduction rule of the simply typed $\lambda$-calculus with rewrite rules that deal with the associativity, commutativity, idempotence and identity (ACI1) properties of set-union operator.

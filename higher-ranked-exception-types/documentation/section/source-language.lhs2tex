@@ -1,26 +1,30 @@
 \section{Source language}
 
-Our analysis is applicable to a simple non-strict functional language that supports Boolean and list data types. In section we'll give its syntax and semantics.
+Our analysis is applicable to a simple non-strict functional language that supports Boolean, integer and list data types. In section we'll give its syntax and semantics.
 
 \begin{figure}[ht]
 \paragraph{Terms}
-\begin{align}
-    \Tm \in \ClassTm &&::=  \quad &\TmVar                   \tag{term variable}     \\
-                     &&||   \quad &\TmCon{\Ty}              \tag{term constant}     \\
-                     &&||   \quad &\TmAbs{\TmVar}{\Ty}{\Tm} \tag{term abstraction}  \\
-                     &&||   \quad &\TmApp{\Tm_1}{\Tm_2}     \tag{term application}  \\
-                     &&||   \quad &\TmOp{\Tm_1}{\Tm_2}      \tag{operator}          \\
-                     &&||   \quad &\TmIf{\Tm_1}{\Tm_2}{\Tm_3}\tag{conditional}      \\
-                     &&||   \quad &\TmCrash{\Ty}{\ExnLbl}   \tag{exception constant}\\
-                     &&||   \quad &\TmSeq{\Tm_1}{\Tm_2}     \tag{forcing}           \\
-                     &&||   \quad &\TmFix{\Tm}              \tag{anonymous fixpoint}\\
-                     &&||   \quad &\TmNil{\Ty}              \tag{nil constructor}   \\
-                     &&||   \quad &\TmCons{\Tm_1}{\Tm_2}    \tag{cons constructor}  \\
-                     &&||   \quad &\TmCase{\Tm_1}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}
+\begin{alignat}{2}
+\!  \Tm \in \ClassTm &\ ::=\   &&\ \TmVar                   \tag{term variable}     \\
+                     &\quad||  &&\ \TmCon{\Ty}              \tag{term constant}     \\
+                     &\quad||  &&\ \TmAbs{\TmVar}{\Ty}{\Tm} \tag{term abstraction}  \\
+                     &\quad||  &&\ \TmApp{\Tm_1}{\Tm_2}     \tag{term application}  \\
+                     &\quad||  &&\ \TmOp{\Tm_1}{\Tm_2}      \tag{operator}          \\
+                     &\quad||  &&\ \TmIf{\Tm_1}{\Tm_2}{\Tm_3}\tag{conditional}      \\
+                     &\quad||  &&\ \TmCrash{\Ty}{\ExnLbl}   \tag{exception constant}\\
+                     &\quad||  &&\ \TmSeq{\Tm_1}{\Tm_2}     \tag{forcing}           \\
+                     &\quad||  &&\ \TmFIX{\TmVar}{\Ty}{\Tm} \tag{fixpoint}          \\
+                     &\quad||  &&\ \TmNil{\Ty}              \tag{nil constructor}   \\
+                     &\quad||  &&\ \TmCons{\Tm_1}{\Tm_2}    \tag{cons constructor}  \\
+                     &\quad||  &&\ \TmCase{\Tm_1}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}
                                                             \tag{list eliminator}
-\end{align}
+\end{alignat}
 \caption{Source language: syntax}
 \end{figure}
+
+\begin{itemize}
+    \item \TODOX{Remove type annotation from $\TmCon{\Ty}$, make the operator a boolean one, and drop support for integers?}
+\end{itemize}
 
 \subsection{Underlying type system}
 
