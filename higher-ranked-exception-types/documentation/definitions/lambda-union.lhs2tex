@@ -36,3 +36,5 @@
 \newcommand{\REDUCE}{\longrightarrow}
 \newcommand{\Reduce}[2]{{#1 \REDUCE #2}}
 \newcommand{\ReduceMulti}[2]{{#1 \REDUCE^{*} #2}}
+
+\newcommand{\LuDenote}[2]{\llbracket #1 \rrbracket_{\rho\left[\LuVar\mapsto #2\right]}}

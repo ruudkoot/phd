@@ -5,8 +5,7 @@
 Values $\LuVal$ are terms of the form \[ \LuAbs{\LuVar_1}{\LuTy_1}{\cdots\LuAbs{\LuVar_i}{\LuTy_i}{\LuUnion{\LuCon[\LuCON_1]}{(
 \LuUnion{\cdots}{(\LuUnion{\LuCon[\LuCON_j]}{(\LuUnion{\LuApp{\LuVar_1}{\LuVal_{11}\cdots\LuVal_{1m}}}{(\LuUnion{\cdots}{\LuApp{x_k}{v_{k1} \cdots v_{kn}}})})})})}}} \]
 
-\subsection{Reduction relation}
-
+\subsection{Reduction relation (wrong!)}
 
 
 \begin{itemize}
@@ -82,6 +81,46 @@ Values $\LuVal$ are terms of the form \[ \LuAbs{\LuVar_1}{\LuTy_1}{\cdots\LuAbs{
 \begin{corollary}
     Equality of $\LambdaUnion$-terms can be decided by normalization.
 \end{corollary}
+
+\subsection{Semantics}
+
+\begin{itemize}
+    \item \TODO Combine the lemma and the theorem and make the ``extensionally'' explicit.
+    \item \TODO Is the case for applications rigorous? Relies on the monotonicity of $\varphi : V_{\tau_1} \to V_{\tau_2}$ (separate lemma, require in the denotational semantics?); this might fail for anything other than set union?
+\end{itemize}
+
+\begin{lemma}\label{lu-lem-app}
+    $\llbracket \LuTm \rrbracket_{\rho\left[\LuVar \mapsto v_1\right]} \cup \llbracket \LuTm \rrbracket_{\rho\left[\LuVar \mapsto v_2\right]} \subseteq \llbracket \LuTm \rrbracket_{\rho\left[\LuVar \mapsto v_1 \cup v_2\right]}$ (extensionally).
+\end{lemma}
+\begin{proof}
+    By induction on the term $\LuTm$.
+
+    \Case{$\LuTm = \LuVar$} $\llbracket \LuVar \rrbracket_{\rho\left[\LuVar\mapsto v_1\right]} \cup \llbracket \LuVar \rrbracket_{\rho\left[\LuVar\mapsto v_2\right]} = \rho\!\left[\LuVar\mapsto v_1\right]\!(x) \cup \rho\!\left[\LuVar\mapsto v_2\right]\!(x) = v_1 \cup v_2 = \rho\!\left[x\mapsto v_1 \cup v_2\right]\!(x) = \llbracket \LuVar \rrbracket_{\rho\left[x\mapsto v_1 \cup v_2\right]}$.
+
+    \Case{$\LuTm = y$ ($y \neq \LuVar$)} $\llbracket y \rrbracket_{\rho\left[\LuVar\mapsto v_1\right]} \cup \llbracket y \rrbracket_{\rho\left[\LuVar\mapsto v_2\right]} = \rho\!\left[\LuVar\mapsto v_1\right]\!(y) \cup \rho\!\left[\LuVar\mapsto v_2\right]\!(y) = \rho(y) \cup \rho(y) = \rho(y) = \rho\!\left[x\mapsto v_1 \cup v_2\right]\!(y) = \llbracket y \rrbracket_{\rho\left[x\mapsto v_1 \cup v_2\right]}$.
+
+    \Case{$t=\LuApp{\LuTm_1}{\LuTm_2}$}
+    \begin{align*}
+        &\LuDenote{\LuApp{\LuTm_1}{\LuTm_2}}{v_1} \cup \LuDenote{\LuApp{\LuTm_1}{\LuTm_2}}{v_2} \\
+        &= \bigcup\left\{\varphi(\LuDenote{\LuTm_2}{v_1})\mid\varphi\in\LuDenote{\LuTm_1}{v_1}\right\}\cup \bigcup\left\{\varphi(\LuDenote{\LuTm_2}{v_2})\mid\varphi\in\LuDenote{\LuTm_1}{v_2}\right\} \\
+        &\textcolor{red}{\stackrel{!}{\subseteq}} \bigcup\left\{\varphi(\LuDenote{\LuTm_2}{v_1})\cup\varphi(\LuDenote{\LuTm_2}{v_2})\mid\varphi\in\LuDenote{\LuTm_1}{v_1}\cup\LuDenote{\LuTm_1}{v_2}\right\} \\
+        &\textcolor{red}{\stackrel{!}{\subseteq}} \bigcup\left\{\varphi(\LuDenote{\LuTm_2}{v_1}\cup\LuDenote{\LuTm_2}{v_2})\mid\varphi\in\LuDenote{\LuTm_1}{v_1}\cup\LuDenote{\LuTm_1}{v_2}\right\} \\
+        & \IH{\subseteq} \bigcup\left\{\varphi(\LuDenote{\LuTm_2}{v_1 \cup v_2})\mid\varphi\in\LuDenote{\LuTm_1}{v_1\cup v_2}\right\} \\
+        &= \LuDenote{\LuUnion{\LuTm_1}{\LuTm_2}}{v_1 \cup v_2}
+    \end{align*}
+
+    \Case{$t=\LuEmpty$} $\llbracket \LuEmpty \rrbracket_{\rho\left[\LuVar\mapsto v_1\right]} \cup \llbracket \LuEmpty \rrbracket_{\rho\left[\LuVar\mapsto v_2\right]} = \emptyset = \llbracket \LuEmpty \rrbracket_{\rho\left[\LuVar\mapsto v_1 \cup v_2\right]}$.
+
+    \Case{$t=\LuCon$} $\llbracket \LuCon \rrbracket_{\rho\left[\LuVar\mapsto v_1\right]} \cup \llbracket \LuCon \rrbracket_{\rho\left[\LuVar\mapsto v_2\right]} = \LuCon = \llbracket \LuCon \rrbracket_{\rho\left[\LuVar\mapsto v_1 \cup v_2\right]}$.
+
+    \Case{$t = \LuUnion{\LuTm_1}{\LuTm_2}$} $\llbracket \LuUnion{\LuTm_1}{\LuTm_2} \rrbracket_{\rho\left[\LuVar\mapsto v_1\right]} \llbracket \LuUnion{\LuTm_1}{\LuTm_2} \rrbracket_{\rho\left[\LuVar\mapsto v_2\right]} = \LuDenote{\LuTm_1}{v_1} \cup \LuDenote{\LuTm_1}{v_2} \cup \LuDenote{\LuTm_2}{v_1} \cup \LuDenote{\LuTm_2}{v_2} \IH{\subseteq} \LuDenote{\LuTm_1}{v_1 \cup v_2} \cup \LuDenote{\LuTm_2}{v_1 \cup v_2} = \LuDenote{\LuUnion{\LuTm_1}{\LuTm_2}}{v_1 \cup v_2}.$
+\end{proof}
+
+The inequality of Lemma~\ref{lu-lem-app} in not an equality.
+
+\begin{counterexample}
+Let $\mathrm{app} = \lambda f.\lambda x.f\ x$, then $\mathrm{app}\ (\lambda x.\emptyset)\ \{C\} \cup \mathrm{app}\ (\lambda x. x) \emptyset \leadsto \emptyset$, but $\mathrm{app}\ ((\lambda x.\emptyset) \cup (\lambda x. x))\ (\{C\} \cup \emptyset) \leadsto \{C\}$.
+\end{counterexample}
 
 \subsection{Normalization (with widening)}
 \begin{itemize}

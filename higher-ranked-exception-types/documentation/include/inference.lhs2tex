@@ -7,6 +7,7 @@
 \newcommand{\CiteRule}[1]{\mbox{\textsc{#1}}}
 
 \newcommand{\CaseRule}[1]{Case \textsc{#1}: }
+\newcommand{\Case}[1]{Case ``#1'': }
 \newcommand{\Subcase}[1]{Subcase ``#1'': }
 
 % Environments
