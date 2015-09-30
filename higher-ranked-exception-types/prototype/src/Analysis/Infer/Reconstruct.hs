@@ -166,7 +166,7 @@ reconstruct env kenv tm@(FIX x ty e)
                    ,ElabFIX de_w ## (env, kenv, tm)
                    ,ReconstructFIX env kenv tm re_w t0 exn0 km) #
                         (FIX' x t_w exn_w ee_w, t_w, exn_w)
-         
+         {-
          -- METHOD 2 ("top-down")
          -- FIXME: doesn't work yet!
          co@(dt1', t0, ExnVar exn0, kenv1) <- C.complete [] ty
@@ -194,7 +194,7 @@ reconstruct env kenv tm@(FIX x ty e)
                 else kleeneMycroft (trace ++ [tr]) t_j exn_j
 
          km@(_, t_w2, exn_w, subst_w) <- kleeneMycroft [] t0 (ExnVar exn0)
-
+         -}
          return $ res
          {-
          if exnTyEq kenv' t_w t_w2 then
