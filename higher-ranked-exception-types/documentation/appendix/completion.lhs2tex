@@ -1,0 +1,20 @@
+\section{Completion}
+The completion procedure as an algorithm:
+
+%format :*:       = "\times"
+%format Tuple3 (x) (y) (z) = "\left<" x "; " y "; " z "\right>"
+
+%format kindEnv_i = "\KindEnv{i}"
+%format TyBool    = "\TyBool"
+%format ExnTyBool = "\ExnTyBool"
+%format e         = "\ExnVar"
+%format eis       = "\overline{\ExnVar_i}"
+%format kis       = "\overline{\Kind_i \KindArr}"
+%format EXN       = "\KindEXN"
+
+\begin{code}
+    complete :: Env :*: Ty -> ExnTy :*: Exn :*: Env
+    complete kindEnv_i TyBool =
+        let  e be fresh
+        in   Tuple3 ExnTyBool (e eis) (e :: kis EXN)
+\end{code}

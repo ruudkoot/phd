@@ -142,7 +142,7 @@
 
 %include section/related-work.lhs2tex
 
-\newpage
+\clearpage
 
 %BEGIN sigplanconf-template.tex
 

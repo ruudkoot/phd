@@ -1,21 +1,65 @@
 \section{Completion}
 
+\subsection{Exception types}
+
+\begin{itemize}
+    \item \TODO $\ExnVar \in \ClassExnVar$
+    \item \TODO Well-formedness of exception types:
+        \begin{enumerate}
+            \item Kinding relatation (all annotation should be of kind $\KindEXN$.
+            \item Conservative extension / full-flexibility.
+        \end{enumerate}
+\end{itemize}
+
+The syntax of exception types are given in Figure~\ref{fig-exception-type-syntax}. An exception type~$\ExnTy$ is formed out of base types (booleans), compound types (lists), function types and quantification over exception variables.\footnote{To avoid complicating the presentation would do \emph{not} allow quantification over type variables, i.e. polymorpism in the underlying type system.}
+
+For a list with exception type $\ExnTyList{\ExnTy}{\Exn}$ the type of the elements in the lists $\ExnTy$ is \emph{annotated} with and exception set expression $\Exn$ of kind~$\KindEXN$. 
+
 \begin{figure}[h]
-\begin{align}
-    \Kind \in \ClassKind &&::= \quad &\KindEXN \tag{exception} \\
-                         &&||  \quad &\Kind_1 \KindArr \Kind_2 \tag{exception operator}
-\end{align}
-\begin{align}
-    \Exn \in \ClassExn &&::= \quad &\ExnVar \tag{exception variables} \\
-                       &&||  \quad &\ExnAbs{\ExnVar}{\Kind}{\Exn} \tag{exception abstraction}\end{align}
-\begin{align}
-    \ExnTy \in \ClassExnTy &&::= \quad &\ExnForall{\ExnVar :: \Kind}\ExnTy \tag{exception quantification} \\
-                 &&||  \quad &\ExnTyBool \tag{boolean type} \\
-                 &&||  \quad &\ExnTyList{\ExnTy}{\Exn} \tag{list type} \\
-                 &&||  \quad &\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2} \tag{function type}
-\end{align}
-\caption{Exception types}
+    \begin{alignat}{2}
+        \Kind \in \ClassKind &\ ::=\ &&\KindEXN \tag{exception set} \\
+                             &\quad||  &&\Kind_1 \KindArr \Kind_2 \tag{exception operator}\\
+        \notag\\
+        \Exn \in \ClassExn &\ ::=\ &&\ExnVar \tag{exception variables} \\
+                           &\quad||  &&\ExnAbs{\ExnVar}{\Kind}{\Exn} \tag{exception abstraction}\\
+                            &\quad||    &&\ExnApp{\Exn_1}{\Exn_2} \tag{exception application}\\
+                            &\quad||    &&\ExnEmpty \tag{empty exception set} \\
+                            &\quad||    &&\ExnCon{\ExnLbl} \tag{singleton exception} \\
+                            &\quad||    &&\ExnUnion{\Exn_1}{\Exn_2} \tag{exception set union} \\
+    \notag\\
+        \ExnTy \in \ClassExnTy &\ ::=\ &&\ExnForall{\ExnVar :: \Kind}\ExnTy \tag{exception quantification} \\
+                     &\quad||  &&\ExnTyBool \tag{boolean type} \\
+                     &\quad||  &&\ExnTyList{\ExnTy}{\Exn} \tag{list type} \\
+                     &\quad||  &&\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2} \tag{function type}
+    \end{alignat}
+    \caption{Exception types: syntax}
+    \label{fig-exception-type-syntax}
 \end{figure}
+
+\begin{figure}[h]
+    \begin{gather*}
+        \Rule{W-Univ}
+             {\JudgeExnTyWff{d}{\KiEnv,\ExnVar :: \Kind}{\ExnTy}}
+             {\JudgeExnTyWff{d}{\KiEnv}{\ExnTyForall{\ExnVar}{\Kind}{\ExnTy}}}
+        \HOR
+        \Rule{W-Bool}
+             {}
+             {\JudgeExnTyWff{d}{\KiEnv}{\ExnTyBool}}
+        \VER
+        \Rule{W-List}
+             {\JudgeExnTyWff{d}{\KiEnv}{\ExnTy} \quad \JudgeKind{\KiEnv}{\Exn}{\KindEXN}}
+             {\JudgeExnTyWff{d}{\KiEnv}{\ExnTyList{\ExnTy}{\Exn}}}
+        \VER
+        \Rule{W-Arr}
+             {}
+             {\JudgeExnTyWff{d}{\KiEnv}{\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}}}
+    \end{gather*}
+    \caption{Exception types: well-formedness}
+    \label{fig-exception-type-well-formed}
+\end{figure}
+
+
+\subsection{Exception type completion}
 
 The completion procedure as a set of inference rules:
 
@@ -68,23 +112,3 @@ The completion procedure as a set of inference rules:
     \end{gather*}
     \caption{Type completion ($\JudgeComplete{\KindENV}{\Ty}{\ExnTy}{\Exn}{\KindENV'}$)}
 \end{figure*}
-
-The completion procedure as an algorithm:
-
-%format :*:       = "\times"
-%format Tuple3 (x) (y) (z) = "\left<" x "; " y "; " z "\right>"
-
-%format kindEnv_i = "\KindEnv{i}"
-%format TyBool    = "\TyBool"
-%format ExnTyBool = "\ExnTyBool"
-%format e         = "\ExnVar"
-%format eis       = "\overline{\ExnVar_i}"
-%format kis       = "\overline{\Kind_i \KindArr}"
-%format EXN       = "\KindEXN"
-
-\begin{code}
-    complete :: Env :*: Ty -> ExnTy :*: Exn :*: Env
-    complete kindEnv_i TyBool =
-        let  e be fresh
-        in   Tuple3 ExnTyBool (e eis) (e :: kis EXN)
-\end{code}

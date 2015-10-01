@@ -93,5 +93,6 @@
 \chapter{Old stuff}
 
 %include appendix/lambda-union.lhs2tex
+%include appendix/completion.lhs2tex
 
 \end{document}
