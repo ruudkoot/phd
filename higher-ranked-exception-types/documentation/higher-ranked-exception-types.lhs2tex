@@ -12,6 +12,7 @@
 \usepackage{mathtools}
 \usepackage{stmaryrd}
 \usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+\usepackage{natbib}
 
 \newcommand{\ThesisPaper}[2]{#1}
 
@@ -94,5 +95,8 @@
 
 %include appendix/lambda-union.lhs2tex
 %include appendix/completion.lhs2tex
+
+\bibliographystyle{abbrvnat}
+\bibliography{higher-ranked-exception-types}
 
 \end{document}

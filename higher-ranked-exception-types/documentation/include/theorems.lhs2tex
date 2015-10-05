@@ -3,6 +3,7 @@
 \newtheorem{definition}{Definition}
 \newtheorem{lemma}{Lemma}
 \newtheorem{theorem}{Theorem}
+\newtheorem{example}{Example}
 \newtheorem{counterexample}{Counterexample}
 
 \newcommand{\IH}[1]{\stackrel{\text{i.h.}}{#1}}

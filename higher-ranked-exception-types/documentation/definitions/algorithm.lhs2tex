@@ -3,19 +3,22 @@
 %format EXN               = "\KindEXN"
 %format KindArr (k1) (k2) = "(" k1 " \KindArr " k2 ")"
 
-%format ExnVar (e)                     = "e_{" e "}"
-%format ExnCon (l)                     = l
-%format ExnApp (t1) (t2)               = "(" t1 "\ " t2 ")"
-%format ExnAbs (e) (k) (t)             = "(\lambda e_" e " :: " k "." t ")"
-%%ormat ExnForall (e) (k) (t)          = "(\ExnForall{e_{" e "} :: " k "} " t ")"
-%format ExnForall (e) (k) (t)          = "(\ExnForall{e_{" e "}} " t ")"
-%format ExnBool                        = "\ExnBool"
-%format ExnList (t) (exn)              = "\ExnTyList{" t "}{" exn "}"
-%format ExnArr (t1) (exn1) (t2) (exn2) = "(\ExnTyArr{" t1 "}{" exn1 "}{" t2 "}{" exn2 "})"
+%format ExnVar (e)                      = "e_{" e "}"
+%format ExnCon (l)                      = l
+%format ExnApp (t1) (t2)                = "(" t1 "\ " t2 ")"
+%format ExnAbs (e) (k) (t)              = "(\lambda e_" e " :: " k "." t ")"
+%%ormat ExnForall (e) (k) (t)           = "(\ExnForall{e_{" e "} :: " k "} " t ")"
+%format ExnForall (e) (k) (t)           = "(\ExnForall{e_{" e "}} " t ")"
+%format ExnBool                         = "\ExnBool"
+%format ExnList (t) (exn)               = "\ExnTyList{" t "}{" exn "}"
+%format ExnArr (t1) (exn1) (t2) (exn2)  = "\ExnTyArr{" t1 "}{" exn1 "}{" t2 "}{" exn2 "}"
+%format ExnArrA (t1) (exn1)             = t1 "\langle" exn1 "\rangle\rightarrow"
+%format (ExnArrB (t2) (exn2))           = t2 "\langle" exn2 "\rangle"
 
+%format ExnUnion (e1) (e2)              = "(\ExnUnion{" e1 "}{" e2 "})"
+%format ExnEmpty                        = "\ExnEmpty "
 
-%format ExnUnion (e1) (e2)             = "(\ExnUnion{" e1 "}{" e2 "})"
-%format ExnEmpty                       = "\ExnEmpty "
+%format :&:                             = "\ \&\ "
 
 
 \newcommand{\Complete}{\mathcal{C}}

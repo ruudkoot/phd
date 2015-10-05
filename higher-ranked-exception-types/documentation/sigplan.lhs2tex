@@ -17,6 +17,7 @@
 \usepackage{mathtools}
 \usepackage{stmaryrd}
 \usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+\usepackage{natbib}
 
 \newcommand{\ThesisPaper}[2]{#2}
 
@@ -94,7 +95,7 @@
 \TODO{term1, term2}
 
 \keywords
-\TODO higher-ranked types, exception analysis, type inference
+\TODO higher-ranked types/polymorphism, exception analysis, type inference, type systems, static/type-based program analysis
 
 %END sigplanconf-template.tex
 
@@ -144,21 +145,23 @@
 
 \clearpage
 
+\bibliographystyle{abbrvnat}
+\bibliography{higher-ranked-exception-types}
+
 %BEGIN sigplanconf-template.tex
 
 % We recommend abbrvnat bibliography style.
-
-\bibliographystyle{abbrvnat}
+%\bibliographystyle{abbrvnat}
 
 % The bibliography should be embedded for final submission.
 
-\begin{thebibliography}{}
-\softraggedright
-
-\bibitem[Smith et~al.(2009)Smith, Jones]{smith02}
-P. Q. Smith, and X. Y. Jones. ...reference text...
-
-\end{thebibliography}
+%\begin{thebibliography}{}
+%\softraggedright
+%
+%\bibitem[Smith et~al.(2009)Smith, Jones]{smith02}
+%P. Q. Smith, and X. Y. Jones. ...reference text...
+%
+%\end{thebibliography}
 
 %END sigplanconf-template.tex
 
