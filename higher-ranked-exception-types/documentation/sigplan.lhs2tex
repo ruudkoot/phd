@@ -103,7 +103,6 @@
 %include section/lambda-union.lhs2tex
 %include section/source-language.lhs2tex
 %include section/exception-type-system.lhs2tex
-%include section/completion.lhs2tex
 %include section/type-inference.lhs2tex
 %include section/interesting-observations.lhs2tex
 

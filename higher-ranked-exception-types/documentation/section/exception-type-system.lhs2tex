@@ -1,5 +1,173 @@
 \section{Exception types}
 
+\subsection{Exception types}
+
+\begin{itemize}
+    \item \TODO $\ExnVar \in \ClassExnVar$
+    \item \TODO Well-formedness of exception types: embed conservativity / full-flexibility?
+    \item \TODO Can we roll \textsc{Univ} and \textsc{Arr} into a single construct: $\ExnTyForall{\ExnVar}{\Kind}{\ExnTyArr{\ExnTy_1}{\ExnVar}{\ExnTy_2}{\Exn(\ExnVar)}}$? Still need to deal with the well-formedness of $\ExnTy_1$... Also may need to quantify over more than one variable simultaneously...
+\end{itemize}
+
+The syntax of well-formed exception types are given in Figure~\ref{fig-exception-type-syntax} and Figure~\ref{fig-exception-type-well-formed}. An exception type~$\ExnTy$ is formed out of base types (booleans), compound types (lists), function types and quantification over exception variables.\footnote{To avoid complicating the presentation would do \emph{not} allow quantification over type variables, i.e. polymorpism in the underlying type system.}
+
+For a list with exception type $\ExnTyList{\ExnTy}{\Exn}$ and effect $\psi$, the type $\ExnTy$ of the elements in the list is \emph{annotated} with an exception set expression $\Exn$ of kind~$\KindEXN$. This expression gives a set of exceptions which may be raised when an element of the list is forced. The effect gives a set of exceptions may be raised when a constructor forming the spine of the list is forced.
+
+For a function with exception type $\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}$ and effect~$\psi$, the argument of type $\ExnTy_1$ is annotated with an exception set expression $\Exn_1$ that gives set of exceptions that may be raised if the argument is forced by the function. The result of type $\ExnTy_2$ is annotated with an exception set expression $\Exn_2$ that gives the set of exceptions that may be raised when the result of the function is forced. The effect $\psi$ gives the set of exceptions that may be raised if the function closure is forced.
+
+\begin{code}
+id : forall e. ExnArr ExnBool e ExnBool e :&: EmptySet
+id = \x -> x
+\end{code}
+
+\begin{code}
+bottom : forall e. ExnArr ExnBool e ExnBool EmptySet :&: {E}
+\end{code}
+
+The exception set expressions $\Exn$ and their kinds $\Kind$ are an instance of the \mbox{$\LambdaUnion$-calculus}, where exception set expressions are terms and kinds are the types. Two exception set expressions are considered equivalent if they are convertible as $\LambdaUnion$-terms, which is to say that they reduce to the same normal form. 
+
+\begin{itemize}
+    \item \TODO Some more complicated examples
+\end{itemize}
+
+\begin{figure}[h]
+    \begin{alignat}{2}
+        \Kind \in \ClassKind &\ ::=\ &&\KindEXN \tag{exception set} \\
+                             &\quad||  &&\Kind_1 \KindArr \Kind_2 \tag{exception operator}\\
+        \notag\\
+        \Exn, \psi \in \ClassExn  &\ ::=\ &&\ExnVar \tag{exception variables} \\
+                            &\quad||  &&\ExnAbs{\ExnVar}{\Kind}{\Exn} \tag{exception abstraction}\\
+                            &\quad||    &&\ExnApp{\Exn_1}{\Exn_2} \tag{exception application}\\
+                            &\quad||    &&\ExnEmpty \tag{empty exception set} \\
+                            &\quad||    &&\ExnCon{\ExnLbl} \tag{singleton exception} \\
+                            &\quad||    &&\ExnUnion{\Exn_1}{\Exn_2} \tag{exception set union} \\
+    \notag\\
+        \ExnTy \in \ClassExnTy &\ ::=\ &&\ExnForall{\ExnVar :: \Kind}\ExnTy \tag{exception quantification} \\
+                     &\quad||  &&\ExnTyBool \tag{boolean type} \\
+                     &\quad||  &&\ExnTyList{\ExnTy}{\Exn} \tag{list type} \\
+                     &\quad||  &&\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2} \tag{function type}
+    \end{alignat}
+    \caption{Exception types: syntax}
+    \label{fig-exception-type-syntax}
+\end{figure}
+
+\begin{figure}[h]
+    \begin{gather*}
+        \Rule{W-Univ}
+             {\JudgeExnTyWff{d}{\KiEnv,\ExnVar :: \Kind}{\ExnTy}}
+             {\JudgeExnTyWff{d}{\KiEnv}{\ExnTyForall{\ExnVar}{\Kind}{\ExnTy}}}
+        \HOR
+        \Rule{W-Bool}
+             {}
+             {\JudgeExnTyWff{d}{\KiEnv}{\ExnTyBool}}
+        \VER
+        \Rule{W-List}
+             {\JudgeExnTyWff{d}{\KiEnv}{\ExnTy} \quad \JudgeKind{\KiEnv}{\Exn}{\KindEXN}}
+             {\JudgeExnTyWff{d}{\KiEnv}{\ExnTyList{\ExnTy}{\Exn}}}
+        \VER
+        \Rule{W-Arr}
+             {\begin{gathered}\JudgeExnTyWff{d}{\KiEnv}{\ExnTy_1} \quad \JudgeKind{\KiEnv}{\Exn_1}{\KindEXN} \\ \JudgeExnTyWff{d}{\KiEnv}{\ExnTy_2} \quad \JudgeKind{\KiEnv}{\Exn_2}{\KindEXN}\end{gathered}}
+             {\JudgeExnTyWff{d}{\KiEnv}{\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}}}
+    \end{gather*}
+    \caption{Exception types: well-formedness}
+    \label{fig-exception-type-well-formed}
+\end{figure}
+
+\subsection{Conservativeness}
+
+Any program that is typeable in the underlying type system should also have an exception type: the exception type system is a conservative extension of the underlying type system. Like type systems for strictness or control flow analysis, and unlike type systems for information flow security or dimensional analysis, we do not want to reject any program that is well-typed in the underlying type system, but merely provide more insight in its behavior.
+
+If we furthermore want out type system to be modular---allowing type checking and inference to work on indivildual modules instead of whole programs---we cannot make any assumptions about the exception types of the arguments that are applied to any function, as the function may be called from outside the module with an argument that also comes from outside the module and which we cannot known anything about.\footnote{\citet{HoldermansHage} call such types \emph{fully flexible}.}
+
+For base and compound types that stand in an argument position their effect and any nested annotations must thus be instantiatable to any arbitrary exception set expression. They must thus be exception set variables that have been universally quantified.
+
+\begin{itemize}
+    \item \TODO check all examples types against prototype
+    \item \TODO properly typeset example types
+    \item \TODO Skolemization and expliciy existential quantication over unification variables?
+\end{itemize}
+
+\begin{example}\
+\begin{code}
+    tail : forall e_1 e_2. ExnArr (ExnList ExnBool e_1) e_2 (ExnList ExnBool e_1) (e_2 # EMPTY)
+\end{code}
+
+\begin{code}
+    (&&) : forall e_1. ExnArr ExnBool e_1 ((forall e_2. ExnArr ExnBool e_2 ExnBool (e_1 # e_2))) EmptySet & EmptySet
+\end{code}
+\end{example}
+
+For function types that stand in an argument position (the functional parameters of a higher-order function) the situation is slightly more complicated. For the argument of this function we can inductively assume that this will be a universally quantified exception set variable. The result of this function, however, is some exception set expression that depends on the exception set variables that were quantified over in the argument. We cannot simply introduce a new exception set variable here, but must introduce a Skolem function that depends on each of the universally quantified exception set variables.
+
+\begin{example} Consider the higher-order function |apply| that applies its first argument to the second.
+% apply : A e2:E. A e3:E=>E.
+%           (A e1:E. bool<e1> --<e2>-> bool<e3 e2>) ->
+%               A e4:E. bool<e4> -> bool<e2 + e3 e4>
+\begin{code}
+    apply  :    forall e_2 :: EXN. forall e_3 :: EXN => EXN.
+                  ExnArrA ((forall e_1 :: EXN. ExnArr ExnBool e_1 ExnBool (e_3 e_1))) e_2
+                    (ExnArrB ((forall e_4 :: EXN. ExnArr ExnBool e_4 ExnBool (e_2 # e_3 e_4))) ExnEmpty)
+           :&:  ExnEmpty
+    apply  =  LAMBDA f (LAMBDA x (f x))
+\end{code}
+The first, functional, argument of |apply| has exception type |forall e_1 :: EXN. ExnArr ExnBool e_1 ExnBool (e_3 e_1)| and effect |e_2|. It can be instantiated with any function that accepts an argument annotated with any exception set effect, and produces a result annotated with some exception set effect depending on the exception set effect of the argument; the function closure itself may raise any exception. All functions of underling type |Bool -> Bool| satisfy these constraints, so they do not really constrain us in any way.
+
+As |e_1| has been quantified over only the exception set operator~|e_3| and the effect |e_2| are left free. We quantify over them outside the outer function space constructor, allowing them to appear in the annotation |e_2 # e_3 e_4| in the result. The exception set operator |e_3| is now applied to |e_4|, as the application |f x| will instantiate the quantified exception set variable |e_1| to |e_4|.
+\end{example}
+
+\subsection{Exception type completion}
+
+During exception type inference will want to compute the least constraint exception type that erases to a given underlying type.
+
+\begin{figure*}[h]
+    \begin{gather*}
+        \Rule{C-Bool}
+             {}
+             {\JudgeComplete{\KindEnv{i}}
+                            {\TyBool}
+                            {\ExnTyBool}
+                            {\ExnVar\ \overline{\ExnVar_i}}
+                            {\ExnVar :: \overline{\Kind_i\KindArr}\KindEXN}
+             }
+        \HOR
+        \Rule{C-List}
+             {\JudgeComplete{\KindEnv{i}}
+                            {\Ty}
+                            {\ExnTy}
+                            {\Exn}
+                            {\KindEnv{j}}
+             }
+             {\JudgeComplete{\KindEnv{i}}
+                            {\TyList{\Ty}}
+                            {\ExnTyList{\ExnTy}{\Exn}}
+                            {\ExnVar\ \overline{\ExnVar_i}}
+                            {\ExnVar :: \overline{\Kind_i\KindArr}%
+                                \KindEXN, \KindEnv{j}}
+             }
+        \VER
+        \Rule{C-Arr}
+             {\JudgeComplete{}
+                            {\Ty_1}
+                            {\ExnTy_1}
+                            {\Exn_1}
+                            {\KindEnv{j}}
+              \quad
+              \JudgeComplete{\KindEnv{i},\KindEnv{j}}
+                            {\Ty_2}
+                            {\ExnTy_2}
+                            {\Exn_2}
+                            {\KindEnv{j}}
+             }
+             {\JudgeComplete{\KindEnv{i}}
+                            {\TyArr{\Ty_1}{\Ty_2}}
+                            {\ExnForall{\overline{\ExnVar_j :: \Kind_j}}\left(\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}\right)}
+                            {\ExnVar\ \overline{\ExnVar_i}}
+                            {\ExnVar :: \overline{\Kind_j\KindArr}%
+                                \KindEXN, \KindEnv{k}}
+             }
+    \end{gather*}
+    \caption{Type completion ($\JudgeComplete{\KindENV}{\Ty}{\ExnTy}{\Exn}{\KindENV'}$)}
+\end{figure*}
+
 \subsection{Declarative exception type system}
 
 \begin{figure*}[h!]

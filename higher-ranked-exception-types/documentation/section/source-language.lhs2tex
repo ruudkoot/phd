@@ -28,7 +28,7 @@ Our analysis is applicable to a simple non-strict functional language that suppo
 
 \subsection{Underlying type system}
 
-\begin{figure*}[ht]
+\begin{figure*}[p]
     \begin{gather*}
         \Rule{T-Var}
              {}

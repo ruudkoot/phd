@@ -1,3 +1,32 @@
 \section{Related work}
 
-\TODO
+\subsection{Higher-ranked polymorphism in type and effect systems}
+
+\citet{KennedyThesis} presents a type system that ensures the dimensional consistency of  a ML-like language extended with units of measure ($\mathrm{ML}_\delta$). This language has predicative, prenex dimension polymorphism. Kennedy gives an Algorithm~$\mathcal{W}$-like type inference procedure that uses equational unification to deal with the Abelian group (AG) structure of dimension expressions. Also described are two explicitly typed variants of the language: a System F-like language with arbitrary rank dimension polymorphism ($\Lambda_\delta$), and a System~$\mathrm{F}_\omega$-like language that extends $\Lambda_\delta$ with dimension operators ($\Lambda_{\delta\omega}$). This latter language bears a striking resemblance to our language in Figure~\ref{fig-exception-type-syntax}: the empty and singleton exception sets constants and the exception set union operator have been replaced with a unit dimension and dimension product and inverse operators, because dimensions have an AG structure, while exception sets have an ACI1 structure; in the dimension type system the annotation is placed only on the real number base type instead of on the compound types, and there is no effect. No type inference algorithm is presented for this language, however.
+
+Polymorphic recursion
+
+Stefan
+
+RW in Stefan (Faxen?)
+
+\LORUMIPSUM
+
+\subsection{Exception analyses}
+ML. Haskell.
+
+\LORUMIPSUM
+
+\LORUMIPSUM
+
+\subsection{$\LambdaUnion$-calculus} Revezc
+
+\LORUMIPSUM
+
+\section{Further research}
+
+Two obvious opportunities for further research present itself:
+\begin{enumerate}
+    \item Can we adapt our type inference algorithm to automatically infer types for Kennedy's $\Lambda_{\delta\omega}$?
+    \item BR
+\end{enumerate}
