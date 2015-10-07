@@ -1,10 +1,15 @@
 %%%% LHS2TEX COMMANDS FOR TYPESETTING THE ALGORITHMS
 
+%format :   = "::"
+%format ::  = ":"
+
 %format EXN               = "\KindEXN"
 %format KindArr (k1) (k2) = "(" k1 " \KindArr " k2 ")"
 
 %format ExnVar (e)                      = "e_{" e "}"
 %format ExnCon (l)                      = l
+%format ExnConE                         = "\{\mathbf{E}\}"
+%format ExnLblE                         = "\mathbf{E}"
 %format ExnApp (t1) (t2)                = "(" t1 "\ " t2 ")"
 %format ExnAbs (e) (k) (t)              = "(\lambda e_" e " :: " k "." t ")"
 %%ormat ExnForall (e) (k) (t)           = "(\ExnForall{e_{" e "} :: " k "} " t ")"
@@ -19,6 +24,8 @@
 %format ExnEmpty                        = "\ExnEmpty "
 
 %format :&:                             = "\ \&\ "
+
+%format --->                            = "\longrightarrow "
 
 
 \newcommand{\Complete}{\mathcal{C}}
@@ -44,6 +51,7 @@
 %format exn' = "\Exn^{\prime}"
 
 %format Bool = "\TyBool"
+%format Int  = "\TyInt"
 
 \newcommand{\ListNil}{\left[\right]}
 %format Nil (ty) = "\ListNil_{" ty "}"

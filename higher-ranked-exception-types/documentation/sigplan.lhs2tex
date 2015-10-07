@@ -142,6 +142,24 @@
 
 %include section/related-work.lhs2tex
 
+\section{\textcolor{red}{TODO}}
+
+\begin{itemize}
+
+    \item standard polyrec examples (DHM + GSM)
+    
+    \item conclusion
+    
+    \item type inference: we have a fixpoint a la DHM
+    
+    \item compexity (HM = DEXP, STLC in Statman)
+    
+    \item ``algebraic'' effects?
+    
+    \item unexpected decidablity
+
+\end{itemize}
+
 \clearpage
 
 \bibliographystyle{abbrvnat}

@@ -103,9 +103,9 @@ For function types that stand in an argument position (the functional parameters
 %           (A e1:E. bool<e1> --<e2>-> bool<e3 e2>) ->
 %               A e4:E. bool<e4> -> bool<e2 + e3 e4>
 \begin{code}
-    apply  :    forall e_2 :: EXN. forall e_3 :: EXN => EXN.
-                  ExnArrA ((forall e_1 :: EXN. ExnArr ExnBool e_1 ExnBool (e_3 e_1))) e_2
-                    (ExnArrB ((forall e_4 :: EXN. ExnArr ExnBool e_4 ExnBool (e_2 # e_3 e_4))) ExnEmpty)
+    apply  ::   forall e_2 : EXN. forall e_3 : EXN => EXN.
+                  ExnArrA ((forall e_1 : EXN. ExnArr ExnBool e_1 ExnBool (e_3 e_1))) e_2
+                    (ExnArrB ((forall e_4 : EXN. ExnArr ExnBool e_4 ExnBool (e_2 # e_3 e_4))) ExnEmpty)
            :&:  ExnEmpty
     apply  =  LAMBDA f (LAMBDA x (f x))
 \end{code}

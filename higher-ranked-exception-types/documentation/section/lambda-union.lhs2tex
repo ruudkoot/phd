@@ -169,3 +169,7 @@ setRewrite T
 \end{code}
 \caption{Normalization algorithm for $\LambdaUnion$-terms.}
 \end{figure}
+
+\subsection{Unification}
+
+\TODO
