@@ -24,13 +24,13 @@ Without dimension operators we would have had to specialize the type of the high
 
 The language $\Lambda_{\delta\omega}$ bears a striking resemblance to our language in Figure~\ref{fig-exception-type-syntax}: the empty and singleton exception sets constants and the exception set union operator have been replaced with a unit dimension and dimension product and inverse operators, as dimensions have an AG structure, while exception sets have an ACI1 structure; in the dimension type system the annotation is placed only on the real number base type instead of on the compound types, and there is no effect. No type inference algorithm is presented for this language, however.
 
-\TODOX{Polymorphic recursion}
+For plain type systems Hindley--Milner's |let|-bound polymorphism generally provides a good compromise between expressiveness and complexity. In type and effect systems it has long been recognized that $\mathbf{fix}$-bound polymorphism (polymorphic recursion) \emph{in the effects} is often beneficial or necessary for achieving precise analysis results. For example 
+
+\TODOX{Polymorphic recursion} 
 
 \TODOX{Stefan}
 
 \TODOX{RW in Stefan (Faxen?)}
-
-\LORUMIPSUM
 
 \subsection{Exception analyses}
 \TODOX{ML. Haskell.}
