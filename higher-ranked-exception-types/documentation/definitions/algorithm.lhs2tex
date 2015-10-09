@@ -3,7 +3,10 @@
 %format :   = "::"
 %format ::  = ":"
 
+%format (Angled (x))      = "\langle " x "\rangle"
+
 %format EXN               = "\KindEXN"
+%format DIM               = "\KindDIM"
 %format KindArr (k1) (k2) = "(" k1 " \KindArr " k2 ")"
 
 %format ExnVar (e)                      = "e_{" e "}"
@@ -50,8 +53,9 @@
 %format exn  = "\Exn"
 %format exn' = "\Exn^{\prime}"
 
-%format Bool = "\TyBool"
-%format Int  = "\TyInt"
+%format Bool        = "\TyBool"
+%format Int         = "\TyInt"
+%format Real (d)    = "\TyReal{" d "}"
 
 \newcommand{\ListNil}{\left[\right]}
 %format Nil (ty) = "\ListNil_{" ty "}"

@@ -1,8 +1,11 @@
 %%%% GENERIC FORMATTING FOR LHS2TEX CODE
 
+%format exp a b = a "^" b
+
 %format EXN = "\textsc{exn}"
 
 %format LAMBDA (x) (e) = "\lambda" x "." e
+%format LLAMBDA (x) (e) = "\Lambda" x "." e
 %format TYLAMBDA (x) (t) (e) = "\Lambda" x ":" t "." e
 %format -|> = "\mapsto "
 %format -\> = "\mapsto "

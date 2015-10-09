@@ -34,6 +34,7 @@
 \newcommand{\Ty}{\tau}
 \newcommand{\TyBool}{\mathbf{bool}}
 \newcommand{\TyInt}{\mathbf{int}}
+\newcommand{\TyReal}[1]{\mathbf{real}\langle #1 \rangle}
 \newcommand{\TyList}[1]{\left[#1\right]}
 \newcommand{\TyArr}[2]{#1 \to #2}
 
