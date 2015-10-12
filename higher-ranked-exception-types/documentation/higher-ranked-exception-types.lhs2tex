@@ -90,6 +90,7 @@
 %include proof/termination.lhs2tex
 
 %include section/related-work.lhs2tex
+%include section/conclusion.lhs2tex
 
 \appendix
 \chapter{Old stuff}

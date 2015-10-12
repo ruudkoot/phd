@@ -2,13 +2,22 @@
 
 \subsection{Higher-ranked polymorphism in type and effect systems}
 
-\citet{KennedyThesis} presents a type system that ensures the dimensional consistency of  a ML-like language extended with units of measure ($\mathrm{ML}_\delta$). This language has predicative, prenex dimension polymorphism. Kennedy gives an Algorithm~$\mathcal{W}$-like type inference procedure that uses equational unification to deal with the Abelian group (AG) structure of dimension expressions. Also described are two explicitly typed variants of the language: a System F-like language with arbitrary rank dimension polymorphism ($\Lambda_\delta$), and a System~$\mathrm{F}_\omega$-like language that extends $\Lambda_\delta$ with dimension operators ($\Lambda_{\delta\omega}$). This language can type strictly more programs than the language without dimension operators:
+\paragraph{Effect polymorphism} For plain type systems Hindley--Milner's |let|-bound polymorphism generally provides a good compromise between expressiveness of the type system and complexity of the inference algorithm \cite{Hindley1969,Milner78atheory,Damas:1982:PTF:582153.582176}.
+These systems where extended with effects---including |let|-bound effect polymorphism---by \citet{Lucassen:1988:PES:73560.73564,Jouvelot:1991:ART:99583.99623}; and \citet{JFP:1457464,Talpin:1994:TED:191349.184660}.
+In type and effect systems it has long been recognized that $\mathbf{fix}$-bound polymorphism (polymorphic recursion) \emph{in the effects} is often beneficial or even necessary for achieving precise analysis results. For example, in type and effect systems for regions \cite{Tofte:1994:ITC:174675.177855}, dimensions \cite{Kennedy:1994:DT:645390.651419,Rittri:1994:STT:194679.194683,Rittri:1995:DIU:224164.224197}, binding-times \cite{Dussart:1995:PRS:647163.717680}, and exceptions \cite{Glynn:2002:EAN:581478.581488,Koot:2015:TEA:2678015.2682542}.
+Inferring principal types in a type system with polymorphic recursion is equivalent to solving an undecidable semi-unification problem \cite{Mycroft1984,Kfoury:1990:USP:100216.100279,Kfoury:1993:TRP:169701.169687,Henglein:1993:TIP:169701.169692}.
+
+When restricted to polymorphic recursion in the effects, the problem often becomes decidable again. In \citet{Tofte:1994:ITC:174675.177855} this is a conjecture based on empirical observation. \citet{Rittri:1995:DIU:224164.224197} gives a semi-unification procedure based on the general semi-algorithm by \citet{Baaz93APTCC} and proves it terminates in the special case of semi-unification in Abelian groups. \citet{Dussart:1995:PRS:647163.717680} use a constraint-based algorithm and show that all variables that do not occur free in the context or type can be eliminated from the constraint set during each step of the Kleene--Mycroft iteration. As at most $n^2$ subeffecting constaints can be formed over $n$ variables, the whole procedure must terminate. By not restarting the Kleene-Mycroft iteration from bottom their algorithm will run in polynomial time, even in the presence of nested fixpoints.
+
+Somehow, the obvious extension to $\mathbf{lambda}$-bound effect polymorphism (higher-ranked polymorphism) remained mostly unstudied, possibly because it is of limited use without the simultaneous introduction of effect operators, in contrast to higher-ranked polymorphism in plain type systems.
+
+\paragraph{Effect operators} \citet{KennedyThesis} presents a type system that ensures the dimensional consistency of  a ML-like language extended with units of measure ($\mathrm{ML}_\delta$). This language has predicative, prenex dimension polymorphism. Kennedy gives an Algorithm~$\mathcal{W}$-like type inference procedure that uses equational unification to deal with the Abelian group (AG) structure of dimension expressions. Also described are two explicitly typed variants of the language: a System F-like language with arbitrary rank dimension polymorphism ($\Lambda_\delta$), and a System~$\mathrm{F}_\omega$-like language that extends $\Lambda_\delta$ with dimension operators ($\Lambda_{\delta\omega}$). This language can type strictly more programs than the language without dimension operators:
     \begin{code}
         twice       ::  forall F : DIM => DIM.
                             (forall d : DIM. Real d -> Real (F d)) ->
                                 (forall d : DIM. Real d -> Real (F (F d)))
         twice       =   LLAMBDA (F : DIM => DIM)
-                            (LAMBDA (f : (forall d : DIM. Real d -> Real (F d)))
+                            (LAMBDA (f :: (forall d : DIM. Real d -> Real (F d)))
                                 (LLAMBDA (d : DIM) (LAMBDA (x :: Real d) (f (Angled (F d)) (f (Angled d) x)))))
 
         square      ::  forall d : DIM. Real d -> Real (exp d 2)
@@ -20,24 +29,22 @@
         sixteenth   ::  forall d : DIM. Real d -> Real (exp d 16)
         sixteenth   =   twice (Angled (LLAMBDA (d : DIM) (exp d 4))) fourth
     \end{code}
-Without dimension operators we would have had to specialize the type of the higher-order function |twice| to one that was either application in |fourth|, or one that was applicable in |sixteenth|.
+Without dimension operators we would have to specialize the type of the higher-order function |twice| to one that is either only application in |fourth|, or one that is only applicable in |sixteenth|.
 
 The language $\Lambda_{\delta\omega}$ bears a striking resemblance to our language in Figure~\ref{fig-exception-type-syntax}: the empty and singleton exception sets constants and the exception set union operator have been replaced with a unit dimension and dimension product and inverse operators, as dimensions have an AG structure, while exception sets have an ACI1 structure; in the dimension type system the annotation is placed only on the real number base type instead of on the compound types, and there is no effect. No type inference algorithm is presented for this language, however.
-
-For plain type systems Hindley--Milner's |let|-bound polymorphism generally provides a good compromise between expressiveness and complexity. In type and effect systems it has long been recognized that $\mathbf{fix}$-bound polymorphism (polymorphic recursion) \emph{in the effects} is often beneficial or necessary for achieving precise analysis results. For example 
-
-\TODOX{Polymorphic recursion} 
 
 \TODOX{Stefan}
 
 \TODOX{RW in Stefan (Faxen?)}
 
 \subsection{Exception analyses}
-\TODOX{ML. Haskell.}
 
-\LORUMIPSUM
+\TODOX{Update to this paper!} Several exception analyses have been described in the literature, primarily targeting the detection of uncaught exceptions in ML.
+The exception analysis in \citet{kyi} is based on abstract interpretation.
+\citet{Guzman94anextended} and \citet{Fahndrich:1998:TDE:893957} describe type-based exception analyses. The row-based type system for exception analysis described in \citet{Leroy:2000:TAU:349214.349230} containing a data-flow analysis component that is specialized towards tracking value-carrying exceptions instead of value-dependent exceptions and thus employs a less precise unification method instead of subtyping.
+\citet{Glynn:2002:EAN:581478.581488} developed the first exception analysis for non-strict languages. It is a type-based analysis using Boolean constraints and, although it does not take data flow into account, has a similar flavour to our system.
 
-\LORUMIPSUM
+\TODOX{Koot and Hage 2015}
 
 \subsection{$\LambdaUnion$-calculus}
 
@@ -78,5 +85,5 @@ At least two opportunities for further research present itself:
     
     where |ExnLblE| is the label of the exception raised when the pattern match in the |where|-clause fails.\footnote{This exception is left implicit in the above program, but becomes explicit when the code is desugared into our core language.} However, we pattern match on the result of the recursive call |risers (x_2 : xs)|. When |risers| is given a non-empty list (such as |x_2 : xs|) as an argument, it will always return a non-empty list as its result. The pattern match can thus never fail, and the exception labelled |ExnLblE| will thus never be raised.
     
-    In our previous work demonstrated how this exception can be elided, by having the exception flow depend on the data flow. The $\LambdaUnion$-calculus terms that form our effect annotations cannot express this dependence, however. In this earlier work we used a slightly ad hoc form of conditional constraints to model this dependence. We now believe extending a $\lambda$-calculus with an equational theory of Boolean rings may form the basis of more principled approach. Booleans rings have already been successfully used to design type system for strictness analysis \cite{Wright}, records \cite{LIX-RR-96-09} and exception tracking \cite{Benton:2007:SEA:1190315.1190320}.
+    In our previous work we demonstrated how this exception can be elided, by having the exception flow depend on the data flow. The $\LambdaUnion$-calculus terms that form our effect annotations cannot express this dependence, however. In this earlier work we used a slightly ad hoc form of conditional constraints to model this dependence. We now believe extending a $\lambda$-calculus with an equational theory of Boolean rings may form the basis of more principled approach. Booleans rings have already been successfully used to design type system for strictness analysis \cite{Wright}, records \cite{LIX-RR-96-09} and exception tracking \cite{Benton:2007:SEA:1190315.1190320}.
 \end{enumerate}

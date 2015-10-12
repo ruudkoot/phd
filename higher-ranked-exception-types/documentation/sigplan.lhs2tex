@@ -141,14 +141,13 @@
 %include proof/termination.lhs2tex
 
 %include section/related-work.lhs2tex
+%include section/conclusion.lhs2tex
 
 \section{\textcolor{red}{TODO}}
 
 \begin{itemize}
 
     \item standard polyrec examples (DHM + GSM)
-    
-    \item conclusion
     
     \item type inference: we have a fixpoint a la DHM
     
@@ -165,6 +164,8 @@
     \item exception type of twice (and other h-o funs)
     
     \item no slanted-greek for lambda and Lambda
+    
+    \item re-enable more fields in bibliography
 
 \end{itemize}
 
