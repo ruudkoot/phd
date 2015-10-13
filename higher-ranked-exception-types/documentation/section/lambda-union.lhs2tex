@@ -44,11 +44,11 @@ The typing relation of the $\LambdaUnion$-calculus is an extension of the simply
     \Rule{T-Abs}
          {\JudgeLuTy[\LuEnv, \LuVar : \LuTy_1]{\LuTm}{\LuTy_2}}
          {\JudgeLuTy{\LuAbs{\LuVar}{\LuTy_1}{\LuTm}}{\LuArr{\LuTy_1}{\LuTy_2}}}
-    \\\\
+    \VER
     \Rule{T-App}
          {\JudgeLuTy{\LuTm_1}{\LuArr{\LuTy_1}{\LuTy_2}} \quad \JudgeLuTy{\LuTm_2}{\LuTy_1}}
          {\JudgeLuTy{\LuApp{\LuTm_1}{\LuTm_2}}{\LuTy_2}}
-    \\\\
+    \VER
     \Rule{T-Empty}
          {}
          {\JudgeLuTy{\LuEmpty}{\LuBase}}
@@ -56,7 +56,7 @@ The typing relation of the $\LambdaUnion$-calculus is an extension of the simply
     \Rule{T-Con}
          {}
          {\JudgeLuTy{\LuCon}{\LuBase}}
-    \\\\
+    \VER
     \Rule{T-Union}
          {\JudgeLuTy{\LuTm_1}{\LuTy} \quad \JudgeLuTy{\LuTm_2}{\LuTy}}
          {\JudgeLuTy{\LuUnion{\LuTm_1}{\LuTm_2}}{\LuTy}}
@@ -170,6 +170,16 @@ setRewrite T
 \caption{Normalization algorithm for $\LambdaUnion$-terms.}
 \end{figure}
 
-\subsection{Unification}
+\subsection{Pattern unification}
 
-\TODO
+\TODOX{add context/quantifiers for free/bound vars}
+
+\begin{definition}
+A $\LambdaUnion$-term $\pi$ is called a \emph{pattern} if it is of the form $f(e_1, ..., e_n)$ where $f$ is a free variable and $e_1, ..., e_n$ are distinct bound variables.
+\end{definition}
+
+Note that this definition is a special case of what is normally called a \emph{pattern} in higher-order unification theory \cite{Miller1991,Dowek:2001:HUM:778522.778525}.
+
+If $f(e_1, ..., e_n)$ is a $\LambdaUnion$-pattern and $t$ a $\LambdaUnion$-term, then the equation
+\[ f : \overline{\LuTy_i \Rightarrow } \LuTy \vdash \forall e_1 : \LuTy_1, ..., e_n : \LuTy_n. f(e_1, ..., e_n) = t \]
+can be uniquely solved by the unifier \[ \theta = \left[f \mapsto \lambda e_1 : \LuTy_1, ..., e_n : \LuTy_n. t \right]. \]

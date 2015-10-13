@@ -177,11 +177,13 @@
     
     \item compexity (HM = DEXP, STLC in Statman)
     
+    \item widening
+    
     \item ``algebraic'' effects?
     
     \item unexpected decidablity
     
-    \item ack: Vincent + Femke; Andrew + Jeremy + Stephanie; ST-RC
+    \item ack: Vincent + Femke; Andrew + Jeremy + Stephanie + Andres; ST-RC
     
     \item check wiki and folder for notes
     
@@ -191,7 +193,9 @@
     
     \item typeset System $F_\omega$ correctly
     
-    \item re-enable more fields in bibliography
+    \item re-enable more fields in bibliography, full first names
+    
+    \item Stefan's terminology: fully parametric vs. fully flexible
 
 \end{itemize}
 
