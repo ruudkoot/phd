@@ -143,32 +143,6 @@
 %include section/related-work.lhs2tex
 %include section/conclusion.lhs2tex
 
-\section{\textcolor{red}{TODO}}
-
-\begin{itemize}
-
-    \item standard polyrec examples (DHM + GSM)
-    
-    \item type inference: we have a fixpoint a la DHM
-    
-    \item compexity (HM = DEXP, STLC in Statman)
-    
-    \item ``algebraic'' effects?
-    
-    \item unexpected decidablity
-    
-    \item ack: Vincent + Femke; Andrew + Jeremy + Stephanie; ST-RC
-    
-    \item check wiki and folder for notes
-    
-    \item exception type of twice (and other h-o funs)
-    
-    \item no slanted-greek for lambda and Lambda
-    
-    \item re-enable more fields in bibliography
-
-\end{itemize}
-
 \clearpage
 
 \bibliographystyle{abbrvnat}
@@ -190,5 +164,36 @@
 %\end{thebibliography}
 
 %END sigplanconf-template.tex
+
+\clearpage
+
+\section*{\textcolor{red}{TODO}}
+
+\begin{itemize}
+
+    \item standard polyrec examples (DHM + GSM)
+    
+    \item type inference: we have a fixpoint a la DHM
+    
+    \item compexity (HM = DEXP, STLC in Statman)
+    
+    \item ``algebraic'' effects?
+    
+    \item unexpected decidablity
+    
+    \item ack: Vincent + Femke; Andrew + Jeremy + Stephanie; ST-RC
+    
+    \item check wiki and folder for notes
+    
+    \item exception type of twice (and other h-o funs)
+    
+    \item no slanted-greek for lambda and Lambda
+    
+    \item typeset System $F_\omega$ correctly
+    
+    \item re-enable more fields in bibliography
+
+\end{itemize}
+
 
 \end{document}

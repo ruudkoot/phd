@@ -74,6 +74,8 @@ The exception set expressions $\Exn$ and their kinds $\Kind$ are an instance of 
 
 \subsection{Conservativeness}
 
+\TODOX{Atomicity: |e_1 # e_2 -> ExnTyList e_1 e_2| is not useful, because no introspection}
+
 Any program that is typeable in the underlying type system should also have an exception type: the exception type system is a conservative extension of the underlying type system. Like type systems for strictness or control flow analysis, and unlike type systems for information flow security or dimensional analysis, we do not want to reject any program that is well-typed in the underlying type system, but merely provide more insight in its behavior.
 
 If we furthermore want out type system to be modular---allowing type checking and inference to work on indivildual modules instead of whole programs---we cannot make any assumptions about the exception types of the arguments that are applied to any function, as the function may be called from outside the module with an argument that also comes from outside the module and which we cannot known anything about.\footnote{\citet{HoldermansHage} call such types \emph{fully flexible}.}
@@ -88,11 +90,11 @@ For base and compound types that stand in an argument position their effect and 
 
 \begin{example}\
 \begin{code}
-    tail : forall e_1 e_2. ExnArr (ExnList ExnBool e_1) e_2 (ExnList ExnBool e_1) (e_2 # EMPTY)
+    tail :: forall e_1 e_2. ExnArr (ExnList ExnBool e_1) e_2 (ExnList ExnBool e_1) (e_2 # ExnConE)
 \end{code}
 
 \begin{code}
-    (&&) : forall e_1. ExnArr ExnBool e_1 ((forall e_2. ExnArr ExnBool e_2 ExnBool (e_1 # e_2))) EmptySet & EmptySet
+    (&&) :: forall e_1. ExnArr ExnBool e_1 ((forall e_2. ExnArr ExnBool e_2 ExnBool (e_1 # e_2))) EmptySet & EmptySet
 \end{code}
 \end{example}
 
