@@ -2,4 +2,4 @@ We present a type-and-effect system for a simply typed non-strict functional lan
 
 By restricting the use of higher-ranked polymorphism and operators to the effects and not extending their use to the types the inference problem remains decidable. We give a type inference algorithm that extends on the techniques developed by \citet{HoldermansHage}.
 
-The types in \SystemFw form a simply typed \mbox{$\lambda$-calculus}, similarly the effects in our system form a simply typed $\lambda$-calculus embellished with an \ACIone set-structure ($\LambdaUnion$). We briefly study this language in its own right.
+The types in \SystemFw form a simply typed \mbox{$\lambda$-calculus}. Similarly, the effects in our system form a simply typed $\lambda$-calculus embellished with an \ACIone set-structure ($\LambdaUnion$). We briefly study this language in its own right.

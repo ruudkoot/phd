@@ -19,6 +19,7 @@
 \usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
 \usepackage{natbib}
 \usepackage{xspace}
+\usepackage{hyperref}
 
 \newcommand{\ThesisPaper}[2]{#2}
 
@@ -93,10 +94,10 @@
 % general terms are not compulsory anymore, 
 % you may leave them out
 \terms
-Languages
+Languages, Theory
 
 \keywords
-type-and-effect systems, higher-ranked polymorphism, type operators, exception analysis, type inference, type-based program analysis
+type-and-effect systems, higher-ranked polymorphism, type operators, polymorphic recursion, type inference, unification theory, type-based program analysis, exceptions
 
 %END sigplanconf-template.tex
 
@@ -105,7 +106,6 @@ type-and-effect systems, higher-ranked polymorphism, type operators, exception a
 %include section/source-language.lhs2tex
 %include section/exception-type-system.lhs2tex
 %include section/type-inference.lhs2tex
-%include section/interesting-observations.lhs2tex
 
 \section{Metatheory}
 
@@ -146,7 +146,7 @@ type-and-effect systems, higher-ranked polymorphism, type operators, exception a
 
 \clearpage
 
-\bibliographystyle{abbrvnat}
+\bibliographystyle{plainnat}
 \bibliography{higher-ranked-exception-types}
 
 %BEGIN sigplanconf-template.tex
@@ -197,8 +197,11 @@ type-and-effect systems, higher-ranked polymorphism, type operators, exception a
     \item re-enable more fields in bibliography, full first names
     
     \item Stefan's terminology: fully parametric vs. fully flexible
+    
+    \item roll Metatheory into earlier sections, add new section Analysis
 
 \end{itemize}
 
+%include section/interesting-observations.lhs2tex
 
 \end{document}

@@ -12,7 +12,7 @@
 \usepackage{mathtools}
 \usepackage{stmaryrd}
 \usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
-\usepackage{natbib}
+\usepackage[round]{natbib}
 \usepackage{xspace}
 
 \newcommand{\ThesisPaper}[2]{#1}
@@ -100,7 +100,7 @@
 %include appendix/lambda-union.lhs2tex
 %include appendix/completion.lhs2tex
 
-\bibliographystyle{abbrvnat}
+\bibliographystyle{plainnat}
 \bibliography{higher-ranked-exception-types}
 
 \end{document}

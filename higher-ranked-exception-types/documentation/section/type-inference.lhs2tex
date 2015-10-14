@@ -1,4 +1,4 @@
-\subsection{Type inference algorithm}
+\section{Type inference algorithm}
 
 %format reconstruct                 = "\mathcal{R}"
 %format complete                    = "\mathcal{C}"
