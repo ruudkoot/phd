@@ -13,6 +13,7 @@
 \usepackage{stmaryrd}
 \usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
 \usepackage{natbib}
+\usepackage{xspace}
 
 \newcommand{\ThesisPaper}[2]{#1}
 
@@ -30,6 +31,7 @@
 %include include/code.lhs2tex
 %include include/refs.lhs2tex
 
+%include definitions/text.lhs2tex
 %include definitions/lambda-union.lhs2tex
 %include definitions/completion.lhs2tex
 %include definitions/type-system.lhs2tex

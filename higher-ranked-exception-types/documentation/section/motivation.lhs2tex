@@ -23,6 +23,8 @@ map  =   LAMBDA f (LAMBDA xs (case xs of
                            (y:ys)  -|> f y : map f ys))
 \end{code}
 
+\TODOX{$\varphi, \psi$ or $\xi, \zeta$?}
+
 For each type $\tau$, we denote its exception-annotated type by~$\tau\langle\xi\rangle$. For function types we will write $\tau_1\langle\xi_1\rangle \xrightarrow{\xi} \tau_2\langle\xi_2\rangle$ instead of $\left(\tau_1\langle\xi_1\rangle \rightarrow \tau_2\langle\xi_2\rangle\right)\langle\xi\rangle$. If $\xi$ is the empty exception set, then we will omit it completely.
 
 The fully exception-polymorphic and exception-annotated type, or \emph{exception type}, of |map| is\ThesisPaper{\TODO{cramped formatting}}{}

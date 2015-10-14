@@ -122,7 +122,7 @@ In the $\LambdaUnion$-calculus terms are interpreted as sets and types as powers
     \item \TODOX{We can make union only work on base types (as we not longer \emph{need} to distribute unions over applications)? Then the denotation of the function space would be simpler and might generalize to other structures..}
 \end{itemize}
 
-To reduce $\LambdaUnion$-terms to a normal form we combine the $\beta$-reduction rule of the simply typed $\lambda$-calculus with rewrite rules that deal with the associativity, commutativity, idempotence and identity (ACI1) properties of set-union operator.
+To reduce $\LambdaUnion$-terms to a normal form we combine the $\beta$-reduction rule of the simply typed $\lambda$-calculus with rewrite rules that deal with the associativity, commutativity, idempotence and identity (\ACIone) properties of set-union operator.
 
 If a term $t$ is $\eta$-long it can be written in the form
 \begin{align*}

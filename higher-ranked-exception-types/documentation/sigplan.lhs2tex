@@ -18,6 +18,7 @@
 \usepackage{stmaryrd}
 \usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
 \usepackage{natbib}
+\usepackage{xspace}
 
 \newcommand{\ThesisPaper}[2]{#2}
 
@@ -35,6 +36,7 @@
 %include include/code.lhs2tex
 %include include/refs.lhs2tex
 
+%include definitions/text.lhs2tex
 %include definitions/lambda-union.lhs2tex
 %include definitions/completion.lhs2tex
 %include definitions/type-system.lhs2tex
@@ -67,7 +69,7 @@
 \titlebanner{banner above paper title}        % These are ignored unless
 \preprintfooter{short description of paper}   % 'preprint' option specified.
 
-\title{Higher-ranked Exception Types\titlenote{This material is based upon work supported by the Netherlands Organisation for Scientific Research (NWO) under the project \emph{Higher-ranked Polyvariance Explored} (612.001.120).}}
+\title{Higher-ranked Exception Types\titlenote{This material is based upon work supported by the Netherlands Organisation for Scientific Research (\textsc{nwo}) under the project \emph{Higher-ranked Polyvariance Explored} (612.001.120).}}
 %\subtitle{Subtitle Text, if any}
 
 \authorinfo{Ruud Koot}
@@ -80,22 +82,21 @@
 \maketitle
 
 \begin{abstract}
-\LORUMIPSUM
-
-\LORUMIPSUM
-
-\LORUMIPSUM
+%include section/abstract.lhs2tex
 \end{abstract}
 
-\category{\TODO{CR-number}}{subcategory}{third-level}
+\category{D.1.1}{Programming Techniques}{Applicative (Functional) Programming}
+\category{F.3.3}{Logics and Meanings of Programs}{Studies of Program Constructs---Type structure}
+\category{D.3.3}{Programming Languages}{Language Constructs and Features---Polymorphism}
+%\category{F.3.2}{Logics and Meanings of Programs}{Semantics of Programming Languages---Program analysis}
 
 % general terms are not compulsory anymore, 
 % you may leave them out
 \terms
-\TODO{term1, term2}
+Languages
 
 \keywords
-\TODO higher-ranked types/polymorphism, exception analysis, type inference, type systems, static/type-based program analysis
+type-and-effect systems, higher-ranked polymorphism, type operators, exception analysis, type inference, type-based program analysis
 
 %END sigplanconf-template.tex
 
