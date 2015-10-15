@@ -163,8 +163,6 @@ setRewrite T
 
 \subsection{Pattern unification}
 
-\TODOX{add context/quantifiers for free/bound vars}
-
 \begin{definition}
 A $\LambdaUnion$-term $\pi$ is called a \emph{pattern} if it is of the form $f(e_1, ..., e_n)$ where $f$ is a free variable and $e_1, ..., e_n$ are distinct bound variables.
 \end{definition}
@@ -174,10 +172,3 @@ Note that this definition is a special case of what is normally called a \emph{p
 If $f(e_1, ..., e_n)$ is a $\LambdaUnion$-pattern and $t$ a $\LambdaUnion$-term, then the equation
 \[ f : \LuTy_1 \Rightarrow \cdots \Rightarrow \LuTy_n \Rightarrow \LuTy \vdash \forall e_1 : \LuTy_1, ..., e_n : \LuTy_n. f(e_1, ..., e_n) = t \]
 can be uniquely solved by the unifier \[ \theta = \left[f \mapsto \lambda e_1 : \LuTy_1, ..., e_n : \LuTy_n. t \right]. \]
-
-\begin{itemize}
-    \item \TODOX{Prove semantics is ACI1. We have a different unit for each type!}
-    \item \TODOX{$\mathcal{P}(V_{\tau_1} \to V_{\tau_2}) \simeq V_{\tau_1} \to \mathcal{P}(V_{\tau_2})$? Cardinallity suggests not: $2^{(\beta^\alpha)} \neq (2^\beta)^\alpha$.}
-    \item \TODOX{If we don't distribute unions over applications, can we ever get them deep inside terms?}
-    \item \TODOX{If we don't \emph{and} the outermost lambdas are not there because is always of kind star, can we get non-trivial terms? I.e. something other than $e_1(e_{11},...,e_{1n_1}) \cup \cdots \cup e_k(e_{k1},...,e_{kn_k}$ (note: $e$ and not $t$ as arugments).}
-\end{itemize}

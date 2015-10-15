@@ -1,0 +1,56 @@
+\section{TODO}
+
+\begin{itemize}
+
+    \item standard polyrec examples (DHM + GSM)
+    
+    \item polyrec does not ``come for free''
+    
+    \item type inference: we have a fixpoint a la DHM
+    
+    \item compexity (HM = DEXP, STLC in Statman)
+    
+    \item widening
+    
+    \item ``algebraic'' effects?
+    
+    \item unexpected decidablity
+    
+    \item ack: Vincent + Femke; Andrew + Jeremy + Stephanie + Andres; ST-RC
+    
+    \item check wiki and folder for notes
+    
+    \item exception type of twice (and other h-o funs)
+    
+    \item no slanted-greek for lambda and Lambda
+    
+    \item typeset System $F_\omega$ correctly
+    
+    \item re-enable more fields in bibliography, full first names
+    
+    \item Stefan's terminology: fully parametric vs. fully flexible
+    
+    \item roll Metatheory into earlier sections, add new section Analysis (also add to Overview)
+    
+    \item Untracked exceptions can break information flow security.
+    
+    \item Elaborte in the subsection ``Contributions''. Mention prototype?
+
+\end{itemize}
+
+\subsection{Introduction}
+
+    \begin{itemize}
+    
+        \item Why not |ThrowsArr (Throws alpha e_1) (Throws beta (e_2)) e_3|?! Give some examples why higher-rankedness is needed. The example on the poster/|map| isn't sufficient. Postpone to a later section?
+
+    \end{itemize}
+    
+\subsection{The $\LambdaUnion$-calculus}
+
+    \begin{itemize}
+        \item Prove semantics is ACI1. We have a different unit for each type!
+        \item $\mathcal{P}(V_{\tau_1} \to V_{\tau_2}) \simeq V_{\tau_1} \to \mathcal{P}(V_{\tau_2})$? Cardinallity suggests not: $2^{(\beta^\alpha)} \neq (2^\beta)^\alpha$.
+        \item If we don't distribute unions over applications, can we ever get them deep inside terms?
+        \item If we don't \emph{and} the outermost lambdas are not there because is always of kind star, can we get non-trivial terms? I.e. something other than $e_1(e_{11},...,e_{1n_1}) \cup \cdots \cup e_k(e_{k1},...,e_{kn_k}$ (note: $e$ and not $t$ as arugments).
+    \end{itemize}

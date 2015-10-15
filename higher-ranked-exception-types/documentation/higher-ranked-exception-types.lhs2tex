@@ -100,6 +100,7 @@
 
 %include appendix/lambda-union.lhs2tex
 %include appendix/completion.lhs2tex
+%include section/todo.lhs2tex
 
 \bibliographystyle{plainnat}
 \bibliography{higher-ranked-exception-types}

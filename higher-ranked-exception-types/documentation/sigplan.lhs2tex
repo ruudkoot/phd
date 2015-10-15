@@ -170,46 +170,7 @@ type-and-effect systems, higher-ranked polymorphism, type operators, polymorphic
 
 \clearpage
 
-\section*{\textcolor{red}{TODO}}
-
-\begin{itemize}
-
-    \item standard polyrec examples (DHM + GSM)
-    
-    \item polyrec does not ``come for free''
-    
-    \item type inference: we have a fixpoint a la DHM
-    
-    \item compexity (HM = DEXP, STLC in Statman)
-    
-    \item widening
-    
-    \item ``algebraic'' effects?
-    
-    \item unexpected decidablity
-    
-    \item ack: Vincent + Femke; Andrew + Jeremy + Stephanie + Andres; ST-RC
-    
-    \item check wiki and folder for notes
-    
-    \item exception type of twice (and other h-o funs)
-    
-    \item no slanted-greek for lambda and Lambda
-    
-    \item typeset System $F_\omega$ correctly
-    
-    \item re-enable more fields in bibliography, full first names
-    
-    \item Stefan's terminology: fully parametric vs. fully flexible
-    
-    \item roll Metatheory into earlier sections, add new section Analysis (also add to Overview)
-    
-    \item Untracked exceptions can break information flow security.
-    
-    \item Elaborte in the subsection ``Contributions''. Mention prototype?
-
-\end{itemize}
-
+%include section/todo.lhs2tex
 %include section/interesting-observations.lhs2tex
 
 \end{document}
