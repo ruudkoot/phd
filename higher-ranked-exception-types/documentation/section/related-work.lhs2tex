@@ -1,10 +1,10 @@
-\section{Related work}
+\section{Related work}\label{section-related-work}
 
-\subsection{Higher-ranked polymorphism in type and effect systems}
+\subsection{Higher-ranked polymorphism in type-and-effect systems}
 
 \paragraph{Effect polymorphism} For plain type systems Hindley--Milner's |let|-bound polymorphism generally provides a good compromise between expressiveness of the type system and complexity of the inference algorithm \cite{Hindley1969,Milner78atheory,Damas:1982:PTF:582153.582176}.
 These systems where extended with effects---including |let|-bound effect polymorphism---by \citet{Lucassen:1988:PES:73560.73564,Jouvelot:1991:ART:99583.99623}; and \citet{JFP:1457464,Talpin:1994:TED:191349.184660}.
-In type and effect systems it has long been recognized that $\mathbf{fix}$-bound polymorphism (polymorphic recursion) \emph{in the effects} is often beneficial or even necessary for achieving precise analysis results. For example, in type and effect systems for regions \cite{Tofte:1994:ITC:174675.177855}, dimensions \cite{Kennedy:1994:DT:645390.651419,Rittri:1994:STT:194679.194683,Rittri:1995:DIU:224164.224197}, binding-times \cite{Dussart:1995:PRS:647163.717680}, and exceptions \cite{Glynn:2002:EAN:581478.581488,Koot:2015:TEA:2678015.2682542}.
+In type-and-effect systems it has long been recognized that $\mathbf{fix}$-bound polymorphism (polymorphic recursion) \emph{in the effects} is often beneficial or even necessary for achieving precise analysis results. For example, in type-and-effect systems for regions \cite{Tofte:1994:ITC:174675.177855}, dimensions \cite{Kennedy:1994:DT:645390.651419,Rittri:1994:STT:194679.194683,Rittri:1995:DIU:224164.224197}, binding-times \cite{Dussart:1995:PRS:647163.717680}, and exceptions \cite{Glynn:2002:EAN:581478.581488,Koot:2015:TEA:2678015.2682542}.
 Inferring principal types in a type system with polymorphic recursion is equivalent to solving an undecidable semi-unification problem \cite{Mycroft1984,Kfoury:1990:USP:100216.100279,Kfoury:1993:TRP:169701.169687,Henglein:1993:TIP:169701.169692}.
 
 When restricted to polymorphic recursion in the effects, the problem often becomes decidable again. In \citet{Tofte:1994:ITC:174675.177855} this is a conjecture based on empirical observation. \citet{Rittri:1995:DIU:224164.224197} gives a semi-unification procedure based on the general semi-algorithm by \citet{Baaz93APTCC} and proves it terminates in the special case of semi-unification in Abelian groups. \citet{Dussart:1995:PRS:647163.717680} use a constraint-based algorithm and show that all variables that do not occur free in the context or type can be eliminated from the constraint set by a constraint reduction step during each Kleene--Mycroft iteration. As at most $n^2$ subeffecting constraints can be formed over $n$ variables, the whole procedure must terminate. By not restarting the Kleene-Mycroft iteration from bottom their algorithm will run in polynomial time, even in the presence of nested fixpoints.
@@ -53,38 +53,6 @@ similar to our typed $\LambdaUnion$-calculus.
 \TODOX{Update to this paper!} Several exception analyses have been described in the literature, primarily targeting the detection of uncaught exceptions in ML.
 The exception analysis in \citet{kyi} is based on abstract interpretation.
 \citet{Guzman94anextended} and \citet{Fahndrich:1998:TDE:893957} describe type-based exception analyses. The row-based type system for exception analysis described in \citet{Leroy:2000:TAU:349214.349230} containing a data-flow analysis component that is specialized towards tracking value-carrying exceptions instead of value-dependent exceptions and thus employs a less precise unification method instead of subtyping.
-\citet{Glynn:2002:EAN:581478.581488} developed the first exception analysis for non-strict languages. It is a type-based analysis using Boolean constraints and, although it does not take data flow into account, has a similar flavor to our system.
+\citet{Glynn:2002:EAN:581478.581488} developed the first exception analysis for a non-strict language. It is a type-based analysis using Boolean constraints and, although it does not take data flow into account, has a similar flavor to our system.
 
 \TODOX{Koot and Hage 2015}
-
-\section{Further research}
-
-At least two opportunities for further research present itself:
-\begin{enumerate}
-    \item Can we adapt our type inference algorithm to automatically infer types for Kennedy's higher-ranked $\Lambda_{\delta\omega}$? One problem that immediately presents itself is that this type system is not a conservative extension of the underlying type system: programs can be rejected because, while type correct in the underlying type system, the program may still be dimensionally inconsistent.
-    
-    Unlike in this system, the annotations on function arguments will no longer be of the simple form (variables only) required for the straightforward matching step in our type inference algorithm. Instead we will likely have to solve a higher-order (equational) unification problem, which is only semi-decidable. \citet{Snyder:1990:HOE:648229.752474} and \citet{NipkowQian1991} do gives us semi-algorithms for solving such problems (although, at least in the latter approach, the equational theory is assumed to be regular, which the theory of Abelian groups is not).
-    
-    \item Can we further improve the precision of exception types? In previous work \cite{Koot:2015:TEA:2678015.2682542} we argued that an accurate exception typing system for non-strict languages should also take the data flow of the program into account, as many exceptions that can be raised in non-strict languages are caused by incomplete pattern matches. The canonical example is the |risers| function---which splits a list into monotonically increasing subsegments; e.g., |risers [1, 3, 5, 1, 2] ---> [[1, 3, 5], [1, 2]]|---by \citet{Mitchell:2008:PBE:1411286.1411293}:
-    
-    \begin{code}
-        risers  :: [Int] -> [[Int]]
-        risers  []               =  []
-        risers  [x]              =  [[x]]
-        risers (x_1 : x_2 : xs)  =
-            if x_1 <= x_2 then (x_1 : y) : ys else [x_1] : (y : ys)
-                where (y : ys) = risers (x_2 : xs)
-    \end{code}
-
-    Our type inference algorithm assigns |risers| the exception type
-
-    % (∀e1::E.(∀e2::E.([int⟨e2⟩]⟨e1⟩→[[int⟨e2⟩]⟨∅⟩]⟨({risers}∪(e1∪e2))⟩))) & ∅    
-    \begin{code}
-        forall e_1 : EXN. forall e_2 : EXN.
-            ExnTyArr (ExnTyList ExnTyInt e_2) e_1 (ExnList (ExnTyList ExnTyInt e_2) ExnEmpty) (e_1 # e_2 # ExnConE) :&: EmptySet
-    \end{code}
-    
-    where |ExnLblE| is the label of the exception raised when the pattern match in the |where|-clause fails.\footnote{This exception is left implicit in the above program, but becomes explicit when the code is desugared into our core language.} However, we pattern match on the result of the recursive call |risers (x_2 : xs)|. When |risers| is given a non-empty list (such as |x_2 : xs|) as an argument, it will always return a non-empty list as its result. The pattern match can thus never fail, and the exception labelled |ExnLblE| will thus never be raised.
-    
-    In our previous work we demonstrated how this exception can be elided, by having the exception flow depend on the data flow. The $\LambdaUnion$-calculus terms that form our effect annotations cannot express this dependence, however. In this earlier work we used a slightly ad hoc form of conditional constraints to model this dependence. We now believe extending a $\lambda$-calculus with an equational theory of Boolean rings may form the basis of more principled approach. Booleans rings have already been successfully used to design type system for strictness analysis \cite{Wright}, records \cite{LIX-RR-96-09} and exception tracking \cite{Benton:2007:SEA:1190315.1190320}.
-\end{enumerate}

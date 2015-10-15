@@ -1,4 +1,4 @@
-\section{Exception types}
+\section{Exception types}\label{section-exception-types}
 
 \subsection{Exception types}
 
@@ -10,17 +10,17 @@
 
 The syntax of well-formed exception types are given in Figure~\ref{fig-exception-type-syntax} and Figure~\ref{fig-exception-type-well-formed}. An exception type~$\ExnTy$ is formed out of base types (booleans), compound types (lists), function types and quantification over exception variables.\footnote{To avoid complicating the presentation would do \emph{not} allow quantification over type variables, i.e. polymorpism in the underlying type system.}
 
-For a list with exception type $\ExnTyList{\ExnTy}{\Exn}$ and effect $\psi$, the type $\ExnTy$ of the elements in the list is \emph{annotated} with an exception set expression $\Exn$ of kind~$\KindEXN$. This expression gives a set of exceptions which may be raised when an element of the list is forced. The effect gives a set of exceptions may be raised when a constructor forming the spine of the list is forced.
+For a list with exception type $\ExnTyList{\ExnTy}{\Exn}$ and effect $\ExnAlt$, the type $\ExnTy$ of the elements in the list is \emph{annotated} with an exception set expression $\Exn$ of kind~$\KindEXN$. This expression gives a set of exceptions which may be raised when an element of the list is forced. The effect gives a set of exceptions may be raised when a constructor forming the spine of the list is forced.
 
-For a function with exception type $\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}$ and effect~$\psi$, the argument of type $\ExnTy_1$ is annotated with an exception set expression $\Exn_1$ that gives set of exceptions that may be raised if the argument is forced by the function. The result of type $\ExnTy_2$ is annotated with an exception set expression $\Exn_2$ that gives the set of exceptions that may be raised when the result of the function is forced. The effect $\psi$ gives the set of exceptions that may be raised if the function closure is forced.
+For a function with exception type $\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}$ and effect~$\ExnAlt$, the argument of type $\ExnTy_1$ is annotated with an exception set expression $\Exn_1$ that gives set of exceptions that may be raised if the argument is forced by the function. The result of type $\ExnTy_2$ is annotated with an exception set expression $\Exn_2$ that gives the set of exceptions that may be raised when the result of the function is forced. The effect $\ExnAlt$ gives the set of exceptions that may be raised if the function closure is forced.
 
 \begin{code}
-id : forall e. ExnArr ExnBool e ExnBool e :&: EmptySet
-id = \x -> x
+id  ::  forall e. ExnArr ExnBool e ExnBool e :&: EmptySet
+id  =   LAMBDA x x
 \end{code}
 
 \begin{code}
-bottom : forall e. ExnArr ExnBool e ExnBool EmptySet :&: {E}
+bottom_E ::  forall e. ExnArr ExnBool e ExnBool EmptySet :&: e_E
 \end{code}
 
 The exception set expressions $\Exn$ and their kinds $\Kind$ are an instance of the \mbox{$\LambdaUnion$-calculus}, where exception set expressions are terms and kinds are the types. Two exception set expressions are considered equivalent if they are convertible as $\LambdaUnion$-terms, which is to say that they reduce to the same normal form. 
@@ -34,7 +34,7 @@ The exception set expressions $\Exn$ and their kinds $\Kind$ are an instance of 
         \Kind \in \ClassKind &\ ::=\ &&\KindEXN \tag{exception set} \\
                              &\quad||  &&\Kind_1 \KindArr \Kind_2 \tag{exception operator}\\
         \notag\\
-        \Exn, \psi \in \ClassExn  &\ ::=\ &&\ExnVar \tag{exception variables} \\
+        \Exn, \ExnAlt \in \ClassExn  &\ ::=\ &&\ExnVar \tag{exception variables} \\
                             &\quad||  &&\ExnAbs{\ExnVar}{\Kind}{\Exn} \tag{exception abstraction}\\
                             &\quad||    &&\ExnApp{\Exn_1}{\Exn_2} \tag{exception application}\\
                             &\quad||    &&\ExnEmpty \tag{empty exception set} \\
@@ -42,7 +42,7 @@ The exception set expressions $\Exn$ and their kinds $\Kind$ are an instance of 
                             &\quad||    &&\ExnUnion{\Exn_1}{\Exn_2} \tag{exception set union} \\
     \notag\\
         \ExnTy \in \ClassExnTy &\ ::=\ &&\ExnForall{\ExnVar :: \Kind}\ExnTy \tag{exception quantification} \\
-                     &\quad||  &&\ExnTyBool \tag{boolean type} \\
+                     &\quad||  &&\ExnBool \tag{boolean type} \\
                      &\quad||  &&\ExnTyList{\ExnTy}{\Exn} \tag{list type} \\
                      &\quad||  &&\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2} \tag{function type}
     \end{alignat}
@@ -90,11 +90,11 @@ For base and compound types that stand in an argument position their effect and 
 
 \begin{example}\
 \begin{code}
-    tail :: forall e_1 e_2. ExnArr (ExnList ExnBool e_1) e_2 (ExnList ExnBool e_1) (e_2 # ExnConE)
+    tail :: forall e_1 e_2. ExnArr (ExnList ExnBool e_1) e_2 (ExnList ExnBool e_1) (e_2 # ExnConE) :&: EmptySet
 \end{code}
 
 \begin{code}
-    (&&) :: forall e_1. ExnArr ExnBool e_1 ((forall e_2. ExnArr ExnBool e_2 ExnBool (e_1 # e_2))) EmptySet & EmptySet
+    &&  :: forall e_1. ExnArr ExnBool e_1 ((forall e_2. ExnArr ExnBool e_2 ExnBool (e_1 # e_2))) EmptySet :&: EmptySet
 \end{code}
 \end{example}
 
@@ -388,8 +388,6 @@ During exception type inference will want to compute the least constraint except
         \\[1.5ex]
         \Rule{T-Case}
              {\begin{gathered}
-                  \JudgeSubExn{\KiEnv}{\Exn^\prime}{\Exn}
-                  \quad
                   \JudgeExnTy{\TyEnv}
                              {\KiEnv}
                              {\Tm_1}
@@ -407,6 +405,8 @@ During exception type inference will want to compute the least constraint except
                              {\Tm_3}
                              {\ExnTy}
                              {\Exn}
+                    \quad
+                    \JudgeSubExn{\KiEnv}{\Exn^\prime}{\Exn}
               \end{gathered}
              }
              {\JudgeExnTy{\TyEnv}

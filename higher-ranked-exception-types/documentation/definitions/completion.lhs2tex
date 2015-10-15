@@ -27,7 +27,8 @@
 \newcommand{\ExnTyForallS}[3]{\forall \overline{#1 : #2}. #3}
 \newcommand{\ExnForall}[1]{\forall {#1}.}           % FIXME: deprecate
 
-\newcommand{\Exn}{\varphi}
+\newcommand{\Exn}{\xi}
+\newcommand{\ExnAlt}{\zeta}
 \newcommand{\ExnVar}{e}
 \newcommand{\ExnCon}[1]{\{#1\}}
 \newcommand{\ExnAbs}[3]{\lambda #1 : #2 . #3}

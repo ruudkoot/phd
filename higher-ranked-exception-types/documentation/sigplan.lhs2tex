@@ -141,7 +141,9 @@ type-and-effect systems, higher-ranked polymorphism, type operators, polymorphic
 %include theorem/termination.lhs2tex
 %include proof/termination.lhs2tex
 
+\newpage
 %include section/related-work.lhs2tex
+%include section/future-research.lhs2tex
 %include section/conclusion.lhs2tex
 
 \clearpage
@@ -174,6 +176,8 @@ type-and-effect systems, higher-ranked polymorphism, type operators, polymorphic
 
     \item standard polyrec examples (DHM + GSM)
     
+    \item polyrec does not ``come for free''
+    
     \item type inference: we have a fixpoint a la DHM
     
     \item compexity (HM = DEXP, STLC in Statman)
@@ -198,7 +202,11 @@ type-and-effect systems, higher-ranked polymorphism, type operators, polymorphic
     
     \item Stefan's terminology: fully parametric vs. fully flexible
     
-    \item roll Metatheory into earlier sections, add new section Analysis
+    \item roll Metatheory into earlier sections, add new section Analysis (also add to Overview)
+    
+    \item Untracked exceptions can break information flow security.
+    
+    \item Elaborte in the subsection ``Contributions''. Mention prototype?
 
 \end{itemize}
 
