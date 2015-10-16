@@ -43,6 +43,7 @@ The exception set expressions $\Exn$ and their kinds $\Kind$ are an instance of 
     \notag\\
         \ExnTy \in \ClassExnTy &\ ::=\ &&\ExnForall{\ExnVar :: \Kind}\ExnTy \tag{exception quantification} \\
                      &\quad||  &&\ExnBool \tag{boolean type} \\
+                     &\quad||  &&\ExnInt  \tag{integer type} \\
                      &\quad||  &&\ExnTyList{\ExnTy}{\Exn} \tag{list type} \\
                      &\quad||  &&\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2} \tag{function type}
     \end{alignat}

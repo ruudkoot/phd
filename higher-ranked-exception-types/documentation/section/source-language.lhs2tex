@@ -1,8 +1,6 @@
 \section{Source language}\label{section-source-language}
 
-\TODO{no catching}
-
-Our analysis is applicable to a simple non-strict functional language that supports Boolean, integer and list data types. In section we'll give its syntax and semantics.
+Our analysis is applicable to a simple non-strict functional language that supports Boolean, integer and list data types. In section we'll briefly state its syntax and semantics.
 
 \begin{figure}[ht]
 \paragraph{Terms}
@@ -24,11 +22,11 @@ Our analysis is applicable to a simple non-strict functional language that suppo
 \caption{Source language: syntax}
 \end{figure}
 
-\begin{itemize}
-    \item \TODOX{Remove type annotation from $\TmCon{\Ty}$, make the operator a boolean one, and drop support for integers?}
-\end{itemize}
+Missing from the language is a construct to ``catch'' exceptional values. While this may be surprising to programmers familiar with strict languages, it is a common design decision to omit such a construct from the pure fragment of non-strict languages. The omission of such a construct allows for the introduction of a certain amount of non-determinism in the operational semantics of the language---giving more freedom to an optimizing compiler---without breaking referential transparency.
 
 \subsection{Underlying type system}
+
+The type system of the source language is given for reference in Figure~\ref{figure-underlying-type-system}. This is the \emph{underlying type system} with respect to the type-and-effect system we will present in Section~\ref{section-exception-types} and we will assume that any term we will type in the type-and-effect system is already well-typed in the underlying type system.
 
 \begin{figure*}[p]
     \begin{gather*}
@@ -174,22 +172,15 @@ Our analysis is applicable to a simple non-strict functional language that suppo
                       {\Ty}
              }
     \end{gather*}
-    \caption{Underlying type system ($\JudgeTy{\TyEnv}{\Tm}{\Ty}$)}    
+    \caption{Underlying type system ($\JudgeTy{\TyEnv}{\Tm}{\Ty}$)}
+    \label{figure-underlying-type-system}   
 \end{figure*}
 
 \subsection{Operational semantics}
 
-\begin{itemize}
+The operational semantics of the source language is given in Figure~\ref{figure-operational-semantics}. Note that these is a small amount of non-determinism in the order of reduction, for example in the derivation rules \CiteRule{E-OpExn$_1$} and \CiteRule{E-OpExn$_2$}. We do not go as far as having an imprecise exception semantics \cite{PeytonJones:1999:SIE:301618.301637}. For example, if the guard of a conditional evaluates to an exceptional value (\CiteRule{E-IfExn}), we do not continue evaluation the two branches in exception finding mode.
 
-    \item The reduction relation is non-deterministic.
-    
-    \item We do not have a Haskell-style imprecise exception semantics (e.g. \textsc{E-If}).
-    
-    \item We either need to omit the type annotations on $\TmCrash{\Ty}{\ExnLbl}$, or add them to $\TmIf{}{}{}$ and $\TmCase{}{}{}{}{}$.
-    
-    \item We do not have a rule \CiteRule{E-AnnAppExn}. Check that the canonical forms lemma gives us that terms of universally quantified type cannot be exceptional values.
-
-\end{itemize}
+Some of the reduction rules are for constructs that will only be introduced to language in Section~\ref{section-exception-types} (\CiteRule{E-AnnApp}, \CiteRule{E-AnnAbsApp}, and the effect annotation on the $\mathbf{fix}$ construct).
 
 \begin{figure*}[ht]
     \begin{gather*}
@@ -319,5 +310,6 @@ Our analysis is applicable to a simple non-strict functional language that suppo
                         {\TmCrash{}{\ExnLbl}}
              }
     \end{gather*}
-    \caption{Operational semantics ($\JudgeEval{\Tm_1}{\Tm_2}$)}    
+    \caption{Operational semantics ($\JudgeEval{\Tm_1}{\Tm_2}$)}
+    \label{figure-operational-semantics}
 \end{figure*}
