@@ -64,3 +64,17 @@
         \item We do not have a rule \CiteRule{E-AnnAppExn}. Check that the canonical forms lemma gives us that terms of universally quantified type cannot be exceptional values.
 
     \end{itemize}
+    
+\subsection{Exception types}
+
+    \begin{itemize}
+
+        \item $\ExnVar \in \ClassExnVar$
+
+        \item Well-formedness of exception types: embed conservativity / full-flexibility?
+
+        \item Can we roll \textsc{Univ} and \textsc{Arr} into a single construct: $\ExnTyForall{\ExnVar}{\Kind}{\ExnTyArr{\ExnTy_1}{\ExnVar}{\ExnTy_2}{\Exn(\ExnVar)}}$? Still need to deal with the well-formedness of $\ExnTy_1$... Also may need to quantify over more than one variable simultaneously...
+
+    \end{itemize}
+    
+\subsection{Type inference}

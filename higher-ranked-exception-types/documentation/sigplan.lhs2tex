@@ -94,7 +94,7 @@
 % general terms are not compulsory anymore, 
 % you may leave them out
 \terms
-Languages, Theory
+Languages, Design, Theory
 
 \keywords
 type-and-effect systems, higher-ranked polymorphism, type operators, polymorphic recursion, type inference, unification theory, type-based program analysis, exceptions

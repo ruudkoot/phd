@@ -1,8 +1,10 @@
 \newtheorem{conjecture}{Conjecture}
 \newtheorem{corollary}{Corollary}
-\newtheorem{definition}{Definition}
 \newtheorem{lemma}{Lemma}
 \newtheorem{theorem}{Theorem}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
 \newtheorem{example}{Example}
 \newtheorem{counterexample}{Counterexample}
 
