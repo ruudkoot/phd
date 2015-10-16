@@ -33,9 +33,7 @@ Without dimension operators we would have to specialize the type of the higher-o
 
 The language $\Lambda_{\delta\omega}$ bears a striking resemblance to our language in Figure~\ref{fig-exception-type-syntax}: the empty and singleton exception sets constants and the exception set union operator have been replaced with a unit dimension and dimension product and inverse operators, as dimensions have an \textsc{ag} structure, while exception sets have an \ACIone structure; in the dimension type system the annotation is placed only on the real number base type instead of on the compound types, and there is no effect. No type inference algorithm is presented for this language, however.
 
-\TODOX{Stefan}
-
-\TODOX{RW in Stefan (Faxen? Smith \& Wang?)}
+\TODOX{Stefan + RW?} \LORUMIPSUM
 
 \subsection{$\LambdaUnion$-calculus}
 
