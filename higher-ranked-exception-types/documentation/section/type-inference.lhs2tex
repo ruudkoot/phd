@@ -171,6 +171,20 @@
 
 \end{itemize}
 
+\subsection{Polymorphic recursion}
+
+\begin{example}[Dussart, Henglein, Mossin]
+
+    \begin{code}
+        
+    \end{code}
+
+\end{example}
+
+\begin{example}[Glynn, Stuckey, Sulzman]
+\end{example}
+
+
 \subsection{Complexity}
 
 There are three aspects that affect the run-time complexity of the algorithm: the complexity of the underlying type system, reduction of the effects, and the fixpoint-iteration in the inference step of the $\mathbf{fix}$-construct.

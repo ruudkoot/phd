@@ -819,5 +819,3 @@ During exception type inference will want to compute the least constraint except
  \item For T-Fix: how would a binding fixpoint construct work?
 
 \end{itemize}
-
-\clearpage

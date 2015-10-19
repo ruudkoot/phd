@@ -57,39 +57,7 @@
 %include section/type-inference.lhs2tex
 %include section/interesting-observations.lhs2tex
 
-\section{Metatheory}
-
-\subsection{Declarative type system}
-
-%include theorem/canonical-forms.lhs2tex
-%include proof/canonical-forms.lhs2tex
-
-%include theorem/progress.lhs2tex
-%include proof/progress.lhs2tex
-
-%include figure/substitution.lhs2tex
-
-%include theorem/annotation-substitution.lhs2tex
-%include proof/annotation-substitution.lhs2tex
-
-%include theorem/term-substitution.lhs2tex
-%include proof/term-substitution.lhs2tex
-
-%include theorem/inversion.lhs2tex
-%include proof/inversion.lhs2tex
-
-%include theorem/preservation.lhs2tex
-%include proof/preservation.lhs2tex
-
-\subsection{Syntax-directed type elaboration}
-
-\subsection{Type inference algorithm}
-
-%include theorem/syntactic-soundness.lhs2tex
-%include proof/syntactic-soundness.lhs2tex
-
-%include theorem/termination.lhs2tex
-%include proof/termination.lhs2tex
+%include section/metatheory.lhs2tex
 
 %include section/future-research.lhs2tex
 %include section/related-work.lhs2tex
