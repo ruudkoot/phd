@@ -171,71 +171,10 @@
 
 \end{itemize}
 
-\subsection{Subtyping}
+\subsection{Complexity}
 
-\begin{itemize}
-    \item Is \CiteRule{S-Refl} an admissable/derivable rule, or should we drop \CiteRule{S-Bool} and \CiteRule{S-Int}?
-\end{itemize}
+There are three aspects that affect the run-time complexity of the algorithm: the complexity of the underlying type system, reduction of the effects, and the fixpoint-iteration in the inference step of the $\mathbf{fix}$-construct.
 
-\begin{figure}[h]
-    \begin{gather*}
-        \Rule{S-Refl}
-             {}
-             {\JudgeSubTy{\KiEnv}{\ExnTy}{\ExnTy}}
-        \quad
-        \Rule{S-Trans}
-             {\JudgeSubTy{\KiEnv}{\ExnTy_1}{\ExnTy_2}
-              \quad
-              \JudgeSubTy{\KiEnv}{\ExnTy_2}{\ExnTy_3}
-             }
-             {\JudgeSubTy{\KiEnv}{\ExnTy_1}{\ExnTy_3}}
-        \\[1.5ex]
-        \Rule{S-Bool}
-             {}
-             {\JudgeSubTy{\KiEnv}{\ExnBool}{\ExnBool}}
-        \quad
-        \Rule{S-Int}
-             {}
-             {\JudgeSubTy{\KiEnv}{\ExnInt}{\ExnInt}}
-        \\[1.5ex]
-        \Rule{S-Arr}
-             {\begin{gathered}
-              \JudgeSubTy{\KiEnv}{\ExnTy_1^\prime}{\ExnTy_1}
-                \quad
-              \JudgeSubExn{\KiEnv}{\Exn_1^\prime}{\Exn_1}
-                \\
-              \JudgeSubTy{\KiEnv}{\ExnTy_2}{\ExnTy_2^\prime}
-                \quad
-              \JudgeSubExn{\KiEnv}{\Exn_2}{\Exn_2^\prime}
-              \end{gathered}
-             }
-             {\JudgeSubTy{\KiEnv}
-                         {\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}}
-                         {\ExnTyArr{\ExnTy_1^\prime}{\Exn_1^\prime}{\ExnTy_2^\prime}{\Exn_2^\prime}}
-             }
-        \\[1.5ex]
-        \Rule{S-List}
-             {\JudgeSubTy{\KiEnv}{\ExnTy}{\ExnTy^\prime}
-                \quad
-              \JudgeSubExn{\KiEnv}{\Exn}{\Exn^\prime}
-             }
-             {\JudgeSubTy{\KiEnv}
-                         {\ExnTyList{\ExnTy}{\Exn}}
-                         {\ExnTyList{\ExnTy^\prime}{\Exn^\prime}}
-             }
-        \VER
-        \Rule{S-Forall}
-             {\JudgeSubTy{\KiEnv, \ExnVar : \Kind}{\ExnTy_1}{\ExnTy_2}}
-             {\JudgeSubTy{\KiEnv}
-                         {\ExnForall{\ExnVar : \Kind}{\ExnTy_1}}
-                         {\ExnForall{\ExnVar : \Kind}{\ExnTy_2}}
-             }
-    \end{gather*}
-\caption{Subtyping}
-\end{figure}
+We have a simply typed underlying type system, but if we would extend this to full Hindley--Milner, then it is possible for types to become exponentially larger than terms \cite{Mairson:1989:DMT:96709.96748,Kfoury:1990:MTD:101856.101870}. The effects are $\LambdaUnion$-terms, which contains the simply type $\lambda$-calculus as a special case. Reduction of terms in the simply typed $\lambda$-calculus is not elementary recursive \cite{stat79b}. It is also easy to find an artificial family of terms that requires a linear number of iterations to converge on a fixpoint. For these reasons we do not believe the algorithm to have an attractive theoretical bound on time-complexity.
 
-\begin{itemize}
-
-    \item Possibly useful lemma: $\ExnTy_1 = \ExnTy_2 \iff \ExnTy_1 \leq \ExnTy_2 \land \ExnTy_2 \leq \ExnTy_1$.
-
-\end{itemize}
+Anecdotal evidence suggests that the practical time-complexity is acceptable, however. Hindley--Milner has almost linear complexity in non-pathological cases. Types do not grow larger than the terms. The same seems to hold for the effects. Reduction of effects takes a small number of steps, as does the convergence of the fixpoint-iteration.
