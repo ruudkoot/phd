@@ -95,7 +95,7 @@
 %format Var_2
 \begin{figure}[h!]
 \begin{code}
-    reconstruct : Product ClassTyEnv (Product ClassKiEnv ClassTm) -> Product ClassExnTy ClassExn
+    reconstruct :: Product ClassTyEnv (Product ClassKiEnv ClassTm) -> Product ClassExnTy ClassExn
 
     reconstruct env kenv Var         =  env_x
 
@@ -173,12 +173,62 @@
 
 \subsection{Polymorphic recursion}
 
-\begin{example}[Dussart, Henglein, Mossin]
+\begin{itemize}
 
+    \item \TODO You \emph{don't} get polymorphic recursion ``for free''!
+
+\end{itemize}
+
+\begin{example}[Dussart, Henglein, Mossin]
+    Consider the term
     \begin{code}
-        
+        dhm  ::  Bool -> Bool -> Bool
+        dhm  =   FIX f (Bool -> Bool -> Bool)
+                    (LAMBDA (x :: Bool) (LAMBDA (y :: Bool) (if x then True else f y x)))
     \end{code}
 
+    Algorithm $\mathcal{R}$ will infer the exception type (and elaborated term)
+
+%    \begin{code}
+%        dhm  ::  forall e_1:EXN. ExnTyArrS ExnTyBool e_1 (forall e_2:EXN. ExnTyArrT ExnTyBool e_2 ExnTyBool (e_1 # e_2) ExnEmpty) ExnEmpty
+%        dhm  =   FIX (f) (forall e_1:EXN. ExnTyArrS ExnTyBool e_1 (forall e_2:EXN. ExnTyArrT ExnTyBool e_2 ExnTyBool (e_1 # e_2) ExnEmpty) ExnEmpty)
+%                    (LLAMBDA (e_1 : EXN) (LAMBDA (x :: ExnTyBool :&: e_1) (LLAMBDA (e_2 : EXN) (PLAMBDA (y :: ExnTyBool :&: e_2))))
+%                        if x then True else f (Angled e_2) y (Angled e_1) x
+%    \end{code}    
+
+    \begin{code}
+        dhm  ::  forall e_1. ExnTyArrS ExnTyBool e_1 (forall e_2. ExnTyArrT ExnTyBool e_2 ExnTyBool (e_1 # e_2) ExnEmpty) ExnEmpty
+        dhm  =   FIX (f) (forall e_1. ExnTyArrS ExnTyBool e_1 (forall e_2. ExnTyArrT ExnTyBool e_2 ExnTyBool (e_1 # e_2) ExnEmpty) ExnEmpty)
+                    (LLAMBDA (e_1 : EXN) (LAMBDA (x :: ExnTyBool :&: e_1) (LLAMBDA (e_2 : EXN) (PLAMBDA (y :: ExnTyBool :&: e_2))))
+                        if x then True else f (Angled e_2) y (Angled e_1) x
+    \end{code}
+    
+    First let's think about why the elaborated term is type-correct. 
+    
+    \begin{align*}
+        x &: \ExnBool\ \&\ e_1 \\
+        \TmTrue &: \ExnBool\ \&\ \emptyset \\
+        f \langle e_2\rangle\ y\ \langle e_1\rangle\ x &: \ExnBool\ \&\ e_2 \cup e_1
+    \end{align*}
+    
+    \[ \TmIf{x}{\TmTrue}{f \langle e_2\rangle\ y\ \langle e_1\rangle\ x} : \ExnBool \sqcup \ExnBool\ \&\ e_1 \cup \emptyset \cup e_2 \cup e_1 \]
+    
+    By commutativity and idempotence of the union operator and the empty set begin the unit with respect to it, this reduces to:
+    \[ \TmIf{x}{\TmTrue}{f \langle e_2\rangle\ y\ \langle e_1\rangle\ x} : \ExnBool\ \&\ e_1 \cup e_2 \]
+
+    Of course, checking that a type-correctness is easier than type-inference. To infer the type of the fixed-point |f| we have to ``guess'' a type for it. How do we guess this type? We first try the least exception type $\bot_{\TyBool\to\TyBool\to\TyBool}$:
+    \begin{code}
+        forall e_1. ExnTyArrS ExnTyBool e_1 (forall e_2. ExnTyArrT ExnTyBool e_2 ExnTyBool (ExnEmpty) ExnEmpty) ExnEmpty
+    \end{code}
+    If we continue inferring the type with this guess, then we end up with the larger type (larger than the guess):
+    \begin{code}
+        forall e_1. ExnTyArrS ExnTyBool e_1 (forall e_2. ExnTyArrT ExnTyBool e_2 ExnTyBool (e_1) ExnEmpty) ExnEmpty
+    \end{code}
+    We try inferring the type again, but now start with this type as our guess instead of the least type. We end up with a larger type again:
+    \begin{code}
+        forall e_1. ExnTyArrS ExnTyBool e_1 (forall e_2. ExnTyArrT ExnTyBool e_2 ExnTyBool (e_1 # e_2) ExnEmpty) ExnEmpty
+    \end{code}
+    Finally, if we take this type as our guess, we will get back the exact same type and conclude we have reached a fixed point.
 \end{example}
 
 \begin{example}[Glynn, Stuckey, Sulzman]
@@ -189,6 +239,6 @@
 
 There are three aspects that affect the run-time complexity of the algorithm: the complexity of the underlying type system, reduction of the effects, and the fixpoint-iteration in the inference step of the $\mathbf{fix}$-construct.
 
-We have a simply typed underlying type system, but if we would extend this to full Hindley--Milner, then it is possible for types to become exponentially larger than terms \cite{Mairson:1989:DMT:96709.96748,Kfoury:1990:MTD:101856.101870}. The effects are $\LambdaUnion$-terms, which contains the simply type $\lambda$-calculus as a special case. Reduction of terms in the simply typed $\lambda$-calculus is not elementary recursive \cite{stat79b}. It is also easy to find an artificial family of terms that requires a linear number of iterations to converge on a fixpoint. For these reasons we do not believe the algorithm to have an attractive theoretical bound on time-complexity.
+We have a simply typed underlying type system, but if we would extend this to full Hindley--Milner, then it is possible for types to become exponentially larger than terms \cite{Mairson:1989:DMT:96709.96748,Kfoury:1990:MTD:101856.101870}. The effects are $\LambdaUnion$-terms, which contains the simply type $\lambda$-calculus as a special case. Reduction of terms in the simply typed $\lambda$-calculus is not elementary recursive \cite{stat79b}. It is also easy to find an artificial family of terms that requires at least a linear number of iterations to converge on a fixpoint. For these reasons we do not believe the algorithm to have an attractive theoretical bound on time-complexity.
 
 Anecdotal evidence suggests that the practical time-complexity is acceptable, however. Hindley--Milner has almost linear complexity in non-pathological cases. Types do not grow larger than the terms. The same seems to hold for the effects. Reduction of effects takes a small number of steps, as does the convergence of the fixpoint-iteration.

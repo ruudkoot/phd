@@ -20,6 +20,8 @@
 %format ExnBool                         = "\ExnBool"
 %format ExnList (t) (exn)               = "\ExnTyList{" t "}{" exn "}"
 %format ExnArr (t1) (exn1) (t2) (exn2)  = "\ExnTyArr{" t1 "}{" exn1 "}{" t2 "}{" exn2 "}"
+%format ExnTyArrS (t1) (exn1) (t2) (eff) = "\ExnTyArrS{" t1 "}{" exn1 "}{" t2 "}{" eff "}"
+%format ExnTyArrT (t1) (exn1) (t2) (exn2) (eff) = "\ExnTyArrT{" t1 "}{" exn1 "}{" t2 "}{" exn2 "}{" eff "}"
 %format ExnArrA (t1) (exn1)             = t1 "\langle" exn1 "\rangle\rightarrow"
 %format (ExnArrB (t2) (exn2))           = t2 "\langle" exn2 "\rangle"
 

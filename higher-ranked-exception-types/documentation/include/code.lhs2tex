@@ -5,6 +5,7 @@
 %format EXN = "\textsc{exn}"
 
 %format LAMBDA (x) (e) = "\lambda" x "." e
+%format PLAMBDA (x) = "\lambda" x "."
 %format LLAMBDA (x) (e) = "\Lambda" x "." e
 %format TYLAMBDA (x) (t) (e) = "\Lambda" x ":" t "." e
 %format -|> = "\mapsto "
@@ -24,6 +25,7 @@
 %format Bottom (l) (t) = "\bot^{" l "}_{" t "}"
 %format Seq (e1) (e2) = "(" e1 "\ \mathbf{seq}\ " e2 ")"
 %format Fix (e) = "(\mathbf{fix}\ " e ")"
+%format FIX (x) (t) (e) = "\mathbf{fix}\ " x " : " t ". " e
 
 %format alpha = "\alpha"
 %format beta  = "\beta"

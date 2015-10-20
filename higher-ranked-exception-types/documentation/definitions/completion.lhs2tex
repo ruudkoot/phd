@@ -23,6 +23,8 @@
 \newcommand{\ExnTyBool}{\mathrm{b\widehat{oo}l}}    % FIXME: deprecate
 \newcommand{\ExnTyList}[2]{\left[\Throws{#1}{#2}\right]\!}
 \newcommand{\ExnTyArr}[4]{\Throws{#1}{#2} \to \Throws{#3}{#4}}
+\newcommand{\ExnTyArrS}[4]{\Throws{#1}{#2} \xrightarrow{#4} #3}
+\newcommand{\ExnTyArrT}[5]{\Throws{#1}{#2} \xrightarrow{#5} \Throws{#3}{#4}}
 \newcommand{\ExnTyForall}[3]{\forall #1 : #2. #3}
 \newcommand{\ExnTyForallS}[3]{\forall \overline{#1 : #2}. #3}
 \newcommand{\ExnForall}[1]{\forall {#1}.}           % FIXME: deprecate
