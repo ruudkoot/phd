@@ -216,7 +216,7 @@
     By commutativity and idempotence of the union operator and the empty set begin the unit with respect to it, this reduces to:
     \[ \TmIf{x}{\TmTrue}{f \langle e_2\rangle\ y\ \langle e_1\rangle\ x} : \ExnBool\ \&\ e_1 \cup e_2 \]
 
-    Of course, checking that a type-correctness is easier than type-inference. To infer the type of the fixed-point |f| we have to ``guess'' a type for it. How do we guess this type? We first try the least exception type $\bot_{\TyBool\to\TyBool\to\TyBool}$:
+    Of course, checking type-correctness is easier than type-inference. To infer the type of the fixed-point |f| we have to ``guess'' a type for it. How do we guess this type? We first try the least exception type $\bot_{\TyBool\to\TyBool\to\TyBool}$:
     \begin{code}
         forall e_1. ExnTyArrS ExnTyBool e_1 (forall e_2. ExnTyArrT ExnTyBool e_2 ExnTyBool (ExnEmpty) ExnEmpty) ExnEmpty
     \end{code}
@@ -224,7 +224,7 @@
     \begin{code}
         forall e_1. ExnTyArrS ExnTyBool e_1 (forall e_2. ExnTyArrT ExnTyBool e_2 ExnTyBool (e_1) ExnEmpty) ExnEmpty
     \end{code}
-    We try inferring the type again, but now start with this type as our guess instead of the least type. We end up with a larger type again:
+    We try inferring the type again, but now start with this type as our guess instead of the least type. We end up with a yet larger type:
     \begin{code}
         forall e_1. ExnTyArrS ExnTyBool e_1 (forall e_2. ExnTyArrT ExnTyBool e_2 ExnTyBool (e_1 # e_2) ExnEmpty) ExnEmpty
     \end{code}

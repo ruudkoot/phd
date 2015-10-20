@@ -1,6 +1,6 @@
 \section{The $\LambdaUnion$-calculus}\label{section-lambda-union}
 
-The $\LambdaUnion$-calculus is simply typed $\lambda$-calculus extended with a set-union operator and singleton-set and empty-set constants at the term level.
+The $\LambdaUnion$-calculus is a simply typed $\lambda$-calculus extended with a set-union operator and singleton-set and empty-set constants at the term level.
 
 \begin{figure}[h]
 \paragraph{Types}
@@ -91,7 +91,7 @@ In the $\LambdaUnion$-calculus terms are interpreted as sets and types as powers
     The terms $\LuUnion{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_1}\right)}{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_2}\right)}$ and $\LuAbs{\LuVar}{\LuTy}{\LuUnion{\LuTm_1}{\LuTm_2}}$ are extensionally equal.
 \end{lemma}
 \begin{proof}
-    We prove that \[\llbracket \LuApp{\left(\LuUnion{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_1}\right)}{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_2}\right)}\right)}{\LuTm_3} \rrbracket_\rho = \llbracket \LuApp{\left(\LuAbs{\LuVar}{\LuTy}{\LuUnion{\LuTm_1}{\LuTm_2}}\right)}{\LuTm_3} \rrbracket_\rho \] for all $\rho$ and $\LuTm_3$.
+    We prove that \[\llbracket \LuApp{\left(\LuUnion{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_1}\right)}{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_2}\right)}\right)}{\LuTm_3} \rrbracket_\rho = \llbracket \LuApp{\left(\LuAbs{\LuVar}{\LuTy}{\LuUnion{\LuTm_1}{\LuTm_2}}\right)}{\LuTm_3} \rrbracket_\rho \] for all suitable $\rho$ and $\LuTm_3$.
     \begin{align*}
         & \llbracket \LuApp{\left(\LuUnion{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_1}\right)}{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_2}\right)}\right)}{\LuTm_3} \rrbracket_\rho \\
         &= \bigcup \left\{ \varphi(\llbracket \LuTm_3 \rrbracket_\rho) \mid \varphi \in \llbracket \LuUnion{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_1}\right)}{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_2}\right)} \rrbracket_\rho \right\} \\

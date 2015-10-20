@@ -36,7 +36,7 @@ The result of |map| will be a list with the exception type |Throws ([Throws beta
 
         \item If |f| is an exceptional function value, then it must be one from the exception set |e_3|. Applying an argument to an exceptional value will cause the exceptional value to be propagated.
         
-        \item Otherwise |f| is a non-exceptional value. The argument |y| has exception type |Throws alpha e_4|---it is an element from the input list---and so can only be applied to |f| if we instantiate |e_1| to |e_4| first. If |f y| will produce an exceptional value it will thus be on from the exception set |e_2 e_4|.
+        \item Otherwise |f| is a non-exceptional value. The argument |y| has exception type |Throws alpha e_4|---it is an element from the input list---and so can only be applied to |f| if we instantiate |e_1| to |e_4| first. If |f y| will produce an exceptional value it will thus be one from the exception set |e_2 e_4|.
         
     \end{enumerate}
 To account for both cases we need to take the union of the two exception sets, giving us a value with the exception type \mbox{|Throws beta (e_2 e_4 # e_3)|}.
@@ -79,7 +79,7 @@ A type inference algorithm for this type-and-effect system is presented in Secti
 
 \begin{itemize}
 
-    \item A \emph{type-and-effect system} than precisely tracks the uncaught exceptions using higher-ranked types.
+    \item A \emph{type-and-effect system} that precisely tracks the uncaught exceptions using higher-ranked types.
     
     \item An \emph{inference algorithm} that automatically infers such higher-ranked exception types.
 

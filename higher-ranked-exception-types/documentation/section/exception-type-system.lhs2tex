@@ -79,7 +79,7 @@ Quantification on the other hand is resticted to the types, over effects, and no
 
 Any program that is typeable in the underlying type system should also have an exception type: the exception type system is a conservative extension of the underlying type system. Like type systems for strictness or control flow analysis, and unlike type systems for information flow security or dimensional analysis, we do not want to reject any program that is well-typed in the underlying type system, but merely provide more insight in its behavior.
 
-If we furthermore want out type system to be modular---allowing type checking and inference to work on indivildual modules instead of whole programs---we cannot make any assumptions about the exception types of the arguments that are applied to any function, as the function may be called from outside the module with an argument that also comes from outside the module and which we cannot known anything about.\footnote{\citet{HoldermansHage} call such types \emph{fully flexible}.}
+If we furthermore want out type system to be modular---allowing type checking and inference to work on individual modules instead of whole programs---we cannot make any assumptions about the exception types of the arguments that are applied to any function, as the function may be called from outside the module with an argument that also comes from outside the module and which we cannot known anything about.\footnote{\citet{HoldermansHage} call such types \emph{fully flexible}.}
 
 For base and compound types that stand in an argument position their effect and any nested annotations must thus be instantiatable to any arbitrary exception set expression. They must thus be exception set variables that have been universally quantified.
 
@@ -112,14 +112,14 @@ For function types that stand in an argument position (the functional parameters
            :&:  ExnEmpty
     apply  =  LAMBDA f (LAMBDA x (f x))
 \end{code}
-The first, functional, argument of |apply| has exception type |forall e_1 :: EXN. ExnArr ExnBool e_1 ExnBool (e_3 e_1)| and effect |e_2|. It can be instantiated with any function that accepts an argument annotated with any exception set effect, and produces a result annotated with some exception set effect depending on the exception set effect of the argument; the function closure itself may raise any exception. All functions of underling type |Bool -> Bool| satisfy these constraints, so they do not really constrain us in any way.
+The first, functional, argument of |apply| has exception type |forall e_1 :: EXN. ExnArr ExnBool e_1 ExnBool (e_3 e_1)| and effect |e_2|. It can be instantiated with any function that accepts an argument annotated with any exception set effect, and produces a result annotated with some exception set effect depending on the exception set effect of the argument; the function closure itself may raise any exception. All functions of underlying type |Bool -> Bool| satisfy these constraints, so they do not really constrain us in any way.
 
 As |e_1| has been quantified over only the exception set operator~|e_3| and the effect |e_2| are left free. We quantify over them outside the outer function space constructor, allowing them to appear in the annotation |e_2 # e_3 e_4| in the result. The exception set operator |e_3| is now applied to |e_4|, as the application |f x| will instantiate the quantified exception set variable |e_1| to |e_4|.
 \end{example}
 
 \subsection{Exception type completion}
 
-During exception type inference will want to compute the least constraint exception type that erases to a given underlying type.
+During exception type inference we will want to compute the least constraint exception type that erases to a given underlying type.
 
 \begin{figure*}[h]
     \begin{gather*}
