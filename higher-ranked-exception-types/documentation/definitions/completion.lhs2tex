@@ -16,6 +16,8 @@
 %format ClassExn    = "\ClassExn"
 \newcommand{\ClassKind}{\mathbf{Kind}}
 %format Kind        = "\ClassKind"
+\newcommand{\ClassSubst}{\mathbf{Subst}}
+%format ClassSubst  = "\ClassSubst"
 
 \newcommand{\Throws}[2]{#1\langle #2\rangle}    %%%%%%%%%%%%% WHICH TO USE?
 \newcommand{\ExnTy}{\widehat\tau}
@@ -25,13 +27,14 @@
 \newcommand{\ExnTyArr}[4]{\Throws{#1}{#2} \to \Throws{#3}{#4}}
 \newcommand{\ExnTyArrS}[4]{\Throws{#1}{#2} \xrightarrow{#4} #3}
 \newcommand{\ExnTyArrT}[5]{\Throws{#1}{#2} \xrightarrow{#5} \Throws{#3}{#4}}
-\newcommand{\ExnTyForall}[3]{\forall #1 : #2. #3}
-\newcommand{\ExnTyForallS}[3]{\forall \overline{#1 : #2}. #3}
+\newcommand{\ExnTyForall}[3]{\forall #1 :: #2. #3}
+\newcommand{\ExnTyForallS}[3]{\forall \overline{#1 :: #2}. #3}
 \newcommand{\ExnForall}[1]{\forall {#1}.}           % FIXME: deprecate
 
 \newcommand{\Exn}{\xi}
 \newcommand{\ExnAlt}{\zeta}
 \newcommand{\ExnVar}{e}
+\newcommand{\ExnPat}{\pi}
 \newcommand{\ExnCon}[1]{\{#1\}}
 \newcommand{\ExnAbs}[3]{\lambda #1 : #2 . #3}
 \newcommand{\ExnApp}[2]{#1\ #2}
@@ -46,7 +49,7 @@
 \newcommand{\KindDIM}{\textsc{dim}}
 \newcommand{\KindArr}{\Rightarrow}
 
-\newcommand{\KindENV}{\Gamma}
+\newcommand{\KindENV}{\Delta}
 \newcommand{\KindEnv}[1]{{\overline{\ExnVar_{#1} :: \Kind_{#1}}}}
 
 % Judgements

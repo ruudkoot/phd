@@ -4,7 +4,7 @@
 %\usepackage{fullpage}                  % FIXME: geometry
 
 \usepackage[sc,osf]{mathpazo}			% Palatino (text + math)
-\linespread{1.05}
+\linespread{1.05}                       % 1.1? (might be better for lines with greek)
 
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -17,7 +17,7 @@
 
 \newcommand{\ThesisPaper}[2]{#1}
 
-\allowdisplaybreaks[1]                  % BAD IDEA?!
+%\allowdisplaybreaks[0]                  % BAD IDEA?!
 
 \def\labelitemi{--}
 
