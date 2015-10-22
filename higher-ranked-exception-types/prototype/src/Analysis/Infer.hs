@@ -15,6 +15,13 @@ x # y = (x, y)
 infixr 0 #
 
 inferenceExamples = map (\(l,x) -> (l, show x, mathjax' x)) [
+    -- eta-conversion
+    "eta1" # exEta1,
+    "eta2" # exEta2,
+    "eta3" # App exEta1 (Con True),
+    "eta4" # App exEta2 (Con True),
+    "eta5" # Seq exEta1 (Con True),
+    "eta6" # Seq exEta2 (Con True),
     -- decent first example
     "id id" # App (Abs 1 (Bool:->Bool) (Var 1)) (Abs 2 Bool (Var 2)),
     -- * constants
@@ -194,6 +201,8 @@ inferenceExamples = map (\(l,x) -> (l, show x, mathjax' x)) [
     "fixIfIdCrash" # Abs 1 Bool $ If (Var 1) (Fix $ Abs 2 Bool (Var 2))
                                              (Fix $ Crash "foo" (Bool :-> Bool))
   ] where
+        exEta1 = Abs 1 Bool (App exEta2 (Var 1))
+        exEta2 = Crash "E" (Bool :-> Bool)
         ex29 =
             Abs 2 (List Bool) $
                 Case (Var 2) (Nil Bool) 3 4 (Cons (Var 3) (App (Var 1) (Var 4)))

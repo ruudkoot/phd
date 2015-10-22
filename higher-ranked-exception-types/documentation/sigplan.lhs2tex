@@ -138,7 +138,6 @@ type-and-effect systems, higher-ranked polymorphism, type operators, polymorphic
 \clearpage
 
 %include section/todo.lhs2tex
-%include section/interesting-observations.lhs2tex
 
 \clearpage
 

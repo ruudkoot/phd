@@ -194,7 +194,7 @@ In the case applications, we instantiate ($\mathcal{I}$) all quantified variable
         match  kienv  matchList1    matchList2    = Subst e Exn . match kienv ExnTy_1 ExnTy_2
         match  kienv  matchForall1  matchForall2  = match (kienv, e : ki) ExnTy_1 ExnTy_2
         match  kienv  matchArr1      matchArr2
-                =  noot
+                 =  noot
     \end{code}
     \caption{Exception type matching \cite{HoldermansHage}}
 \end{figure}

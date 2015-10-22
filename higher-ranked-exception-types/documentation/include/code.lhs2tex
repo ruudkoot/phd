@@ -23,6 +23,7 @@
 
 %format Var (n) = "x_" n
 %format Bottom (l) (t) = "\bot^{" l "}_{" t "}"
+%format seq             = "\mathbf{seq}"
 %format Seq (e1) (e2) = "(" e1 "\ \mathbf{seq}\ " e2 ")"
 %format Fix (e) = "(\mathbf{fix}\ " e ")"
 %format FIX (x) (t) (e) = "\mathbf{fix}\ " x " : " t ". " e

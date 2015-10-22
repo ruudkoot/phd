@@ -117,6 +117,30 @@ The first, functional, argument of |apply| has exception type |forall e_1 :: EXN
 As |e_1| has been quantified over only the exception set operator~|e_3| and the effect |e_2| are left free. We quantify over them outside the outer function space constructor, allowing them to appear in the annotation |e_2 # e_3 e_4| in the result. The exception set operator |e_3| is now applied to |e_4|, as the application |f x| will instantiate the quantified exception set variable |e_1| to |e_4|.
 \end{example}
 
+%format CrashB2B = "\TmCrash{\TyBool\to\TyBool}{\ExnLblE}"
+\begin{example}
+    Exception types are not invariant under $\eta$-conversion. The term
+    \savecolumns
+    \begin{code}
+        LAMBDA (x :: Bool) (CrashB2B x)  :: forall e : EXN. ExnTyArrT ExnBool e ExnBool ExnConE EmptySet
+    \end{code}
+    does not have the same exception type as the term
+    \restorecolumns
+    \begin{code}
+        CrashB2B                         :: forall e : EXN. ExnTyArrT ExnBool e ExnBool EmptySet ExnConE
+    \end{code}
+    We cannot observe a difference between these terms by applying an argument to them
+    \begin{code}
+        (LAMBDA (x :: Bool) (CrashB2B x))  True  :: ExnBool :&: ExnConE
+        CrashB2B                           True  :: ExnBool :&: ExnConE
+    \end{code}
+    but we can by forcing the closure
+    \begin{code}
+        (LAMBDA (x :: Bool) (CrashB2B x))  seq  True  :: ExnBool :&: EmptySet
+        CrashB2B                           seq  True  :: ExnBool :&: ExnConE
+    \end{code}
+\end{example}
+
 \subsection{Exception type completion}
 
 During exception type inference we will want to compute the least constraint exception type that erases to a given underlying type.

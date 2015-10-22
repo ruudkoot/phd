@@ -36,6 +36,8 @@
 \newcommand{\ExnVar}{e}
 \newcommand{\ExnPat}{\pi}
 \newcommand{\ExnCon}[1]{\{#1\}}
+\newcommand{\ExnLblE}{\mathbf{E}}
+\newcommand{\ExnConE}{\ExnCon{\ExnLblE}}
 \newcommand{\ExnAbs}[3]{\lambda #1 : #2 . #3}
 \newcommand{\ExnApp}[2]{#1\ #2}
 \newcommand{\ExnUnion}[2]{#1 \cup #2}
