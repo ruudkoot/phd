@@ -254,7 +254,7 @@ The interesting case of exception type matching is the case for function types, 
     \begin{code}
         forall e_1. ExnTyArrS ExnTyBool e_1 (forall e_2. ExnTyArrT ExnTyBool e_2 ExnTyBool (e_1) ExnEmpty) ExnEmpty
     \end{code}
-    We try inferring the type again, but now start with this type as our guess instead of the least type. We end up with a yet larger type:
+    We try inferring the type again, but now start with this type as our guess instead of the least type. We end up with an even larger type:
     \begin{code}
         forall e_1. ExnTyArrS ExnTyBool e_1 (forall e_2. ExnTyArrT ExnTyBool e_2 ExnTyBool (e_1 # e_2) ExnEmpty) ExnEmpty
     \end{code}
@@ -269,6 +269,10 @@ The interesting case of exception type matching is the case for function types, 
 
 There are three aspects that affect the run-time complexity of the algorithm: the complexity of the underlying type system, reduction of the effects, and the fixpoint-iteration in the inference step of the $\mathbf{fix}$-construct.
 
-We have a simply typed underlying type system, but if we would extend this to full Hindley--Milner, then it is possible for types to become exponentially larger than terms \cite{Mairson:1989:DMT:96709.96748,Kfoury:1990:MTD:101856.101870}. The effects are $\LambdaUnion$-terms, which contains the simply type $\lambda$-calculus as a special case. Reduction of terms in the simply typed $\lambda$-calculus is not elementary recursive \cite{stat79b}. It is also easy to find an artificial family of terms that requires at least a linear number of iterations to converge on a fixpoint. For these reasons we do not believe the algorithm to have an attractive theoretical bound on time-complexity.
+We have a simply typed underlying type system, but if we would extend this to full Hindley--Milner, then it is possible for types to become exponentially larger than terms \cite{Mairson:1989:DMT:96709.96748,Kfoury:1990:MTD:101856.101870}. The effects are $\LambdaUnion$-terms, which contains the simply type $\lambda$-calculus as a special case. Reduction of terms in the simply typed $\lambda$-calculus is non-elementary recursive \cite{stat79b}. It is also easy to find an artificial family of terms that requires at least a linear number of iterations to converge on a fixpoint. For these reasons we do not believe the algorithm to have an attractive theoretical bound on time-complexity.
 
 Anecdotal evidence suggests that the practical time-complexity is acceptable, however. Hindley--Milner has almost linear complexity in non-pathological cases. Types do not grow larger than the terms. The same seems to hold for the effects. Reduction of effects takes a small number of steps, as does the convergence of the fixpoint-iteration.
+
+\subsection{Widening}
+
+\TODO

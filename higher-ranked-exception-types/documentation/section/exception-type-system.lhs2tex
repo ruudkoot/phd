@@ -124,7 +124,7 @@ As |e_1| has been quantified over only the exception set operator~|e_3| and the 
     \begin{code}
         LAMBDA (x :: Bool) (CrashB2B x)  :: forall e : EXN. ExnTyArrT ExnBool e ExnBool ExnConE EmptySet
     \end{code}
-    does not have the same exception type as the term
+    does not have the same exception type as the $\eta$-equivalent term
     \restorecolumns
     \begin{code}
         CrashB2B                         :: forall e : EXN. ExnTyArrT ExnBool e ExnBool EmptySet ExnConE

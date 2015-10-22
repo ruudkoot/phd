@@ -1,3 +1,3 @@
-\section{Conclusion}
+\section{Conclusions}
 
-We show that it is feasible to extend non-strict higher-order languages with exception-annotated types, as is already done in some strict first-order languages. We argue that the use of higher-ranked exception polymorphism and exception operators \emph{\`a la} System~$F_\omega$, not only increases the precision of the analysis, but are also more readable and understandable for the programmer \emph{vis-\`a-vis} constrained type schemes: the exception terms in the annotations more closely mirrors what is happening at the term level than a constraint set does.
+We show that it is feasible to extend non-strict higher-order languages with exception-annotated types, as is already done in some strict first-order languages. We argue that higher-ranked exception polymorphic type with exception operators \emph{\`a la} System~$F_\omega$, are not only more accurate, but are also more readable for the programmer \emph{vis-\`a-vis} constrained type-schemes: the exception terms in the annotations more closely mirrors what is happening at the term level constraint sets do.

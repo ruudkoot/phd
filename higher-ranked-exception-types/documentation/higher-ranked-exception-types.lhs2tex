@@ -58,8 +58,8 @@
 
 %include section/metatheory.lhs2tex
 
-%include section/future-research.lhs2tex
 %include section/related-work.lhs2tex
+%include section/future-research.lhs2tex
 %include section/conclusion.lhs2tex
 
 \appendix

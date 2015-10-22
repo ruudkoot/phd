@@ -38,6 +38,16 @@
 
 \end{itemize}
 
+\subsection{Abstract}
+
+    \begin{itemize}
+
+        \item Decidability is only conjectured, so far.
+        
+        \item title: Higher-order effect types
+    
+    \end{itemize}
+
 \subsection{Introduction}
 
     \begin{itemize}
@@ -78,3 +88,19 @@
     \end{itemize}
     
 \subsection{Type inference}
+
+    \begin{itemize}
+    
+        \item \TODOX{swap arugments of $\mathcal{M}$ in the algorithm}
+        
+        \item Complexity: reduction corresponds to agressive constraint simplification
+        
+    \end{itemize}
+    
+\subsection{Future research}
+
+    \begin{itemize}
+
+        \item higher-ranked effect types, Koka
+    
+    \end{itemize}

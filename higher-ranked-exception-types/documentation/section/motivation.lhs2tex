@@ -79,7 +79,7 @@ A type inference algorithm for this type-and-effect system is presented in Secti
 
 \begin{itemize}
 
-    \item A \emph{type-and-effect system} that precisely tracks the uncaught exceptions using higher-ranked types.
+    \item A \emph{type-and-effect system} that precisely tracks the uncaught exceptions using higher-ranked types and effect operators.
     
     \item An \emph{inference algorithm} that automatically infers such higher-ranked exception types.
 
