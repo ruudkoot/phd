@@ -1,4 +1,4 @@
-\begin{figure}
+\begin{figure}[ht]
     \begin{align*}
         \Subst{\Exn}{\ExnVar}{\ExnVar} &\equiv \Exn \\
         \Subst{\Exn}{\ExnVar}{\ExnVar^\prime} &\equiv \ExnVar^\prime &&\text{if $\ExnVar \neq \ExnVar^\prime$}\\
@@ -11,7 +11,7 @@
     \caption{Annotation substitution}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[ht]
     \begin{align*}
         \Subst{\Tm}{x}{x} &\equiv \Tm \\
         \Subst{\Tm}{x}{x^\prime} &\equiv x^\prime &&\text{if $x \neq x^\prime$} \\

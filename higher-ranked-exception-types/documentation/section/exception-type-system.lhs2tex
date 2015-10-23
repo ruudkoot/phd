@@ -2,7 +2,7 @@
 
 \subsection{Exception types}
 
-The syntax of well-formed exception types are given in Figure~\ref{fig-exception-type-syntax} and Figure~\ref{fig-exception-type-well-formed}. An exception type~$\ExnTy$ is formed out of base types (booleans), compound types (lists), function types and quantification over exception variables.\footnote{To avoid complicating the presentation would do \emph{not} allow quantification over type variables, i.e. polymorpism in the underlying type system.}
+The syntax of well-formed exception types are given in Figure~\ref{fig-exception-type-syntax} and Figure~\ref{fig-exception-type-well-formed}. An exception type~$\ExnTy$ is formed out of base types (booleans), compound types (lists), function types and quantification over exception variables.\footnote{To avoid complicating the presentation we do \emph{not} allow quantification over type variables, i.e. polymorpism in the underlying type system.}
 
 For a list with exception type $\ExnTyList{\ExnTy}{\Exn}$ and effect $\ExnAlt$, the type $\ExnTy$ of the elements in the list is \emph{annotated} with an exception set expression $\Exn$ of kind~$\KindEXN$. This expression gives a set of exceptions which may be raised when an element of the list is forced. The effect gives a set of exceptions may be raised when a constructor forming the spine of the list is forced.
 
@@ -563,7 +563,20 @@ During exception type inference we will want to compute the least constraint exc
 
 \end{itemize}
 
-\begin{figure*}[h!]
+%format lub (a) (b) = a "\sqcup " b
+%format |_| = "\sqcup "
+\begin{figure}[ht]
+    \begin{code}
+        lub :: Product ClassExnTy ClassExnTy -> ClassExnTy
+        ExnBool            |_|         ExnBool              = ExnBool
+        ExnList t_1 Exn  |_|         c                    = d
+    \end{code}
+    \caption{\TODOX{Exception types: least upper bound}}
+\end{figure}
+
+aa
+
+\begin{figure*}[h]
     \begin{gather*}
         \Rule{T-Var}
              {}

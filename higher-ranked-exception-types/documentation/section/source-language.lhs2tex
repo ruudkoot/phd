@@ -1,6 +1,6 @@
 \section{Source language}\label{section-source-language}
 
-Our analysis is applicable to a simple non-strict functional language that supports Boolean, integer and list data types. In section we'll briefly state its syntax and semantics.
+Our analysis is applicable to a simple non-strict functional language that supports Boolean, integer and list data types. In this section we'll briefly state its syntax and semantics.
 
 \begin{figure}[ht]
 \paragraph{Terms}
@@ -23,6 +23,9 @@ Our analysis is applicable to a simple non-strict functional language that suppo
 \end{figure}
 
 Missing from the language is a construct to ``catch'' exceptional values. While this may be surprising to programmers familiar with strict languages, it is a common design decision to omit such a construct from the pure fragment of non-strict languages. The omission of such a construct allows for the introduction of a certain amount of non-determinism in the operational semantics of the language---giving more freedom to an optimizing compiler---without breaking referential transparency.
+
+\TODOX{Values $v$ and possibly exceptional values $\hat{v}$.}
+\LORUMIPSUM
 
 \subsection{Underlying type system}
 

@@ -1,11 +1,12 @@
 \section{Type inference}\label{section-type-inference-algorithm}
 
+We now give an algorithm that infers the exception types presented in the previous section.
+
 %format reconstruct                 = "\mathcal{R}"
 %format complete                    = "\mathcal{C}"
 %format instantiate                 = "\mathcal{I}"
 %format match                       = "\mathcal{M}"
 
-%format Product (a) (b)             = a "\times " b
 %format ClassEnv                    = "\ClassEnv"
 %format ClassTy                     = "\ClassTy"
 %format env                         = "\TyEnv"
@@ -14,7 +15,7 @@
 %format Var                         = "\TmVar"
 %format env_x                       = "\TyEnv_x"
 
-%format (Con (t) (c))               = c "_" t
+%format (ConX)                      = "c_\Ty"
 %format ty                          = "\Ty"
 %format Result (a) (b)              = "\langle" a "; " b "\rangle"
 %format bottomTy                    = "\BottomTy{\Ty}"
@@ -94,13 +95,13 @@
 %format Case                        = "\TmCase{\Tm_1}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}"
 %format Var_1
 %format Var_2
-\begin{figure}[h!]
+\begin{figure}[ht]
 \begin{code}
     reconstruct :: Product ClassTyEnv (Product ClassKiEnv ClassTm) -> Product ClassExnTy ClassExn
 
     reconstruct env kenv Var         =  env_x
 
-    reconstruct env kenv (Con ty c)  =  Result bottomTy ExnEmpty
+    reconstruct env kenv (ConX)      =  Result bottomTy ExnEmpty
 
     reconstruct env kenv Crash       =  Result bottomTy ExnCon
 
@@ -196,7 +197,7 @@ In the case applications, we instantiate ($\mathcal{I}$) all quantified variable
         match  kienv  matchArr1      matchArr2
                  =  noot
     \end{code}
-    \caption{Exception type matching \cite{HoldermansHage}}
+    \caption{\TODOX{Exception type matching}}
 \end{figure}
 
 The interesting case of exception type matching is the case for function types, where we perform pattern unification of the exception annotations. The produced substitution $\theta$ covers all variables freshly introduced by the instantiation procedure $\mathcal{I}$. Finally, we apply the substitution $\theta$ to result exception type and effect of $t_1$.
@@ -262,6 +263,7 @@ The interesting case of exception type matching is the case for function types, 
 \end{example}
 
 \begin{example}[Glynn, Stuckey, Sulzman]
+    \TODO
 \end{example}
 
 
@@ -275,4 +277,4 @@ Anecdotal evidence suggests that the practical time-complexity is acceptable, ho
 
 \subsection{Widening}
 
-\TODO
+\LORUMIPSUM

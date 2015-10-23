@@ -38,7 +38,7 @@
 
 \end{itemize}
 
-\subsection{Abstract}
+\subsection*{Abstract}
 
     \begin{itemize}
 
@@ -95,6 +95,14 @@
         
         \item Complexity: reduction corresponds to agressive constraint simplification
         
+    \end{itemize}
+    
+\subsection{Related work}
+
+    \begin{itemize}
+    
+        \item More differences between \cite{HoldermansHage} (e.g. data types)?
+    
     \end{itemize}
     
 \subsection{Future research}

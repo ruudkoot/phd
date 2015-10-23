@@ -9,7 +9,7 @@ Inferring principal types in a type system with polymorphic recursion is equival
 
 When restricted to polymorphic recursion in the effects, the problem often becomes decidable again. In \citet{Tofte:1994:ITC:174675.177855} this is a conjecture based on empirical observation. \citet{Rittri:1995:DIU:224164.224197} gives a semi-unification procedure based on the general semi-algorithm by \citet{Baaz93APTCC} and proves it terminates in the special case of semi-unification in Abelian groups. \citet{Dussart:1995:PRS:647163.717680} use a constraint-based algorithm and show that all variables that do not occur free in the context or type can be eliminated from the constraint set by a constraint reduction step during each Kleene--Mycroft iteration. As at most $n^2$ subeffecting constraints can be formed over $n$ variables, the whole procedure must terminate. By not restarting the Kleene-Mycroft iteration from bottom their algorithm will run in polynomial time, even in the presence of nested fixpoints.
 
-Somehow, the obvious extension to polymorphic effect abstraction ($\mathbf{lambda}$-bound, higher-ranked effect polymorphism) remained mostly unstudied, possibly because it is of limited use without the simultaneous introduction of effect operators, in contrast to higher-ranked polymorphism in plain type systems.
+The extension to polymorphic effect abstraction ($\mathbf{lambda}$-bound, higher-ranked effect polymorphism) remained much less well studied, possibly because it is of limited use without the simultaneous introduction of effect operators, in contrast to higher-ranked polymorphism in plain type systems.
 
 \paragraph{Effect operators} \citet{KennedyThesis} presents a type system that ensures the dimensional consistency of  a ML-like language extended with units of measure ($\mathrm{ML}_\delta$). This language has predicative, prenex dimension polymorphism. Kennedy gives an Algorithm~$\mathcal{W}$-like type inference procedure that uses equational unification to deal with the Abelian group (\textsc{ag}) structure of dimension expressions. Also described are two explicitly typed variants of the language: a System F-like language with arbitrary rank dimension polymorphism ($\Lambda_\delta$), and a System~$\mathrm{F}_\omega$-like language that extends $\Lambda_\delta$ with dimension operators ($\Lambda_{\delta\omega}$). This language can type strictly more programs than the language without dimension operators:
     \begin{code}
@@ -35,7 +35,7 @@ The language $\Lambda_{\delta\omega}$ bears a striking resemblance to our langua
 
 \citet{Faxen:1996:PPF:646912.710963} presents a type system for flow analysis that uses constrained type schemes in the style of \citet{Aiken:1993:TIC:165180.165188}, and has $\lambda$-bounded polymorphism (but no type operators) in the style of System~F. To make the inference algorithm terminate for recursive programs the size of the name supply needs to be bounded, leading to imprecision. \citet{SmithWang} present a very similar framework, but one that can be instantiated with variants of either $k$-\textsc{cfa} \cite{Shivers:1991:CAH:124950} or \textsc{cpa} \cite{Agesen:1995:CPA:646153.679533} to ensure termination.
 
-\TODOX{Stefan + RW?} \LORUMIPSUM
+\citet{HoldermansHage} design a \SystemFw-like type system for flow analysis for a strict language that has both polymorphic abstraction and effect operators. Our type inference algorithm extends upon their techniques. A key difference is that they work with a constraint-based type system and a constraint solver, while we replace these with reduction of terms in an extended $\lambda$-calculus. This difference expresses itself particularly in how the case of (polymorphic) recursion is handled. We believe our approach will scale more easily to analyses that are either not conservative extensions of the underlying type system, or require more expressive effects (see Section~\ref{section-future-research}).
 
 \subsection{$\LambdaUnion$-calculus}
 
@@ -50,9 +50,8 @@ similar to our typed $\LambdaUnion$-calculus.
 
 \subsection{Exception analyses}
 
-\TODOX{Update to this paper!} Several exception analyses have been described in the literature, primarily targeting the detection of uncaught exceptions in ML.
+Several exception analyses have been described in the literature, primarily targeting the detection of uncaught exceptions in ML.
 The exception analysis in \citet{kyi} is based on abstract interpretation.
-\citet{Guzman94anextended} and \citet{Fahndrich:1998:TDE:893957} describe type-based exception analyses. The row-based type system for exception analysis described in \citet{Leroy:2000:TAU:349214.349230} containing a data-flow analysis component that is specialized towards tracking value-carrying exceptions instead of value-dependent exceptions and thus employs a less precise unification method instead of subtyping.
-\citet{Glynn:2002:EAN:581478.581488} developed the first exception analysis for a non-strict language. It is a type-based analysis using Boolean constraints and, although it does not take data flow into account, has a similar flavor to our system.
+\citet{Guzman94anextended} and \citet{Fahndrich:1998:TDE:893957} describe type-based exception analyses. \citet{Leroy:2000:TAU:349214.349230} presents a row-based type system for exception analysis that contains a data-flow analysis component targeted towards tracking value-carrying exceptions.
 
-\TODOX{Koot and Hage 2015}
+\citet{Glynn:2002:EAN:581478.581488} developed the first exception analysis for a non-strict language. It is a type-based analysis using Boolean constraints. In \cite{Koot:2015:TEA:2678015.2682542} we presented a constraint-based type system for exception analysis of non-strict language, where the exception-flow could depend on the data-flow using conditional constraints. This increases the accuracy in the presence of exceptions raised by pattern-matching failures.

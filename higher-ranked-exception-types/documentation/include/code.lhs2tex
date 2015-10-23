@@ -89,3 +89,5 @@
 %format ApplySubst (s) (t) = s "{}" t
 
 %format ... = "\cdots "
+
+%format Product (a) (b)             = a "\times " b

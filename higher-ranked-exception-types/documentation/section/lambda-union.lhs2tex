@@ -125,7 +125,7 @@ A normal form $v$ of a term $t$ can be written as
 \begin{align*}
     v = \lambda x_1 \cdots x_n. \{ k_1(v_{11}, ..., v_{1q_1}), ..., k_p(v_{p1}, ..., v_{pq_p}) \}
 \end{align*}
-where $k_i$ can be a free or bound variable, or a singleton-set constant, but not a term as this would form a $\beta$-redex.\footnote{Technically, terms that bind at least one variable would form a $\beta$-redex. Terms that do not bind any variables do not occur either as they merely form a subsequence of $k_1(v_{11}, ..., v_{1q_1}), ..., k_p(v_{p1}, ..., v_{pq_p})$ in this notation.} For each $k_i, k_j$ with $i < j$ we must also have that $k_i < k_j$ for some total order on $\ClassVar \cup \ClassCon$. Not only does this imply that each ter      m $k_i(v_{i1}, ..., v_{iq_i})$ occurs only once in $k_1(v_{11}, ..., v_{1q_1}), ..., k_p(v_{p1}, ..., v_{pq_p})$, but also the stronger condition that $k_i \neq k_j$ for all $i\neq j$.
+where $k_i$ can be a free or bound variable, or a singleton-set constant, but not a term as this would form a $\beta$-redex.\footnote{Technically, terms that bind at least one variable would form a $\beta$-redex. Terms that do not bind any variables do not occur either as they merely form a subsequence of $k_1(v_{11}, ..., v_{1q_1}), ..., k_p(v_{p1}, ..., v_{pq_p})$ in this notation.} For each $k_i, k_j$ with $i < j$ we must also have that $k_i < k_j$ for some total order on $\ClassVar \cup \ClassCon$. Not only does this imply that each term $k_i(v_{i1}, ..., v_{iq_i})$ occurs only once in $k_1(v_{11}, ..., v_{1q_1}), ..., k_p(v_{p1}, ..., v_{pq_p})$, but also the stronger condition that $k_i \neq k_j$ for all $i\neq j$.
 
 %format reduce  (t)    = "\llfloor " t "\rrfloor "
 %format reduce' (t)    = "\lfloor " t "\rfloor "
