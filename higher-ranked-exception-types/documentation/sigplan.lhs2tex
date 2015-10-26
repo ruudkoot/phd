@@ -108,7 +108,6 @@ type-and-effect systems, higher-ranked polymorphism, type operators, polymorphic
 \clearpage
 %include section/type-inference.lhs2tex
 
-\newpage
 %include section/related-work.lhs2tex
 %include section/future-research.lhs2tex
 %include section/conclusion.lhs2tex

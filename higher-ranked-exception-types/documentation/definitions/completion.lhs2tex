@@ -34,7 +34,8 @@
 \newcommand{\Exn}{\xi}
 \newcommand{\ExnAlt}{\zeta}
 \newcommand{\ExnVar}{e}
-\newcommand{\ExnPat}{\pi}
+\newcommand{\ExnPat}{\ExnVar^\prime\ \overline{\ExnVar_i}}
+\newcommand{\ExnPatVar}{\pi}
 \newcommand{\ExnCon}[1]{\{#1\}}
 \newcommand{\ExnLblE}{\mathbf{E}}
 \newcommand{\ExnConE}{\ExnCon{\ExnLblE}}

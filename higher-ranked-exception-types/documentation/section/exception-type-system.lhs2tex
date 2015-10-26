@@ -563,19 +563,6 @@ During exception type inference we will want to compute the least constraint exc
 
 \end{itemize}
 
-%format lub (a) (b) = a "\sqcup " b
-%format |_| = "\sqcup "
-\begin{figure}[ht]
-    \begin{code}
-        lub :: Product ClassExnTy ClassExnTy -> ClassExnTy
-        ExnBool            |_|         ExnBool              = ExnBool
-        ExnList t_1 Exn  |_|         c                    = d
-    \end{code}
-    \caption{\TODOX{Exception types: least upper bound}}
-\end{figure}
-
-aa
-
 \begin{figure*}[h]
     \begin{gather*}
         \Rule{T-Var}

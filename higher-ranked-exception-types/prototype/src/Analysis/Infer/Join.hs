@@ -5,7 +5,7 @@ module Analysis.Infer.Join (
 import           Analysis.Names
 import           Analysis.Common
 
--- | Join / subtyping
+-- | Join / subtyping / least upper bounds
 
 join :: ExnTy -> ExnTy -> ExnTy
 join ExnBool ExnBool
