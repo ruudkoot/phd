@@ -76,6 +76,8 @@
 \subsection{Exception types}
 
     \begin{itemize}
+    
+        \item \TODOX{Rename stuff in \CiteRule{T-App} in the elaboration system (now subtype/-effect of the result instead of the argument and clashes with the indices enumerated over by $i$!}
 
         \item $\ExnVar \in \ClassExnVar$
 

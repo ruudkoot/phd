@@ -4,6 +4,10 @@
 %format ClassTyEnv       = "\ClassTyEnv"
 \newcommand{\ClassKiEnv}{\mathbf{KiEnv}}
 %format ClassKiEnv   = "\ClassKiEnv"
+\newcommand{\ClassVal}{\mathbf{Val}}
+%format ClassVal    = "\ClassVal"
+\newcommand{\ClassExnVal}{\mathbf{ExnVal}}
+%format ClassExnVal = "\ClassExnVal"
 \newcommand{\ClassTm}{\mathbf{Tm}}
 %format ClassTm     = "\ClassTm"
 \newcommand{\ClassTy}{\mathbf{Ty}}

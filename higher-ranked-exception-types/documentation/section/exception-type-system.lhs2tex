@@ -4,25 +4,9 @@
 
 The syntax of well-formed exception types are given in Figure~\ref{fig-exception-type-syntax} and Figure~\ref{fig-exception-type-well-formed}. An exception type~$\ExnTy$ is formed out of base types (booleans), compound types (lists), function types and quantification over exception variables.\footnote{To avoid complicating the presentation we do \emph{not} allow quantification over type variables, i.e. polymorpism in the underlying type system.}
 
-For a list with exception type $\ExnTyList{\ExnTy}{\Exn}$ and effect $\ExnAlt$, the type $\ExnTy$ of the elements in the list is \emph{annotated} with an exception set expression $\Exn$ of kind~$\KindEXN$. This expression gives a set of exceptions which may be raised when an element of the list is forced. The effect gives a set of exceptions may be raised when a constructor forming the spine of the list is forced.
+For a list with exception type $\ExnTyList{\ExnTy}{\Exn}$ and effect $\ExnAlt$, the type $\ExnTy$ of the elements in the list is \emph{annotated} with an exception set expression $\Exn$ of kind~$\KindEXN$. This expression gives a set of exceptions which may be raised when an element of the list is forced. The effect $\ExnAlt$ gives a set of exceptions that may be raised when a constructor forming the spine of the list is forced.
 
 For a function with exception type $\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}$ and effect~$\ExnAlt$, the argument of type $\ExnTy_1$ is annotated with an exception set expression $\Exn_1$ that gives set of exceptions that may be raised if the argument is forced by the function. The result of type $\ExnTy_2$ is annotated with an exception set expression $\Exn_2$ that gives the set of exceptions that may be raised when the result of the function is forced. The effect $\ExnAlt$ gives the set of exceptions that may be raised if the function closure is forced.
-
-\begin{example} The identity function
-    \begin{code}
-    id  ::  forall e. ExnArr ExnBool e ExnBool e :&: EmptySet
-    id  =   LAMBDA x x
-    \end{code}
-    propagates any exceptional value passed to it as an argument to the result unchanged. As the identity function is constructed by a literal $\lambda$-abstraction, no exception will be raised when the resulting closure is forced, hence the empty effect.
-\end{example}
-
-%format bottom_E_fun = "\lightning^\mathbf{E}_{\TyBool \to \TyBool}"
-\begin{example} The exceptional function value
-    \begin{code}
-    bottom_E_fun ::  forall e. ExnArr ExnBool e ExnBool EmptySet :&: e_E
-    \end{code}
-    raises an exception when its closure is forced, for example as happens when an argument is applied to it. As this function can never produce a result, it certainly cannot produce an exceptional value, so the result type is annotated with an empty exception set.
-\end{example}
 
 \begin{figure}[h]
     \begin{alignat}{2}
@@ -46,7 +30,23 @@ For a function with exception type $\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2
     \label{fig-exception-type-syntax}
 \end{figure}
 
-\begin{figure}[h]
+\begin{example} The identity function
+    \begin{code}
+    id  ::  forall e. ExnArr ExnBool e ExnBool e :&: EmptySet
+    id  =   LAMBDA x x
+    \end{code}
+    propagates any exceptional value passed to it as an argument to the result unchanged. As the identity function is constructed by a literal $\lambda$-abstraction, no exception will be raised when the resulting closure is forced, hence the empty effect.
+\end{example}
+
+%format bottom_E_fun = "\lightning^\mathbf{E}_{\TyBool \to \TyBool}"
+\begin{example} The exceptional function value
+    \begin{code}
+    bottom_E_fun ::  forall e. ExnArr ExnBool e ExnBool EmptySet :&: e_E
+    \end{code}
+    raises an exception when its closure is forced, for example as happens when an argument is applied to it. As this function can never produce a result, it certainly cannot produce an exceptional value, so the result type is annotated with an empty exception set.
+\end{example}
+
+\begin{figure}[ht]
     \begin{gather*}
         \Rule{W-Univ}
              {\JudgeExnTyWff{d}{\KiEnv,\ExnVar :: \Kind}{\ExnTy}}
@@ -140,6 +140,10 @@ As |e_1| has been quantified over only the exception set operator~|e_3| and the 
         CrashB2B                           seq  True  :: ExnBool :&: ExnConE
     \end{code}
 \end{example}
+
+\subsection{Least exception types}
+
+\TODO
 
 \subsection{Exception type completion}
 
@@ -559,6 +563,8 @@ During exception type inference we will want to compute the least constraint exc
 
 \begin{itemize}
 
+    \item \TODOX{Type erasure relation}
+
     \item In \CiteRule{T-App} and {T-Fix}, note that there are substitutions in the premises of the rules. Are these inductive? (Probably, as these premises are not ``recursive'' ones.)
 
 \end{itemize}
@@ -581,7 +587,7 @@ During exception type inference we will want to compute the least constraint exc
                         {\KiEnv}
                         {\TmCon{\Ty}}
                         {\TmCon{\Ty}}
-                        {\Ty}
+                        {\BottomTy{\Ty}}
                         {\ExnEmpty}
              }
         \quad
@@ -621,7 +627,7 @@ During exception type inference we will want to compute the least constraint exc
                         {\ExnEmpty}
              }
         \\[1.5ex]
-        \Rule{T-App}
+        \Rule{\TODO{T-App}}
              {\begin{gathered}
                 \JudgeSubTy{\KiEnv}
                            {\ExnTy_2}
@@ -774,7 +780,7 @@ During exception type inference we will want to compute the least constraint exc
                         {\KiEnv}
                         {\TmNil{\Ty}}
                         {\TmNil{\Ty}}
-                        {\BottomTy{\Ty}}
+                        {\ExnTyList{\BottomTy{\Ty}}{\ExnEmpty}}
                         {\ExnEmpty}
              }
         \HOR
@@ -807,7 +813,7 @@ During exception type inference we will want to compute the least constraint exc
                             {\KiEnv}
                             {\Tm_1}
                             {\Tm_1^\prime}
-                            {\ExnTyList{\Ty_1}{\Exn_1}}
+                            {\ExnTyList{\ExnTy_1}{\Exn_1}}
                             {\Exn_1^\prime}
                   \quad
                   \JudgeElab{\TyEnv}
@@ -817,7 +823,7 @@ During exception type inference we will want to compute the least constraint exc
                             {\ExnTy_2}
                             {\Exn_2}
                   \quad
-                  \JudgeElab{\TyEnv, \TmVar_1 : \ExnTy_1\ \&\ \Exn_1, \TmVar_2 : \ExnTyList{\Ty_1}{\Exn_1}\ \&\ \Exn_1^\prime}
+                  \JudgeElab{\TyEnv, \TmVar_1 : \ExnTy_1\ \&\ \Exn_1, \TmVar_2 : \ExnTyList{\ExnTy_1}{\Exn_1}\ \&\ \Exn_1^\prime}
                             {\KiEnv}
                             {\Tm_3}
                             {\Tm_3^\prime}
