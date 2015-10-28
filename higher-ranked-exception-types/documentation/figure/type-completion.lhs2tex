@@ -1,0 +1,49 @@
+\begin{figure*}[p]
+    \begin{gather*}
+        \Rule{C-Bool}
+             {}
+             {\JudgeComplete{\KindEnv{i}}
+                            {\TyBool}
+                            {\ExnTyBool}
+                            {\ExnVar\ \overline{\ExnVar_i}}
+                            {\ExnVar :: \overline{\Kind_i\KindArr}\KindEXN}
+             }
+        \HOR
+        \Rule{C-List}
+             {\JudgeComplete{\KindEnv{i}}
+                            {\Ty}
+                            {\ExnTy}
+                            {\Exn}
+                            {\KindEnv{j}}
+             }
+             {\JudgeComplete{\KindEnv{i}}
+                            {\TyList{\Ty}}
+                            {\ExnTyList{\ExnTy}{\Exn}}
+                            {\ExnVar\ \overline{\ExnVar_i}}
+                            {\ExnVar :: \overline{\Kind_i\KindArr}%
+                                \KindEXN, \KindEnv{j}}
+             }
+        \VER
+        \Rule{C-Arr}
+             {\JudgeComplete{}
+                            {\Ty_1}
+                            {\ExnTy_1}
+                            {\Exn_1}
+                            {\KindEnv{j}}
+              \quad
+              \JudgeComplete{\KindEnv{i},\KindEnv{j}}
+                            {\Ty_2}
+                            {\ExnTy_2}
+                            {\Exn_2}
+                            {\KindEnv{j}}
+             }
+             {\JudgeComplete{\KindEnv{i}}
+                            {\TyArr{\Ty_1}{\Ty_2}}
+                            {\ExnForall{\overline{\ExnVar_j :: \Kind_j}}\left(\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}\right)}
+                            {\ExnVar\ \overline{\ExnVar_i}}
+                            {\ExnVar :: \overline{\Kind_j\KindArr}%
+                                \KindEXN, \KindEnv{k}}
+             }
+    \end{gather*}
+    \caption{Type completion ($\JudgeComplete{\KindENV}{\Ty}{\ExnTy}{\Exn}{\KindENV'}$)}
+\end{figure*}
