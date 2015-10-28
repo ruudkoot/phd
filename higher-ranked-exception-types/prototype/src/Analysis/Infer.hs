@@ -22,8 +22,10 @@ inferenceExamples = map (\(l,x) -> (l, show x, mathjax' x)) [
     "eta4" # App exEta2 (Con True),
     "eta5" # Seq exEta1 (Con True),
     "eta6" # Seq exEta2 (Con True),
-    -- decent first example
+    -- decent first examples
     "id id" # App (Abs 1 (Bool:->Bool) (Var 1)) (Abs 2 Bool (Var 2)),
+    "" # Abs 1 (Bool :-> Bool) (App (Var 1) (Con True)),
+    "" # Seq (Crash "F" ((Bool :-> Bool) :-> Bool)) $ Abs 1 (Bool :-> Bool) $ If (Crash "G" Bool) (App (Var 1) (Con True)) (App (Var 1) (Crash "E" Bool)),
     -- * constants
     "true" # Con True,
     -- * abstraction
