@@ -1,0 +1,21 @@
+%format kienv           = "\KindENV"
+%format matchList1      = "\ExnTyList{\ExnTy^\prime}{\ExnPat}"
+%format matchList2      = "\ExnTyList{\ExnTy}{\Exn}"
+%format matchArr1       = "(\ExnTyArr{\ExnTy_1}{\ExnVar}{\ExnTy_2^\prime}{\ExnPat})"
+%format matchArr2       = "(\ExnTyArr{\ExnTy_1}{\ExnVar}{\ExnTy_2}{\Exn})"
+%format matchForall1    = "(\ExnTyForall{\ExnVar}{\Kind}{\ExnTy^\prime})"
+%format matchForall2    = "(\ExnTyForall{\ExnVar}{\Kind}{\ExnTy})"
+%format ExnSol          = "\lambda \overline{e_i :: \KindENV_{e_i}}.\Exn"
+\begin{figure}[ht]
+    \begin{code}
+        match  ::  Product ClassKiEnv (Product ClassExnTy ClassExnTy) -> ClassSubst
+        match  kienv  ExnTyBool     ExnTyBool     = EmptyEnv
+        match  kienv  ExnTyInt      ExnTyInt      = EmptyEnv
+        match  kienv  matchList1    matchList2
+                        = Subst e' ExnSol . match kienv ExnTy' ExnTy
+        match  kienv  matchArr1      matchArr2
+                        = Subst e' ExnSol . match kienv ExnTy_2' ExnTy_2
+        match  kienv  matchForall1  matchForall2  = match (kienv, e : ki) ExnTy' ExnTy
+    \end{code}
+    \caption{Exception type matching}
+\end{figure}

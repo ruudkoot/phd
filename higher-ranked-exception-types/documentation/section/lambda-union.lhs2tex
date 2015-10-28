@@ -63,7 +63,7 @@ The empty-set and singleton-set constants are of base type and we can only take 
 
 \subsection{Semantics}
 
-In the $\LambdaUnion$-calculus terms are interpreted as sets and types as powersets.
+In the $\LambdaUnion$-calculus, terms are interpreted as sets and types as powersets.
 
 \begin{figure}[h]
     \paragraph{Types and values}
@@ -164,11 +164,11 @@ setRewrite T
 \subsection{Pattern unification}
 
 \begin{definition}
-A $\LambdaUnion$-term $\pi$ is called a \emph{pattern} if it is of the form $f(e_1, ..., e_n)$ where $f$ is a free variable and $e_1, ..., e_n$ are distinct bound variables.
+A $\LambdaUnion$-term is called a \emph{pattern} if it is of the form $f(e_1, ..., e_n)$ where $f$ is a free variable and $e_1, ..., e_n$ are distinct bound variables.
 \end{definition}
 
 Note that this definition is a special case of what is normally called a \emph{pattern} in higher-order unification theory \cite{Miller1991,Dowek:2001:HUM:778522.778525}.
 
-If $f(e_1, ..., e_n)$ is a $\LambdaUnion$-pattern and $t$ a $\LambdaUnion$-term, then the equation
-\[ f : \LuTy_1 \Rightarrow \cdots \Rightarrow \LuTy_n \Rightarrow \LuTy \vdash \forall e_1 : \LuTy_1, ..., e_n : \LuTy_n. f(e_1, ..., e_n) = t \]
+If $f(e_1, ..., e_n)$ is a pattern and $t$ a term, then the equation
+\[ f : \LuTy_1 \to \cdots \to \LuTy_n \to \LuTy \vdash \forall e_1 : \LuTy_1, ..., e_n : \LuTy_n. f(e_1, ..., e_n) = t \]
 can be uniquely solved by the unifier \[ \theta = \left[f \mapsto \lambda e_1 : \LuTy_1, ..., e_n : \LuTy_n. t \right]. \]

@@ -57,6 +57,13 @@
 \subsection{The $\LambdaUnion$-calculus}
 
     \begin{itemize}
+    
+        \item \TODOX{Prove more Lemmas about reduction rules (esp. $\gamma_1$)}
+        
+        \item Counterexample for the widening rule.
+        
+        \item \TODOX{Rewrite subsection about Normalization}
+    
         \item Prove semantics is ACI1. We have a different unit for each type!
         \item $\mathcal{P}(V_{\tau_1} \to V_{\tau_2}) \simeq V_{\tau_1} \to \mathcal{P}(V_{\tau_2})$? Cardinallity suggests not: $2^{(\beta^\alpha)} \neq (2^\beta)^\alpha$.
         \item If we don't distribute unions over applications, can we ever get them deep inside terms?
@@ -77,6 +84,8 @@
 
     \begin{itemize}
     
+        \item Elaborate on well-formedness
+    
         \item \TODOX{Rename stuff in \CiteRule{T-App} in the elaboration system (now subtype/-effect of the result instead of the argument and clashes with the indices enumerated over by $i$!}
         
         \item \TODOX{\CiteRule{T-AnnAbs}: $e \notin \mathrm{fv}(\Gamma)$}
@@ -92,8 +101,7 @@
 \subsection{Type inference}
 
     \begin{itemize}
-    
-       
+
         \item Complexity: reduction corresponds to agressive constraint simplification
 
         \item alternative (faster?) version of Kleene-Mycroft

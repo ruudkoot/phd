@@ -36,7 +36,7 @@ Our analysis is applicable to a simple non-strict functional language that suppo
 
 Missing from the language is a construct to ``catch'' exceptional values. While this may be surprising to programmers familiar with strict languages, it is a common design decision to omit such a construct from the pure fragment of non-strict languages. The omission of such a construct allows for the introduction of a certain amount of non-determinism in the operational semantics of the language---giving more freedom to an optimizing compiler---without breaking referential transparency.
 
-We stratify the values of our source language into non-exceptional values $\Val$ and possibly exceptional values $\ExnVal$.
+The values of the source language are stratified into non-exceptional values $\Val$ and possibly exceptional values $\ExnVal$.
 
 \subsection{Underlying type system}
 
@@ -44,6 +44,8 @@ The type system of the source language is given for reference in Figure~\ref{fig
 
 \subsection{Operational semantics}
 
-The operational semantics of the source language is given in Figure~\ref{figure-operational-semantics}. Note that these is a small amount of non-determinism in the order of reduction, for example in the derivation rules \CiteRule{E-OpExn$_1$} and \CiteRule{E-OpExn$_2$}. We do not go as far as having an imprecise exception semantics \cite{PeytonJones:1999:SIE:301618.301637}. For example, if the guard of a conditional evaluates to an exceptional value (\CiteRule{E-IfExn}), we do not continue evaluation the two branches in exception finding mode.
+The operational semantics of the source language is given in Figure~\ref{figure-operational-semantics}. Note that there is a small amount of non-determinism in the order of reduction, for example in the derivation rules \CiteRule{E-OpExn$_1$} and \CiteRule{E-OpExn$_2$}.
 
-Some of the reduction rules are for constructs that will only be introduced to language in Section~\ref{section-exception-types} (\CiteRule{E-AnnApp}, \CiteRule{E-AnnAbsApp}, and the effect annotation on the $\mathbf{fix}$ construct).
+We do not go as far as having an imprecise exception semantics \cite{PeytonJones:1999:SIE:301618.301637}. For example, if the guard of a conditional evaluates to an exceptional value (\CiteRule{E-IfExn}), we do not continue evaluation of the two branches in exception finding mode.
+
+The reduction rules \CiteRule{E-AnnApp}, \CiteRule{E-AnnAbsApp} are for constructs that will only be introduced in the language in Section~\ref{section-exception-types}.

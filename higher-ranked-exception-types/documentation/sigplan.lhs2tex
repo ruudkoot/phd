@@ -97,7 +97,7 @@
 Languages, Design, Theory
 
 \keywords
-type-and-effect systems, higher-ranked polymorphism, type operators, polymorphic recursion, type inference, unification theory, type-based program analysis, exceptions
+exceptions, higher-ranked polymorphism, polymorphic recursion, type-and-effect systems, type-based program analysis, type inference, type operators, unification theory
 
 %END sigplanconf-template.tex
 
