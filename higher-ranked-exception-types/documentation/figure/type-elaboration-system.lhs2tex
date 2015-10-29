@@ -1,6 +1,6 @@
 \begin{figure*}[h]
     \begin{gather*}
-        \Rule{T-Var}
+        \Rule{L-Var}
              {}
              {\JudgeElab{\TyEnv, \TmVar : \ExnTy\ \&\ \Exn}
                         {\KiEnv}
@@ -10,7 +10,7 @@
                         {\Exn}
              }
         \HOR
-        \Rule{T-Con}
+        \Rule{L-Con}
              {}
              {\JudgeElab{\TyEnv}
                         {\KiEnv}
@@ -20,7 +20,7 @@
                         {\ExnEmpty}
              }
         \quad
-        \Rule{T-Crash}
+        \Rule{L-Crash}
              {}
              {\JudgeElab{\TyEnv}
                         {\KiEnv}
@@ -30,18 +30,18 @@
                         {\ExnCon{\ExnLbl}}
              }
         \\[1.5ex]
-        \Rule{T-Abs}
+        \Rule{L-Abs}
              {\begin{gathered}
-                \JudgeTyElab{\KiEnv, \overline{\ExnVar_i : \Kind_i}}
+                \JudgeTyElab{\KiEnv, \overline{\ExnVar_i :: \Kind_i}}
                             {\ExnTy_1}
                             {\Ty_1}
                 \quad
-                \JudgeKind{\KiEnv, \overline{\ExnVar_i : \Kind_i}}
+                \JudgeKind{\KiEnv, \overline{\ExnVar_i :: \Kind_i}}
                           {\Exn_1}
                           {\KindEXN}
                 \quad
                 \JudgeElab{\TyEnv, x : \ExnTy_1\ \&\ \Exn_1}
-                          {\KiEnv, \overline{\ExnVar_i : \Kind_i}}
+                          {\KiEnv, \overline{\ExnVar_i :: \Kind_i}}
                           {\Tm}
                           {\Tm^\prime}
                           {\ExnTy_2}
@@ -56,7 +56,7 @@
                         {\ExnEmpty}
              }
         \\[1.5ex]
-        \Rule{\TODO{T-App}}
+        \Rule{\TODO{L-App}}
              {\begin{gathered}
                 \JudgeSubTy{\KiEnv}
                            {\ExnTy_2}
@@ -95,7 +95,7 @@
                         {\ExnUnion{\SubstS{\Exn_i}{\ExnVar_i}{\Exn}}{\Exn^\prime}}
              }
         \\[1.5ex]
-        \Rule{T-Fix}
+        \Rule{L-Fix}
              {\begin{gathered}
                 \JudgeElab{\TyEnv}
                           {\KiEnv}
@@ -127,7 +127,7 @@
                         {\ExnUnion{\SubstS{\Exn_i}{\ExnVar_i}{\Exn}}{\Exn^{\prime\prime}}}
              }
         \\[1.5ex]
-        \Rule{T-Op}
+        \Rule{L-Op}
              {\JudgeElab{\TyEnv}
                         {\KiEnv}
                         {\Tm_1}
@@ -150,7 +150,7 @@
                         {\ExnUnion{\Exn_1}{\Exn_2}}
              }
         \HOR
-        \Rule{T-Seq}
+        \Rule{L-Seq}
              {\JudgeElab{\TyEnv}
                         {\KiEnv}
                         {\Tm_1}
@@ -173,7 +173,7 @@
                         {\ExnUnion{\Exn_1}{\Exn_2}}
              }
         \\[1.5ex]
-        \Rule{T-If}
+        \Rule{L-If}
              {\JudgeElab{\TyEnv}
                         {\KiEnv}
                         {\Tm_1}
@@ -203,7 +203,7 @@
                         {\ExnUnion{\Exn_1}{\ExnUnion{\Exn_2}{\Exn_3}}}
              }             
         \\[1.5ex]
-        \Rule{T-Nil}
+        \Rule{L-Nil}
              {}
              {\JudgeElab{\TyEnv}
                         {\KiEnv}
@@ -213,7 +213,7 @@
                         {\ExnEmpty}
              }
         \HOR
-        \Rule{T-Cons}
+        \Rule{L-Cons}
              {\JudgeElab{\TyEnv}
                         {\KiEnv}
                         {\Tm_1}
@@ -236,7 +236,7 @@
                         {\Exn_2}
              }
         \\[1.5ex]
-        \Rule{T-Case}
+        \Rule{L-Case}
              {\begin{gathered}
                   \JudgeElab{\TyEnv}
                             {\KiEnv}

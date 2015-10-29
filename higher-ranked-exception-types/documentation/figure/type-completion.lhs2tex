@@ -4,11 +4,20 @@
              {}
              {\JudgeComplete{\KindEnv{i}}
                             {\TyBool}
-                            {\ExnTyBool}
+                            {\ExnBool}
                             {\ExnVar\ \overline{\ExnVar_i}}
                             {\ExnVar :: \overline{\Kind_i\KindArr}\KindEXN}
              }
         \HOR
+        \Rule{C-Int}
+             {}
+             {\JudgeComplete{\KindEnv{i}}
+                            {\TyInt}
+                            {\ExnInt}
+                            {\ExnVar\ \overline{\ExnVar_i}}
+                            {\ExnVar :: \overline{\Kind_i\KindArr}\KindEXN}
+             }
+        \VER
         \Rule{C-List}
              {\JudgeComplete{\KindEnv{i}}
                             {\Ty}

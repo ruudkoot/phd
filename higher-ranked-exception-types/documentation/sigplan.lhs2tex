@@ -136,12 +136,13 @@ exceptions, higher-ranked polymorphism, polymorphic recursion, type-and-effect s
 
 \clearpage
 
-%include section/todo.lhs2tex
-
-\clearpage
-
 \appendix
 
 %include section/metatheory.lhs2tex
+
+\clearpage
+
+%include section/todo.lhs2tex
+
 
 \end{document}

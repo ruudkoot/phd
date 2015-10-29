@@ -11,16 +11,16 @@ For a function with exception type $\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2
 \begin{figure}[h!]
     \begin{alignat}{2}
         \Kind \in \ClassKind &\ ::=\ &&\KindEXN \tag{exception set} \\
-                             &\quad||  &&\Kind_1 \KindArr \Kind_2 \tag{exception operator}\\
+                             &\quad||  &&\Kind_1 \KindArr \Kind_2 \tag{exception set operator}\\
         \notag\\
-        \Exn, \ExnAlt \in \ClassExn  &\ ::=\ &&\ExnVar \tag{exception variables} \\
-                            &\quad||  &&\ExnAbs{\ExnVar}{\Kind}{\Exn} \tag{exception abstraction}\\
-                            &\quad||    &&\ExnApp{\Exn_1}{\Exn_2} \tag{exception application}\\
+        \Exn, \ExnAlt \in \ClassExn  &\ ::=\ &&\ExnVar \tag{exception set variables} \\
+                            &\quad||  &&\ExnAbs{\ExnVar}{\Kind}{\Exn} \tag{exception set abstraction}\\
+                            &\quad||    &&\ExnApp{\Exn_1}{\Exn_2} \tag{exception set application}\\
                             &\quad||    &&\ExnEmpty \tag{empty exception set} \\
                             &\quad||    &&\ExnCon{\ExnLbl} \tag{singleton exception} \\
                             &\quad||    &&\ExnUnion{\Exn_1}{\Exn_2} \tag{exception set union} \\
     \notag\\
-        \ExnTy \in \ClassExnTy &\ ::=\ &&\ExnForall{\ExnVar :: \Kind}\ExnTy \tag{exception quantification} \\
+        \ExnTy \in \ClassExnTy &\ ::=\ &&\ExnForall{\ExnVar :: \Kind}\ExnTy \tag{exception set quantification} \\
                      &\quad||  &&\ExnBool \tag{boolean type} \\
                      &\quad||  &&\ExnInt  \tag{integer type} \\
                      &\quad||  &&\ExnTyList{\ExnTy}{\Exn} \tag{list type} \\

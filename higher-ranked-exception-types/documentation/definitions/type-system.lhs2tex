@@ -51,7 +51,7 @@
 \newcommand{\JudgeTy}[3]{{#1 \vdash #2 : #3}}
 \newcommand{\JudgeExnTy}[5]{{#1; #2 \vdash #3 : #4\ \&\ #5}}
 \newcommand{\JudgeExn}[3]{{#1 \vdash #2 : #3}}
-\newcommand{\JudgeKind}[3]{{#1 \vdash #2 : #3}}
+\newcommand{\JudgeKind}[3]{{#1 \vdash #2 :: #3}}
 \newcommand{\JudgeSubTy}[3]{{#1 \vdash #2 \leq #3}}
 \newcommand{\JudgeSubExn}[3]{{#1 \vdash #2 \leq #3}}
 \newcommand{\JudgeElab}[6]{{#1; #2 \vdash #3 \hookrightarrow #4 : #5\ \&\ #6}}

@@ -48,4 +48,4 @@ The operational semantics of the source language is given in Figure~\ref{figure-
 
 We do not go as far as having an imprecise exception semantics \cite{PeytonJones:1999:SIE:301618.301637}. For example, if the guard of a conditional evaluates to an exceptional value (\CiteRule{E-IfExn}), we do not continue evaluation of the two branches in exception finding mode.
 
-The reduction rules \CiteRule{E-AnnApp}, \CiteRule{E-AnnAbsApp} are for constructs that will only be introduced in the language in Section~\ref{section-exception-types}.
+The reduction rules \CiteRule{E-AnnApp}, \CiteRule{E-AnnAbsApp} are for constructs that will only be introduced in the language in Section~\ref{section-exception-types}. The same holds for the additional annotations on the $\lambda$-abstraction and $\mathbf{fix}$-operator.

@@ -43,7 +43,7 @@
 %format Exn_2                       = "\Exn_2"
 %format Exn_2'                      = "\Exn_2^\prime"
 %format Exn_3                       = "\Exn_3"
-%format kenv'                       = "\overline{\ExnVar_i : \Kind_i}"
+%format kenv'                       = "\overline{\ExnVar_i :: \Kind_i}"
 %format EmptyEnv                    = "\emptyset"
 %format (extendTyEnv env x (t) e)   = env ", " x " : " t "\ \&\ " e
 %format Tm                          = "\Tm"

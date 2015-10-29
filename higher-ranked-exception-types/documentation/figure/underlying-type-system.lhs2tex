@@ -1,27 +1,27 @@
 \begin{figure*}[p]
     \begin{gather*}
-        \Rule{T-Var}
+        \Rule{U-Var}
              {}
              {\JudgeTy{\TyEnv, \TmVar : \Ty}
                       {\TmVar}
                       {\Ty}
              }
         \quad
-        \Rule{T-Con}
+        \Rule{U-Con}
              {}
              {\JudgeTy{\TyEnv}
                       {\TmCon{\Ty}}
                       {\Ty}
              }
         \quad
-        \Rule{T-Crash}
+        \Rule{U-Crash}
              {}
              {\JudgeTy{\TyEnv}
                       {\TmCrash{\Ty}{\ExnLbl}}
                       {\Ty}
              }
         \quad
-        \Rule{T-Abs}
+        \Rule{U-Abs}
              {\JudgeTy{\TyEnv, \TmVar : \Ty_1}
                       {\Tm}
                       {\Ty_2}
@@ -31,7 +31,7 @@
                       {\TyArr{\Ty_1}{\Ty_2}}
              }
         \\[1.5ex]
-        \Rule{T-App}
+        \Rule{U-App}
              {\JudgeTy{\TyEnv}
                       {\Tm_1}
                       {\TyArr{\Ty_2}{\Ty}}
@@ -45,7 +45,7 @@
                       {\Ty}
              }
         \quad
-        \Rule{T-Fix}
+        \Rule{U-Fix}
              {\JudgeTy{\TyEnv}
                       {\Tm}
                       {\TyArr{\Ty}{\Ty}}
@@ -55,7 +55,7 @@
                       {\Ty}
              }
         \quad
-        \Rule{T-Op}
+        \Rule{U-Op}
              {\JudgeTy{\TyEnv}
                       {\Tm_1}
                       {\TyInt}
@@ -69,7 +69,7 @@
                       {\TyBool}
              }
         \\[1.5ex]
-        \Rule{T-Seq}
+        \Rule{U-Seq}
              {\JudgeTy{\TyEnv}
                       {\Tm_1}
                       {\Ty_1}
@@ -83,7 +83,7 @@
                       {\Ty_2}
              }
         \quad
-        \Rule{T-If}
+        \Rule{U-If}
              {\JudgeTy{\TyEnv}
                       {\Tm_1}
                       {\TyBool}
@@ -101,14 +101,14 @@
                       {\Ty}
              }             
         \\[1.5ex]
-        \Rule{T-Nil}
+        \Rule{U-Nil}
              {}
              {\JudgeTy{\TyEnv}
                       {\TmNil{\Ty}}
                       {\TyList{\Ty}}
              }
         \quad
-        \Rule{T-Cons}
+        \Rule{U-Cons}
              {\JudgeTy{\TyEnv}
                       {\Tm_1}
                       {\Ty}
@@ -122,7 +122,7 @@
                       {\TyList{\Ty}}
              }
         \quad
-        \Rule{T-Case}
+        \Rule{U-Case}
              {%\begin{gathered}
                   \JudgeTy{\TyEnv}
                           {\Tm_1}
