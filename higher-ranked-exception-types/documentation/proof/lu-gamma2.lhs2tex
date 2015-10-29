@@ -1,0 +1,17 @@
+\begin{proof}
+    We show that \[\llbracket \LuApp{\left(\LuUnion{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_1}\right)}{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_2}\right)}\right)}{\LuTm_3} \rrbracket_\rho = \llbracket \LuApp{\left(\LuAbs{\LuVar}{\LuTy}{\LuUnion{\LuTm_1}{\LuTm_2}}\right)}{\LuTm_3} \rrbracket_\rho \] for all suitable $\rho$ and $\LuTm_3$.
+    \begin{align*}
+        & \llbracket \LuApp{\left(\LuUnion{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_1}\right)}{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_2}\right)}\right)}{\LuTm_3} \rrbracket_\rho \\
+        &= \bigcup \left\{ \varphi(\llbracket \LuTm_3 \rrbracket_\rho) \mid \varphi \in \llbracket \LuUnion{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_1}\right)}{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_2}\right)} \rrbracket_\rho \right\} \\
+        &= \bigcup \left\{ \varphi(\llbracket \LuTm_3 \rrbracket_\rho) \mid \varphi \in \llbracket \LuAbs{\LuVar}{\LuTy}{\LuTm_1} \rrbracket_\rho \cup \llbracket \LuAbs{\LuVar}{\LuTy}{\LuTm_2} \rrbracket_\rho \right\} \\
+        %&= \bigcup \left\{ \varphi(\llbracket \LuTm_3 \rrbracket_\rho) \mid \varphi \in \left\{ \lambda v \in V_\tau. \llbracket \LuTm_1 \rrbracket_{\rho\left[\LuVar \mapsto v\right]}, \lambda v \in V_\tau. \llbracket \LuTm_2 \rrbracket_{\rho\left[\LuVar \mapsto v\right]}\right\} \right\} \\
+        &= \bigcup \left\{ \varphi(\llbracket \LuTm_3 \rrbracket_\rho) \mid \varphi \in \left\{ \lambda v \in V_\tau. \llbracket \LuTm_i \rrbracket_{\rho\left[\LuVar \mapsto v\right]} \mid i \in \left\{1,2\right\} \right\} \right\} \\
+        &= \bigcup \left\{ \llbracket \LuTm_1 \rrbracket_{\rho\left[\LuVar \mapsto \llbracket \LuTm_3 \rrbracket_\rho\right]}, \llbracket \LuTm_2 \rrbracket_{\rho\left[\LuVar \mapsto \llbracket \LuTm_3 \rrbracket_\rho\right]} \right\} \\
+        &= \llbracket \LuTm_1 \rrbracket_{\rho\left[\LuVar \mapsto \llbracket \LuTm_3 \rrbracket_\rho\right]} \cup \llbracket \LuTm_2 \rrbracket_{\rho\left[\LuVar \mapsto \llbracket \LuTm_3 \rrbracket_\rho\right]} \\
+        &= \bigcup \left\{ \llbracket \LuTm_1 \rrbracket_{\rho\left[\LuVar \mapsto \llbracket \LuTm_3 \rrbracket_\rho\right]} \cup \llbracket \LuTm_2 \rrbracket_{\rho\left[\LuVar \mapsto \llbracket \LuTm_3 \rrbracket_\rho\right]} \right\} \\
+        &= \bigcup \left\{ \llbracket \LuUnion{\LuTm_1}{\LuTm_2} \rrbracket_{\rho\left[\LuVar \mapsto \llbracket \LuTm_3 \rrbracket_\rho\right]} \right\} \\
+        &= \bigcup \left\{ \varphi(\llbracket \LuTm_3 \rrbracket_\rho) \mid \varphi \in \left\{ \lambda v \in V_\tau. \llbracket \LuUnion{\LuTm_1}{\LuTm_2} \rrbracket_{\rho\left[\LuVar \mapsto v\right]} \right\} \right\} \\
+        &= \bigcup \left\{ \varphi(\llbracket \LuTm_3 \rrbracket_\rho) \mid \varphi \in \llbracket \LuAbs{\LuVar}{\LuTy}{\LuUnion{\LuTm_1}{\LuTm_2}} \rrbracket_\rho \right\} \\
+        &= \llbracket \LuApp{\left(\LuAbs{\LuVar}{\LuTy}{\LuUnion{\LuTm_1}{\LuTm_2}}\right)}{\LuTm_3} \rrbracket_\rho \qedhere
+    \end{align*}
+\end{proof}

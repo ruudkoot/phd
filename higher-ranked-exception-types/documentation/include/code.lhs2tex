@@ -18,7 +18,7 @@
 
 %format bottom     = "\bot"
 %format bottom_chi = "\bot_\chi"
-%format bottom_E   = "\bot^\mathbf{E}"
+%format bottom_E   = "\lightning^\mathbf{E}"
 %format e_E        = "\{\mathbf{E}\}"
 
 %format Var (n) = "x_" n

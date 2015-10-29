@@ -87,26 +87,9 @@ In the $\LambdaUnion$-calculus, terms are interpreted as sets and types as power
     \caption{$\LambdaUnion$-calculus: denotational semantics}
 \end{figure}
 
-\begin{lemma}
-    The terms $\LuUnion{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_1}\right)}{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_2}\right)}$ and $\LuAbs{\LuVar}{\LuTy}{\LuUnion{\LuTm_1}{\LuTm_2}}$ are extensionally equal.
-\end{lemma}
-\begin{proof}
-    We prove that \[\llbracket \LuApp{\left(\LuUnion{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_1}\right)}{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_2}\right)}\right)}{\LuTm_3} \rrbracket_\rho = \llbracket \LuApp{\left(\LuAbs{\LuVar}{\LuTy}{\LuUnion{\LuTm_1}{\LuTm_2}}\right)}{\LuTm_3} \rrbracket_\rho \] for all suitable $\rho$ and $\LuTm_3$.
-    \begin{align*}
-        & \llbracket \LuApp{\left(\LuUnion{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_1}\right)}{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_2}\right)}\right)}{\LuTm_3} \rrbracket_\rho \\
-        &= \bigcup \left\{ \varphi(\llbracket \LuTm_3 \rrbracket_\rho) \mid \varphi \in \llbracket \LuUnion{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_1}\right)}{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_2}\right)} \rrbracket_\rho \right\} \\
-        &= \bigcup \left\{ \varphi(\llbracket \LuTm_3 \rrbracket_\rho) \mid \varphi \in \llbracket \LuAbs{\LuVar}{\LuTy}{\LuTm_1} \rrbracket_\rho \cup \llbracket \LuAbs{\LuVar}{\LuTy}{\LuTm_2} \rrbracket_\rho \right\} \\
-        %&= \bigcup \left\{ \varphi(\llbracket \LuTm_3 \rrbracket_\rho) \mid \varphi \in \left\{ \lambda v \in V_\tau. \llbracket \LuTm_1 \rrbracket_{\rho\left[\LuVar \mapsto v\right]}, \lambda v \in V_\tau. \llbracket \LuTm_2 \rrbracket_{\rho\left[\LuVar \mapsto v\right]}\right\} \right\} \\
-        &= \bigcup \left\{ \varphi(\llbracket \LuTm_3 \rrbracket_\rho) \mid \varphi \in \left\{ \lambda v \in V_\tau. \llbracket \LuTm_i \rrbracket_{\rho\left[\LuVar \mapsto v\right]} \mid i \in \left\{1,2\right\} \right\} \right\} \\
-        &= \bigcup \left\{ \llbracket \LuTm_1 \rrbracket_{\rho\left[\LuVar \mapsto \llbracket \LuTm_3 \rrbracket_\rho\right]}, \llbracket \LuTm_2 \rrbracket_{\rho\left[\LuVar \mapsto \llbracket \LuTm_3 \rrbracket_\rho\right]} \right\} \\
-        &= \llbracket \LuTm_1 \rrbracket_{\rho\left[\LuVar \mapsto \llbracket \LuTm_3 \rrbracket_\rho\right]} \cup \llbracket \LuTm_2 \rrbracket_{\rho\left[\LuVar \mapsto \llbracket \LuTm_3 \rrbracket_\rho\right]} \\
-        &= \bigcup \left\{ \llbracket \LuTm_1 \rrbracket_{\rho\left[\LuVar \mapsto \llbracket \LuTm_3 \rrbracket_\rho\right]} \cup \llbracket \LuTm_2 \rrbracket_{\rho\left[\LuVar \mapsto \llbracket \LuTm_3 \rrbracket_\rho\right]} \right\} \\
-        &= \bigcup \left\{ \llbracket \LuUnion{\LuTm_1}{\LuTm_2} \rrbracket_{\rho\left[\LuVar \mapsto \llbracket \LuTm_3 \rrbracket_\rho\right]} \right\} \\
-        &= \bigcup \left\{ \varphi(\llbracket \LuTm_3 \rrbracket_\rho) \mid \varphi \in \left\{ \lambda v \in V_\tau. \llbracket \LuUnion{\LuTm_1}{\LuTm_2} \rrbracket_{\rho\left[\LuVar \mapsto v\right]} \right\} \right\} \\
-        &= \bigcup \left\{ \varphi(\llbracket \LuTm_3 \rrbracket_\rho) \mid \varphi \in \llbracket \LuAbs{\LuVar}{\LuTy}{\LuUnion{\LuTm_1}{\LuTm_2}} \rrbracket_\rho \right\} \\
-        &= \llbracket \LuApp{\left(\LuAbs{\LuVar}{\LuTy}{\LuUnion{\LuTm_1}{\LuTm_2}}\right)}{\LuTm_3} \rrbracket_\rho
-    \end{align*}
-\end{proof}
+%include ../theorem/lu-gamma1.lhs2tex
+%include ../theorem/lu-gamma2.lhs2tex
+%include ../proof/lu-gamma2-sketch.lhs2tex
 
 \subsection{Normalization}
 \begin{itemize}
@@ -172,3 +155,7 @@ Note that this definition is a special case of what is normally called a \emph{p
 If $f(e_1, ..., e_n)$ is a pattern and $t$ a term, then the equation
 \[ f : \LuTy_1 \to \cdots \to \LuTy_n \to \LuTy \vdash \forall e_1 : \LuTy_1, ..., e_n : \LuTy_n. f(e_1, ..., e_n) = t \]
 can be uniquely solved by the unifier \[ \theta = \left[f \mapsto \lambda e_1 : \LuTy_1, ..., e_n : \LuTy_n. t \right]. \]
+
+\LORUMIPSUM
+\LORUMIPSUM
+\LORUMIPSUM

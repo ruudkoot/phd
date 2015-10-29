@@ -1,0 +1,3 @@
+\begin{lemma}
+    The terms $\LuApp{(\LuUnion{\LuTm_1}{\LuTm_2})}{\LuTm}$ and $\LuUnion{\LuApp{\LuTm_1}{\LuTm}}{\LuApp{\LuTm_2}{\LuTm}}$ are equivalent.
+\end{lemma}

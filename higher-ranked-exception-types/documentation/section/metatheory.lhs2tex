@@ -1,5 +1,13 @@
 \section{Metatheory}
 
+\subsection{$\LambdaUnion$-calculus}
+
+%include ../theorem/lu-gamma1.lhs2tex
+%include ../proof/lu-gamma1.lhs2tex
+
+%include ../theorem/lu-gamma2.lhs2tex
+%include ../proof/lu-gamma2.lhs2tex
+
 \subsection{Declarative type system}
 
 %include ../theorem/canonical-forms.lhs2tex

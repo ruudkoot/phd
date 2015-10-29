@@ -19,7 +19,7 @@ map  =   LAMBDA f (LAMBDA xs (case xs of
                            (y:ys)  -|> f y : map f ys))
 \end{code}
 
-For each type $\tau$, we denote its exception-annotated type by~$\tau\langle\Exn\rangle$. For function types we will write $\tau_1\langle\Exn_1\rangle \xrightarrow{\Exn} \tau_2\langle\Exn_2\rangle$ instead of $\left(\tau_1\langle\Exn_1\rangle \rightarrow \tau_2\langle\Exn_2\rangle\right)\langle\Exn\rangle$. If $\Exn$ is the empty exception set, then we will omit it completely.
+For each type $\tau$, we denote its exception-annotated type by~$\tau\langle\Exn\rangle$. For function types we will sometimes write $\tau_1\langle\Exn_1\rangle \xrightarrow{\Exn} \tau_2\langle\Exn_2\rangle$ instead of $\left(\tau_1\langle\Exn_1\rangle \rightarrow \tau_2\langle\Exn_2\rangle\right)\!\langle\Exn\rangle$. If $\Exn$ is the empty exception set, then may be omitted completely.
 
 The fully exception-polymorphic and exception-annotated type, or \emph{exception type}, of |map| is\ThesisPaper{\TODO{cramped formatting}}{}
 \begin{code}

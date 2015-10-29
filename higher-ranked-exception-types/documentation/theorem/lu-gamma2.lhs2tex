@@ -1,0 +1,3 @@
+\begin{lemma}
+    The terms $\LuUnion{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_1}\right)}{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_2}\right)}$ and $\LuAbs{\LuVar}{\LuTy}{\LuUnion{\LuTm_1}{\LuTm_2}}$ are extensionally equivalent.
+\end{lemma}

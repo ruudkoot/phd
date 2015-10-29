@@ -1,0 +1,10 @@
+\begin{proof}
+    \begin{align*}
+        &\LuDen{\LuApp{(\LuUnion{\LuTm_1}{\LuTm_2})}{\LuTm}} \\
+        &= \bigcup\left\{\varphi(\LuDen{\LuTm})\mid\varphi\in\LuDen{\LuUnion{\LuTm_1}{\LuTm_2}}\right\} \\
+        &= \bigcup\left\{\varphi(\LuDen{\LuTm})\mid\varphi\in\LuDen{\LuTm_1}\cup\LuDen{\LuTm_2}\right\} \\
+        &= \bigcup\left\{\varphi(\LuDen{\LuTm})\mid\varphi\in\LuDen{\LuTm_1}\right\} \cup \bigcup\left\{\varphi(\LuDen{\LuTm})\mid\varphi\in\LuDen{\LuTm_2}\right\} \\
+        &= \LuDen{\LuApp{\LuTm_1}{\LuTm}} \cup \LuDen{\LuApp{\LuTm_2}{\LuTm}} \\
+        &= \LuDen{\LuUnion{(\LuApp{\LuTm_1}{\LuTm})}{(\LuApp{\LuTm_2}{\LuTm})}} \qedhere
+    \end{align*}
+\end{proof}

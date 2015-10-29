@@ -91,7 +91,7 @@
 %format Case                        = "\TmCase{\Tm_1}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}"
 %format Var_1
 %format Var_2
-\begin{figure}[ht]\label{figure-type-inference-algorithm}
+\begin{figure}[h!]\label{figure-type-inference-algorithm}
 \begin{code}
     reconstruct :: Product ClassTyEnv (Product ClassKiEnv ClassTm) -> Product ClassExnTy ClassExn
 

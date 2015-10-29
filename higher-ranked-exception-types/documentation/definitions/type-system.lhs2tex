@@ -14,7 +14,7 @@
 \newcommand{\TmFalse}{\mathbf{false}}
 \newcommand{\TmAbs}[3]{\lambda #1 : #2. #3}
 \newcommand{\TmAbsExn}[4]{\lambda #1 : #2\ \&\ #3. #4}
-\newcommand{\TmAnnAbs}[3]{\Lambda #1 : #2. #3}
+\newcommand{\TmAnnAbs}[3]{\Lambda #1 :: #2. #3}
 \newcommand{\TmAnnAbsS}[3]{\Lambda \overline{#1 : #2}. #3}
 \newcommand{\TmApp}[2]{#1\ #2}
 \newcommand{\TmAnnApp}[2]{#1\ \langle #2 \rangle}
@@ -56,5 +56,5 @@
 \newcommand{\JudgeSubExn}[3]{{#1 \vdash #2 \leq #3}}
 \newcommand{\JudgeElab}[6]{{#1; #2 \vdash #3 \hookrightarrow #4 : #5\ \&\ #6}}
 \newcommand{\JudgeElabM}[6]{{#1; #2 \vdash #3 \hookrightarrow}\\{\quad\quad\quad\quad #4 : #5\ \&\ #6}}
-\newcommand{\JudgeTyElab}[3]{{#1 \vdash #2 \triangleright #3}}
+\newcommand{\JudgeTyElab}[3]{{#1 \vdash #2 \downarrow #3}}
 \newcommand{\JudgeExnTyWff}[3]{{#2 \vdash #3\ \text{wff}}}

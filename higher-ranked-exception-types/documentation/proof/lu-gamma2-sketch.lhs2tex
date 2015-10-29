@@ -1,0 +1,3 @@
+\begin{proof}
+    We show that \[\llbracket \LuApp{\left(\LuUnion{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_1}\right)}{\left(\LuAbs{\LuVar}{\LuTy}{\LuTm_2}\right)}\right)}{\LuTm_3} \rrbracket_\rho = \llbracket \LuApp{\left(\LuAbs{\LuVar}{\LuTy}{\LuUnion{\LuTm_1}{\LuTm_2}}\right)}{\LuTm_3} \rrbracket_\rho \] for all suitable $\rho$ and $\LuTm_3$.
+\end{proof}

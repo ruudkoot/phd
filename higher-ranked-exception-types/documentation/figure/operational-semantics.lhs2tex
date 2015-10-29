@@ -10,7 +10,7 @@
         \quad
         \Rule{E-AppAbs}
              {}
-             {\JudgeEval{\TmApp{(\TmAbsExn{\TmVar}{\ExnTy}{\Exn}{\Tm})}{\Tm_2}}
+             {\JudgeEval{\TmApp{(\TmAbsExn{\TmVar}{\ExnTy}{\Exn}{\Tm_1})}{\Tm_2}}
                         {\Subst{\Tm_2}{\TmVar}{\Tm_1}}
              }
         \quad
