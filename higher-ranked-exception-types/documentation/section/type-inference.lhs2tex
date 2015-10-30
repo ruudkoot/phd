@@ -27,7 +27,7 @@ The fixpoint construct abstracts over a variable that is of an exception polymor
                     (LAMBDA (x :: Bool) (LAMBDA (y :: Bool) (if x then True else f' y x)))
     \end{code}
 
-    Algorithm $\mathcal{R}$ will infer the exception type (and elaborated term)
+    Algorithm $\mathcal{R}$ infers the exception type (and elaborated term)
 %    \begin{code}
 %        dhm  ::  forall e_1:EXN. ExnTyArrS ExnTyBool e_1 (forall e_2:EXN. ExnTyArrT ExnTyBool e_2 ExnTyBool (e_1 # e_2) ExnEmpty) ExnEmpty
 %        dhm  =   FIX (f) (forall e_1:EXN. ExnTyArrS ExnTyBool e_1 (forall e_2:EXN. ExnTyArrT ExnTyBool e_2 ExnTyBool (e_1 # e_2) ExnEmpty) ExnEmpty)
@@ -65,7 +65,7 @@ The fixpoint construct abstracts over a variable that is of an exception polymor
     \begin{code}
         forall e_1. ExnTyArrS ExnTyBool e_1 (forall e_2. ExnTyArrT ExnTyBool e_2 ExnTyBool (e_1 # e_2) ExnEmpty) ExnEmpty
     \end{code}
-    Finally, if we take this type as our guess, we will get back the exact same type and conclude we have reached a fixed point.
+    Finally, if we take this type as our guess, we obtain the same type and conclude we have reached a fixed point.
 \end{example}
 
 \ThesisPaper{TODOX{Example: Glynn, Stuckey, Sulzman}}{}

@@ -50,7 +50,11 @@
 
 \chapter{Higher-ranked Exception Types}
 
-%include section/motivation.lhs2tex
+\begin{quote}\small
+%include section/abstract.lhs2tex
+\end{quote}
+
+%include section/introduction.lhs2tex
 %include section/lambda-union.lhs2tex
 %include section/source-language.lhs2tex
 %include section/exception-type-system.lhs2tex
@@ -67,7 +71,7 @@
 
 %include appendix/lambda-union.lhs2tex
 %include appendix/completion.lhs2tex
-%include section/todo.lhs2tex
+%include appendix/todo.lhs2tex
 
 \bibliographystyle{plainnat}
 \bibliography{higher-ranked-exception-types}

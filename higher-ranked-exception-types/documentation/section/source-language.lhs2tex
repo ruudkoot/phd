@@ -6,7 +6,11 @@
 
 Our analysis is applicable to a simple non-strict functional language that supports Boolean, integer and list data types. In this section we'll briefly state its syntax and semantics.
 
-\begin{figure}[ht]
+\subsection{Syntax}
+
+The terms and values are given in Figure~\ref{figure-source-language-syntax}.
+
+\begin{figure}[h]
 \paragraph{Terms}
 \begin{alignat}{2}
 \!  \Tm \in \ClassTm &\ ::=\   &&\ \TmVar                   \tag{term variable}     \\
@@ -23,15 +27,14 @@ Our analysis is applicable to a simple non-strict functional language that suppo
                      &\quad||  &&\ \TmCase{\Tm_1}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}
                                                             \tag{list eliminator}
 \end{alignat}
-
-
+\paragraph{Values}
 \begin{alignat}{2}
 \Val \in \ClassVal &\ ::=\  &&\ \TmCon{\Ty}\ ||\ \TmAbs{\TmVar}{\Ty}{\Tm}\ ||\ \TmFIX{\TmVar}{\Ty}{\Tm}\ ||\ \TmNil{\Ty}\ ||\ \TmCons{\Tm_1}{\Tm_2} \notag
 \end{alignat}
 \begin{alignat}{2}
 \ExnVal \in \ClassExnVal &\ ::=\  &&\ \TmCrash{\Ty}{\ExnLbl}\ ||\ \Val \notag
 \end{alignat}
-\caption{Source language: syntax}
+\caption{Source language: syntax}\label{figure-source-language-syntax}
 \end{figure}
 
 Missing from the language is a construct to ``catch'' exceptional values. While this may be surprising to programmers familiar with strict languages, it is a common design decision to omit such a construct from the pure fragment of non-strict languages. The omission of such a construct allows for the introduction of a certain amount of non-determinism in the operational semantics of the language---giving more freedom to an optimizing compiler---without breaking referential transparency.
@@ -40,7 +43,7 @@ The values of the source language are stratified into non-exceptional values $\V
 
 \subsection{Underlying type system}
 
-The type system of the source language is given for reference in Figure~\ref{figure-underlying-type-system}. This is the \emph{underlying type system} with respect to the type-and-effect system we will present in Section~\ref{section-exception-types} and we will assume that any term we will type in the type-and-effect system is already well-typed in the underlying type system.
+The type system of the source language is given for reference in Figure~\ref{figure-underlying-type-system}. This is the \emph{underlying type system} with respect to the type-and-effect system that is presented in Section~\ref{section-exception-types} and we assume that any term we type in the type-and-effect system is already well-typed in the underlying type system.
 
 \subsection{Operational semantics}
 
@@ -48,4 +51,4 @@ The operational semantics of the source language is given in Figure~\ref{figure-
 
 We do not go as far as having an imprecise exception semantics \cite{PeytonJones:1999:SIE:301618.301637}. For example, if the guard of a conditional evaluates to an exceptional value (\CiteRule{E-IfExn}), we do not continue evaluation of the two branches in exception finding mode.
 
-The reduction rules \CiteRule{E-AnnApp}, \CiteRule{E-AnnAbsApp} are for constructs that will only be introduced in the language in Section~\ref{section-exception-types}. The same holds for the additional annotations on the $\lambda$-abstraction and $\mathbf{fix}$-operator.
+The reduction rules \CiteRule{E-AnnApp}, \CiteRule{E-AnnAbsApp} apply to constructs that are introduced to the language in Section~\ref{section-exception-types}. This also holds for the additional annotations on the $\lambda$-abstraction and the $\mathbf{fix}$-operator.

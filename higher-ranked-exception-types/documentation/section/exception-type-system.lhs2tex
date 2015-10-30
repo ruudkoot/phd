@@ -35,7 +35,7 @@ For a function with exception type $\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2
     id  ::  forall e. ExnArr ExnBool e ExnBool e :&: EmptySet
     id  =   LAMBDA x x
     \end{code}
-    propagates any exceptional value passed to it as an argument to the result unchanged. As the identity function is constructed by a literal $\lambda$-abstraction, no exception will be raised when the resulting closure is forced, hence the empty effect.
+    propagates any exceptional value passed to it as an argument to the result unchanged. As the identity function is constructed by a literal $\lambda$-abstraction, no exception is raised when the resulting closure is forced, hence the empty effect.
 \end{example}
 
 %format bottom_E_fun = "\lightning^\mathbf{E}_{\TyBool \to \TyBool}"
@@ -99,7 +99,7 @@ For base and compound types that stand in an argument position their effect and 
 \end{code}
 \end{example}
 
-For function types that stand in an argument position (the functional parameters of a higher-order function) the situation is slightly more complicated. For the argument of this function we can inductively assume that this will be a universally quantified exception set variable. The result of this function, however, is some exception set expression that depends on the exception set variables that were quantified over in the argument. We cannot simply introduce a new exception set variable here, but must introduce a Skolem function that depends on each of the universally quantified exception set variables.
+For function types that stand in an argument position (the functional parameters of a higher-order function) the situation is slightly more complicated. For the argument of this function we can inductively assume that this is a universally quantified exception set variable. The result of this function, however, is some exception set expression that depends on the exception set variables that were quantified over in the argument. We cannot simply introduce a new exception set variable here, but must introduce a Skolem function that depends on each of the universally quantified exception set variables.
 
 \begin{example} Consider the higher-order function |apply| that applies its first argument to the second.
 % apply : A e2:E. A e3:E=>E.
@@ -115,9 +115,9 @@ For function types that stand in an argument position (the functional parameters
 
 The first (functional) argument of |apply| has exception type |forall e_1 :: EXN. ExnArr ExnBool e_1 ExnBool (e_3 e_1)| and effect |e_2|. It can be instantiated with any function that accepts an argument annotated with any exception set effect, and produces a result annotated with some exception set effect depending on the exception set effect of the argument; the function closure itself may raise any exception. All functions of underlying type |Bool -> Bool| satisfy these constraints, so they do not really constrain us in any way.
 
-As |e_1| has been quantified over, only the exception set operator~|e_3| and the effect |e_2| are left free. We quantify over them outside the outer function space constructor, allowing them to appear in the annotation |e_2 # e_3 e_4| on the result. The exception set operator |e_3| is now applied to |e_4|, as the term-level application |f x| will instantiate the quantified exception set variable |e_1| to |e_4|.
+As |e_1| has been quantified over, only the exception set operator~|e_3| and the effect |e_2| are left free. We quantify over them outside the outer function space constructor, allowing them to appear in the annotation |e_2 # e_3 e_4| on the result. The exception set operator |e_3| is now applied to |e_4|, as the term-level application |f x| instantiates the quantified exception set variable |e_1| to |e_4|.
 
-(Note that the exception annotation $e_2$ on the closure---unlike the exception operator $e_3$ on the result---does not depend on the exception variable $e_1$ annotation the argument. As a closure is already a value, it being exceptional or not can never depend on the argument it is later applied to.)
+(Note that the exception annotation $e_2$ on the closure---unlike the exception set operator $e_3$ on the result---does not depend on the exception variable $e_1$ annotation the argument. As a closure is already a value, it being exceptional or not can never depend on the argument it is later applied to.)
 \end{example}
 
 %format CrashB2B = "\TmCrash{\TyBool\to\TyBool}{\ExnLblE}"
@@ -150,7 +150,7 @@ As |e_1| has been quantified over, only the exception set operator~|e_3| and the
 
 \subsection{Exception type completion}
 
-During exception type inference we will want to compute the least constraint exception type that erases to a given underlying type.
+During exception type inference we need to compute the least constraint exception type that erases to a given underlying type.
 
 \subsection{Subtyping}
 
@@ -233,7 +233,7 @@ During exception type inference we will want to compute the least constraint exc
 
     \item In T-App, note the double occurence of $\Exn$ when typing $\Tm_1$. Is subeffecting sufficient here? Also note that we do \emph{not} expect an exception variable in the left-hand side annotation of the function space constructor.
     
-    \item In T-AnnApp, note the substitution. We will need a substitution lemma for annotations.
+    \item In T-AnnApp, note the substitution. We need a substitution lemma for annotations.
     
     \item In T-Fix, the might be some universal quantifiers in our way. Do annotation applications in $\Tm$ take care of this, already? Perhaps we do need to change $\TmFix{\Tm}$ into a binding construct to resolve this? Also, there is some implicit subeffecting going on between the annotations and effect.
     
