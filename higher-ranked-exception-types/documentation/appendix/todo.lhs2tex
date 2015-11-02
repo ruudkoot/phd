@@ -100,6 +100,46 @@
 
     \end{itemize}
     
+\subsubsection{Subtyping}
+
+    \begin{itemize}
+
+        \item Is \CiteRule{S-Refl} an admissable/derivable rule, or should we drop \CiteRule{S-Bool} and \CiteRule{S-Int}?
+        
+        \item Possibly useful lemma: $\ExnTy_1 = \ExnTy_2 \iff \ExnTy_1 \leq \ExnTy_2 \land \ExnTy_2 \leq \ExnTy_1$.
+
+    \end{itemize}
+    
+\subsubsection{Declarative type system}
+
+    \begin{itemize}
+
+        \item In T-Abs and T-AnnAbs, should the term-level term-abstraction also have an explicit effect annotation?
+
+        \item In T-AnnAbs, might need a side condition stating that $\ExnVar$ is not free in $\KiEnv$.
+
+        \item In T-App, note the double occurence of $\Exn$ when typing $\Tm_1$. Is subeffecting sufficient here? Also note that we do \emph{not} expect an exception variable in the left-hand side annotation of the function space constructor.
+        
+        \item In T-AnnApp, note the substitution. We need a substitution lemma for annotations.
+        
+        \item In T-Fix, the might be some universal quantifiers in our way. Do annotation applications in $\Tm$ take care of this, already? Perhaps we do need to change $\TmFix{\Tm}$ into a binding construct to resolve this? Also, there is some implicit subeffecting going on between the annotations and effect.
+        
+        \item In T-Case, note the use of explicit subeffecting. Can this be done using implicit subeffecting?
+        
+        \item For T-Sub, should we introduce a term-level coercion, as in Dussart--Henglein--Mossin? We now do shape-conformant subtyping, is subeffecting sufficient?
+        
+        \item Do we need additional kinding judgements in some of the rules? Can we merge the kinding judgement with the subtyping and/or -effecting judgement? Kind-preserving substitutions.
+        
+    \end{itemize}
+    
+\subsubsection{Type elaboration system}
+
+    \begin{itemize}
+    
+        \item In \CiteRule{T-App} and {T-Fix}, note that there are substitutions in the premises of the rules. Are these inductive? (Probably, as these premises are not ``recursive'' ones.)
+
+    \end{itemize}
+    
 \subsection{Type inference}
 
     \begin{itemize}

@@ -264,5 +264,5 @@
                          {\Exn}
              }
     \end{gather*}
-    \caption{Declarative type system ($\JudgeExnTy{\TyEnv}{\KiEnv}{\Tm}{\ExnTy}{\Exn}$)}    
+    \caption{Declarative type system ($\JudgeExnTy{\TyEnv}{\KiEnv}{\Tm}{\ExnTy}{\Exn}$)}\label{figure-declarative-type-system}
 \end{figure*}

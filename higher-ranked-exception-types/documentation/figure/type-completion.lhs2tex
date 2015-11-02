@@ -54,5 +54,5 @@
                                 \KindEXN, \KindEnv{k}}
              }
     \end{gather*}
-    \caption{Type completion ($\JudgeComplete{\KindENV}{\Ty}{\ExnTy}{\Exn}{\KindENV'}$)}
+    \caption{Type completion ($\JudgeComplete{\KindENV}{\Ty}{\ExnTy}{\Exn}{\KindENV'}$)}\label{figure-type-completion}
 \end{figure*}

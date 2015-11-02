@@ -91,13 +91,13 @@ In the $\LambdaUnion$-calculus, terms are interpreted as sets and types as power
 %include ../theorem/lu-gamma2.lhs2tex
 %include ../proof/lu-gamma2-sketch.lhs2tex
 
-\LORUMIPSUM
+\subsection{\TODO{Subset relation}}
 
 \LORUMIPSUM
 
 \LORUMIPSUM
 
-\subsection{Normalization}
+\subsection{\TODO{Normalization}}
 \begin{itemize}
     \item \TODOX{We can make union only work on base types (as we not longer \emph{need} to distribute unions over applications)? Then the denotation of the function space would be simpler and might generalize to other structures..}
 \end{itemize}
@@ -147,7 +147,7 @@ setRewrite ({ ..., k(...), k(...), ...})
 setRewrite T
     = T
 \end{code}
-\caption{Normalization algorithm of $\LambdaUnion$-terms.}
+\caption{\TODO Normalization algorithm of $\LambdaUnion$-terms.}
 \end{figure}
 
 \subsection{Pattern unification}

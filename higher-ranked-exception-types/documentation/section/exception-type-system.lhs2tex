@@ -51,10 +51,14 @@ For a function with exception type $\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2
         \Rule{W-Univ}
              {\JudgeExnTyWff{d}{\KiEnv,\ExnVar :: \Kind}{\ExnTy}}
              {\JudgeExnTyWff{d}{\KiEnv}{\ExnTyForall{\ExnVar}{\Kind}{\ExnTy}}}
-        \HOR
+        \VER
         \Rule{W-Bool}
              {}
-             {\JudgeExnTyWff{d}{\KiEnv}{\ExnTyBool}}
+             {\JudgeExnTyWff{d}{\KiEnv}{\ExnBool}}
+        \HOR
+        \Rule{W-Int}
+             {}
+             {\JudgeExnTyWff{d}{\KiEnv}{\ExnInt}}
         \VER
         \Rule{W-List}
              {\JudgeExnTyWff{d}{\KiEnv}{\ExnTy} \quad \JudgeKind{\KiEnv}{\Exn}{\KindEXN}}
@@ -73,7 +77,7 @@ The exception set expressions $\Exn$ and their kinds $\Kind$ are an instance of 
 The type system resembles \SystemFw \cite{Girard1972} in that we have quantification, abstraction and application at the type level. A key difference is that abstraction and application are restricted to the effects ($\ClassExn$) and cannot be used in the types ($\ClassExnTy$) directly.
 Quantification on the other hand is resticted to the types, over effects, and not allowed in the effect itself. The types thus remain predicative.
 
-\subsection{Conservativeness}
+\subsection{\TODO{Conservativeness}}
 
 \TODOX{Atomicity: |e_1 # e_2 -> ExnTyList e_1 e_2| is not useful, because no introspection}
 
@@ -89,7 +93,7 @@ For base and compound types that stand in an argument position their effect and 
     \item \TODO Skolemization and expliciy existential quantication over unification variables?
 \end{itemize}
 
-\begin{example}\
+\begin{example}[\TODO]\
 \begin{code}
     tail :: forall e_1 e_2. ExnArr (ExnList ExnBool e_1) e_2 (ExnList ExnBool e_1) (e_2 # ExnConE) :&: EmptySet
 \end{code}
@@ -144,132 +148,62 @@ As |e_1| has been quantified over, only the exception set operator~|e_3| and the
     \end{code}
 \end{example}
 
-\subsection{Least exception types}
+\subsection{\TODO Subtyping}
+
+\LORUMIPSUM
+
+%include ../figure/subtyping.lhs2tex
+
+\subsection{\TODO{Exception type completion}}
+
+Give an underlying type $\Ty$ we can compute a the most general exception type $\ExnTy$ that erases to $\Ty$. This is done using the type completion system in Figure~\ref{figure-type-completion}, defining a type completion relation $\JudgeComplete{\KindENV}{\Ty}{\ExnTy}{\Exn}{\KindENV'}$.
+
+A judgement $\JudgeComplete{\KindEnv{i}}{\Ty}{\ExnTy}{\Exn}{\KindEnv{j}}$ is read as: if the kinded exception set variables $\KindEnv{i}$ are in scope, then the underlying type $\Ty$ is completed to the exception type $\ExnTy$ and effect $\Exn$, while introducing the kinded free exception set variables $\KindEnv{j}$.
+
+\begin{example}[\TODO] First-order, multiple arguments:
+    \begin{align*}
+        &\vdash         && \TyArr{\TyList{\TyBool}}{\TyArr{\TyList{\TyBool}}{\TyList{\TyBool}}} \\
+        &:              &&    {\ExnTyForall{\ExnVar_1}{\KindEXN}{\ExnTyForall{\ExnVar_1^\prime}{\KindEXN}{\Throws{\ExnTyList{\ExnBool}{\ExnVar_1}}{\ExnVar_1^\prime}}}} \to \\
+        &               && \quad (\ExnTyForall{\ExnVar_2}{\KindEXN}{\ExnTyForall{\ExnVar_2^\prime}{\KindEXN}{\Throws{\ExnTyList{\ExnBool}{\ExnVar_2}}{\ExnVar_2^\prime}}} \to \\
+        &               && \quad\quad \Throws{\Throws{\ExnTyList{\ExnBool}{\ExnVar_3\ \ExnVar_1\ \ExnVar_1^\prime\ \ExnVar_2\ \ExnVar_2^\prime}}{\ExnVar_3^\prime\ \ExnVar_1\ \ExnVar_1^\prime\ \ExnVar_2\ \ExnVar_2^\prime})}{\ExnVar_4} \\
+        &\&             && \ExnVar_5 \\
+        &\triangleright && \ExnVar_3, \ExnVar_3^\prime :: \KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN, \ExnVar_4, \ExnVar_5 :: \KindEXN
+    \end{align*}
+    
+    Higher-order:
+    \begin{align*}
+        &\vdash         && \TyArr{(\TyArr{\TyList{\TyBool}}{\TyList{\TyBool}})}{\TyList{\TyBool}} \\
+        &:              && \ExnTyForall{\ExnVar_2}{\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN}{\ExnTyForall{\ExnVar_2^\prime}{\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN}{\ExnTyForall{\ExnVar_3}{\KindEXN}{}}} \\
+        &               && \quad \Throws{(\ExnTyForall{\ExnVar_1}{\KindEXN}{\ExnTyForall{\ExnVar_1^\prime}{\KindEXN}{\ExnTyArr{\ExnTyList{\ExnBool}{\ExnVar_1}}{\ExnVar_1^\prime}{\ExnTyList{\ExnBool}{\ExnVar_2\ \ExnVar_1\ \ExnVar_1^\prime}}{\ExnVar_2^\prime\ \ExnVar_1\ \ExnVar_1^\prime}}})}{\ExnVar_3} \to \\
+        &               && \quad\quad \Throws{\ExnTyList{\ExnBool}{\ExnVar_4\ \ExnVar_2\ \ExnVar_2^\prime\ \ExnVar_3}}{\ExnVar_4^\prime\ \ExnVar_2\ \ExnVar_2^\prime\ \ExnVar_3} \\
+        &\&             && \ExnVar_5\\
+        &\triangleright && \ExnVar_4, \ExnVar_4^\prime :: (\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN)\!\KindArr\!(\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN)\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN, \ExnVar_5 :: \KindEXN
+    \end{align*}
+\end{example}
+
+\subsection{\TODO Least exception types}
 
 \TODO
 
-\subsection{Exception type completion}
+\subsection{\TODO Declarative exception type system}
 
-During exception type inference we need to compute the least constraint exception type that erases to a given underlying type.
+In Figure~\ref{figure-declarative-type-system} we give a declarative system for deriving exception typing judgements $\JudgeExnTy{\TyEnv}{\KiEnv}{\Tm}{\ExnTy}{\Exn}$.
 
-\subsection{Subtyping}
-
-\begin{itemize}
-    \item Is \CiteRule{S-Refl} an admissable/derivable rule, or should we drop \CiteRule{S-Bool} and \CiteRule{S-Int}?
-\end{itemize}
+These judgements work on an explicitly type language and for this purpose we extend the terms of the source language with two new constructs: term-level effect abstraction and effect application.
 
 \begin{figure}[h]
-    \begin{gather*}
-        \Rule{S-Refl}
-             {}
-             {\JudgeSubTy{\KiEnv}{\ExnTy}{\ExnTy}}
-        \quad
-        \Rule{S-Trans}
-             {\JudgeSubTy{\KiEnv}{\ExnTy_1}{\ExnTy_2}
-              \quad
-              \JudgeSubTy{\KiEnv}{\ExnTy_2}{\ExnTy_3}
-             }
-             {\JudgeSubTy{\KiEnv}{\ExnTy_1}{\ExnTy_3}}
-        \\[1.5ex]
-        \Rule{S-Bool}
-             {}
-             {\JudgeSubTy{\KiEnv}{\ExnBool}{\ExnBool}}
-        \quad
-        \Rule{S-Int}
-             {}
-             {\JudgeSubTy{\KiEnv}{\ExnInt}{\ExnInt}}
-        \\[1.5ex]
-        \Rule{S-Arr}
-             {\begin{gathered}
-              \JudgeSubTy{\KiEnv}{\ExnTy_1^\prime}{\ExnTy_1}
-                \quad
-              \JudgeSubExn{\KiEnv}{\Exn_1^\prime}{\Exn_1}
-                \\
-              \JudgeSubTy{\KiEnv}{\ExnTy_2}{\ExnTy_2^\prime}
-                \quad
-              \JudgeSubExn{\KiEnv}{\Exn_2}{\Exn_2^\prime}
-              \end{gathered}
-             }
-             {\JudgeSubTy{\KiEnv}
-                         {\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}}
-                         {\ExnTyArr{\ExnTy_1^\prime}{\Exn_1^\prime}{\ExnTy_2^\prime}{\Exn_2^\prime}}
-             }
-        \\[1.5ex]
-        \Rule{S-List}
-             {\JudgeSubTy{\KiEnv}{\ExnTy}{\ExnTy^\prime}
-                \quad
-              \JudgeSubExn{\KiEnv}{\Exn}{\Exn^\prime}
-             }
-             {\JudgeSubTy{\KiEnv}
-                         {\ExnTyList{\ExnTy}{\Exn}}
-                         {\ExnTyList{\ExnTy^\prime}{\Exn^\prime}}
-             }
-        \VER
-        \Rule{S-Forall}
-             {\JudgeSubTy{\KiEnv, \ExnVar :: \Kind}{\ExnTy_1}{\ExnTy_2}}
-             {\JudgeSubTy{\KiEnv}
-                         {\ExnForall{\ExnVar :: \Kind}{\ExnTy_1}}
-                         {\ExnForall{\ExnVar :: \Kind}{\ExnTy_2}}
-             }
-    \end{gather*}
-\caption{Exception types: subtyping relation ($\JudgeSubTy{\KiEnv}{\ExnTy_1}{\ExnTy_2}$)}
+\paragraph{Terms}
+\begin{alignat}{2}
+\!  \Tm \in \ClassTm &\ ::=\   &&\ ...                            \notag       \\
+                     &\quad||  &&\ \TmAnnAbs{\ExnVar}{\Kind}{\Tm} \tag{effect abstraction}  \\
+                     &\quad||  &&\ \TmAnnApp{\Tm}{\Exn}           \tag{effect application}
+\end{alignat}
+\caption{Source language: extended syntax}\label{figure-source-language-syntax-extended}
 \end{figure}
 
-\begin{itemize}
+\subsection{\TODO Type elaboration system}
 
-    \item Possibly useful lemma: $\ExnTy_1 = \ExnTy_2 \iff \ExnTy_1 \leq \ExnTy_2 \land \ExnTy_2 \leq \ExnTy_1$.
-
-\end{itemize}
-
-\subsection{Declarative exception type system}
-
-%include ../figure/declarative-exception-type-system.lhs2tex
-
-\begin{itemize}
-
-    \item In T-Abs and T-AnnAbs, should the term-level term-abstraction also have an explicit effect annotation?
-
-    \item In T-AnnAbs, might need a side condition stating that $\ExnVar$ is not free in $\KiEnv$.
-
-    \item In T-App, note the double occurence of $\Exn$ when typing $\Tm_1$. Is subeffecting sufficient here? Also note that we do \emph{not} expect an exception variable in the left-hand side annotation of the function space constructor.
-    
-    \item In T-AnnApp, note the substitution. We need a substitution lemma for annotations.
-    
-    \item In T-Fix, the might be some universal quantifiers in our way. Do annotation applications in $\Tm$ take care of this, already? Perhaps we do need to change $\TmFix{\Tm}$ into a binding construct to resolve this? Also, there is some implicit subeffecting going on between the annotations and effect.
-    
-    \item In T-Case, note the use of explicit subeffecting. Can this be done using implicit subeffecting?
-    
-    \item For T-Sub, should we introduce a term-level coercion, as in Dussart--Henglein--Mossin? We now do shape-conformant subtyping, is subeffecting sufficient?
-    
-    \item Do we need additional kinding judgements in some of the rules? Can we merge the kinding judgement with the subtyping and/or -effecting judgement? Kind-preserving substitutions.
-    
-\end{itemize}
-
-\subsection{Type elaboration system}
-
-\begin{itemize}
-
-    \item \TODOX{Source language extentsion}
-
-    \item \TODOX{Type completion}
-    
-    \item \TODOX{least types}
-
-    \item \TODOX{Type erasure relation}
-    
-    \item \TODOX{leat upper bound (declarativly in terms of subtyping}
-
-    \item In \CiteRule{T-App} and {T-Fix}, note that there are substitutions in the premises of the rules. Are these inductive? (Probably, as these premises are not ``recursive'' ones.)
-
-\end{itemize}
-
-%include ../figure/type-elaboration-system.lhs2tex
-
-\begin{itemize}
-
- \item For T-Fix: how would a binding fixpoint construct work?
-
-\end{itemize}
+As the source language is not explicitly typed we also give a type elaboration system that given an implicitly typed term in the source language produces and explitly typed term (Figure~\ref{type-elaboration-system}).
 
 \subsection{Type simplification}
 
@@ -280,6 +214,11 @@ In their fully flexible form the location of the quantifiers is uniquely determi
 
 \begin{itemize}
 
-    \item \TODOX{apply?}
+    \item \TODOX{Type erasure relation}
+    
+    \item \TODOX{leat upper bound (declarativly in terms of subtyping}
 
 \end{itemize}
+
+%include ../figure/declarative-exception-type-system.lhs2tex
+%include ../figure/type-elaboration-system.lhs2tex
