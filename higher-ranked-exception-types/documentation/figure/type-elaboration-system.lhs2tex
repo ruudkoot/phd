@@ -95,7 +95,7 @@
                         {\ExnUnion{\SubstS{\Exn_i}{\ExnVar_i}{\Exn}}{\Exn^\prime}}
              }
         \\[1.5ex]
-        \Rule{L-Fix}
+        \Rule{\TODO L-Fix}
              {\begin{gathered}
                 \JudgeElab{\TyEnv}
                           {\KiEnv}

@@ -46,12 +46,12 @@
              }
         \quad
         \Rule{U-Fix}
-             {\JudgeTy{\TyEnv}
+             {\JudgeTy{\TyEnv,\TmVar:\Ty}
                       {\Tm}
-                      {\TyArr{\Ty}{\Ty}}
+                      {\Ty}
              }
              {\JudgeTy{\TyEnv}
-                      {\TmFix{\Tm}}
+                      {\TmFIX{\TmVar}{\Ty}{\Tm}}
                       {\Ty}
              }
         \quad

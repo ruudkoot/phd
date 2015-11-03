@@ -97,15 +97,11 @@
         \\[1.5ex]
         \Rule{T-Fix}
              {\begin{gathered}
-              \JudgeSubExn{\KiEnv}{\Exn^\prime}{\Exn}
-              \quad
-              \JudgeSubExn{\KiEnv}{\Exn^{\prime\prime}}{\Exn}
-              \quad
-              \JudgeExnTy{\TyEnv}
+              \JudgeExnTy{\TyEnv,\TmVar:\ExnTy\ \&\ \Exn}
                          {\KiEnv}
                          {\Tm}
-                         {\ExnTyArr{\ExnTy}{\Exn^\prime}{\ExnTy}{\Exn^\prime}}
-                         {\Exn^{\prime\prime}}
+                         {\ExnTy}
+                         {\Exn}
               \end{gathered}
              }
              {\JudgeExnTy{\TyEnv}

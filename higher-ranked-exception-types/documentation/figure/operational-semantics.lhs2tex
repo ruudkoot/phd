@@ -13,7 +13,13 @@
              {\JudgeEval{\TmApp{(\TmAbsExn{\TmVar}{\ExnTy}{\Exn}{\Tm_1})}{\Tm_2}}
                         {\Subst{\Tm_2}{\TmVar}{\Tm_1}}
              }
-        \quad
+        \HOR
+        \Rule{E-AppExn}
+             {}
+             {\JudgeEval{\TmApp{\TmCrash{}{\ExnLbl}}{\Tm_2}}
+                        {\TmCrash{}{\ExnLbl}}
+             }
+        \VER
         \Rule{E-AnnApp}
              {\JudgeEval{\Tm}
                         {\Tm^\prime}
@@ -21,39 +27,33 @@
              {\JudgeEval{\TmAnnApp{\Tm}{\Exn}}
                         {\TmAnnApp{\Tm^\prime}{\Exn}}
              }
-        \\[1.5ex]
+        \HOR
         \Rule{E-AnnAppAbs}
              {}
              {\JudgeEval{\TmAnnApp{(\TmAnnAbs{\TmExnVar}{\Kind}{\Tm})}{\Exn}}
                         {\Subst{\Exn}{\TmExnVar}{\Tm}}
              }
-        \quad
-        \Rule{E-Fix}
+        \VER
+        \Rule{E-Fix$_1$}
              {\JudgeEval{\Tm}
                         {\Tm^\prime}
              }
-             {\JudgeEval{\TmFix{\Tm}}
-                        {\TmFix{\Tm^\prime}}
+             {\JudgeEval{\TmFixExn{\TmVar}{\ExnTy}{\Exn}{\Tm}}
+                        {\TmFixExn{\TmVar}{\ExnTy}{\Exn}{\Tm^\prime}}
              }
         \quad
-        \Rule{E-FixAbs}
+        \Rule{E-Fix$_2$}
              {}
-             {\JudgeEval{\TmFix{(\TmAbsExn{\TmVar}{\ExnTy}{\Exn}{\Tm})}}
-                        {\Subst{\TmFix{(\TmAbsExn{\TmVar}{\ExnTy}{\Exn}{\Tm})}}{\TmVar}{\Tm}}
+             {\JudgeEval{\TmFixExn{\TmVar}{\ExnTy}{\Exn}{\Tm}}
+                        {\Subst{\TmFixExn{\TmVar}{\ExnTy}{\Exn}{\Tm}}{\TmVar}{\Tm}}
              }
-        \\[1.5ex]
-        \Rule{E-AppExn}
-             {}
-             {\JudgeEval{\TmApp{\TmCrash{}{\ExnLbl}}{\Tm_2}}
-                        {\TmCrash{}{\ExnLbl}}
-             }
-        \quad
-        \Rule{E-FixExn}
-             {}
-             {\JudgeEval{\TmFix{\TmCrash{}{\ExnLbl}}}
-                        {\TmCrash{}{\ExnLbl}}
-             }
-        \quad
+%        \HOR
+%        \Rule{E-FixExn}
+%             {}
+%             {\JudgeEval{\TmFix{\TmCrash{}{\ExnLbl}}}
+%                        {\TmCrash{}{\ExnLbl}}
+%             }
+        \VER
         \Rule{E-Op$_1$}
              {\JudgeEval{\Tm_1}{\Tm_1^\prime}}
              {\JudgeEval{\TmOp{\Tm_1}{\Tm_2}}{\TmOp{\Tm_1^\prime}{\Tm_2}}}
@@ -61,11 +61,11 @@
         \Rule{E-Op$_2$}
              {\JudgeEval{\Tm_2}{\Tm_2^\prime}}
              {\JudgeEval{\TmOp{\Tm_1}{\Tm_2}}{\TmOp{\Tm_1}{\Tm_2^\prime}}}
-        \\[1.5ex]
+        \HOR
         \Rule{E-Op}
              {}
              {\JudgeEval{\TmOp{\TmVal_1}{\TmVal_2}}{\Interp{\TmOp{\TmVal_1}{\TmVal_2}}}}
-        \quad
+        \VER
         \Rule{E-OpExn$_1$}
              {}
              {\JudgeEval{\TmOp{\TmCrash{}{\ExnLbl}}{\Tm_2}}{\TmCrash{}{\ExnLbl}}}

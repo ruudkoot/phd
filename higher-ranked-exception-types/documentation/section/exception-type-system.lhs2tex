@@ -2,7 +2,7 @@
 
 \subsection{Exception types}
 
-The syntax of well-formed exception types are given in Figure~\ref{fig-exception-type-syntax} and Figure~\ref{fig-exception-type-well-formed}. An exception type~$\ExnTy$ is formed out of base types (booleans), compound types (lists), function types and quantification over exception variables.\footnote{To avoid complicating the presentation we do \emph{not} allow quantification over type variables, i.e. polymorpism in the underlying type system.}
+The syntax of well-formed exception types are given in Figure~\ref{fig-exception-type-syntax} and Figure~\ref{fig-exception-type-well-formed}. An exception type~$\ExnTy$ is formed out of base types (booleans), compound types (lists), function types and quantification over exception variables.\footnote{To avoid complicating the presentation we do \emph{not} allow quantification over type variables, i.e. polymorphism in the underlying type system.}
 
 For a list with exception type $\ExnTyList{\ExnTy}{\Exn}$ and effect $\ExnAlt$, the type $\ExnTy$ of the elements in the list is \emph{annotated} with an exception set expression $\Exn$ of kind~$\KindEXN$. This expression gives a set of exceptions which may be raised when an element of the list is forced. The effect $\ExnAlt$ gives a set of exceptions that may be raised when a constructor forming the spine of the list is forced.
 
@@ -101,6 +101,7 @@ For base and compound types that stand in an argument position their effect and 
 \begin{code}
     &&  :: forall e_1. ExnArr ExnBool e_1 ((forall e_2. ExnArr ExnBool e_2 ExnBool (e_1 # e_2))) EmptySet :&: EmptySet
 \end{code}
+\LORUMIPSUM
 \end{example}
 
 For function types that stand in an argument position (the functional parameters of a higher-order function) the situation is slightly more complicated. For the argument of this function we can inductively assume that this is a universally quantified exception set variable. The result of this function, however, is some exception set expression that depends on the exception set variables that were quantified over in the argument. We cannot simply introduce a new exception set variable here, but must introduce a Skolem function that depends on each of the universally quantified exception set variables.
@@ -158,7 +159,7 @@ As |e_1| has been quantified over, only the exception set operator~|e_3| and the
 
 Give an underlying type $\Ty$ we can compute a the most general exception type $\ExnTy$ that erases to $\Ty$. This is done using the type completion system in Figure~\ref{figure-type-completion}, defining a type completion relation $\JudgeComplete{\KindENV}{\Ty}{\ExnTy}{\Exn}{\KindENV'}$.
 
-A judgement $\JudgeComplete{\KindEnv{i}}{\Ty}{\ExnTy}{\Exn}{\KindEnv{j}}$ is read as: if the kinded exception set variables $\KindEnv{i}$ are in scope, then the underlying type $\Ty$ is completed to the exception type $\ExnTy$ and effect $\Exn$, while introducing the kinded free exception set variables $\KindEnv{j}$.
+A judgment $\JudgeComplete{\KindEnv{i}}{\Ty}{\ExnTy}{\Exn}{\KindEnv{j}}$ is read as: if the kinded exception set variables $\KindEnv{i}$ are in scope, then the underlying type $\Ty$ is completed to the exception type $\ExnTy$ and effect $\Exn$, while introducing the kinded free exception set variables $\KindEnv{j}$.
 
 \begin{example}[\TODO] First-order, multiple arguments:
     \begin{align*}
@@ -173,28 +174,51 @@ A judgement $\JudgeComplete{\KindEnv{i}}{\Ty}{\ExnTy}{\Exn}{\KindEnv{j}}$ is rea
     Higher-order:
     \begin{align*}
         &\vdash         && \TyArr{(\TyArr{\TyList{\TyBool}}{\TyList{\TyBool}})}{\TyList{\TyBool}} \\
-        &:              && \ExnTyForall{\ExnVar_2}{\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN}{\ExnTyForall{\ExnVar_2^\prime}{\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN}{\ExnTyForall{\ExnVar_3}{\KindEXN}{}}} \\
-        &               && \quad \Throws{(\ExnTyForall{\ExnVar_1}{\KindEXN}{\ExnTyForall{\ExnVar_1^\prime}{\KindEXN}{\ExnTyArr{\ExnTyList{\ExnBool}{\ExnVar_1}}{\ExnVar_1^\prime}{\ExnTyList{\ExnBool}{\ExnVar_2\ \ExnVar_1\ \ExnVar_1^\prime}}{\ExnVar_2^\prime\ \ExnVar_1\ \ExnVar_1^\prime}}})}{\ExnVar_3} \to \\
+        &:              && \ExnTyForall{\ExnVar_2,\ExnVar_2^\prime}{\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN}{} \\
+        &               && \quad \Throws{(\ExnTyForall{\ExnVar_1,\ExnVar_1^\prime}{\KindEXN}{\Throws{\ExnTyList{\ExnBool}{\ExnVar_1}}{\ExnVar_1^\prime} \to \\
+        &               && \quad\quad\quad\quad\quad\quad\quad\quad\quad \Throws{\ExnTyList{\ExnBool}{\ExnVar_2\ \ExnVar_1\ \ExnVar_1^\prime}}{\ExnVar_2^\prime\ \ExnVar_1\ \ExnVar_1^\prime}})}{\ExnVar_3} \to \\
         &               && \quad\quad \Throws{\ExnTyList{\ExnBool}{\ExnVar_4\ \ExnVar_2\ \ExnVar_2^\prime\ \ExnVar_3}}{\ExnVar_4^\prime\ \ExnVar_2\ \ExnVar_2^\prime\ \ExnVar_3} \\
         &\&             && \ExnVar_5\\
-        &\triangleright && \ExnVar_4, \ExnVar_4^\prime :: (\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN)\!\KindArr\!(\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN)\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN, \ExnVar_5 :: \KindEXN
+        &\triangleright && \ExnVar_4, \ExnVar_4^\prime :: (\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN)\!\KindArr \\
+        &               && \quad\quad\quad\quad\quad (\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN)\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN, \\
+        &               && \ExnVar_5 :: \KindEXN
     \end{align*}
 \end{example}
 
 \subsection{\TODO Least exception types}
 
-\TODO
+Given an effect kind $\overline{\kappa_i\Rightarrow}\KindEXN$, denote by $\emptyset_{\overline{\kappa_i\Rightarrow}\KindEXN}$ the effect $\lambda \overline{e_i :: \kappa_i}. \emptyset$.
+
+Besides completing an underlying type $\Ty$ to a most general exception type, we also want to compute a least exception type~$\bot_\Ty$. This can be accomplished by first completing the type $\Ty$ to the most general exception type, and then substituting $\emptyset_{\kappa_j}$ for all newly introduced exception set variables $\KindEnv{j}$.
+
+\begin{example}[\TODO] First-order, multiple arguments:
+    \begin{align*}
+        &\bot_{\TyList{\TyBool}\to\TyList{\TyBool}\to\TyList{\TyBool}} \\
+        &= \ExnTyForall{\ExnVar_1,\ExnVar_1^\prime}{\KindEXN}{\Throws{\ExnTyList{\ExnBool}{\ExnVar_1}}{\ExnVar_1^\prime}\to} \\
+        &\quad\quad\quad\quad\ExnTyForall{\ExnVar_2,\ExnVar_2^\prime}{\KindEXN}{\Throws{\ExnTyList{\ExnBool}{\ExnVar_2}}{\ExnVar_2^\prime}\to \Throws{\ExnTyList{\ExnBool}{\ExnEmpty}}{\ExnEmpty}}
+    \end{align*}
+    
+    Higher-order:
+    \begin{align*}
+        &\bot_{(\TyList{\TyBool}\to\TyList{\TyBool})\to\TyList{\TyBool}} \\
+        &= \ExnTyForall{\ExnVar_2,\ExnVar_2^\prime}{\KindEXN\KindArr\KindEXN}{\ExnTyForall{\ExnVar_3,\ExnVar_3^\prime}{\KindEXN}} \\
+        & \Throws{(\ExnTyForall{\ExnVar_1,\ExnVar_1^\prime}{\KindEXN}{\Throws{\ExnTyList{\ExnBool}{\ExnVar_1}}{\ExnVar_1^\prime}\to\Throws{\ExnTyList{\ExnBool}{\ExnEmpty}}{\ExnEmpty}})}{\ExnEmpty} \to \Throws{\ExnTyList{\ExnBool}{\ExnEmpty}}{\ExnEmpty}
+    \end{align*}
+\end{example}
 
 \subsection{\TODO Declarative exception type system}
 
-In Figure~\ref{figure-declarative-type-system} we give a declarative system for deriving exception typing judgements $\JudgeExnTy{\TyEnv}{\KiEnv}{\Tm}{\ExnTy}{\Exn}$.
+In Figure~\ref{figure-declarative-type-system} we give a declarative system for deriving exception typing judgments $\JudgeExnTy{\TyEnv}{\KiEnv}{\Tm}{\ExnTy}{\Exn}$.
 
-These judgements work on an explicitly type language and for this purpose we extend the terms of the source language with two new constructs: term-level effect abstraction and effect application.
+These judgments work on an explicitly type language and for this purpose we extend the terms of the source language with two new constructs: term-level effect abstraction and effect application.
 
 \begin{figure}[h]
 \paragraph{Terms}
 \begin{alignat}{2}
 \!  \Tm \in \ClassTm &\ ::=\   &&\ ...                            \notag       \\
+                     &\quad||  &&\ \TmAbs{\TmVar}{\ExnTy\ \&\ \Exn}{\Tm} \tag{term abstraction} \\
+                     &\quad||  &&\ \TmFixExn{\TmVar}{\ExnTy}{\Exn}{\Tm} \tag{fixpoint} \\
+                     &\quad||  &&\ ...                            \notag       \\
                      &\quad||  &&\ \TmAnnAbs{\ExnVar}{\Kind}{\Tm} \tag{effect abstraction}  \\
                      &\quad||  &&\ \TmAnnApp{\Tm}{\Exn}           \tag{effect application}
 \end{alignat}
@@ -203,7 +227,19 @@ These judgements work on an explicitly type language and for this purpose we ext
 
 \subsection{\TODO Type elaboration system}
 
-As the source language is not explicitly typed we also give a type elaboration system that given an implicitly typed term in the source language produces and explitly typed term (Figure~\ref{type-elaboration-system}).
+As the source language is not explicitly typed we also give a type elaboration system that given an implicitly typed term in the source language produces and explicitly typed term (Figure~\ref{type-elaboration-system}).
+
+\begin{itemize}
+
+    \item \TODOX{Exception type erasure relation}
+    
+    \item \TODOX{Least upper bounds (declaratively, as subtypes)}
+
+\end{itemize}
+
+\subsection{\TODO Type normalization}
+
+\LORUMIPSUM
 
 \subsection{Type simplification}
 
@@ -211,14 +247,6 @@ In their fully flexible form the location of the quantifiers is uniquely determi
 \begin{code}
 (ThrowsArr (Throws alpha e_1) (Throws beta (e_2 e_1)) (e_3)) -> Throws ([Throws alpha e_4]) e_5 -> Throws ([Throws beta (e_2 e_4 # e_3)]) e_5
 \end{code}
-
-\begin{itemize}
-
-    \item \TODOX{Type erasure relation}
-    
-    \item \TODOX{leat upper bound (declarativly in terms of subtyping}
-
-\end{itemize}
 
 %include ../figure/declarative-exception-type-system.lhs2tex
 %include ../figure/type-elaboration-system.lhs2tex

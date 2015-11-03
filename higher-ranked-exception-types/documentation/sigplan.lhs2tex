@@ -134,6 +134,8 @@ exceptions, higher-ranked polymorphism, polymorphic recursion, type-and-effect s
 
 %END sigplanconf-template.tex
 
+\end{document}
+
 \clearpage
 
 \appendix

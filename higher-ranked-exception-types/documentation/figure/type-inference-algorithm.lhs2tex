@@ -63,7 +63,7 @@
 %format applySubst (x)              = "\theta " x
 %format (simplify (kenv) (x))       = "\llfloor " x "\rrfloor_{" kenv "}"
 
-%format Fix                         = "\TmFix{\Tm}"
+%format Fix                         = "\TmFIX{\TmVar}{\Ty}{\Tm}"
 %format Exn_i                       = "\Exn_i"
 %format Exn_i1                      = "\Exn_{i+1}"
 %format Exn_im                      = "\Exn_{i-1}"
@@ -74,7 +74,7 @@
 %format ExnTy_im                    = "\ExnTy_{i-1}"
 %format ExnTy_w                     = "\ExnTy_\omega"
 %format ExnTy_w'                    = "\ExnTy_\omega^\prime"
-%format bottomTyU                   = "\BottomTy{\lfloor \ExnTy^\prime \rfloor}"
+%format bottomTyU                   = "\BottomTy{\Ty}"
 %format until                       = "\mathbf{until}"
 %format return                      = "\mathbf{return}"
 
@@ -91,6 +91,8 @@
 %format Case                        = "\TmCase{\Tm_1}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}"
 %format Var_1
 %format Var_2
+
+%format repeat                      = "\mathbf{repeat}"
 \begin{figure}[h!]\label{figure-type-inference-algorithm}
 \begin{code}
     reconstruct :: Product ClassTyEnv (Product ClassKiEnv ClassTm) -> Product ClassExnTy ClassExn
@@ -115,13 +117,12 @@
         in      Tuple (simplify kenv (applySubst ExnTy')) (simplify kenv (ExnUnion (applySubst Exn') (Exn_1)))
 
     reconstruct env kenv (Fix) =
-        let     Tuple ExnTy Exn                                      = reconstruct env kenv tm
-                Tuple (ExnTyArr ExnTy' ExnVar' ExnTy'' Exn'') kenv'  = instantiate ExnTy
-        in      Triple ExnTy_0 Exn_0 i  <- Triple bottomTyU ExnEmpty 0
-                do  subst                     <- Subst ExnVar' Exn_i . match EmptyEnv ExnTy' ExnTy_i
-                    Triple ExnTy_i1 Exn_i1 i  <- Triple  (simplify kenv (applySubst ExnTy'')) (simplify kenv (applySubst Exn'')) (i+1)
+        do      Triple ExnTy_0 Exn_0 i  <- Triple bottomTyU ExnEmpty 0
+                repeat
+                        (Tuple ExnTy_i1 Exn_i1)  <- reconstruct (env, x :: ExnTy_i & Exn_i) kenv tm
+                        i                        <- i + 1
                 until (Tuple ExnTy_i Exn_i) == Tuple ExnTy_im Exn_im
-                return (Tuple ExnTy_i (simplify kenv (ExnUnion Exn Exn_i)))
+                return (Tuple ExnTy_i Exn_i)
 
     reconstruct env kenv (BinOp) =
         let     Tuple ExnTyInt Exn_1  = reconstruct env kenv tm_1

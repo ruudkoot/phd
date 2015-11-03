@@ -172,5 +172,18 @@ setRewrite ({ ..., k(...), k(...), ...})
 setRewrite T
     = T
 \end{code}
-\caption{Normalization algorithm for $\LambdaUnion$-terms.}
+\caption{\TODO Normalization algorithm of $\LambdaUnion$-terms.}
 \end{figure}
+
+\section{Type inference}
+
+\begin{code}
+    reconstruct env kenv (Fix) =
+        let     Tuple ExnTy Exn                                      = reconstruct env kenv tm
+                Tuple (ExnTyArr ExnTy' ExnVar' ExnTy'' Exn'') kenv'  = instantiate ExnTy
+        in      Triple ExnTy_0 Exn_0 i  <- Triple bottomTyU ExnEmpty 0
+                do  subst                     <- Subst ExnVar' Exn_i . match EmptyEnv ExnTy' ExnTy_i
+                    Triple ExnTy_i1 Exn_i1 i  <- Triple  (simplify kenv (applySubst ExnTy'')) (simplify kenv (applySubst Exn'')) (i+1)
+                until (Tuple ExnTy_i Exn_i) == Tuple ExnTy_im Exn_im
+                return (Tuple ExnTy_i (simplify kenv (ExnUnion Exn Exn_i)))
+\end{code}

@@ -17,7 +17,7 @@ The interesting cases of exception type matching are the cases for list and func
 
 \subsection{Polymorphic recursion}
 
-The fixpoint construct abstracts over a variable that is of an exception polymorphic type. This case is handled in the inference algorithm by a Kleene--Mycroft iteration.\footnote{\citet{HoldermansHage} note that $\lambda$-bound polymorpism gives us $\mathbf{fix}$-bound polymorphism ``for free.'' We believe this statement to be overly optimistic. While the highly polymorphic nature of these types do effectively force us to also handle polymorphic recursion, the inference step is arguably more complicated than the case for polymorphic abstraction.}
+The fixpoint construct abstracts over a variable that is of an exception polymorphic type. This case is handled in the inference algorithm by a Kleene--Mycroft iteration.\footnote{\citet{HoldermansHage} note that $\lambda$-bound polymorpism gives us $\mathbf{fix}$-bound polymorphism ``for free.'' We believe this statement to be overly optimistic. While the highly polymorphic nature of these types do effectively force us to also handle polymorphic recursion, the inference step is arguably as complicated as the case for polymorphic abstraction.}
 
 \begin{example}[Dussart, Henglein, Mossin]
     Consider the term
@@ -94,4 +94,4 @@ There are three aspects that affect the run-time complexity of the algorithm: th
 
 We have a simply typed underlying type system, but if we would extend this to full Hindley--Milner, then it is possible for types to become exponentially larger than terms \cite{Mairson:1989:DMT:96709.96748,Kfoury:1990:MTD:101856.101870}. The effects are $\LambdaUnion$-terms, which contains the simply typed $\lambda$-calculus as a special case. Reduction of terms in the simply typed $\lambda$-calculus is non-elementary recursive \cite{stat79b}. It is also easy to find an artificial family of terms that requires at least a linear number of iterations to converge on a fixpoint. For these reasons we do not believe the algorithm to have an attractive theoretical bound on time-complexity.
 
-Anecdotal evidence suggests that the practical time-complexity is acceptable, however. Hindley--Milner has almost linear complexity in non-pathological cases. Types do not grow larger than the terms. The same seems to hold for the effects. Reduction of effects takes a small number of steps, as does the convergence of the fixpoint-iteration. \TODOX{Widening (Lemma~2)}
+Anecdotal evidence suggests that the practical time-complexity is acceptable, however. Hindley--Milner has almost linear complexity in non-pathological cases. Types do not grow larger than the terms. The same seems to hold for the effects. Reduction of effects takes a small number of steps, as does the convergence of the fixpoint-iteration. \TODOX{Widening (Lemma~3)}
