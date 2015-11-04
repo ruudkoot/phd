@@ -4,7 +4,7 @@
 
 \section{Source language}\label{section-source-language}
 
-Our analysis is applicable to a simple non-strict functional language that supports Boolean, integer and list data types. In this section we'll briefly state its syntax and semantics.
+The analysis is applicable to a simple non-strict functional language that supports Boolean, integer and list data types, as well as general recursion. In this section we briefly state its syntax and semantics.
 
 \subsection{Syntax}
 
@@ -15,13 +15,13 @@ The terms and values are given in Figure~\ref{figure-source-language-syntax}.
 \begin{alignat}{2}
 \!  \Tm \in \ClassTm &\ ::=\   &&\ \TmVar                   \tag{term variable}     \\
                      &\quad||  &&\ \TmCon{\Ty}              \tag{term constant}     \\
-                     &\quad||  &&\ \TmAbs{\TmVar}{\Ty}{\Tm} \tag{term abstraction}  \\
+                     &\quad||  &&\ \TmCrash{\Ty}{\ExnLbl}   \tag{exceptional constant}\\
                      &\quad||  &&\ \TmApp{\Tm_1}{\Tm_2}     \tag{term application}  \\
+                     &\quad||  &&\ \TmAbs{\TmVar}{\Ty}{\Tm} \tag{term abstraction}  \\
+                     &\quad||  &&\ \TmFIX{\TmVar}{\Ty}{\Tm} \tag{fixpoint}          \\
+                     &\quad||  &&\ \TmSeq{\Tm_1}{\Tm_2}     \tag{forcing}           \\
                      &\quad||  &&\ \TmOp{\Tm_1}{\Tm_2}      \tag{operator}          \\
                      &\quad||  &&\ \TmIf{\Tm_1}{\Tm_2}{\Tm_3}\tag{conditional}      \\
-                     &\quad||  &&\ \TmCrash{\Ty}{\ExnLbl}   \tag{exception constant}\\
-                     &\quad||  &&\ \TmSeq{\Tm_1}{\Tm_2}     \tag{forcing}           \\
-                     &\quad||  &&\ \TmFIX{\TmVar}{\Ty}{\Tm} \tag{fixpoint}          \\
                      &\quad||  &&\ \TmNil{\Ty}              \tag{nil constructor}   \\
                      &\quad||  &&\ \TmCons{\Tm_1}{\Tm_2}    \tag{cons constructor}  \\
                      &\quad||  &&\ \TmCase{\Tm_1}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}
@@ -43,7 +43,7 @@ The values of the source language are stratified into non-exceptional values $\V
 
 \subsection{Underlying type system}
 
-The type system of the source language is given for reference in Figure~\ref{figure-underlying-type-system}. This is the \emph{underlying type system} with respect to the type-and-effect system that is presented in Section~\ref{section-exception-types} and we assume that any term we type in the type-and-effect system is already well-typed in the underlying type system.
+The type system of the source language is given for reference in Figure~\ref{figure-underlying-type-system}. This is the \emph{underlying type system} with respect to the type-and-effect system that is presented in Section~\ref{section-exception-types}. We assume that any term we type in the type-and-effect system is already well-typed in the underlying type system.
 
 \subsection{Operational semantics}
 
