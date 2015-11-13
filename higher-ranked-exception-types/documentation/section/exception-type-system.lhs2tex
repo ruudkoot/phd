@@ -1,6 +1,6 @@
 \section{Exception types}\label{section-exception-types}
 
-\subsection{Exception types}
+%\subsection{Exception types}
 
 The syntax of well-formed exception types are given in Figure~\ref{fig-exception-type-syntax} and Figure~\ref{fig-exception-type-well-formed}. An exception type~$\ExnTy$ is formed out of base types (booleans), compound types (lists), function types and quantification over exception variables.\footnote{To avoid complicating the presentation we do \emph{not} allow quantification over type variables, i.e. polymorphism in the underlying type system.}
 
@@ -43,7 +43,7 @@ For a function with exception type $\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2
     \begin{code}
     bottom_E_fun ::  forall e. ExnArr ExnBool e ExnBool EmptySet :&: e_E
     \end{code}
-    raises an exception when its closure is forced, for example as happens when it is applied to an argument. As this function can never produce a result, it certainly cannot produce an exceptional value, so the result type is annotated with an empty exception set.
+    raises an exception when its closure is forced---as happens when it is applied to an argument. As this function can never produce a result, it certainly cannot produce an exceptional value, so the result type is annotated with an empty exception set.
 \end{example}
 
 \begin{figure}[t]
@@ -118,7 +118,7 @@ For function types that stand in an argument position (the functional parameters
     apply  =  LAMBDA f (LAMBDA x (f x))
 \end{code}
 
-The first (functional) argument of |apply| has exception type |forall e_1 :: EXN. ExnArr ExnBool e_1 ExnBool (e_3 e_1)| and effect |e_2|. It can be instantiated with any function that accepts an argument annotated with any exception set effect, and produces a result annotated with some exception set effect depending on the exception set effect of the argument; the function closure itself may raise any exception. All functions of underlying type |Bool -> Bool| satisfy these constraints, so they do not really constrain us in any way.
+The first (functional) argument of |apply| has exception type |forall e_1 : EXN. ExnArr ExnBool e_1 ExnBool (e_3 e_1)| and effect |e_2|. It can be instantiated with any function that accepts an argument annotated with any exception set effect, and produces a result annotated with some exception set effect depending on the exception set effect of the argument; the function closure itself may raise any exception. All functions of underlying type |Bool -> Bool| satisfy these constraints, so they do not really constrain us in any way.
 
 As |e_1| has been quantified over, only the exception set operator~|e_3| and the effect |e_2| are left free. We quantify over them outside the outer function space constructor, allowing them to appear in the annotation |e_2 # e_3 e_4| on the result. The exception set operator |e_3| is now applied to |e_4|, as the term-level application |f x| instantiates the quantified exception set variable |e_1| to |e_4|.
 

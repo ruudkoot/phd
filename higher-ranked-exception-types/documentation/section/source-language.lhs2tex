@@ -4,11 +4,8 @@
 
 \section{Source language}\label{section-source-language}
 
-The analysis is applicable to a simple non-strict functional language that supports Boolean, integer and list data types, as well as general recursion. In this section we briefly state its syntax and semantics.
-
-\subsection{Syntax}
-
-The terms and values are given in Figure~\ref{figure-source-language-syntax}.
+The type-and-effect system is applicable to a simple non-strict functional language that supports Boolean, integer and list data types, as well as general recursion.
+%In this section we briefly state its syntax and semantics.
 
 \begin{figure}[h]
 \paragraph{Terms}
@@ -37,7 +34,9 @@ The terms and values are given in Figure~\ref{figure-source-language-syntax}.
 \caption{Source language: syntax}\label{figure-source-language-syntax}
 \end{figure}
 
-Missing from the language is a construct to ``catch'' exceptional values. While this may be surprising to programmers familiar with strict languages, it is a common design decision to omit such a construct from the pure fragment of non-strict languages. The omission of such a construct allows for the introduction of a certain amount of non-determinism in the operational semantics of the language---giving more freedom to an optimizing compiler---without breaking referential transparency.
+Most constructs in Figure~\ref{figure-source-language-syntax} should be familiar. The $\mathbf{seq}$-construct evaluates the term on the left to a value and then continues evaluating the term on the right.
+
+Missing from the language is a construct to `catch' exceptional values. While this may be surprising to programmers familiar with strict languages, it is a common design decision to omit such a construct from the pure fragment of non-strict languages. The omission of such a construct allows for the introduction of a certain amount of non-determinism in the operational semantics of the language---giving more freedom to an optimizing compiler---without breaking referential transparency.
 
 The values of the source language are stratified into non-exceptional values $\Val$ and possibly exceptional values $\ExnVal$.
 
@@ -47,8 +46,6 @@ The type system of the source language is given for reference in Figure~\ref{fig
 
 \subsection{Operational semantics}
 
-The operational semantics of the source language is given in Figure~\ref{figure-operational-semantics}. Note that there is a small amount of non-determinism in the order of reduction, for example in the derivation rules \CiteRule{E-OpExn$_1$} and \CiteRule{E-OpExn$_2$}.
+The operational semantics of the source language is given in Figure~\ref{figure-operational-semantics}. Note that there is a small amount of non-determinism in the order of reduction. For example, in the derivation rules \CiteRule{E-OpExn$_1$} and \CiteRule{E-OpExn$_2$}.\footnote{We do not go so far as to have an \emph{imprecise exception semantics} \cite{PeytonJones:1999:SIE:301618.301637}. For example, when the guard of a conditional evaluates to an exceptional value (\CiteRule{E-IfExn}), we do not continue evaluation of the two branches in exception finding mode.}
 
-We do not go as far as having an imprecise exception semantics \cite{PeytonJones:1999:SIE:301618.301637}. For example, if the guard of a conditional evaluates to an exceptional value (\CiteRule{E-IfExn}), we do not continue evaluation of the two branches in exception finding mode.
-
-The reduction rules \CiteRule{E-AnnApp}, \CiteRule{E-AnnAbsApp} apply to constructs that are introduced to the language in Section~\ref{section-exception-types}. This also holds for the additional annotations on the $\lambda$-abstraction and the $\mathbf{fix}$-operator.
+The reduction rules \CiteRule{E-AnnApp} and \CiteRule{E-AnnAbsApp} apply to constructs that are introduced to the language in Section~\ref{section-exception-types}. This also holds for the additional annotations on the $\lambda$-abstraction and the $\mathbf{fix}$-operator.

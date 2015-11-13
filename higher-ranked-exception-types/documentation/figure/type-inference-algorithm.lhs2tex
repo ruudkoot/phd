@@ -93,7 +93,7 @@
 %format Var_2
 
 %format repeat                      = "\mathbf{repeat}"
-\begin{figure}[h!]\label{figure-type-inference-algorithm}
+\begin{figure}[h]
 \begin{code}
     reconstruct :: Product ClassTyEnv (Product ClassKiEnv ClassTm) -> Product ClassExnTy ClassExn
 
@@ -153,5 +153,5 @@
                 Tuple ExnTy_3 Exn_3                    = reconstruct env kenv tm_3
         in      Tuple (simplify kenv (ExnTyJoin ExnTy_2 ExnTy_3)) (simplify kenv (ExnUnion Exn_1 (ExnUnion Exn_2 Exn_3)))
 \end{code}
-\caption{Type inference algorithm}
+\caption{Type inference algorithm ($\mathcal{R}$)}\label{figure-type-inference-algorithm}
 \end{figure}

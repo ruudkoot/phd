@@ -1,6 +1,8 @@
 \section{The $\LambdaUnion$-calculus}\label{section-lambda-union}
 
-The $\LambdaUnion$-calculus is a simply typed $\lambda$-calculus extended with a set-union operator and singleton-set and empty-set constants at the term level.
+%\subsection{Syntax}
+
+The $\LambdaUnion$-calculus is a simply typed $\lambda$-calculus extended with a set-union operator and singleton-set and empty-set constants at the term level. We let $\LuVar \in \ClassVar$ range over an infinite set of variables and $c \in \ClassCon$ over a non-empty set of constants.
 
 \begin{figure}[h]
 \paragraph{Types}
@@ -11,7 +13,7 @@ The $\LambdaUnion$-calculus is a simply typed $\lambda$-calculus extended with a
 
 \paragraph{Terms}
 \begin{alignat}{2}
-    \LuTm \in \ClassLuTm &\ ::=\    &&\LuVar, \LuVarY, ... \tag{variable} \\
+    \LuTm \in \ClassLuTm &\ ::=\    &&\LuVar \tag{variable} \\
                          &\quad||   &&\LuAbs{\LuVar}{\LuTy}{\LuTm} \tag{abstraction} \\
                          &\quad||   &&\LuApp{\LuTm_1}{\LuTm_2} \tag{application} \\
                          &\quad||   &&\LuEmpty \tag{empty} \\
@@ -21,14 +23,14 @@ The $\LambdaUnion$-calculus is a simply typed $\lambda$-calculus extended with a
 
 \paragraph{Environments}
 \begin{align*}
-    \LuEnv \in \ClassLuEnv\ ::=\ \EmptyEnv \quad || \quad \LuEnv, \LuVar : \LuTy
+    \LuEnv \in \ClassLuEnv\ \ ::=\ \ \EmptyEnv \quad || \quad \LuEnv, \LuVar : \LuTy
 \end{align*}
 \caption{$\LambdaUnion$-calculus: syntax}
 \end{figure}
 
-\subsection{Typing relation}
+%\subsection{Typing relation}
 
-The typing relation of the $\LambdaUnion$-calculus is an extension of the simply types $\lambda$-calculus' typing relation.
+The typing relation of the $\LambdaUnion$-calculus is an extension of the simply typed $\lambda$-calculus' typing relation.
 
 \begin{figure}[h]
 \begin{gather*}
@@ -87,15 +89,31 @@ In the $\LambdaUnion$-calculus, terms are interpreted as sets and types as power
     \caption{$\LambdaUnion$-calculus: denotational semantics}
 \end{figure}
 
+\subsection{Subsumption and equivalence}
+
+The set-structure of the $\LambdaUnion$-calculus induces a partial order on the terms.
+
+%\begin{definition}
+%We say that a term environment $\rho$ is \emph{compatible} with a type environment $\Gamma$ if $\mathrm{dom}(\rho) = \mathrm{dom}(\Gamma)$ and for all $x \in \mathrm{dom}(\rho)$ we have that $\Gamma \vdash \rho(x) : \Gamma(x)$.
+%\end{definition}
+
+\begin{definition}
+    Let $\LuTm_1$ and $\LuTm_2$ be terms such that $\JudgeLuTy{\LuTm_1}{\LuTy}$ and $\JudgeLuTy{\LuTm_2}{\LuTy}$.
+    We say the term $\LuTm_2$ \emph{subsumes} the term $\LuTm_1$, written $\JudgeLuSub{\LuTm_1}{\LuTm_2}$, if for any context $\LuCtx{}$ such that $\JudgeLuTy[]{\LuCtx{\LuTm_1}}{\LuBase}$ and $\JudgeLuTy[]{\LuCtx{\LuTm_2}}{\LuBase}$ we have that $\LuDen[\emptyset]{\LuCtx{\LuTm_1}} \subseteq \LuDen[\emptyset]{\LuCtx{\LuTm_2}}$.
+\end{definition}
+
+\begin{definition}
+    Let $\LuTm_1$ and $\LuTm_2$ be terms such that $\JudgeLuTy{\LuTm_1}{\LuTy}$ and $\JudgeLuTy{\LuTm_2}{\LuTy}$.
+    We say that the terms $\LuTm_1$ and $\LuTm_2$ are \emph{observationally equivalent}, denoted as $\JudgeLuEqv{\LuTm_1}{\LuTm_2}$, if
+    \begin{enumerate}
+        \item $\JudgeLuSub{\LuTm_1}{\LuTm_2}$ and $\JudgeLuSub{\LuTm_2}{\LuTm_1}$, or equivalently that
+        \item for any context $\LuCtx{}$ such that $\JudgeLuTy[]{\LuCtx{\LuTm_1}}{\LuBase}$ and $\JudgeLuTy[]{\LuCtx{\LuTm_2}}{\LuBase}$ we have that $\LuDen[\emptyset]{\LuCtx{\LuTm_1}} = \LuDen[\emptyset]{\LuCtx{\LuTm_2}}$.
+    \end{enumerate}
+\end{definition}
+
 %include ../theorem/lu-gamma1.lhs2tex
 %include ../theorem/lu-gamma2.lhs2tex
 %include ../proof/lu-gamma2-sketch.lhs2tex
-
-\subsection{\TODO{Subeffect relation ($\Gamma\vdash t_1 \leq t_2$)}}
-
-\LORUMIPSUM
-
-\LORUMIPSUM
 
 \LORUMIPSUM
 
@@ -154,7 +172,7 @@ where $k_i$ can be a free or bound variable, or a singleton-set constant, but no
 A $\LambdaUnion$-term is called a \emph{pattern} if it is of the form $f(e_1, ..., e_n)$ where $f$ is a free variable and $e_1, ..., e_n$ are distinct bound variables.
 \end{definition}
 
-Note that this definition is a special case of what is normally called a \emph{pattern} in higher-order unification theory \cite{Miller1991,Dowek:2001:HUM:778522.778525}.
+Note that this definition is a special case of what is usually called a \emph{pattern} in higher-order unification theory \cite{Miller1991,Dowek:2001:HUM:778522.778525}.
 
 If $f(e_1, ..., e_n)$ is a pattern and $t$ a term, then the equation
 \[ f : \LuTy_1 \to \cdots \to \LuTy_n \to \LuTy \vdash \forall e_1 : \LuTy_1, ..., e_n : \LuTy_n. f(e_1, ..., e_n) = t \]

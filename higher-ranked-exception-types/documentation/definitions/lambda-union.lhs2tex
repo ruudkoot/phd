@@ -13,7 +13,7 @@
 \newcommand{\LuTyApp}[2]{#1\ \left<#2\right>}       %% Lu?
 \newcommand{\LuArr}[2]{{#1 \to #2}}
 \newcommand{\LuARR}[2]{{#1 \Rightarrow #2}}         %% Lu?
-\newcommand{\LuBase}{\mathcal{C}}
+\newcommand{\LuBase}{\text{\rotatebox[origin=c]{180}{$\star$}}}
 \newcommand{\LuCON}{c}
 \newcommand{\LuCon}[1][\LuCON]{\{#1\}}
 \newcommand{\LuEmpty}{\emptyset}
@@ -29,13 +29,17 @@
 \newcommand{\LuVar}{x}
 \newcommand{\LuVarY}{y}
 
+\newcommand{\LuCtx}[1]{C\!\left[#1\right]}
+
 \newcommand{\LuAPPLIED}[1][]{\LuVar\ \LuTm_1#1 \cdots \LuTm_n#1}
 
 \newcommand{\JudgeLuTy}[3][\LuEnv]{#1 \vdash #2 : #3}
+\newcommand{\JudgeLuSub}[3][\LuEnv]{#1 \vdash #2 \leq #3}
+\newcommand{\JudgeLuEqv}[3][\LuEnv]{#1 \vdash #2 \cong #3}
 
 \newcommand{\REDUCE}{\longrightarrow}
 \newcommand{\Reduce}[2]{{#1 \REDUCE #2}}
 \newcommand{\ReduceMulti}[2]{{#1 \REDUCE^{*} #2}}
 
-\newcommand{\LuDen}[1]{\llbracket #1 \rrbracket_{\rho}}
+\newcommand{\LuDen}[2][\rho]{\llbracket #2 \rrbracket_{#1}}
 \newcommand{\LuDenote}[2]{\llbracket #1 \rrbracket_{\rho\left[\LuVar\mapsto #2\right]}}

@@ -8,7 +8,7 @@
 %format ExnSol          = "\lambda \overline{e_i :: \KindENV_{e_i}}.\Exn"
 \begin{figure}[ht]
     \begin{code}
-        match  ::  Product ClassKiEnv (Product ClassExnTy ClassExnTy) -> ClassSubst
+        match ::  Product ClassKiEnv (Product ClassExnTy ClassExnTy) -> ClassSubst
         match  kienv  ExnTyBool     ExnTyBool     = EmptyEnv
         match  kienv  ExnTyInt      ExnTyInt      = EmptyEnv
         match  kienv  matchList1    matchList2
@@ -17,5 +17,5 @@
                         = Subst e' ExnSol . match kienv ExnTy_2' ExnTy_2
         match  kienv  matchForall1  matchForall2  = match (kienv, e : ki) ExnTy' ExnTy
     \end{code}
-    \caption{Exception type matching}
+    \caption{Exception type matching ($\mathcal{M}$)}
 \end{figure}
