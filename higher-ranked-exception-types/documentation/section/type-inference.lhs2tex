@@ -12,7 +12,7 @@ In the case of abstractions, we first complete the type of the bound variable to
 In the case of applications, we instantiate ($\mathcal{I}$) all quantified variables of the exception type of $t_1$ with fresh exception variables. Next we use the auxiliary procedure $\mathcal{M}$ to find a matching substitution between the exception types of the formal and the actual parameters.
 %include ../figure/exception-type-matching.lhs2tex
 
-The interesting cases of exception type matching are the cases for list and function types, where we perform pattern unification of the exception annotations. The produced substitution $\theta$ covers all variables $\overline{\ExnVar_i :: \Kind_i}$ freshly introduced by the instantiation procedure~$\mathcal{I}$. Finally, we apply the substitution $\theta$ to the exception type~$\ExnTy^\prime$ and effect~$\Exn^\prime$ of the result of $t_1$.
+The interesting cases of exception type matching are the cases for list and function types, where we perform pattern unification on the exception annotations. The produced substitution $\theta$ covers all variables $\overline{\ExnVar_i :: \Kind_i}$ freshly introduced by the instantiation procedure~$\mathcal{I}$. Finally, we apply the substitution $\theta$ to the exception type~$\ExnTy^\prime$ and effect~$\Exn^\prime$ of the result of $t_1$.
 
 \subsection{Polymorphic recursion}
 

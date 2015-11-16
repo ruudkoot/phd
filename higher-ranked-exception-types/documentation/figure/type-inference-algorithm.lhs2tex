@@ -104,10 +104,10 @@
     reconstruct env kenv Crash       =  Result bottomTy ExnCon
 
     reconstruct env kenv (Abs)       =
-        let     Triple ExnTy_1 ExnVar_1 kenv'  =  complete EmptyEnv ty
+        let     Triple ExnTy_1 e kenv'         =  complete EmptyEnv ty
                                              
-                Tuple ExnTy_2 Exn_2            =  reconstruct ((extendTyEnv env Var ExnTy_1 ExnVar_1)) (kenv,kenv') Tm
-        in      Result (ExnForall kenv' (ExnTyArr ExnTy_1 ExnVar_1 ExnTy_2 Exn_2)) ExnEmpty
+                Tuple ExnTy_2 Exn_2            =  reconstruct ((extendTyEnv env Var ExnTy_1 e)) (kenv,kenv') Tm
+        in      Result (ExnForall kenv' (ExnTyArr ExnTy_1 e ExnTy_2 Exn_2)) ExnEmpty
 
     reconstruct env kenv (App)       =
         let     Tuple ExnTy_1 Exn_1                                    = reconstruct env kenv tm_1

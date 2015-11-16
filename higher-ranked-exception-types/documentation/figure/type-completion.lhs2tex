@@ -39,18 +39,18 @@
                             {\ExnTy_1}
                             {\Exn_1}
                             {\KindEnv{j}}
-              \quad
+              \quad\quad\quad\quad
               \JudgeComplete{\KindEnv{i},\KindEnv{j}}
                             {\Ty_2}
                             {\ExnTy_2}
                             {\Exn_2}
-                            {\KindEnv{j}}
+                            {\KindEnv{k}}
              }
              {\JudgeComplete{\KindEnv{i}}
                             {\TyArr{\Ty_1}{\Ty_2}}
                             {\ExnForall{\overline{\ExnVar_j :: \Kind_j}}\left(\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}\right)}
                             {\ExnVar\ \overline{\ExnVar_i}}
-                            {\ExnVar :: \overline{\Kind_j\KindArr}%
+                            {\ExnVar :: \overline{\Kind_i\KindArr}%
                                 \KindEXN, \KindEnv{k}}
              }
     \end{gather*}

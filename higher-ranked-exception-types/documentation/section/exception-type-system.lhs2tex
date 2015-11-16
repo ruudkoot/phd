@@ -2,7 +2,7 @@
 
 %\subsection{Exception types}
 
-The syntax of well-formed exception types are given in Figure~\ref{fig-exception-type-syntax} and Figure~\ref{fig-exception-type-well-formed}. An exception type~$\ExnTy$ is formed out of base types (booleans), compound types (lists), function types and quantification over exception variables.\footnote{To avoid complicating the presentation we do \emph{not} allow quantification over type variables, i.e. polymorphism in the underlying type system.}
+The syntax of well-formed exception types is given in Figure~\ref{fig-exception-type-syntax} and Figure~\ref{fig-exception-type-well-formed}. An exception type~$\ExnTy$ is formed out of base types (booleans), compound types (lists), function types and quantification over exception variables.\footnote{To avoid complicating the presentation we do \emph{not} allow quantification over type variables, i.e. polymorphism in the underlying type system.}
 
 For a list with exception type $\ExnTyList{\ExnTy}{\Exn}$ and effect $\ExnAlt$, the type $\ExnTy$ of the elements in the list is \emph{annotated} with an exception set expression $\Exn$ of kind~$\KindEXN$. This expression gives a set of exceptions which may be raised when an element of the list is forced. The effect $\ExnAlt$ gives a set of exceptions that may be raised when a constructor forming the spine of the list is forced.
 
@@ -17,7 +17,7 @@ For a function with exception type $\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2
                             &\quad||  &&\ExnAbs{\ExnVar}{\Kind}{\Exn} \tag{exception set abstraction}\\
                             &\quad||    &&\ExnApp{\Exn_1}{\Exn_2} \tag{exception set application}\\
                             &\quad||    &&\ExnEmpty \tag{empty exception set} \\
-                            &\quad||    &&\ExnCon{\ExnLbl} \tag{singleton exception} \\
+                            &\quad||    &&\ExnCon{\ExnLbl} \tag{singleton exception set} \\
                             &\quad||    &&\ExnUnion{\Exn_1}{\Exn_2} \tag{exception set union} \\
     \notag\\
         \ExnTy \in \ClassExnTy &\ ::=\ &&\ExnForall{\ExnVar :: \Kind}\ExnTy \tag{exception set quantification} \\
@@ -122,7 +122,7 @@ The first (functional) argument of |apply| has exception type |forall e_1 : EXN.
 
 As |e_1| has been quantified over, only the exception set operator~|e_3| and the effect |e_2| are left free. We quantify over them outside the outer function space constructor, allowing them to appear in the annotation |e_2 # e_3 e_4| on the result. The exception set operator |e_3| is now applied to |e_4|, as the term-level application |f x| instantiates the quantified exception set variable |e_1| to |e_4|.
 
-(Note that the exception annotation $e_2$ on the closure---unlike the exception set operator $e_3$ on the result---does not depend on the exception variable $e_1$ annotation the argument. As a closure is already a value, it being exceptional or not can never depend on the argument it is later applied to.)
+(Note that the exception annotation $e_2$ on the closure---unlike the exception set operator $e_3$ on the result---does not depend on the exception variable $e_1$, the annotation on the argument. As a closure is already a value, it being exceptional or not can never depend on the argument it is later applied to.)
 \end{example}
 
 %format CrashB2B = "\TmCrash{\TyBool\to\TyBool}{\ExnLblE}"
@@ -137,7 +137,7 @@ As |e_1| has been quantified over, only the exception set operator~|e_3| and the
     \begin{code}
         CrashB2B                         :: forall e : EXN. ExnTyArrT ExnBool e ExnBool EmptySet ExnConE
     \end{code}
-    We cannot observe a difference between these terms by applying an argument to them
+    We cannot observe a difference between these terms by applying them to an argument
     \begin{code}
         (LAMBDA (x :: Bool) (CrashB2B x))  True  :: ExnBool :&: ExnConE
         CrashB2B                           True  :: ExnBool :&: ExnConE
@@ -157,31 +157,45 @@ As |e_1| has been quantified over, only the exception set operator~|e_3| and the
 
 \subsection{\TODO{Exception type completion}}
 
-Give an underlying type $\Ty$ we can compute a the most general exception type $\ExnTy$ that erases to $\Ty$. This is done using the type completion system in Figure~\ref{figure-type-completion}, defining a type completion relation $\JudgeComplete{\KindENV}{\Ty}{\ExnTy}{\Exn}{\KindENV'}$.
+Given an underlying type $\Ty$ we can compute the most general exception type $\ExnTy$ that erases to $\Ty$. This is done using the type completion system in Figure~\ref{figure-type-completion}, defining a type completion relation $\JudgeComplete{\KindENV}{\Ty}{\ExnTy}{\Exn}{\KindENV'}$.
 
-A judgment $\JudgeComplete{\KindEnv{i}}{\Ty}{\ExnTy}{\Exn}{\KindEnv{j}}$ is read as: if the kinded exception set variables $\KindEnv{i}$ are in scope, then the underlying type $\Ty$ is completed to the exception type $\ExnTy$ and effect $\Exn$, while introducing the kinded free exception set variables $\KindEnv{j}$.
+A judgment $\JudgeComplete{\KindEnv{i}}{\Ty}{\ExnTy}{\Exn}{\KindEnv{j}}$ is read: if the kinded exception set variables $\KindEnv{i}$ are in scope, then the underlying type $\Ty$ is completed to the exception type $\ExnTy$ and effect $\Exn$, while introducing the kinded free exception set variables $\KindEnv{j}$.
 
 \begin{example}[\TODO] First-order, multiple arguments:
     \begin{align*}
         &\vdash         && \TyArr{\TyList{\TyBool}}{\TyArr{\TyList{\TyBool}}{\TyList{\TyBool}}} \\
         &:              &&    {\ExnTyForall{\ExnVar_1}{\KindEXN}{\ExnTyForall{\ExnVar_1^\prime}{\KindEXN}{\Throws{\ExnTyList{\ExnBool}{\ExnVar_1}}{\ExnVar_1^\prime}}}} \to \\
         &               && \quad (\ExnTyForall{\ExnVar_2}{\KindEXN}{\ExnTyForall{\ExnVar_2^\prime}{\KindEXN}{\Throws{\ExnTyList{\ExnBool}{\ExnVar_2}}{\ExnVar_2^\prime}}} \to \\
-        &               && \quad\quad \Throws{\Throws{\ExnTyList{\ExnBool}{\ExnVar_3\ \ExnVar_1\ \ExnVar_1^\prime\ \ExnVar_2\ \ExnVar_2^\prime}}{\ExnVar_3^\prime\ \ExnVar_1\ \ExnVar_1^\prime\ \ExnVar_2\ \ExnVar_2^\prime})}{\ExnVar_4} \\
+        &               && \quad\quad \Throws{\Throws{\ExnTyList{\ExnBool}{\ExnVar_3\ \ExnVar_1\ \ExnVar_1^\prime\ \ExnVar_2\ \ExnVar_2^\prime}}{\ExnVar_3^\prime\ \ExnVar_1\ \ExnVar_1^\prime\ \ExnVar_2\ \ExnVar_2^\prime})}{\ExnVar_4\ \ExnVar_1\ \ExnVar_1^\prime} \\
         &\&             && \ExnVar_5 \\
-        &\triangleright && \ExnVar_3, \ExnVar_3^\prime :: \KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN, \ExnVar_4, \ExnVar_5 :: \KindEXN
+        &\triangleright && \ExnVar_3, \ExnVar_3^\prime :: \KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN,\\
+        &               && \ExnVar_4 :: \KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN
+        , \ExnVar_5 :: \KindEXN
     \end{align*}
-    
+
+    \begin{code}
+        LAMBDA (x :: Bool) (seq x (LAMBDA (y :: Bool) y))
+    \end{code}
+
     Higher-order:
     \begin{align*}
         &\vdash         && \TyArr{(\TyArr{\TyList{\TyBool}}{\TyList{\TyBool}})}{\TyList{\TyBool}} \\
-        &:              && \ExnTyForall{\ExnVar_2,\ExnVar_2^\prime}{\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN}{} \\
+        &:              && \ExnTyForall{\ExnVar_2}{\KindEXN}{\ExnTyForall{\ExnVar_3,\ExnVar_3^\prime}{\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN}{}} \\
         &               && \quad \Throws{(\ExnTyForall{\ExnVar_1,\ExnVar_1^\prime}{\KindEXN}{\Throws{\ExnTyList{\ExnBool}{\ExnVar_1}}{\ExnVar_1^\prime} \to \\
-        &               && \quad\quad\quad\quad\quad\quad\quad\quad\quad \Throws{\ExnTyList{\ExnBool}{\ExnVar_2\ \ExnVar_1\ \ExnVar_1^\prime}}{\ExnVar_2^\prime\ \ExnVar_1\ \ExnVar_1^\prime}})}{\ExnVar_3} \to \\
-        &               && \quad\quad \Throws{\ExnTyList{\ExnBool}{\ExnVar_4\ \ExnVar_2\ \ExnVar_2^\prime\ \ExnVar_3}}{\ExnVar_4^\prime\ \ExnVar_2\ \ExnVar_2^\prime\ \ExnVar_3} \\
+        &               && \quad\quad\quad\quad\quad\quad\quad\quad\quad \Throws{\ExnTyList{\ExnBool}{\ExnVar_3\ \ExnVar_1\ \ExnVar_1^\prime}}{\ExnVar_3^\prime\ \ExnVar_1\ \ExnVar_1^\prime}})}{\ExnVar_2} \to \\
+        &               && \quad\quad \Throws{\ExnTyList{\ExnBool}{\ExnVar_4\ \ExnVar_2\ \ExnVar_3\ \ExnVar_3^\prime}}{\ExnVar_4^\prime\ \ExnVar_2\ \ExnVar_3\ \ExnVar_3^\prime} \\
         &\&             && \ExnVar_5\\
-        &\triangleright && \ExnVar_4, \ExnVar_4^\prime :: (\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN)\!\KindArr \\
-        &               && \quad\quad\quad\quad\quad (\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN)\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN, \\
+        &\triangleright && \ExnVar_4, \ExnVar_4^\prime :: \KindEXN\!\KindArr\!(\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN)\!\KindArr \\
+        &               && \quad\quad\quad\quad\quad\quad\quad\quad (\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN)\!\KindArr\!\KindEXN, \\
         &               && \ExnVar_5 :: \KindEXN
+    \end{align*}
+    
+    Functions can also be contained in other compound types, such as lists:
+    \begin{align*}
+        &\vdash         && \TyList{\TyArr{\TyBool}{\TyBool}} \\
+        &:              && [\ExnTyForall{\ExnVar_1}{\KindEXN}{\Throws{\ExnBool}{\ExnVar_1}\xrightarrow{\ExnVar_2}\Throws{\ExnBool}{\ExnVar_3\ \ExnVar_1}}] \\
+        &\&             && \ExnVar_4\\
+        &\triangleright && \ExnVar_2 :: \KindEXN, \ExnVar_3 :: \KindEXN\KindArr\KindEXN, \ExnVar_4 :: \KindEXN
     \end{align*}
 \end{example}
 
@@ -194,15 +208,21 @@ Besides completing an underlying type $\Ty$ to a most general exception type, we
 \begin{example}[\TODO] First-order, multiple arguments:
     \begin{align*}
         &\bot_{\TyList{\TyBool}\to\TyList{\TyBool}\to\TyList{\TyBool}} \\
-        &= \ExnTyForall{\ExnVar_1,\ExnVar_1^\prime}{\KindEXN}{\Throws{\ExnTyList{\ExnBool}{\ExnVar_1}}{\ExnVar_1^\prime}\to} \\
-        &\quad\quad\quad\quad\ExnTyForall{\ExnVar_2,\ExnVar_2^\prime}{\KindEXN}{\Throws{\ExnTyList{\ExnBool}{\ExnVar_2}}{\ExnVar_2^\prime}\to \Throws{\ExnTyList{\ExnBool}{\ExnEmpty}}{\ExnEmpty}}
+        &\quad= \ExnTyForall{\ExnVar_1,\ExnVar_1^\prime}{\KindEXN}{\Throws{\ExnTyList{\ExnBool}{\ExnVar_1}}{\ExnVar_1^\prime}\to} \\
+        &\quad\quad\quad\quad\ExnTyForall{\ExnVar_2,\ExnVar_2^\prime}{\KindEXN}{\Throws{\ExnTyList{\ExnBool}{\ExnVar_2}}{\ExnVar_2^\prime}\xrightarrow{\ExnEmpty} \Throws{\ExnTyList{\ExnBool}{\ExnEmpty}}{\ExnEmpty}}
     \end{align*}
     
     Higher-order:
     \begin{align*}
         &\bot_{(\TyList{\TyBool}\to\TyList{\TyBool})\to\TyList{\TyBool}} \\
-        &= \ExnTyForall{\ExnVar_2,\ExnVar_2^\prime}{\KindEXN\KindArr\KindEXN}{\ExnTyForall{\ExnVar_3,\ExnVar_3^\prime}{\KindEXN}} \\
-        & \Throws{(\ExnTyForall{\ExnVar_1,\ExnVar_1^\prime}{\KindEXN}{\Throws{\ExnTyList{\ExnBool}{\ExnVar_1}}{\ExnVar_1^\prime}\to\Throws{\ExnTyList{\ExnBool}{\ExnEmpty}}{\ExnEmpty}})}{\ExnEmpty} \to \Throws{\ExnTyList{\ExnBool}{\ExnEmpty}}{\ExnEmpty}
+        &\quad= \ExnTyForall{\ExnVar_2}{\KindEXN}{\ExnTyForall{\ExnVar_3,\ExnVar_3^\prime}{\KindEXN\KindArr\KindEXN\KindArr\KindEXN}} \\
+        & \quad\quad\quad\quad (\ExnTyForall{\ExnVar_1,\ExnVar_1^\prime}{\KindEXN}{\Throws{\ExnTyList{\ExnBool}{\ExnVar_1}}{\ExnVar_1^\prime}\xrightarrow{\ExnVar_2} \\
+        & \quad\quad\quad\quad\quad\quad\quad\quad \Throws{\ExnTyList{\ExnBool}{\ExnVar_3\ \ExnVar_1\ \ExnVar_1^\prime}}{\ExnVar_3^\prime\ \ExnVar_1\ \ExnVar_1^\prime}}) \to \Throws{\ExnTyList{\ExnBool}{\ExnEmpty}}{\ExnEmpty}
+    \end{align*}
+    
+    List:
+    \begin{align*}
+        &\bot_{\TyList{\TyBool\to\TyBool}} = [\ExnTyForall{\ExnVar_1}{\KindEXN}{\Throws{\ExnBool}{\ExnVar_1}\xrightarrow{\ExnEmpty}\Throws{\ExnBool}{\ExnEmpty}}]
     \end{align*}
 \end{example}
 
@@ -227,7 +247,7 @@ These judgments work on an explicitly type language and for this purpose we exte
 
 \subsection{\TODO Type elaboration system}
 
-As the source language is not explicitly typed we also give a type elaboration system that given an implicitly typed term in the source language produces and explicitly typed term (Figure~\ref{type-elaboration-system}).
+As the source language is not explicitly typed, we also give a type elaboration system that given an implicitly typed term in the source language produces an explicitly typed term (Figure~\ref{type-elaboration-system}).
 
 \begin{itemize}
 

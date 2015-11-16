@@ -166,6 +166,8 @@ where $k_i$ can be a free or bound variable, or a singleton-set constant, but no
 \caption{$\LambdaUnion$-calculus: reduction}
 \end{figure}
 
+\TODOX{Ordering of terms}
+
 \subsection{Pattern unification}
 
 \begin{definition}

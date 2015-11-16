@@ -25,6 +25,7 @@ inferenceExamples = map (\(l,x) -> (l, show x, mathjax' x)) [
     -- decent first examples
     "id id" # App (Abs 1 (Bool:->Bool) (Var 1)) (Abs 2 Bool (Var 2)),
     "" # Abs 1 (Bool :-> Bool) (App (Var 1) (Con True)),
+    "" # Abs 1 Bool (Seq (Var 1) (Abs 2 Bool (Var 2))),
     "" # Seq (Crash "F" ((Bool :-> Bool) :-> Bool)) $ Abs 1 (Bool :-> Bool) $ If (Crash "G" Bool) (App (Var 1) (Con True)) (App (Var 1) (Crash "E" Bool)),
     -- * constants
     "true" # Con True,
