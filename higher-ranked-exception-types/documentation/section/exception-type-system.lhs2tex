@@ -173,9 +173,10 @@ A judgment $\JudgeComplete{\KindEnv{i}}{\Ty}{\ExnTy}{\Exn}{\KindEnv{j}}$ is read
         , \ExnVar_5 :: \KindEXN
     \end{align*}
 
-    \begin{code}
-        LAMBDA (x :: Bool) (seq x (LAMBDA (y :: Bool) y))
-    \end{code}
+    \begin{align*}
+        &\lambda x : \TyBool . x\ \mathbf{seq}\ \lambda y : \TyBool. y \\
+        &\quad : \ExnTyForall{\ExnVar_1}{\KindEXN}{\ExnTyForall{\ExnVar_2}{\KindEXN}{\Throws{\ExnBool}{\ExnVar_1}\xrightarrow{\ExnEmpty}\Throws{\ExnBool}{\ExnVar_2}\xrightarrow{\ExnVar_1}\Throws{\ExnBool}{\ExnVar_2}}}
+    \end{align*}
 
     Higher-order:
     \begin{align*}

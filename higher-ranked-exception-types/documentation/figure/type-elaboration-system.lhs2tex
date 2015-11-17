@@ -56,19 +56,19 @@
                         {\ExnEmpty}
              }
         \\[1.5ex]
-        \Rule{\TODO{L-App}}
+        \Rule{L-App}
              {\begin{gathered}
                 \JudgeSubTy{\KiEnv}
                            {\ExnTy_2}
-                           {\SubstS{\Exn_i}{\ExnVar_i}{\ExnTy}}
+                           {\SubstS{\ExnAlt_i}{\ExnVar_i}{\ExnTy_1}}
                 \quad
                 \JudgeSubExn{\KiEnv}
                             {\Exn_2}
-                            {\SubstS{\Exn_i}{\ExnVar_i}{\Exn}}
+                            {\SubstS{\ExnAlt_i}{\ExnVar_i}{\Exn_1}}
                 \quad
                 \overline{
                     \JudgeKind{\KiEnv}
-                              {\Exn_i}
+                              {\ExnAlt_i}
                               {\Kind_i}
                 }
                 \\
@@ -90,41 +90,43 @@
              {\JudgeElab{\TyEnv}
                         {\KiEnv}
                         {\TmApp{\Tm_1}{\Tm_2}}
-                        {\TmApp{\TmAnnApp{\Tm_1^\prime}{\overline{\Exn_i}}}{\Tm_2^\prime}}
-                        {\SubstS{\Exn_i}{\ExnVar_i}{\ExnTy}}
-                        {\ExnUnion{\SubstS{\Exn_i}{\ExnVar_i}{\Exn}}{\Exn^\prime}}
+                        {\TmApp{\TmAnnApp{\Tm_1^\prime}{\overline{\ExnAlt_i}}}{\Tm_2^\prime}}
+                        {\SubstS{\ExnAlt_i}{\ExnVar_i}{\ExnTy}}
+                        {\ExnUnion{\SubstS{\ExnAlt_i}{\ExnVar_i}{\Exn}}{\Exn^\prime}}
              }
         \\[1.5ex]
-        \Rule{\TODO L-Fix}
+        \Rule{L-Fix}
              {\begin{gathered}
-                \JudgeElab{\TyEnv}
+                \JudgeTyElab{\KiEnv}
+                            {\ExnTy}
+                            {\Ty}
+                \quad
+                \JudgeKind{\KiEnv}
+                          {\Exn}
+                          {\KindEXN}
+                \quad
+                \JudgeElab{\TyEnv,x:\ExnTy\ \&\ \Exn}
                           {\KiEnv}
                           {\Tm}
                           {\Tm^\prime}
-                          {\ExnTyForallS{\ExnVar_i}{\Kind_i}{\ExnTyArr{\ExnTy}{\Exn}{\ExnTy^\prime}{\Exn^\prime}}}
-                          {\Exn^{\prime\prime}}
+                          {\ExnTy^\prime}
+                          {\Exn^\prime}
                 \quad
                 \JudgeSubTy{\KiEnv}
-                           {\SubstS{\Exn_i}{\ExnVar_i}{\ExnTy^\prime}}
-                           {\SubstS{\Exn_i}{\ExnVar_i}{\ExnTy}}
+                           {\ExnTy^\prime}
+                           {\ExnTy}
                 \quad
                 \JudgeSubExn{\KiEnv}
-                            {\SubstS{\Exn_i}{\ExnVar_i}{\Exn^\prime}}
-                            {\SubstS{\Exn_i}{\ExnVar_i}{\Exn}}
-                \quad
-                \overline{
-                    \JudgeKind{\KiEnv}
-                              {\Exn_i}
-                              {\Kind_i}
-                }
+                            {\Exn^\prime}
+                            {\Exn}
               \end{gathered}
              }
              {\JudgeElab{\TyEnv}
                         {\KiEnv}
-                        {\TmFix{\Tm}}
-                        {\TmAnnApp{\TmFix{\Tm^\prime}}{\overline{\Exn_i}}}
-                        {\SubstS{\Exn_i}{\ExnVar_i}{\ExnTy}}
-                        {\ExnUnion{\SubstS{\Exn_i}{\ExnVar_i}{\Exn}}{\Exn^{\prime\prime}}}
+                        {\TmFIX{x}{\Ty}{\Tm}}
+                        {\TmFixExn{x}{\ExnTy}{\Exn}{\Tm^\prime}}
+                        {\ExnTy}
+                        {\Exn}
              }
         \\[1.5ex]
         \Rule{L-Op}
