@@ -97,7 +97,7 @@ The set-structure of the $\LambdaUnion$-calculus induces a partial order on the 
 %We say that a term environment $\rho$ is \emph{compatible} with a type environment $\Gamma$ if $\mathrm{dom}(\rho) = \mathrm{dom}(\Gamma)$ and for all $x \in \mathrm{dom}(\rho)$ we have that $\Gamma \vdash \rho(x) : \Gamma(x)$.
 %\end{definition}
 
-\begin{definition}
+\begin{definition}\label{definition-subsumption}
     Let $\LuTm_1$ and $\LuTm_2$ be terms such that $\JudgeLuTy{\LuTm_1}{\LuTy}$ and $\JudgeLuTy{\LuTm_2}{\LuTy}$.
     We say the term $\LuTm_2$ \emph{subsumes} the term $\LuTm_1$, written $\JudgeLuSub{\LuTm_1}{\LuTm_2}$, if for any context $\LuCtx{}$ such that $\JudgeLuTy[]{\LuCtx{\LuTm_1}}{\LuBase}$ and $\JudgeLuTy[]{\LuCtx{\LuTm_2}}{\LuBase}$ we have that $\LuDen[\emptyset]{\LuCtx{\LuTm_1}} \subseteq \LuDen[\emptyset]{\LuCtx{\LuTm_2}}$.
 \end{definition}
@@ -123,7 +123,8 @@ The set-structure of the $\LambdaUnion$-calculus induces a partial order on the 
 
 \subsection{\TODO{Normalization}}
 \begin{itemize}
-    \item \TODOX{We can make union only work on base types (as we not longer \emph{need} to distribute unions over applications)? Then the denotation of the function space would be simpler and might generalize to other structures..}
+    \item \TODOX{Ordering of terms}
+    \item \TODOX{We can make union only work on base types (as we not longer \emph{need} to distribute unions over applications)?}
 \end{itemize}
 
 To reduce $\LambdaUnion$-terms to a normal form we combine the $\beta$-reduction rule of the simply typed $\lambda$-calculus with rewrite rules that deal with the associativity, commutativity, idempotence and identity (\ACIone) properties of set-union operator.
@@ -165,8 +166,6 @@ where $k_i$ can be a free or bound variable, or a singleton-set constant, but no
     \end{gather*}
 \caption{$\LambdaUnion$-calculus: reduction}
 \end{figure}
-
-\TODOX{Ordering of terms}
 
 \subsection{Pattern unification}
 

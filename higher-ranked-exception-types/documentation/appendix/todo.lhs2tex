@@ -109,6 +109,18 @@
         \item Possibly useful lemma: $\ExnTy_1 = \ExnTy_2 \iff \ExnTy_1 \leq \ExnTy_2 \land \ExnTy_2 \leq \ExnTy_1$.
 
     \end{itemize}
+
+\subsubsection{Conservativeness}
+
+    \begin{itemize}
+
+        \item \TODO check all examples types against prototype
+
+        \item \TODO properly typeset example types
+
+        \item \TODO Skolemization and explicit existential quantification over unification variables?
+
+    \end{itemize}
     
 \subsubsection{Declarative type system}
 

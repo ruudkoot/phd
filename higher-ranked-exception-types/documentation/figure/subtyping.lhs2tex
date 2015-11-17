@@ -52,5 +52,5 @@
                          {\ExnForall{\ExnVar :: \Kind}{\ExnTy_2}}
              }
     \end{gather*}
-\caption{Exception types: subtyping relation ($\JudgeSubTy{\KiEnv}{\ExnTy_1}{\ExnTy_2}$)}
+\caption{Exception types: subtyping relation ($\JudgeSubTy{\KiEnv}{\ExnTy_1}{\ExnTy_2}$)}\label{figure-subtyping}
 \end{figure}
