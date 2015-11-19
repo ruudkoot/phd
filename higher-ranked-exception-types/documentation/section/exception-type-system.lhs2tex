@@ -83,24 +83,40 @@ Exception types are endowed with the usual subtyping relation for type-and-effec
 
 %include ../figure/subtyping.lhs2tex
 
-\subsection{\TODO{Conservativeness}}
+\subsection{Conservative types}
 
-\TODOX{Atomicity: |e_1 # e_2 -> ExnTyList e_1 e_2| is not useful, because no introspection}
+Any program that is typeable in the underlying type system should also have an exception type: the exception type system is a \emph{conservative extension} of the underlying type system. Like type systems for strictness or control flow analysis---and unlike type systems for information flow security or dimensional analysis---we do not want to reject any program that is well-typed in the underlying type system, but merely provide more insight into its behavior.
 
-Any program that is typeable in the underlying type system should also have an exception type: the exception type system is a conservative extension of the underlying type system. Like type systems for strictness or control flow analysis, and unlike type systems for information flow security or dimensional analysis, we do not want to reject any program that is well-typed in the underlying type system, but merely provide more insight into its behavior.
+If we furthermore want the type system to be modular---allowing type checking and inference to work on individual modules instead of whole programs---we cannot make any assumptions about the exception types of the arguments that are applied to any function, as the function may be called from outside the module with an argument that also comes from outside the module and which we cannot know anything about.
 
-If we furthermore want the type system to be modular---allowing type checking and inference to work on individual modules instead of whole programs---we cannot make any assumptions about the exception types of the arguments that are applied to any function, as the function may be called from outside the module with an argument that also comes from outside the module and which we cannot know anything about.\footnote{\citet{HoldermansHage} call such types \emph{fully flexible}.}
+For base and compound types that stand in an argument position their effect and any nested annotations must thus be able to be instantiated to any arbitrary exception set expression. They must thus be exception set variables that have been universally quantified.
 
-For base and compound types that stand in an argument position their effect and any nested annotations must thus be instantiatable to any arbitrary exception set expression. They must thus be exception set variables that have been universally quantified.
+\begin{definition}
+
+An exception set expression $\Exn$ is \emph{simple} if it is a single exception set variable $\ExnVar$, a \emph{pattern} if it fits Defintion~\ref{definition-pattern}, and always \emph{conservative}.
+We lift these three judgments to exception types $\ExnTy$ in the following manner:\footnote{\citet{HoldermansHage} call pattern types \emph{fully paramteric} and conservative types \emph{fully flexible}.}
+
+    \begin{itemize}
+    
+        \item If $\ExnTy = \ExnBool$ or $\ExnTy = \ExnInt$, then $\ExnTy$ is simple, a pattern and conservative.
+        
+        \item If $\ExnTy = \ExnTyList{\ExnTy^\prime}{\Exn}$, then $\ExnTy$ is simple, a pattern or conservative if $\ExnTy^\prime$ and $\Exn$ are respectively simple, patterns  or conservative.
+        
+        \item If $\ExnTy = \forall \overline{\ExnVar_i :: \kappa_i}.\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}$, then $\ExnTy$ is both simple and a pattern if $\ExnTy_1$ and $\Exn_1$ are simple and $\ExnTy_2$ and $\Exn_2$ are patterns; and $\ExnTy$ is conservative if $\ExnTy_1$ and $\Exn_1$ are simple and $\ExnTy_2$ and $\Exn_2$ are conservative.
+    
+    \end{itemize}
+
+\end{definition}
 
 \begin{example} The function |tail| can be applied to any, but may produce an additional exceptional value, because it is partial:
 \begin{code}
     tail :: forall e_1 e_2. ExnArr (ExnList ExnBool e_1) e_2 (ExnList ExnBool e_1) (e_2 # ExnConE) :&: EmptySet
 \end{code}
 
+%format conj (a) (b) = a "\land " b
 The conjunction operator |&&| can be applied to any two booleans, and---being strict in both arguments---will propagate the exceptional values
 \begin{code}
-    &&  :: forall e_1. ExnArr ExnBool e_1 ((forall e_2. ExnArr ExnBool e_2 ExnBool (e_1 # e_2))) EmptySet :&: EmptySet
+    conj  :: forall e_1. ExnArr ExnBool e_1 ((forall e_2. ExnArr ExnBool e_2 ExnBool (e_1 # e_2))) EmptySet :&: EmptySet
 \end{code}
 \end{example}
 
@@ -127,7 +143,7 @@ As |e_1| has been quantified over, only the exception set operator~|e_3| and the
 
 %format CrashB2B = "\TmCrash{\TyBool\to\TyBool}{\ExnLblE}"
 \begin{example}
-    Exception types are not invariant under $\eta$-conversion. The term
+    The semantics of the source language is not invariant under $\eta$-conversion in the presence of exceptional values---so neither are exception types. The term
     \savecolumns
     \begin{code}
         LAMBDA (x :: Bool) (CrashB2B x)  :: forall e : EXN. ExnTyArrT ExnBool e ExnBool ExnConE EmptySet
@@ -137,12 +153,12 @@ As |e_1| has been quantified over, only the exception set operator~|e_3| and the
     \begin{code}
         CrashB2B                         :: forall e : EXN. ExnTyArrT ExnBool e ExnBool EmptySet ExnConE
     \end{code}
-    We cannot observe a difference between these terms by applying them to an argument
+    They cannot be distinguished by applying them to an argument
     \begin{code}
         (LAMBDA (x :: Bool) (CrashB2B x))  True  :: ExnBool :&: ExnConE
         CrashB2B                           True  :: ExnBool :&: ExnConE
     \end{code}
-    but we can by forcing the closure
+    but they can be by forcing the closure
     \begin{code}
         (LAMBDA (x :: Bool) (CrashB2B x))  seq  True  :: ExnBool :&: EmptySet
         CrashB2B                           seq  True  :: ExnBool :&: ExnConE
@@ -220,7 +236,7 @@ Besides completing an underlying type $\Ty$ to a most general exception type, we
     \end{align*}
 \end{example}
 
-\subsection{\TODO Declarative exception type system}
+\subsection{Exception typing and elaboration}
 
 In Figure~\ref{figure-declarative-type-system} we give a declarative system for deriving exception typing judgments $\JudgeExnTy{\TyEnv}{\KiEnv}{\Tm}{\ExnTy}{\Exn}$.
 
@@ -239,23 +255,11 @@ These judgments work on an explicitly type language and for this purpose we exte
 \caption{Source language: extended syntax}\label{figure-source-language-syntax-extended}
 \end{figure}
 
-\subsection{\TODO Type elaboration system}
-
 As the source language is not explicitly typed, we also give a type elaboration system that given an implicitly typed term in the source language produces an explicitly typed term (Figure~\ref{type-elaboration-system}).
-
-\begin{itemize}
-
-    \item \TODOX{Exception type erasure relation}
-    
-    \item \TODOX{Least upper bounds (declaratively, as subtypes)}
-
-\end{itemize}
-
-\subsection{\TODO Type normalization}
 
 \subsection{Presentation of exception types}
 
-In their fully flexible form the location of the quantifiers is uniquely determined, so we can omit them from the type without introducing ambiguity. For example, the exception type of the |map| function from the introduction can be presented as:
+For conservative exception types the location of the quantifiers is uniquely determined, so we can omit them from the type without introducing ambiguity. For example, the exception type of the |map| function from the introduction can be presented as:
 \begin{code}
 (ThrowsArr (Throws alpha e_1) (Throws beta (e_2 e_1)) (e_3)) -> Throws ([Throws alpha e_4]) e_5 -> Throws ([Throws beta (e_2 e_4 # e_3)]) e_5
 \end{code}

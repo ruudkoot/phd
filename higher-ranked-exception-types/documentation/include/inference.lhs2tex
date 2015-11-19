@@ -11,7 +11,7 @@
 \newcommand{\Subcase}[1]{Subcase ``#1'': }
 
 % Environments
-\newcommand{\EmptyEnv}{\cdot}
+\newcommand{\EmptyEnv}{\emptyset}
 
 % Substitutions
 \newcommand{\Subst}[3]{#3[#1/#2]}

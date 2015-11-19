@@ -110,9 +110,11 @@
 
     \end{itemize}
 
-\subsubsection{Conservativeness}
+\subsubsection{Conservative types}
 
     \begin{itemize}
+
+        \item \TODOX{Atomicity: |e_1 # e_2 -> ExnTyList e_1 e_2| is not useful, because no introspection}
 
         \item \TODO check all examples types against prototype
 
@@ -123,6 +125,14 @@
     \end{itemize}
     
 \subsubsection{Declarative type system}
+
+    \begin{itemize}
+
+        \item \TODOX{Exception type erasure relation}
+        
+        \item \TODOX{Least upper bounds (declaratively, as subtypes)}
+
+    \end{itemize}
 
     \begin{itemize}
 

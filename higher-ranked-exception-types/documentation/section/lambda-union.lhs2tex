@@ -23,7 +23,7 @@ The $\LambdaUnion$-calculus is a simply typed $\lambda$-calculus extended with a
 
 \paragraph{Environments}
 \begin{align*}
-    \LuEnv \in \ClassLuEnv\ \ ::=\ \ \EmptyEnv \quad || \quad \LuEnv, \LuVar : \LuTy
+    \LuEnv \in \ClassLuEnv\ ::=\ \EmptyEnv \ || \ \LuEnv, \LuVar : \LuTy
 \end{align*}
 \caption{$\LambdaUnion$-calculus: syntax}
 \end{figure}
@@ -169,7 +169,7 @@ where $k_i$ can be a free or bound variable, or a singleton-set constant, but no
 
 \subsection{Pattern unification}
 
-\begin{definition}
+\begin{definition}\label{definition-pattern}
 A $\LambdaUnion$-term is called a \emph{pattern} if it is of the form $f(e_1, ..., e_n)$ where $f$ is a free variable and $e_1, ..., e_n$ are distinct bound variables.
 \end{definition}
 

@@ -106,7 +106,7 @@
              }
              {\JudgeExnTy{\TyEnv}
                          {\KiEnv}
-                         {\TmFix{\Tm}}
+                         {\TmFixExn{\TmVar}{\ExnTy}{\Exn}{\Tm}}
                          {\ExnTy}
                          {\Exn}
              }
