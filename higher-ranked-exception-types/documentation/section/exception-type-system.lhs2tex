@@ -87,14 +87,14 @@ Exception types are endowed with the usual subtyping relation for type-and-effec
 
 Any program that is typeable in the underlying type system should also have an exception type: the exception type system is a \emph{conservative extension} of the underlying type system. Like type systems for strictness or control flow analysis---and unlike type systems for information flow security or dimensional analysis---we do not want to reject any program that is well-typed in the underlying type system, but merely provide more insight into its behavior.
 
-If we furthermore want the type system to be modular---allowing type checking and inference to work on individual modules instead of whole programs---we cannot make any assumptions about the exception types of the arguments that are applied to any function, as the function may be called from outside the module with an argument that also comes from outside the module and which we cannot know anything about.
+If we furthermore want the type system to be modular---allowing type checking and inference to work on individual modules instead of whole programs---we cannot and need not make any assumptions about the exception types of the arguments that are applied to any function, as the function may be called from outside the module with an argument that also comes from outside the module and which we cannot know anything about.
 
-For base and compound types that stand in an argument position their effect and any nested annotations must thus be able to be instantiated to any arbitrary exception set expression. They must thus be exception set variables that have been universally quantified.
+These observations lead us the following definition of \emph{conservative exception types}:\footnote{\citet{HoldermansHage} call pattern types \emph{fully paramteric} and conservative types \emph{fully flexible}.}
 
 \begin{definition}
-
 An exception set expression $\Exn$ is \emph{simple} if it is a single exception set variable $\ExnVar$, a \emph{pattern} if it fits Defintion~\ref{definition-pattern}, and always \emph{conservative}.
-We lift these three judgments to exception types $\ExnTy$ in the following manner:\footnote{\citet{HoldermansHage} call pattern types \emph{fully paramteric} and conservative types \emph{fully flexible}.}
+
+We lift these three judgments to exception types $\ExnTy$ in the following manner:
 
     \begin{itemize}
     
@@ -105,8 +105,9 @@ We lift these three judgments to exception types $\ExnTy$ in the following manne
         \item If $\ExnTy = \forall \overline{\ExnVar_i :: \kappa_i}.\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}$, then $\ExnTy$ is both simple and a pattern if $\ExnTy_1$ and $\Exn_1$ are simple and $\ExnTy_2$ and $\Exn_2$ are patterns; and $\ExnTy$ is conservative if $\ExnTy_1$ and $\Exn_1$ are simple and $\ExnTy_2$ and $\Exn_2$ are conservative.
     
     \end{itemize}
-
 \end{definition}
+
+For base and compound types that stand in an argument position their effect and any nested annotations must thus be able to be instantiated to any arbitrary exception set expression. They must thus be exception set variables that have been universally quantified.
 
 \begin{example} The function |tail| can be applied to any, but may produce an additional exceptional value, because it is partial:
 \begin{code}
@@ -168,46 +169,30 @@ As |e_1| has been quantified over, only the exception set operator~|e_3| and the
 \subsection{Exception type completion}
 
 Given an underlying type $\Ty$ we can compute the most general exception type $\ExnTy$ that erases to $\Ty$. This is done using the type completion system in Figure~\ref{figure-type-completion}, defining a type completion relation $\JudgeComplete{\KindENV}{\Ty}{\ExnTy}{\Exn}{\KindENV'}$.
-
 A judgment $\JudgeComplete{\KindEnv{i}}{\Ty}{\ExnTy}{\Exn}{\KindEnv{j}}$ is read: if the kinded exception set variables $\KindEnv{i}$ are in scope, then the underlying type $\Ty$ is completed to the exception type $\ExnTy$ and effect $\Exn$, while introducing the kinded free exception set variables $\KindEnv{j}$.
+A completed exception type is always a pattern type.
 
-\begin{example}[\TODO] First-order, multiple arguments:
+\begin{example} The higher-order underlying type \[ \TyArr{\TyList{\TyArr{\TyBool}{\TyBool}}}{\TyArr{\TyList{\TyBool}}{\TyList{\TyBool}}} \] is completed to the pattern type
     \begin{align*}
-        &\vdash         && \TyArr{\TyList{\TyBool}}{\TyArr{\TyList{\TyBool}}{\TyList{\TyBool}}} \\
-        &:              &&    {\ExnTyForall{\ExnVar_1}{\KindEXN}{\ExnTyForall{\ExnVar_1^\prime}{\KindEXN}{\Throws{\ExnTyList{\ExnBool}{\ExnVar_1}}{\ExnVar_1^\prime}}}} \to \\
-        &               && \quad (\ExnTyForall{\ExnVar_2}{\KindEXN}{\ExnTyForall{\ExnVar_2^\prime}{\KindEXN}{\Throws{\ExnTyList{\ExnBool}{\ExnVar_2}}{\ExnVar_2^\prime}}} \to \\
-        &               && \quad\quad \Throws{\Throws{\ExnTyList{\ExnBool}{\ExnVar_3\ \ExnVar_1\ \ExnVar_1^\prime\ \ExnVar_2\ \ExnVar_2^\prime}}{\ExnVar_3^\prime\ \ExnVar_1\ \ExnVar_1^\prime\ \ExnVar_2\ \ExnVar_2^\prime})}{\ExnVar_4\ \ExnVar_1\ \ExnVar_1^\prime} \\
-        &\&             && \ExnVar_5 \\
-        &\triangleright && \ExnVar_3, \ExnVar_3^\prime :: \KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN,\\
-        &               && \ExnVar_4 :: \KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN
-        , \ExnVar_5 :: \KindEXN
+        &    {\ExnTyForall{\ExnVar_2}{\KindEXN}{\ExnTyForall{\ExnVar_2^\prime}{\KindEXN}{\ExnTyForall{\ExnVar_3}{\KindEXN\KindArr\KindEXN}{}}}} \\
+        & \quad \Throws{[\ExnTyForall{\ExnVar_1}{\KindEXN}{\Throws{\ExnBool}{\ExnVar_1}\xrightarrow{\ExnVar_2^\prime}\Throws{\ExnBool}{\ExnVar_3\ \ExnVar_1}}]}{\ExnVar_2} \to \\
+        & \quad\quad (\ExnTyForall{\ExnVar_5}{\KindEXN}{\ExnTyForall{\ExnVar_5^\prime}{\KindEXN}{\Throws{[\Throws{\ExnBool}{\ExnVar_5^\prime}]}{\ExnVar_5}}} \xrightarrow{\ExnVar_6\ \ExnVar_2\ \ExnVar_2^\prime\ \ExnVar_3} \\
+        & \quad\quad\quad\quad\quad\quad \Throws{\ExnTyList{\ExnBool}{\ExnVar_7^\prime\ \ExnVar_2\ \ExnVar_2^\prime\ \ExnVar_3\ \ExnVar_5\ \ExnVar_5^\prime}}{\ExnVar_7\ \ExnVar_2\ \ExnVar_2^\prime\ \ExnVar_3\ \ExnVar_5\ \ExnVar_5^\prime})
     \end{align*}
-
+    with effect $\ExnVar_4$, and while introducing free variables
     \begin{align*}
-        &\lambda x : \TyBool . x\ \mathbf{seq}\ \lambda y : \TyBool. y \\
-        &\quad : \ExnTyForall{\ExnVar_1}{\KindEXN}{\ExnTyForall{\ExnVar_2}{\KindEXN}{\Throws{\ExnBool}{\ExnVar_1}\xrightarrow{\ExnEmpty}\Throws{\ExnBool}{\ExnVar_2}\xrightarrow{\ExnVar_1}\Throws{\ExnBool}{\ExnVar_2}}}
+        \ExnVar_4  &:: \KindEXN, \\
+        \ExnVar_6 &:: \KindEXN\KindArr\KindEXN\KindArr(\KindEXN\KindArr\KindEXN)\KindArr\KindEXN, \\
+        \ExnVar_7, \ExnVar_7^\prime &:: \KindEXN\KindArr\KindEXN\KindArr(\KindEXN\KindArr\KindEXN)\KindArr\KindEXN\KindArr\KindEXN\KindArr\KindEXN
     \end{align*}
 
-    Higher-order:
-    \begin{align*}
-        &\vdash         && \TyArr{(\TyArr{\TyList{\TyBool}}{\TyList{\TyBool}})}{\TyList{\TyBool}} \\
-        &:              && \ExnTyForall{\ExnVar_2}{\KindEXN}{\ExnTyForall{\ExnVar_3,\ExnVar_3^\prime}{\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN}{}} \\
-        &               && \quad \Throws{(\ExnTyForall{\ExnVar_1,\ExnVar_1^\prime}{\KindEXN}{\Throws{\ExnTyList{\ExnBool}{\ExnVar_1}}{\ExnVar_1^\prime} \to \\
-        &               && \quad\quad\quad\quad\quad\quad\quad\quad\quad \Throws{\ExnTyList{\ExnBool}{\ExnVar_3\ \ExnVar_1\ \ExnVar_1^\prime}}{\ExnVar_3^\prime\ \ExnVar_1\ \ExnVar_1^\prime}})}{\ExnVar_2} \to \\
-        &               && \quad\quad \Throws{\ExnTyList{\ExnBool}{\ExnVar_4\ \ExnVar_2\ \ExnVar_3\ \ExnVar_3^\prime}}{\ExnVar_4^\prime\ \ExnVar_2\ \ExnVar_3\ \ExnVar_3^\prime} \\
-        &\&             && \ExnVar_5\\
-        &\triangleright && \ExnVar_4, \ExnVar_4^\prime :: \KindEXN\!\KindArr\!(\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN)\!\KindArr \\
-        &               && \quad\quad\quad\quad\quad\quad\quad\quad (\KindEXN\!\KindArr\!\KindEXN\!\KindArr\!\KindEXN)\!\KindArr\!\KindEXN, \\
-        &               && \ExnVar_5 :: \KindEXN
-    \end{align*}
-    
-    Functions can also be contained in other compound types, such as lists:
-    \begin{align*}
-        &\vdash         && \TyList{\TyArr{\TyBool}{\TyBool}} \\
-        &:              && [\ExnTyForall{\ExnVar_1}{\KindEXN}{\Throws{\ExnBool}{\ExnVar_1}\xrightarrow{\ExnVar_2}\Throws{\ExnBool}{\ExnVar_3\ \ExnVar_1}}] \\
-        &\&             && \ExnVar_4\\
-        &\triangleright && \ExnVar_2 :: \KindEXN, \ExnVar_3 :: \KindEXN\KindArr\KindEXN, \ExnVar_4 :: \KindEXN
-    \end{align*}
+    another
+%format fty = "\ExnTyForall{\ExnVar_1,\ExnVar_2}{\KindEXN}{\Throws{\ExnBool}{\ExnVar_1}\xrightarrow{\ExnEmpty}\Throws{\ExnBool}{\ExnVar_2}\xrightarrow{\ExnVar_1}\Throws{\ExnBool}{\ExnVar_2}}"
+%format ftm = "\lambda x : \TyBool . x\ \mathbf{seq}\ \lambda y : \TyBool. y"
+    \begin{code}
+        f  :  fty
+        f  =  ftm
+    \end{code}
 \end{example}
 
 \subsection{Least exception types}
@@ -215,24 +200,11 @@ A judgment $\JudgeComplete{\KindEnv{i}}{\Ty}{\ExnTy}{\Exn}{\KindEnv{j}}$ is read
 Given an effect kind $\overline{\kappa_i\Rightarrow}\KindEXN$, denote by $\emptyset_{\overline{\kappa_i\Rightarrow}\KindEXN}$ the effect $\lambda \overline{e_i :: \kappa_i}. \emptyset$.
 Besides completing an underlying type $\Ty$ to a most general exception type, we also want to compute a least exception type~$\bot_\Ty$. This can be accomplished by first completing the type $\Ty$ to the most general exception type, and then substituting $\emptyset_{\kappa_j}$ for all newly introduced exception set variables $\KindEnv{j}$.
 
-\begin{example}[\TODO] First-order, multiple arguments:
+\begin{example} The least exception type \[ \bot_{\TyArr{\TyList{\TyArr{\TyBool}{\TyBool}}}{\TyArr{\TyList{\TyBool}}{\TyList{\TyBool}}}} \] is the conservative type
     \begin{align*}
-        &\bot_{\TyList{\TyBool}\to\TyList{\TyBool}\to\TyList{\TyBool}} \\
-        &\quad= \ExnTyForall{\ExnVar_1,\ExnVar_1^\prime}{\KindEXN}{\Throws{\ExnTyList{\ExnBool}{\ExnVar_1}}{\ExnVar_1^\prime}\to} \\
-        &\quad\quad\quad\quad\ExnTyForall{\ExnVar_2,\ExnVar_2^\prime}{\KindEXN}{\Throws{\ExnTyList{\ExnBool}{\ExnVar_2}}{\ExnVar_2^\prime}\xrightarrow{\ExnEmpty} \Throws{\ExnTyList{\ExnBool}{\ExnEmpty}}{\ExnEmpty}}
-    \end{align*}
-    
-    Higher-order:
-    \begin{align*}
-        &\bot_{(\TyList{\TyBool}\to\TyList{\TyBool})\to\TyList{\TyBool}} \\
-        &\quad= \ExnTyForall{\ExnVar_2}{\KindEXN}{\ExnTyForall{\ExnVar_3,\ExnVar_3^\prime}{\KindEXN\KindArr\KindEXN\KindArr\KindEXN}} \\
-        & \quad\quad\quad\quad (\ExnTyForall{\ExnVar_1,\ExnVar_1^\prime}{\KindEXN}{\Throws{\ExnTyList{\ExnBool}{\ExnVar_1}}{\ExnVar_1^\prime}\xrightarrow{\ExnVar_2} \\
-        & \quad\quad\quad\quad\quad\quad\quad\quad \Throws{\ExnTyList{\ExnBool}{\ExnVar_3\ \ExnVar_1\ \ExnVar_1^\prime}}{\ExnVar_3^\prime\ \ExnVar_1\ \ExnVar_1^\prime}}) \to \Throws{\ExnTyList{\ExnBool}{\ExnEmpty}}{\ExnEmpty}
-    \end{align*}
-    
-    List:
-    \begin{align*}
-        &\bot_{\TyList{\TyBool\to\TyBool}} = [\ExnTyForall{\ExnVar_1}{\KindEXN}{\Throws{\ExnBool}{\ExnVar_1}\xrightarrow{\ExnEmpty}\Throws{\ExnBool}{\ExnEmpty}}]
+        &    {\ExnTyForall{\ExnVar_2}{\KindEXN}{\ExnTyForall{\ExnVar_2^\prime}{\KindEXN}{\ExnTyForall{\ExnVar_3}{\KindEXN\KindArr\KindEXN}{}}}} \\
+        & \quad \Throws{[\ExnTyForall{\ExnVar_1}{\KindEXN}{\Throws{\ExnBool}{\ExnVar_1}\xrightarrow{\ExnVar_2^\prime}\Throws{\ExnBool}{\ExnVar_3\ \ExnVar_1}}]}{\ExnVar_2} \to \\
+        & \quad\quad (\ExnTyForall{\ExnVar_5}{\KindEXN}{\ExnTyForall{\ExnVar_5^\prime}{\KindEXN}{\Throws{[\Throws{\ExnBool}{\ExnVar_5^\prime}]}{\ExnVar_5}}} \xrightarrow{\ExnEmpty} \Throws{\ExnTyList{\ExnBool}{\ExnEmpty}}{\ExnEmpty})
     \end{align*}
 \end{example}
 
