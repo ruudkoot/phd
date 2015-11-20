@@ -1,5 +1,12 @@
 \begin{figure}[h]
     \begin{gather*}
+        \Rule{S-Forall}
+             {\JudgeSubTy{\KiEnv, \ExnVar :: \Kind}{\ExnTy_1}{\ExnTy_2}}
+             {\JudgeSubTy{\KiEnv}
+                         {\ExnForall{\ExnVar :: \Kind}{\ExnTy_1}}
+                         {\ExnForall{\ExnVar :: \Kind}{\ExnTy_2}}
+             }
+        \VER
         \Rule{S-Refl}
              {}
              {\JudgeSubTy{\KiEnv}{\ExnTy}{\ExnTy}}
@@ -11,30 +18,6 @@
              }
              {\JudgeSubTy{\KiEnv}{\ExnTy_1}{\ExnTy_3}}
         \\[1.5ex]
-        \Rule{S-Bool}
-             {}
-             {\JudgeSubTy{\KiEnv}{\ExnBool}{\ExnBool}}
-        \quad
-        \Rule{S-Int}
-             {}
-             {\JudgeSubTy{\KiEnv}{\ExnInt}{\ExnInt}}
-        \\[1.5ex]
-        \Rule{S-Arr}
-             {\begin{gathered}
-              \JudgeSubTy{\KiEnv}{\ExnTy_1^\prime}{\ExnTy_1}
-                \quad
-              \JudgeSubExn{\KiEnv}{\Exn_1^\prime}{\Exn_1}
-                \\
-              \JudgeSubTy{\KiEnv}{\ExnTy_2}{\ExnTy_2^\prime}
-                \quad
-              \JudgeSubExn{\KiEnv}{\Exn_2}{\Exn_2^\prime}
-              \end{gathered}
-             }
-             {\JudgeSubTy{\KiEnv}
-                         {\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}}
-                         {\ExnTyArr{\ExnTy_1^\prime}{\Exn_1^\prime}{\ExnTy_2^\prime}{\Exn_2^\prime}}
-             }
-        \\[1.5ex]
         \Rule{S-List}
              {\JudgeSubTy{\KiEnv}{\ExnTy}{\ExnTy^\prime}
                 \quad
@@ -44,12 +27,29 @@
                          {\ExnTyList{\ExnTy}{\Exn}}
                          {\ExnTyList{\ExnTy^\prime}{\Exn^\prime}}
              }
-        \VER
-        \Rule{S-Forall}
-             {\JudgeSubTy{\KiEnv, \ExnVar :: \Kind}{\ExnTy_1}{\ExnTy_2}}
+        \\[1.5ex]
+        %\Rule{S-Bool}
+        %     {}
+        %     {\JudgeSubTy{\KiEnv}{\ExnBool}{\ExnBool}}
+        %\quad
+        %\Rule{S-Int}
+        %     {}
+        %     {\JudgeSubTy{\KiEnv}{\ExnInt}{\ExnInt}}
+        %\\[1.5ex]
+        \Rule{S-Arr}
+             {\begin{gathered}
+              \JudgeSubTy{\KiEnv}{\ExnTy_1^\prime}{\ExnTy_1}
+                \ \ 
+              \JudgeSubExn{\KiEnv}{\Exn_1^\prime}{\Exn_1}
+                \ \ 
+              \JudgeSubTy{\KiEnv}{\ExnTy_2}{\ExnTy_2^\prime}
+                \ \ 
+              \JudgeSubExn{\KiEnv}{\Exn_2}{\Exn_2^\prime}
+              \end{gathered}
+             }
              {\JudgeSubTy{\KiEnv}
-                         {\ExnForall{\ExnVar :: \Kind}{\ExnTy_1}}
-                         {\ExnForall{\ExnVar :: \Kind}{\ExnTy_2}}
+                         {\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}}
+                         {\ExnTyArr{\ExnTy_1^\prime}{\Exn_1^\prime}{\ExnTy_2^\prime}{\Exn_2^\prime}}
              }
     \end{gather*}
 \caption{Exception types: subtyping relation ($\JudgeSubTy{\KiEnv}{\ExnTy_1}{\ExnTy_2}$)}\label{figure-subtyping}

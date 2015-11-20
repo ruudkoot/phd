@@ -1,7 +1,3 @@
-%include ../figure/underlying-type-system.lhs2tex
-%include ../figure/operational-semantics.lhs2tex
-%include ../figure/type-completion.lhs2tex
-
 \section{Source language}\label{section-source-language}
 
 The type-and-effect system is applicable to a simple non-strict functional language that supports Boolean, integer and list data types, as well as general recursion.

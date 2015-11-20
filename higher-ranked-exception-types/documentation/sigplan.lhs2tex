@@ -71,15 +71,24 @@
 \titlebanner{banner above paper title}        % These are ignored unless
 \preprintfooter{short description of paper}   % 'preprint' option specified.
 
-\title{Higher-ranked Exception Types\titlenote{This material is based upon work supported by the Netherlands Organisation for Scientific Research (\textsc{nwo}) under the project \emph{Higher-ranked Polyvariance Explored} (612.001.120).}}
+%\title{Higher-ranked Exception Types\titlenote{This material is based upon work supported by the Netherlands Organisation for Scientific Research (\textsc{nwo}) under the project \emph{Higher-ranked Polyvariance Explored} (612.001.120).}}
+\title{Higher-ranked Exception Types\titlenote{This material may or may not be based upon work supported by some shady organization under a cryptic project title with a number no one cares about. We will categorically deny everything.}}
 %\subtitle{Subtitle Text, if any}
 
-\authorinfo{Ruud Koot}
-           {Utrecht University}
-           {inbox@@ruudkoot.nl}
-\authorinfo{Jurriaan Hage}
-           {Utrecht University}
-           {j.hage@@uu.nl}
+%\authorinfo{Ruud Koot}
+%           {Utrecht University}
+%           {inbox@@ruudkoot.nl}
+%\authorinfo{Jurriaan Hage}
+%           {Utrecht University}
+%           {j.hage@@uu.nl}
+
+\authorinfo{Jane Doe}
+           {ACME University}
+           {jane.doe@@acm.org}
+\authorinfo{John Doe}
+           {ACME University}
+           {john.doe@@acm.org}
+
 
 \maketitle
 
@@ -104,6 +113,9 @@ exceptions, higher-ranked polymorphism, polymorphic recursion, type-and-effect s
 
 %include section/introduction.lhs2tex
 %include section/lambda-union.lhs2tex
+%include figure/underlying-type-system.lhs2tex
+%include figure/operational-semantics.lhs2tex
+%include figure/type-completion.lhs2tex
 %include section/source-language.lhs2tex
 %include section/exception-type-system.lhs2tex
 \clearpage\clearpage
@@ -135,6 +147,8 @@ exceptions, higher-ranked polymorphism, polymorphic recursion, type-and-effect s
 
 %END sigplanconf-template.tex
 
+\end{document}
+
 \clearpage
 
 \appendix
@@ -144,6 +158,3 @@ exceptions, higher-ranked polymorphism, polymorphic recursion, type-and-effect s
 \clearpage
 
 %include appendix/todo.lhs2tex
-
-
-\end{document}

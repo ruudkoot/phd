@@ -55,7 +55,7 @@ When we apply |map| to |const bottom_E| we unify the exception type of the forma
 \begin{code}
 map (const bottom_E)  :: forall alpha beta e_4 e_5. ThrowsArr (Throws ([Throws alpha e_4]) e_5) (Throws ([Throws beta (e_E)]) e_5) noexn
 \end{code}
-In other words, mapping the constant function with the exceptional value |bottom_E| as its range over a list discards all existing exceptional values from the list and produce only non-exceptional values or the exceptional value |bottom_E| as elements of the lists.
+In other words, mapping the constant function with the exceptional value |bottom_E| as its range over a list discards all existing exceptional values from the list and produces only non-exceptional values or the exceptional value |bottom_E| as elements of the list.
 
 \subsection{Overview}
 In Section~\ref{section-lambda-union} we introduce the $\LambdaUnion$-calculus, a simply typed $\lambda$-calculus embellished with an associative, commutative, idempotent and unit (\ACIone) structure. The $\LambdaUnion$-calculus forms the language of effects in the type-and-effect system.
