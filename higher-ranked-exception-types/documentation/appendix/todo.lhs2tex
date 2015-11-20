@@ -60,6 +60,8 @@
 
     \begin{itemize}
     
+        \item \TODOX{We can make union only work on base types (as we not longer \emph{need} to distribute unions over applications)?}
+
         \item \TODOX{Prove more Lemmas about reduction rules (esp. $\gamma_1$)}
         
         \item Counterexample for the widening rule.
