@@ -6,8 +6,8 @@
 Unlike the system in this paper, the annotations on function arguments will no longer be of the simple form (patterns) required for the straightforward matching step in the type inference algorithm. Instead, we suspect we have to solve a higher-order (equational) unification problem, which is only semi-decidable. \citet{Snyder:1990:HOE:648229.752474} and \citet{NipkowQian1991} do give us semi-algorithms for solving such problems (although---at least in the latter approach---the equational theory is assumed to be regular, which the theory of Abelian groups is not).
     
 \paragraph{Can we further improve the precision of exception types?}
-%In previous work \cite{Koot:2015:TEA:2678015.2682542} we argued
-It is argued by \citet{Koot:2015:TEA:2678015.2682542}
+In previous work \cite{Koot:2015:TEA:2678015.2682542} we argued
+%It is argued by \citet{Koot:2015:TEA:2678015.2682542}
 that an accurate exception typing system for non-strict languages should also take the data flow of the program into account, as many exceptions that can be raised in non-strict languages are caused by incomplete case-analyses during pattern-matching. The canonical example is the |risers| function---which splits a list into monotonically increasing subsegments; for example, |risers [1, 3, 5, 1, 2]| evaluates to |[[1, 3, 5], [1, 2]]|---by \citet{Mitchell:2008:PBE:1411286.1411293}:
     
     \begin{code}
@@ -26,9 +26,9 @@ The inference algorithm in Figure~\ref{figure-type-inference-algorithm} assigns 
     \end{code}
 where |ExnLblE| is the label of the exception raised when the pattern-match in the |where|-clause fails.\footnote{This exception is left implicit in the above program, but becomes explicit when the code is desugared into our core language.} However, the pattern-match happens on the result of the recursive call |risers (x_2 : xs)|. When |risers| is given a non-empty list (such as |x_2 : xs|) as an argument, it always returns a non-empty list as its result. The pattern-match can thus never fail, and the exception labelled |ExnLblE| can thus never be raised.
 
-%In our previous work we demonstrated
-\citet{Koot:2015:TEA:2678015.2682542} demonstrate
+In our previous work we demonstrated
+%\citet{Koot:2015:TEA:2678015.2682542} demonstrate
 how this exception can be elided by having the exception flow depend on the data flow. The $\LambdaUnion$-calculus terms that form the effect annotations cannot express this dependence, however.
-%In our earlier work we used
-\citet{Koot:2015:TEA:2678015.2682542} use
+In our earlier work we used
+%\citet{Koot:2015:TEA:2678015.2682542} use
 a slightly ad hoc form of conditional constraints to model this dependence. We now believe extending a $\lambda$-calculus with an equational theory of Boolean rings may form the basis of a more principled approach. Booleans rings have already been successfully used to design type systems for strictness analysis \cite{Wright}, records \cite{LIX-RR-96-09} and exception tracking \cite{Benton:2007:SEA:1190315.1190320}.

@@ -71,23 +71,23 @@
 \titlebanner{banner above paper title}        % These are ignored unless
 \preprintfooter{short description of paper}   % 'preprint' option specified.
 
-%\title{Higher-ranked Exception Types\titlenote{This material is based upon work supported by the Netherlands Organisation for Scientific Research (\textsc{nwo}) under the project \emph{Higher-ranked Polyvariance Explored} (612.001.120).}}
-\title{Higher-ranked Exception Types\titlenote{This material may or may not be based upon work supported by some shady organization under a cryptic project title with a number no one cares about. We will categorically deny everything.}}
+\title{Higher-ranked Exception Types\titlenote{This material is based upon work supported by the Netherlands Organisation for Scientific Research (\textsc{nwo}) under the project \emph{Higher-ranked Polyvariance Explored} (612.001.120).}}
+%\title{Higher-ranked Exception Types\titlenote{This material may or may not be based upon work supported by some shady organization under a cryptic project title with a number no one cares about. We will categorically deny everything.}}
 %\subtitle{Subtitle Text, if any}
 
-%\authorinfo{Ruud Koot}
-%           {Utrecht University}
-%           {inbox@@ruudkoot.nl}
-%\authorinfo{Jurriaan Hage}
-%           {Utrecht University}
-%           {j.hage@@uu.nl}
+\authorinfo{Ruud Koot}
+           {Utrecht University}
+           {inbox@@ruudkoot.nl}
+\authorinfo{Jurriaan Hage}
+           {Utrecht University}
+           {j.hage@@uu.nl}
 
-\authorinfo{Jane Doe}
-           {ACME University}
-           {jane.doe@@acm.org}
-\authorinfo{John Doe}
-           {ACME University}
-           {john.doe@@acm.org}
+%\authorinfo{Jane Doe}
+%           {ACME University}
+%           {jane.doe@@acm.org}
+%\authorinfo{John Doe}
+%           {ACME University}
+%           {john.doe@@acm.org}
 
 
 \maketitle
