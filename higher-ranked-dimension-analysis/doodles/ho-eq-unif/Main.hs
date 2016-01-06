@@ -111,13 +111,23 @@ decomposition _env (A xs a us, A xs' a' vs) s
 
 variableElimination :: (Eq b, Eq s) => UnificationRule b s
 variableElimination env (u,v) s
-    = variableElimination' (u,v) s ||| variableElimination' (v,u) s
-  where variableElimination' (A xs (Free f) us, v) s
+    = variableElimination' (u,v) ||| variableElimination' (v,u)
+  where variableElimination' (A xs (Free f) us, v)
             | us == map (bound xs) [0 .. length xs - 1] && f `notElem` fv v
                 = let subst = substForFree env v f
                    in Just $ (u,v) : map (both (applySubstAndReduce subst)) s
             | otherwise = Nothing
 
+imitation :: (Eq b, Eq s) => UnificationRule b s
+imitation env (u,v) s
+    = imitation' (u,v) ||| imitation' (v,u)
+  where imitation' (A xs (Free f) us, A xs' (Free  g) vs) | f /= g
+            = undefined
+        imitation' (A xs (Free f) us, A xs' (Const c) vs)
+            = undefined
+        imitation _ = Nothing
+
+imitationBinding = undefined
 
 -- | Higher-order dimension types | --------------------------------------------
 
