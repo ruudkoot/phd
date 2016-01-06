@@ -2,6 +2,9 @@ module Main where
 
 -- | Utility | ----------------------------------------------------------------
 
+both :: (a -> b) -> (a, a) -> (b, b)
+both f (x, y) = (f x, f y)
+
 (|||) :: Maybe a -> Maybe a -> Maybe a
 Nothing ||| Nothing = Nothing
 Just x  ||| Nothing = Just x
@@ -64,6 +67,33 @@ substForFree env v f = map (free env) [0 .. f - 1] ++ [v] ++ map (free env) [f +
 type TermPair   base sig = (AlgebraicTerm base sig, AlgebraicTerm base sig)
 type TermSystem base sig = [TermPair base sig]
 
+-- * Substitution and reduction * ----------------------------------------------
+
+applySubstAndReduce :: Subst base sig -> AlgebraicTerm base sig -> AlgebraicTerm base sig
+applySubstAndReduce subst (A xs (Free f) ys)
+    = let A xs' a ys' = subst !! f
+       in reduce xs xs' a ys' ys
+applySubstAndReduce subst u
+    = u
+
+bindAndReduce :: Subst base sig -> AlgebraicTerm base sig -> AlgebraicTerm base sig
+bindAndReduce zs (A xs (Bound b) ys)
+    = let A xs' a ys' = zs !! b
+       in reduce xs xs' a ys' ys
+bindAndReduce zs u
+    = u
+    
+reduce :: Env base -> Env base -> Atom sig -> Subst base sig -> Subst base sig -> AlgebraicTerm base sig
+reduce xs xs' a ys' ys
+    | length xs' == length ys
+        = let ys'' = map (bindAndReduce ys) ys'
+           in case a of
+                Bound b -> let A xsB aB ysB = ys !! b
+                            in reduce xs xsB aB ysB ys''
+                Free  f -> A xs (Free  f) ys''
+                Const c -> A xs (Const c) ys''
+    | otherwise = error "reduce: length xs' /= length ys"
+
 
 -- * Unification rules * -------------------------------------------------------
 
@@ -85,13 +115,9 @@ variableElimination env (u,v) s
   where variableElimination' (A xs (Free f) us, v) s
             | us == map (bound xs) [0 .. length xs - 1] && f `notElem` fv v
                 = let subst = substForFree env v f
-                   in Just $ (u,v) : map (normalize . applySubst subst) s
+                   in Just $ (u,v) : map (both (applySubstAndReduce subst)) s
             | otherwise = Nothing
-                   
-normalize = undefined
 
--- applySubst :: Subst base sig
-applySubst = undefined
 
 -- | Higher-order dimension types | --------------------------------------------
 
