@@ -1,5 +1,8 @@
 module Main where
 
+import Control.Monad
+import Control.Monad.State
+
 -- | Utility | ----------------------------------------------------------------
 
 both :: (a -> b) -> (a, a) -> (b, b)
@@ -25,6 +28,8 @@ data SimpleType base
 
 base :: base -> SimpleType base
 base = ([] :->)
+
+infix 4 :->
 
 fo2simple :: FirstOrderType base -> SimpleType base
 fo2simple (bs :=> b) = map base bs :-> b
@@ -120,14 +125,36 @@ variableElimination env (u,v) s
 
 imitation :: (Eq b, Eq s) => UnificationRule b s
 imitation env (u,v) s
-    = imitation' (u,v) ||| imitation' (v,u)
+    = imitation' (u,v) ||| imitation' (v,u)     -- FIXME: can both succeed
   where imitation' (A xs (Free f) us, A xs' (Free  g) vs) | f /= g
             = undefined
         imitation' (A xs (Free f) us, A xs' (Const c) vs)
             = undefined
         imitation _ = Nothing
 
-imitationBinding = undefined
+typeOf :: Env base -> Atom sig -> SimpleType base
+typeOf env (Bound b) = env !! b
+
+fresh :: SimpleType base -> State (Env b) (Atom sig)
+fresh = undefined
+
+partialBinding :: (Eq b, Eq s) =>
+                    SimpleType b -> Atom s -> State (Env b) (AlgebraicTerm b s)
+partialBinding (as :-> b) a = do
+    let (cs :-> b') = typeOf as a
+    if b /= b' then
+        error "partialBinding: b /= b'"
+    else do
+    
+        let generalFlexibleTerm (fs :-> c') = do
+                h <- fresh (as ++ fs :-> c')
+                return (A fs h (map (bound fs) [length fs .. length fs + length as - 1]
+                                    ++ map (bound fs) [0 .. length fs - 1]))
+
+        gfts <- mapM generalFlexibleTerm cs
+        return (A as a gfts)
+        
+generalFlexibleTerm = undefined
 
 -- | Higher-order dimension types | --------------------------------------------
 
