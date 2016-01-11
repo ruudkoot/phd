@@ -1,3 +1,6 @@
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+
 module Main where
 
 import Control.Monad
@@ -33,6 +36,9 @@ infix 4 :->
 
 fo2simple :: FirstOrderType base -> SimpleType base
 fo2simple (bs :=> b) = map base bs :-> b
+
+class (Eq sig, Eq base) => Sig base sig | sig -> base where
+    signature :: sig -> FirstOrderType base
 
 data Atom sig
     = Bound Int     -- bound variables
@@ -100,21 +106,58 @@ reduce xs xs' a ys' ys
     | otherwise = error "reduce: length xs' /= length ys"
 
 
+-- * Partial bindings * --------------------------------------------------------
+
+(x:xs) !!! 0 = x
+[]     !!! _ = error "!!!"
+(x:xs) !!! n = xs !!! (n-1)
+
+typeOf :: Sig base sig => Env base -> Atom sig -> State (Env base) (SimpleType base)
+typeOf env (Bound b) = return $ env !! b
+typeOf _   (Free  f) = do
+    env <- get
+    return $ env !! f
+typeOf _   (Const c) = return $ fo2simple (signature c)
+
+freshAtom :: SimpleType base -> State (Env base) (Atom sig)
+freshAtom t = do
+    env <- get
+    put (env ++ [t])
+    return (Free (length env))
+
+partialBinding :: Sig b s => SimpleType b -> Atom s -> State (Env b) (AlgebraicTerm b s)
+partialBinding (as :-> b) a = do
+    cs :-> b' <- typeOf as a
+    if b /= b' then
+        error "partialBinding: b /= b'"
+    else do
+
+        let generalFlexibleTerm (fs :-> c') = do
+                h <- freshAtom (as ++ fs :-> c')
+                return $
+                    A fs h $ map (bound $ fs ++ as) $
+                                [length fs .. length fs + length as - 1]
+                                    ++ [0 .. length fs - 1]
+
+        gfts <- mapM generalFlexibleTerm cs
+        return (A as a gfts)
+
+
 -- * Unification rules * -------------------------------------------------------
 
 type UnificationRule b s = Env b -> TermPair b s -> TermSystem b s -> Maybe (TermSystem b s)
 
-trivial :: (Eq b, Eq s) => UnificationRule b s
+trivial :: Sig b s => UnificationRule b s
 trivial _env (u, u') s
     | u == u'   = Just s
     | otherwise = Nothing
 
-decomposition :: (Eq b, Eq s) => UnificationRule b s
+decomposition :: Sig b s => UnificationRule b s
 decomposition _env (A xs a us, A xs' a' vs) s
     | xs == xs' && a == a' = Just $ zip us vs ++ s
     | otherwise            = Nothing
 
-variableElimination :: (Eq b, Eq s) => UnificationRule b s
+variableElimination :: Sig b s => UnificationRule b s
 variableElimination env (u,v) s
     = variableElimination' (u,v) ||| variableElimination' (v,u)
   where variableElimination' (A xs (Free f) us, v)
@@ -123,7 +166,7 @@ variableElimination env (u,v) s
                    in Just $ (u,v) : map (both (applySubstAndReduce subst)) s
             | otherwise = Nothing
 
-imitation :: (Eq b, Eq s) => UnificationRule b s
+imitation :: Sig b s => UnificationRule b s
 imitation env (u,v) s
     = imitation' (u,v) ||| imitation' (v,u)     -- FIXME: can both succeed
   where imitation' (A xs (Free f) us, A xs' (Free  g) vs) | f /= g
@@ -132,40 +175,18 @@ imitation env (u,v) s
             = undefined
         imitation _ = Nothing
 
-typeOf :: Env base -> Atom sig -> SimpleType base
-typeOf env (Bound b) = env !! b
-
-fresh :: SimpleType base -> State (Env b) (Atom sig)
-fresh = undefined
-
-partialBinding :: (Eq b, Eq s) =>
-                    SimpleType b -> Atom s -> State (Env b) (AlgebraicTerm b s)
-partialBinding (as :-> b) a = do
-    let (cs :-> b') = typeOf as a
-    if b /= b' then
-        error "partialBinding: b /= b'"
-    else do
-    
-        let generalFlexibleTerm (fs :-> c') = do
-                h <- fresh (as ++ fs :-> c')
-                return (A fs h (map (bound fs) [length fs .. length fs + length as - 1]
-                                    ++ map (bound fs) [0 .. length fs - 1]))
-
-        gfts <- mapM generalFlexibleTerm cs
-        return (A as a gfts)
-        
-generalFlexibleTerm = undefined
 
 -- | Higher-order dimension types | --------------------------------------------
 
-data Base = Real
+data Base
+    = Real
   deriving (Eq, Show)
   
 data Signature
     = Mul
     | Inv
   deriving (Eq, Show)
-  
-signature :: Signature -> FirstOrderType Base
-signature Mul = [Real, Real] :=> Real
-signature Inv = [Real]       :=> Real
+
+instance Sig Base Signature where
+    signature Mul = [Real, Real] :=> Real
+    signature Inv = [Real]       :=> Real
