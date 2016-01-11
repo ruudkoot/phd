@@ -11,11 +11,25 @@ import Control.Monad.State
 both :: (a -> b) -> (a, a) -> (b, b)
 both f (x, y) = (f x, f y)
 
-(|||) :: Maybe a -> Maybe a -> Maybe a
-Nothing ||| Nothing = Nothing
-Just x  ||| Nothing = Just x
-Nothing ||| Just y  = Just y
-Just _  ||| Just _  = error "|||"
+(|||) :: State s (Maybe a) -> State s (Maybe a) -> State s (Maybe a)
+x ||| y = do x' <- x
+             case x' of
+                Nothing -> do y' <- y
+                              case y' of
+                                Nothing -> return Nothing
+                                justY   -> return justY
+                justX   -> do y' <- y
+                              case y' of
+                                Nothing -> return justX
+                                justY   -> error "|||"
+
+
+-- * Debugging * ---------------------------------------------------------------
+
+(x:xs) !!! 0 = x
+[]     !!! _ = error "!!!"
+(x:xs) !!! n = xs !!! (n-1)
+
 
 -- | General framework | -------------------------------------------------------
 
@@ -37,13 +51,13 @@ infix 4 :->
 fo2simple :: FirstOrderType base -> SimpleType base
 fo2simple (bs :=> b) = map base bs :-> b
 
-class (Eq sig, Eq base) => Sig base sig | sig -> base where
+class (Eq base, Eq sig) => Sig base sig | sig -> base where
     signature :: sig -> FirstOrderType base
 
 data Atom sig
     = Bound Int     -- bound variables
     | Free  Int     -- free variables
-    | Const sig   -- function constants
+    | Const sig     -- function constants
   deriving (Eq, Show)
   
 -- NOTE: does not enforce function constants to be first-order
@@ -78,6 +92,7 @@ substForFree env v f = map (free env) [0 .. f - 1] ++ [v] ++ map (free env) [f +
 type TermPair   base sig = (AlgebraicTerm base sig, AlgebraicTerm base sig)
 type TermSystem base sig = [TermPair base sig]
 
+
 -- * Substitution and reduction * ----------------------------------------------
 
 applySubstAndReduce :: Subst base sig -> AlgebraicTerm base sig -> AlgebraicTerm base sig
@@ -108,10 +123,6 @@ reduce xs xs' a ys' ys
 
 -- * Partial bindings * --------------------------------------------------------
 
-(x:xs) !!! 0 = x
-[]     !!! _ = error "!!!"
-(x:xs) !!! n = xs !!! (n-1)
-
 typeOf :: Sig base sig => Env base -> Atom sig -> State (Env base) (SimpleType base)
 typeOf env (Bound b) = return $ env !! b
 typeOf _   (Free  f) = do
@@ -123,7 +134,7 @@ freshAtom :: SimpleType base -> State (Env base) (Atom sig)
 freshAtom t = do
     env <- get
     put (env ++ [t])
-    return (Free (length env))
+    return $ Free (length env)
 
 partialBinding :: Sig b s => SimpleType b -> Atom s -> State (Env b) (AlgebraicTerm b s)
 partialBinding (as :-> b) a = do
@@ -134,10 +145,8 @@ partialBinding (as :-> b) a = do
 
         let generalFlexibleTerm (fs :-> c') = do
                 h <- freshAtom (as ++ fs :-> c')
-                return $
-                    A fs h $ map (bound $ fs ++ as) $
-                                [length fs .. length fs + length as - 1]
-                                    ++ [0 .. length fs - 1]
+                return $ A fs h $ map (bound $ fs ++ as) $
+                    [length fs .. length fs + length as - 1] ++ [0 .. length fs - 1]
 
         gfts <- mapM generalFlexibleTerm cs
         return (A as a gfts)
@@ -145,35 +154,40 @@ partialBinding (as :-> b) a = do
 
 -- * Unification rules * -------------------------------------------------------
 
-type UnificationRule b s = Env b -> TermPair b s -> TermSystem b s -> Maybe (TermSystem b s)
+type UnificationRule b s = TermPair b s -> TermSystem b s -> State (Env b) (Maybe (TermSystem b s))
 
 trivial :: Sig b s => UnificationRule b s
-trivial _env (u, u') s
-    | u == u'   = Just s
-    | otherwise = Nothing
+trivial (u, u') s
+    | u == u'   = return $ Just s
+    | otherwise = return $ Nothing
 
 decomposition :: Sig b s => UnificationRule b s
-decomposition _env (A xs a us, A xs' a' vs) s
-    | xs == xs' && a == a' = Just $ zip us vs ++ s
-    | otherwise            = Nothing
+decomposition (A xs a us, A xs' a' vs) s
+    | xs == xs' && a == a' = return $ Just $ zip us vs ++ s
+    | otherwise            = return $ Nothing
 
 variableElimination :: Sig b s => UnificationRule b s
-variableElimination env (u,v) s
+variableElimination (u,v) s
     = variableElimination' (u,v) ||| variableElimination' (v,u)
-  where variableElimination' (A xs (Free f) us, v)
-            | us == map (bound xs) [0 .. length xs - 1] && f `notElem` fv v
-                = let subst = substForFree env v f
-                   in Just $ (u,v) : map (both (applySubstAndReduce subst)) s
-            | otherwise = Nothing
+  where
+    variableElimination' (A xs (Free f) us, v)
+        | us == map (bound xs) [0 .. length xs - 1] && f `notElem` fv v
+            = do env <- get
+                 let subst = substForFree env v f
+                 return $ Just $ (u,v) : map (both (applySubstAndReduce subst)) s
+        | otherwise = return $ Nothing
 
 imitation :: Sig b s => UnificationRule b s
-imitation env (u,v) s
-    = imitation' (u,v) ||| imitation' (v,u)     -- FIXME: can both succeed
-  where imitation' (A xs (Free f) us, A xs' (Free  g) vs) | f /= g
-            = undefined
-        imitation' (A xs (Free f) us, A xs' (Const c) vs)
-            = undefined
-        imitation _ = Nothing
+imitation (u,v) s
+    = imitation' (u,v) ||| imitation' (v,u)         -- FIXME: can both succeed
+  where
+    imitation' r@(A xs (Free f) us, A xs' (Free  g) vs) | f /= g
+        = do t <- partialBinding undefined undefined
+             env <- get
+             return $ Just $ (free env f, t) : r : s
+    imitation' (A xs (Free f) us, A xs' (Const c) vs)
+        = undefined
+    imitation _ = return Nothing
 
 
 -- | Higher-order dimension types | --------------------------------------------
