@@ -182,11 +182,13 @@ imitation (u,v) s
     = imitation' (u,v) ||| imitation' (v,u)         -- FIXME: can both succeed
   where
     imitation' r@(A xs (Free f) us, A xs' (Free  g) vs) | f /= g
-        = do t <- partialBinding undefined undefined
-             env <- get
+        = do env <- get
+             t <- partialBinding (env !! f) (Free g)
              return $ Just $ (free env f, t) : r : s
-    imitation' (A xs (Free f) us, A xs' (Const c) vs)
-        = undefined
+    imitation' r@(A xs (Free f) us, A xs' (Const c) vs)
+        = do env <- get
+             t <- partialBinding (fo2simple $ signature c) (Const c)
+             return $ Just $ (free env f, t) : r : s
     imitation _ = return Nothing
 
 
