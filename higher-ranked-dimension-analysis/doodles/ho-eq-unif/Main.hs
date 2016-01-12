@@ -156,17 +156,17 @@ partialBinding (as :-> b) a = do
 
 type UnificationRule b s = TermPair b s -> TermSystem b s -> State (Env b) (Maybe (TermSystem b s))
 
-trivial :: Sig b s => UnificationRule b s
+trivial :: Sig base sig => UnificationRule base sig
 trivial (u, u') s
     | u == u'   = return $ Just s
     | otherwise = return $ Nothing
 
-decomposition :: Sig b s => UnificationRule b s
+decomposition :: Sig base sig => UnificationRule base sig
 decomposition (A xs a us, A xs' a' vs) s
     | xs == xs' && a == a' = return $ Just $ zip us vs ++ s
     | otherwise            = return $ Nothing
 
-variableElimination :: Sig b s => UnificationRule b s
+variableElimination :: Sig base sig => UnificationRule base sig
 variableElimination (u,v) s
     = variableElimination' (u,v) ||| variableElimination' (v,u)
   where
@@ -177,7 +177,7 @@ variableElimination (u,v) s
                  return $ Just $ (u,v) : map (both (applySubstAndReduce subst)) s
         | otherwise = return $ Nothing
 
-imitation :: Sig b s => UnificationRule b s
+imitation :: Sig base sig => UnificationRule base sig
 imitation (u,v) s
     = imitation' (u,v) ||| imitation' (v,u)         -- FIXME: can both succeed
   where
@@ -187,9 +187,23 @@ imitation (u,v) s
              return $ Just $ (free env f, t) : r : s
     imitation' r@(A xs (Free f) us, A xs' (Const c) vs)
         = do env <- get
-             t <- partialBinding (fo2simple $ signature c) (Const c)
+             t <- partialBinding (env !! f) (Const c)
              return $ Just $ (free env f, t) : r : s
     imitation _ = return Nothing
+
+projection :: Sig base sig => Int -> UnificationRule base sig
+projection i (u,v) s
+    = projection' (u,v) ||| projection' (v,u)         -- FIXME: can both succeed
+  where
+    projection' r@(A xs (Free f) us, A xs' (Free  g) vs) | f /= g
+        = do env <- get
+             t <- partialBinding (env !! f) (Free g)
+             return $ Just $ (free env f, t) : r : s
+    projection' r@(A xs (Free f) us, A xs' a vs)    -- Bound or Const
+        = do env <- get
+             t <- partialBinding (env !! f) a
+             return $ Just $ (free env f, t) : r : s
+    projection _ = return Nothing
 
 
 -- | Higher-order dimension types | --------------------------------------------
