@@ -35,24 +35,24 @@ x ||| y = do x' <- x
 
 -- * Types * -------------------------------------------------------------------
 
-data FirstOrderType base
-    = [base] :=> base
+data Signature sort
+    = [sort] :=> sort
   deriving (Eq, Show)
 
-data SimpleType base
-    = [SimpleType base] :-> base
+data SimpleType sort
+    = [SimpleType sort] :-> sort
   deriving (Eq, Show)
 
-base :: base -> SimpleType base
-base = ([] :->)
+sort :: sort -> SimpleType sort
+sort = ([] :->)
 
 infix 4 :->
 
-fo2simple :: FirstOrderType base -> SimpleType base
-fo2simple (bs :=> b) = map base bs :-> b
+sig2ty :: Signature sort -> SimpleType sort
+sig2ty (bs :=> b) = map sort bs :-> b
 
-class (Eq base, Eq sig) => Sig base sig | sig -> base where
-    signature :: sig -> FirstOrderType base
+class (Eq sort, Eq sig) => Theory sort sig | sig -> sort where
+    signature :: sig -> Signature sort
 
 data Atom sig
     = Bound Int     -- bound variables
@@ -62,54 +62,54 @@ data Atom sig
   
 -- NOTE: does not enforce function constants to be first-order
 --       does not enforce the whole term to be first-order
-data AlgebraicTerm base sig
-    = A [SimpleType base] (Atom sig) [AlgebraicTerm base sig]
+data AlgebraicTerm sort sig
+    = A [SimpleType sort] (Atom sig) [AlgebraicTerm sort sig]
   deriving (Eq, Show)
   
-fv :: AlgebraicTerm base sig -> [Int]
+fv :: AlgebraicTerm sort sig -> [Int]
 fv (A _ (Free f) es) = f : concatMap fv es
 fv (A _ _        es) =     concatMap fv es
 
 -- eta-long variables
 
-type Env base = [SimpleType base]
+type Env sort = [SimpleType sort]
 
-free :: Env base -> Int -> AlgebraicTerm base sig
+free :: Env sort -> Int -> AlgebraicTerm sort sig
 free env n
     = let (xs :-> _) = env !! n
        in A xs (Free $ length xs + n) (map (bound xs) [0 .. length xs - 1])
 
-bound :: Env base -> Int -> AlgebraicTerm base sig
+bound :: Env sort -> Int -> AlgebraicTerm sort sig
 bound env n
     = let (xs :-> _) = env !! n
        in A xs (Bound $ length xs + n) (map (bound xs) [0 .. length xs - 1])
 
-type Subst base sig = [AlgebraicTerm base sig]
+type Subst sort sig = [AlgebraicTerm sort sig]
 
-substForFree :: Env base -> AlgebraicTerm base sig -> Int -> Subst base sig
+substForFree :: Env sort -> AlgebraicTerm sort sig -> Int -> Subst sort sig
 substForFree env v f = map (free env) [0 .. f - 1] ++ [v] ++ map (free env) [f + 1 ..]
 
-type TermPair   base sig = (AlgebraicTerm base sig, AlgebraicTerm base sig)
-type TermSystem base sig = [TermPair base sig]
+type TermPair   sort sig = (AlgebraicTerm sort sig, AlgebraicTerm sort sig)
+type TermSystem sort sig = [TermPair sort sig]
 
 
 -- * Substitution and reduction * ----------------------------------------------
 
-applySubstAndReduce :: Subst base sig -> AlgebraicTerm base sig -> AlgebraicTerm base sig
+applySubstAndReduce :: Subst sort sig -> AlgebraicTerm sort sig -> AlgebraicTerm sort sig
 applySubstAndReduce subst (A xs (Free f) ys)
     = let A xs' a ys' = subst !! f
        in reduce xs xs' a ys' ys
 applySubstAndReduce subst u
     = u
 
-bindAndReduce :: Subst base sig -> AlgebraicTerm base sig -> AlgebraicTerm base sig
+bindAndReduce :: Subst sort sig -> AlgebraicTerm sort sig -> AlgebraicTerm sort sig
 bindAndReduce zs (A xs (Bound b) ys)
     = let A xs' a ys' = zs !! b
        in reduce xs xs' a ys' ys
 bindAndReduce zs u
     = u
     
-reduce :: Env base -> Env base -> Atom sig -> Subst base sig -> Subst base sig -> AlgebraicTerm base sig
+reduce :: Env sort -> Env sort -> Atom sig -> Subst sort sig -> Subst sort sig -> AlgebraicTerm sort sig
 reduce xs xs' a ys' ys
     | length xs' == length ys
         = let ys'' = map (bindAndReduce ys) ys'
@@ -123,20 +123,20 @@ reduce xs xs' a ys' ys
 
 -- * Partial bindings * --------------------------------------------------------
 
-typeOf :: Sig base sig => Env base -> Atom sig -> State (Env base) (SimpleType base)
+typeOf :: Theory sort sig => Env sort -> Atom sig -> State (Env sort) (SimpleType sort)
 typeOf env (Bound b) = return $ env !! b
 typeOf _   (Free  f) = do
     env <- get
     return $ env !! f
-typeOf _   (Const c) = return $ fo2simple (signature c)
+typeOf _   (Const c) = return $ sig2ty (signature c)
 
-freshAtom :: SimpleType base -> State (Env base) (Atom sig)
+freshAtom :: SimpleType sort -> State (Env sort) (Atom sig)
 freshAtom t = do
     env <- get
     put (env ++ [t])
     return $ Free (length env)
 
-partialBinding :: Sig b s => SimpleType b -> Atom s -> State (Env b) (AlgebraicTerm b s)
+partialBinding :: Theory b s => SimpleType b -> Atom s -> State (Env b) (AlgebraicTerm b s)
 partialBinding (as :-> b) a = do
     cs :-> b' <- typeOf as a
     if b /= b' then
@@ -156,19 +156,20 @@ partialBinding (as :-> b) a = do
 
 type UnificationRule b s = TermPair b s -> TermSystem b s -> State (Env b) (Maybe (TermSystem b s))
 
-trivial :: Sig base sig => UnificationRule base sig
+trivial :: Theory sort sig => UnificationRule sort sig
 trivial (u, u') s
     | u == u'   = return $ Just s
     | otherwise = return $ Nothing
 
-decomposition :: Sig base sig => UnificationRule base sig
+decomposition :: Theory sort sig => UnificationRule sort sig
 decomposition (A xs a us, A xs' a' vs) s
     | xs == xs' && a == a' = return $ Just $ zip us vs ++ s
     | otherwise            = return $ Nothing
 
-variableElimination :: Sig base sig => UnificationRule base sig
-variableElimination (u,v) s
-    = variableElimination' (u,v) ||| variableElimination' (v,u)
+variableElimination :: Theory sort sig => UnificationRule sort sig
+variableElimination (u@(A xs _ _),v@(A xs' _ _)) s
+    | xs /= xs' = error "variableElimination: xs /= xs'"
+    | otherwise = variableElimination' (u,v) ||| variableElimination' (v,u)
   where
     variableElimination' (A xs (Free f) us, v)
         | us == map (bound xs) [0 .. length xs - 1] && f `notElem` fv v
@@ -177,9 +178,10 @@ variableElimination (u,v) s
                  return $ Just $ (u,v) : map (both (applySubstAndReduce subst)) s
         | otherwise = return $ Nothing
 
-imitation :: Sig base sig => UnificationRule base sig
-imitation (u,v) s
-    = imitation' (u,v) ||| imitation' (v,u)         -- FIXME: can both succeed
+imitation :: Theory sort sig => UnificationRule sort sig
+imitation (u@(A xs _ _),v@(A xs' _ _)) s
+    | xs /= xs' = error "imitation: xs /= xs'"
+    | otherwise = imitation' (u,v) ||| imitation' (v,u)     -- FIXME: can both succeed
   where
     imitation' r@(A xs (Free f) us, A xs' (Free  g) vs) | f /= g
         = do env <- get
@@ -191,9 +193,10 @@ imitation (u,v) s
              return $ Just $ (free env f, t) : r : s
     imitation _ = return Nothing
 
-projection :: Sig base sig => Int -> UnificationRule base sig
-projection i (u,v) s
-    = projection' (u,v) ||| projection' (v,u)         -- FIXME: can both succeed
+projection :: Theory sort sig => Int -> UnificationRule sort sig
+projection i (u@(A xs _ _),v@(A xs' _ _)) s
+    | xs /= xs' = error "projection: xs /= xs'"
+    | otherwise = projection' (u,v) ||| projection' (v,u)   -- FIXME: can both succeed
   where
     projection' r@(A xs (Free f) us, A xs' (Free  g) vs) | f /= g
         = do env <- get
@@ -204,19 +207,28 @@ projection i (u,v) s
              t <- partialBinding (env !! f) a
              return $ Just $ (free env f, t) : r : s
     projection _ = return Nothing
+    
+flexFlex :: Theory sort sig => Atom sig -> UnificationRule sort sig
+flexFlex a (A xs (Free f) us, A xs' (Free g) vs) s
+    | xs /= xs' 
+        = error "flexFlex: xs /= xs'"
+    | a == Free f || a == Free g
+        = error "flex-flex: a = F \\/ a = G"
+    | otherwise
+        = undefined 
 
 
 -- | Higher-order dimension types | --------------------------------------------
 
-data Base
+data Sort
     = Real
   deriving (Eq, Show)
   
-data Signature
+data Sig
     = Mul
     | Inv
   deriving (Eq, Show)
 
-instance Sig Base Signature where
+instance Theory Sort Sig where
     signature Mul = [Real, Real] :=> Real
     signature Inv = [Real]       :=> Real
