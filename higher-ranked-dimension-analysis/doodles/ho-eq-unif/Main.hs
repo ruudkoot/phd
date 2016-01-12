@@ -220,6 +220,11 @@ flexFlex a r@(A xs (Free f) us, A xs' (Free g) vs) s
              t <- partialBinding (xs :-> b) a
              return $ Just $ (free env f, t) : r : s
 
+lazyParamodulation :: Theory sort sig => Equation -> UnificationRule sort sig
+lazyParamodulation (l,r) (u,v) s
+    = lazyParamodulation' (u,v) ||| lazyParamodulation' (v,u)
+  where
+    lazyParamodulation' (u,v) = undefined
 
 -- | Higher-order dimension types | --------------------------------------------
 
