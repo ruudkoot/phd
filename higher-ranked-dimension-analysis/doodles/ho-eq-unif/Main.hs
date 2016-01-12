@@ -202,20 +202,23 @@ projection i (u@(A xs _ _),v@(A xs' _ _)) s
         = do env <- get
              t <- partialBinding (env !! f) (Free g)
              return $ Just $ (free env f, t) : r : s
-    projection' r@(A xs (Free f) us, A xs' a vs)    -- Bound or Const
+    projection' r@(A xs (Free f) us, A xs' a vs)    -- 'a' is Bound or Const
         = do env <- get
              t <- partialBinding (env !! f) a
              return $ Just $ (free env f, t) : r : s
     projection _ = return Nothing
     
 flexFlex :: Theory sort sig => Atom sig -> UnificationRule sort sig
-flexFlex a (A xs (Free f) us, A xs' (Free g) vs) s
+flexFlex a r@(A xs (Free f) us, A xs' (Free g) vs) s
     | xs /= xs' 
         = error "flexFlex: xs /= xs'"
     | a == Free f || a == Free g
-        = error "flex-flex: a = F \\/ a = G"
+        = error "flexFlex: a = F \\/ a = G"
     | otherwise
-        = undefined 
+        = do env <- get
+             let _ :-> b = env !! f
+             t <- partialBinding (xs :-> b) a
+             return $ Just $ (free env f, t) : r : s
 
 
 -- | Higher-order dimension types | --------------------------------------------
