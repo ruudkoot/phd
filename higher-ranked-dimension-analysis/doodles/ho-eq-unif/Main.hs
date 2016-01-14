@@ -152,7 +152,7 @@ partialBinding (as :-> b) a = do
         return (A as a gfts)
 
 
--- * Unification rules * -------------------------------------------------------
+-- * Unification rules (Snyder) * ----------------------------------------------
 
 type UnificationRule b s = TermPair b s -> TermSystem b s -> State (Env b) (Maybe (TermSystem b s))
 
@@ -207,7 +207,7 @@ projection i (u@(A xs _ _),v@(A xs' _ _)) s
              t <- partialBinding (env !! f) a
              return $ Just $ (free env f, t) : r : s
     projection _ = return Nothing
-    
+
 flexFlex :: Theory sort sig => Atom sig -> UnificationRule sort sig
 flexFlex a r@(A xs (Free f) us, A xs' (Free g) vs) s
     | xs /= xs' 
@@ -219,6 +219,8 @@ flexFlex a r@(A xs (Free f) us, A xs' (Free g) vs) s
              let _ :-> b = env !! f
              t <- partialBinding (xs :-> b) a
              return $ Just $ (free env f, t) : r : s
+
+type Equation = ((),())     -- TODO
 
 lazyParamodulation :: Theory sort sig => Equation -> UnificationRule sort sig
 lazyParamodulation (l,r) (u,v) s
@@ -235,8 +237,10 @@ data Sort
 data Sig
     = Mul
     | Inv
+    | Unit
   deriving (Eq, Show)
 
 instance Theory Sort Sig where
-    signature Mul = [Real, Real] :=> Real
-    signature Inv = [Real]       :=> Real
+    signature Mul  = [Real, Real] :=> Real
+    signature Inv  = [Real]       :=> Real
+    signature Unit = []           :=> Real
