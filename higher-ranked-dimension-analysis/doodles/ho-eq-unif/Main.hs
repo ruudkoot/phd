@@ -6,23 +6,9 @@ module Main where
 import Control.Monad
 import Control.Monad.State
 
+import Data.Set hiding (map)
+
 -- | Utility | ----------------------------------------------------------------
-
-both :: (a -> b) -> (a, a) -> (b, b)
-both f (x, y) = (f x, f y)
-
-(|||) :: State s (Maybe a) -> State s (Maybe a) -> State s (Maybe a)
-x ||| y = do x' <- x
-             case x' of
-                Nothing -> do y' <- y
-                              case y' of
-                                Nothing -> return Nothing
-                                justY   -> return justY
-                justX   -> do y' <- y
-                              case y' of
-                                Nothing -> return justX
-                                justY   -> error "|||"
-
 
 -- * Debugging * ---------------------------------------------------------------
 
@@ -30,6 +16,13 @@ x ||| y = do x' <- x
 []     !!! _ = error "!!!"
 (x:xs) !!! n = xs !!! (n-1)
 
+-- * Sets * --------------------------------------------------------------------
+
+unionMap :: Ord b => (a -> Set b) -> Set a -> Set b
+unionMap f ss = unions (map f (toList ss))
+
+unionMap' :: Ord b => (a -> Set b) -> [a] -> Set b
+unionMap' f ss = unions (map f ss)
 
 -- | General framework | -------------------------------------------------------
 
@@ -41,34 +34,40 @@ data Signature sort
 
 data SimpleType sort
     = [SimpleType sort] :-> sort
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)  -- FIXME: arbitrary Ord for Set
 
-sort :: sort -> SimpleType sort
-sort = ([] :->)
+base :: sort -> SimpleType sort
+base = ([] :->)
 
 infix 4 :->
 
 sig2ty :: Signature sort -> SimpleType sort
-sig2ty (bs :=> b) = map sort bs :-> b
+sig2ty (bs :=> b) = map base bs :-> b
 
-class (Eq sort, Eq sig) => Theory sort sig | sig -> sort where
+class (Ord sort, Ord sig) => Theory sort sig | sig -> sort where
+    -- FIXME: arbitrary Ord for Set (was Eq)
     signature :: sig -> Signature sort
 
 data Atom sig
     = Bound Int     -- bound variables
     | Free  Int     -- free variables
     | Const sig     -- function constants
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)  -- FIXME: arbitrary Ord for Set
   
 -- NOTE: does not enforce function constants to be first-order
 --       does not enforce the whole term to be first-order
 data AlgebraicTerm sort sig
     = A [SimpleType sort] (Atom sig) [AlgebraicTerm sort sig]
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)  -- FIXME: arbitrary Ord for Set
   
 fv :: AlgebraicTerm sort sig -> [Int]
 fv (A _ (Free f) es) = f : concatMap fv es
 fv (A _ _        es) =     concatMap fv es
+
+isRigid :: AlgebraicTerm sort sig -> Bool
+isRigid (A _ (Bound _) _) = True
+isRigid (A _ (Free  _) _) = False
+isRigid (A _ (Const _) _) = True
 
 -- eta-long variables
 
@@ -151,21 +150,76 @@ partialBinding (as :-> b) a = do
         gfts <- mapM generalFlexibleTerm cs
         return (A as a gfts)
 
--- * Unification rules (Qian & Wang) * -----------------------------------------
+-- * Maximal flexible subterms (Qian & Wang) * ---------------------------------
 
+pmfs :: Theory sort sig => AlgebraicTerm sort sig
+                            -> Set ([SimpleType sort], AlgebraicTerm sort sig)
+pmfs = pmfs' []
 
+pmfs' :: Theory sort sig => [SimpleType sort] -> AlgebraicTerm sort sig
+                            -> Set ([SimpleType sort], AlgebraicTerm sort sig)
+pmfs' ys (A xs (Free f) ss) = singleton (xs ++ ys, A [] (Free f) ss)
+pmfs' ys (A xs a        ss) = unionMap' (pmfs' (xs ++ ys)) ss
+
+-- * Transformation rules (Qian & Wang) * --------------------------------------
+
+type TransformationRule b s = TermPair b s -> TermSystem b s -> State (Env b) (Maybe (TermSystem b s))
+
+type HeadConf b s = (Subst b s, TermPair   b s, TermSystem b s)
+type PartConf b s = (Subst b s, TermSystem b s, TermSystem b s)
+
+transformAbs ::Theory b s => HeadConf b s -> State (Env b) (Maybe (HeadConf b s))
+transformAbs (theta, (u,v), ss)
+    | isRigid u || isRigid v =
+        let xs = toList $ pmfs u `union` pmfs v
+         in undefined
+transformAbs _
+    | otherwise = return Nothing
+
+transformEUni :: PartConf b s -> State (Env b) (Maybe (HeadConf b s))
+transformEUni = undefined
+
+transformBin :: HeadConf b s -> State (Env b) (Maybe (HeadConf b s))
+transformBin = undefined
+
+-- * Control strategy (Qian & Wang) * ------------------------------------------
+
+controlStrategy = undefined
+
+-- | Examples | ----------------------------------------------------------------
+
+-- * Maximal flexible subterms * -----------------------------------------------
+
+data Sig' = F | G | H
+  deriving (Eq, Ord, Show)
+  
+instance Theory Sort Sig' where
+    signature H = [Real, Real] :=> Real
+
+u0 = let f = 0
+         g = 1
+         x = 0
+         y = 1
+         x' = 1
+         y' = 2
+         z  = 0
+      in A [base Real, base Real] (Const H)
+            [A [] (Free f) [A [] (Bound x) []]
+            ,A [base Real] (Free f) [A [] (Bound x') []]
+            ,A [] (Free f) [A [] (Free g) [A [] (Bound x) []]]
+            ]
 
 -- | Higher-order dimension types | --------------------------------------------
 
 data Sort
     = Real
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)  -- FIXME: arbitrary Ord for Set
   
 data Sig
     = Mul
     | Inv
     | Unit
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)  -- FIXME: arbitrary Ord for Set
 
 instance Theory Sort Sig where
     signature Mul  = [Real, Real] :=> Real
