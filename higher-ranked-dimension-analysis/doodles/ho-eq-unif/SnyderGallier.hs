@@ -1,7 +1,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 
-module Main where
+module SnyderGallier where
 
 import Control.Monad
 import Control.Monad.State
@@ -151,23 +151,81 @@ partialBinding (as :-> b) a = do
         gfts <- mapM generalFlexibleTerm cs
         return (A as a gfts)
 
--- * Unification rules (Qian & Wang) * -----------------------------------------
 
+-- * Unification rules (Snyder) * ----------------------------------------------
 
+type UnificationRule b s = TermPair b s -> TermSystem b s -> State (Env b) (Maybe (TermSystem b s))
 
--- | Higher-order dimension types | --------------------------------------------
+trivial :: Theory sort sig => UnificationRule sort sig
+trivial (u, u') s
+    | u == u'   = return $ Just s
+    | otherwise = return $ Nothing
 
-data Sort
-    = Real
-  deriving (Eq, Show)
-  
-data Sig
-    = Mul
-    | Inv
-    | Unit
-  deriving (Eq, Show)
+decomposition :: Theory sort sig => UnificationRule sort sig
+decomposition (A xs a us, A xs' a' vs) s
+    | xs == xs' && a == a' = return $ Just $ zip us vs ++ s
+    | otherwise            = return $ Nothing
 
-instance Theory Sort Sig where
-    signature Mul  = [Real, Real] :=> Real
-    signature Inv  = [Real]       :=> Real
-    signature Unit = []           :=> Real
+variableElimination :: Theory sort sig => UnificationRule sort sig
+variableElimination (u@(A xs _ _),v@(A xs' _ _)) s
+    | xs /= xs' = error "variableElimination: xs /= xs'"
+    | otherwise = variableElimination' (u,v) ||| variableElimination' (v,u)
+  where
+    variableElimination' (A xs (Free f) us, v)
+        | us == map (bound xs) [0 .. length xs - 1] && f `notElem` fv v
+            = do env <- get
+                 let subst = substForFree env v f
+                 return $ Just $ (u,v) : map (both (applySubstAndReduce subst)) s
+        | otherwise = return $ Nothing
+
+imitation :: Theory sort sig => UnificationRule sort sig
+imitation (u@(A xs _ _),v@(A xs' _ _)) s
+    | xs /= xs' = error "imitation: xs /= xs'"
+    | otherwise = imitation' (u,v) ||| imitation' (v,u)     -- FIXME: can both succeed
+  where
+    imitation' r@(A xs (Free f) us, A xs' (Free  g) vs) | f /= g
+        = do env <- get
+             t <- partialBinding (env !! f) (Free g)
+             return $ Just $ (free env f, t) : r : s
+    imitation' r@(A xs (Free f) us, A xs' (Const c) vs)
+        = do env <- get
+             t <- partialBinding (env !! f) (Const c)
+             return $ Just $ (free env f, t) : r : s
+    imitation _ = return Nothing
+
+projection :: Theory sort sig => Int -> UnificationRule sort sig
+projection i (u@(A xs _ _),v@(A xs' _ _)) s
+    | xs /= xs' = error "projection: xs /= xs'"
+    | otherwise = projection' (u,v) ||| projection' (v,u)   -- FIXME: can both succeed
+  where
+    projection' r@(A xs (Free f) us, A xs' (Free  g) vs) | f /= g
+        = do env <- get
+             t <- partialBinding (env !! f) (Free g)
+             return $ Just $ (free env f, t) : r : s
+    projection' r@(A xs (Free f) us, A xs' a vs)    -- 'a' is Bound or Const
+        = do env <- get
+             t <- partialBinding (env !! f) a
+             return $ Just $ (free env f, t) : r : s
+    projection _ = return Nothing
+
+flexFlex :: Theory sort sig => Atom sig -> UnificationRule sort sig
+flexFlex a r@(A xs (Free f) us, A xs' (Free g) vs) s
+    | xs /= xs' 
+        = error "flexFlex: xs /= xs'"
+    | a == Free f || a == Free g
+        = error "flexFlex: a = F \\/ a = G"
+    | otherwise
+        = do env <- get
+             let _ :-> b = env !! f
+             t <- partialBinding (xs :-> b) a
+             return $ Just $ (free env f, t) : r : s
+
+type Equation = ((),())     -- TODO
+
+lazyParamodulation :: Theory sort sig => Equation -> UnificationRule sort sig
+lazyParamodulation (l,r) (u,v) s
+    = lazyParamodulation' (u,v) ||| lazyParamodulation' (v,u)
+  where
+    lazyParamodulation' (u,v) = undefined
+
+-- * Unification rules (Nipkow & Qian) * ---------------------------------------
