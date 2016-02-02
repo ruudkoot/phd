@@ -69,6 +69,18 @@ isRigid (A _ (Bound _) _) = True
 isRigid (A _ (Free  _) _) = False
 isRigid (A _ (Const _) _) = True
 
+-- Convert an atom into an eta-long term.
+atom2term :: Theory sort sig => Env sort -> Env sort -> Atom sig -> AlgebraicTerm sort sig
+atom2term envF envB (Bound n) =
+    let (xs :-> _) = envB !! n
+     in A xs (Bound $ length xs + n) (map (bound xs) [0 .. length xs - 1])
+atom2term envF envB (Free  n) =
+    let (xs :-> _) = envF !! n
+     in A xs (Free  $ length xs + n) (map (bound xs) [0 .. length xs - 1])
+atom2term envF envB (Const c) =
+    let (xs :-> _) = sig2ty (signature c)
+     in A xs (Const               c) (map (bound xs) [0 .. length xs - 1])
+
 -- eta-long variables
 
 type Env sort = [SimpleType sort]
@@ -122,12 +134,19 @@ reduce xs xs' a ys' ys
 
 -- * Partial bindings * --------------------------------------------------------
 
-typeOf :: Theory sort sig => Env sort -> Atom sig -> State (Env sort) (SimpleType sort)
-typeOf env (Bound b) = return $ env !! b
-typeOf _   (Free  f) = do
+typeOfAtom :: Theory sort sig => Env sort -> Atom sig -> State (Env sort) (SimpleType sort)
+typeOfAtom env (Bound b) = return $ env !! b
+typeOfAtom _   (Free  f) = do
     env <- get
     return $ env !! f
-typeOf _   (Const c) = return $ sig2ty (signature c)
+typeOfAtom _   (Const c) = return $ sig2ty (signature c)
+
+-- NOTE: assuming eta-long as always
+typeOfTerm :: Theory sort sig => Env sort -> AlgebraicTerm sort sig -> State (Env sort) (SimpleType sort)
+typeOfTerm envB (A xs a ys) = do
+    envF    <- get
+    _ :-> r <- typeOfAtom (xs ++ envB) a
+    return $ xs :-> r
 
 freshAtom :: SimpleType sort -> State (Env sort) (Atom sig)
 freshAtom t = do
@@ -137,7 +156,7 @@ freshAtom t = do
 
 partialBinding :: Theory b s => SimpleType b -> Atom s -> State (Env b) (AlgebraicTerm b s)
 partialBinding (as :-> b) a = do
-    cs :-> b' <- typeOf as a
+    cs :-> b' <- typeOfAtom as a
     if b /= b' then
         error "partialBinding: b /= b'"
     else do
@@ -165,21 +184,42 @@ pmfs' ys (A xs a        ss) = unionMap' (pmfs' (xs ++ ys)) ss
 
 type TransformationRule b s = TermPair b s -> TermSystem b s -> State (Env b) (Maybe (TermSystem b s))
 
+type     Conf b s = (Subst b s,                 TermSystem b s)
 type HeadConf b s = (Subst b s, TermPair   b s, TermSystem b s)
 type PartConf b s = (Subst b s, TermSystem b s, TermSystem b s)
 
-transformAbs ::Theory b s => HeadConf b s -> State (Env b) (Maybe (HeadConf b s))
-transformAbs (theta, (u,v), ss)
-    | isRigid u || isRigid v =
-        let xs = toList $ pmfs u `union` pmfs v
-         in undefined
-transformAbs _
-    | otherwise = return Nothing
+transformAbs :: Theory b s => HeadConf b s -> State (Env b) (Maybe (Conf b s))
+transformAbs (theta, (u,v), ss) | isRigid u || isRigid v = do
+    -- maximal flexible subterms
+    let ps = toList $ pmfs u `union` pmfs v
+    -- conditional mapping
+    -- NOTE: Unlike the paper we don't bother applying xs to H yet, as this
+    --       will not necessarily form an eta-long term. Take care of this in
+    --       the application function instead (xs are remembered in the
+    --       conditional mapping anyway).
+    hs <- forM ps $ \(xs,w) -> do
+            xs' :-> r <- typeOfTerm [] w
+            freshAtom (xs ++ xs' :-> r)
+    let phi = zipWith (\(xs,w) h -> (xs,w,h)) ps hs
+    envF <- get
+    return $ Just $
+        ( error "TODO"
+        , [(applyConditionalMapping phi u,applyConditionalMapping phi v)]
+          ++ map (\(xs,A xs' a' ys',h) -> (atom2term envF [] h, A (xs'++xs) a' ys')) phi
+          ++ ss
+        )
+transformAbs _ | otherwise = return Nothing
 
-transformEUni :: PartConf b s -> State (Env b) (Maybe (HeadConf b s))
+type ConditionalMapping b s = [([SimpleType b], AlgebraicTerm b s, Atom s)]
+
+applyConditionalMapping :: Theory b s => ConditionalMapping b s 
+                                    -> AlgebraicTerm b s -> AlgebraicTerm b s
+applyConditionalMapping = undefined
+
+transformEUni :: PartConf b s -> State (Env b) (Maybe (Conf b s))
 transformEUni = undefined
 
-transformBin :: HeadConf b s -> State (Env b) (Maybe (HeadConf b s))
+transformBin :: HeadConf b s -> State (Env b) (Maybe (Conf b s))
 transformBin = undefined
 
 -- * Control strategy (Qian & Wang) * ------------------------------------------
