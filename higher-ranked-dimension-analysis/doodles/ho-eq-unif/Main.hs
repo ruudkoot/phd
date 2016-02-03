@@ -3,10 +3,12 @@
 
 module Main where
 
+import Control.Arrow ((***))
 import Control.Monad
 import Control.Monad.State
 
-import Data.Set hiding (map)
+import           Data.Set        hiding (map)
+import qualified Data.Set as Set
 
 -- | Utility | ----------------------------------------------------------------
 
@@ -44,9 +46,15 @@ infix 4 :->
 sig2ty :: Signature sort -> SimpleType sort
 sig2ty (bs :=> b) = map base bs :-> b
 
+type UnificationProblem sort sig
+    = [(AlgebraicTerm sort sig, AlgebraicTerm sort sig)]
+
+type Subst sort sig = [AlgebraicTerm sort sig]
+
 class (Ord sort, Ord sig) => Theory sort sig | sig -> sort where
     -- FIXME: arbitrary Ord for Set (was Eq)
     signature :: sig -> Signature sort
+    unify     :: UnificationProblem sort sig -> Maybe (Subst sort sig)
 
 data Atom sig
     = Bound Int     -- bound variables
@@ -94,8 +102,6 @@ bound :: Env sort -> Int -> AlgebraicTerm sort sig
 bound env n
     = let (xs :-> _) = env !! n
        in A xs (Bound $ length xs + n) (map (bound xs) [0 .. length xs - 1])
-
-type Subst sort sig = [AlgebraicTerm sort sig]
 
 substForFree :: Env sort -> AlgebraicTerm sort sig -> Int -> Subst sort sig
 substForFree env v f = map (free env) [0 .. f - 1] ++ [v] ++ map (free env) [f + 1 ..]
@@ -212,12 +218,29 @@ transformAbs _ | otherwise = return Nothing
 
 type ConditionalMapping b s = [([SimpleType b], AlgebraicTerm b s, Atom s)]
 
-applyConditionalMapping :: Theory b s => ConditionalMapping b s 
+applyConditionalMapping :: Theory b s => ConditionalMapping b s
                                     -> AlgebraicTerm b s -> AlgebraicTerm b s
 applyConditionalMapping = undefined
 
-transformEUni :: PartConf b s -> State (Env b) (Maybe (Conf b s))
-transformEUni = undefined
+-- ss' assumed to be E-acceptable
+transformEUni :: Theory b s => PartConf b s -> State (Env b) (Maybe (Conf b s))
+transformEUni (theta, ss', ss) = do
+    let ps = toList $ Set.map snd (unionMap' (\(u,v) -> pmfs u `union` pmfs v) ss')
+    rho <- forM ps $ \w -> do
+            t <- typeOfTerm [] w
+            y <- freshAtom t
+            return (w,y)
+    let rhoSS' = map (applyOrderReduction rho *** applyOrderReduction rho) ss'
+                    -- FIXME: ^ remove duplicates (is a set)
+    let sigma  = unify rhoSS'
+    undefined
+
+type OrderReduction b s = [(AlgebraicTerm b s, Atom s)]
+
+applyOrderReduction :: Theory b s => OrderReduction b s
+                                    -> AlgebraicTerm b s -> AlgebraicTerm b s
+applyOrderReduction = undefined
+
 
 transformBin :: HeadConf b s -> State (Env b) (Maybe (Conf b s))
 transformBin = undefined
@@ -235,6 +258,7 @@ data Sig' = F | G | H
   
 instance Theory Sort Sig' where
     signature H = [Real, Real] :=> Real
+    unify       = undefined
 
 u0 = let f = 0
          g = 1
@@ -265,3 +289,10 @@ instance Theory Sort Sig where
     signature Mul  = [Real, Real] :=> Real
     signature Inv  = [Real]       :=> Real
     signature Unit = []           :=> Real
+    
+    unify          = unify'
+    
+-- * Unification modulo Abelian groups * ---------------------------------------
+
+unify' :: UnificationProblem Sort Sig -> Maybe (Subst Sort Sig)
+unify' = undefined
