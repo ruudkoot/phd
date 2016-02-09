@@ -1,22 +1,26 @@
 \section{\ThesisPaper{Motivation}{Introduction}}
-An often heard selling point of non-strict functional languages is that they provide strong and expressive type systems that make side-effects explicit. This supposedly makes software more reliable by lessening the mental burden placed on programmers. Many programmers with a background in object-oriented languages are thus quite surprised, when making the transition to a functional language, that they lose a feature their type system formerly did provide: the tracking of uncaught exceptions.
+An often-heard selling point of non-strict functional languages is that they provide strong and expressive type systems that make side-effects explicit. This supposedly makes software more reliable by lessening the mental burden placed on programmers. Many programmers with a background in object-oriented languages are thus quite surprised, when making the transition to a functional language, that they lose a feature their type system formerly did provide: the tracking of uncaught exceptions.
 
-There is an excuse for why this feature is missing from the type systems of contemporary non-strict functional languages: in a strict first-order language it is sufficient to annotate each function with a single set of uncaught exceptions the function may raise; in a non-strict higher-order language the situation becomes significantly more complicated. Let us first consider the two aspects ``higher-order'' and ``non-strict'' in isolation:
+There is an excuse for why this feature is missing from the type systems of contemporary non-strict functional languages: in a strict first-order language it is sufficient to annotate each function with a single set of uncaught exceptions the function may raise; in a non-strict higher-order language the situation becomes significantly more complicated. Let us first consider the two aspects `higher-order' and `non-strict' in isolation:
 
 \begin{description}
+
     \item [Higher-order functions] The set of exceptions that may be raised by a higher-order function is not given by a fixed set of exceptions, but depends on the set of exceptions that may be raised by the function that is passed as its functional argument. Higher-order functions are thus \emph{exception polymorphic}.
-    \item [Non-strict evaluation] In non-strictly evaluated languages, exceptions are not a form of control flow, but a kind of value. Typically the set of values of each type are extended with an \emph{exceptional value} $\lightning$ (more commonly denoted $\bot$, but we shall not do so to avoid ambiguity), or family of exceptional values $\lightning^\ell$. This means we do not only need to give all functions an exception-annotated function type, but every expression an exception-annotated type as well.
+
+    \item [Non-strict evaluation] In non-strictly evaluated languages, exceptions are not a form of control flow, but a kind of value. Typically the set of values of each type is extended with an \emph{exceptional value} $\lightning$ (more commonly denoted $\bot$, but we shall not do so to avoid ambiguity), or family of exceptional values~$\lightning^\ell$. This means we do not only need to give all functions an exception-annotated function type, but give every other expression an exception-annotated type as well.
+
 \end{description}
 
+%format alphabeta = "\alpha\beta"
 Now let us consider these two aspects in combination. Take as an example the |map| function:
 \begin{code}
-map  ::  forall alpha beta. (alpha -> beta) -> [alpha] -> [beta]
+map  ::  forall alphabeta. (alpha -> beta) -> [alpha] -> [beta]
 map  =   LAMBDA f (LAMBDA xs (case xs of
                            []      -|> []
                            (y:ys)  -|> f y : map f ys))
 \end{code}
 
-For each type $\tau$, we denote its exception-annotated type by~$\tau\langle\Exn\rangle$. For function types we occasionally write $\tau_1\langle\Exn_1\rangle \xrightarrow{\Exn} \tau_2\langle\Exn_2\rangle$ instead of $\left(\tau_1\langle\Exn_1\rangle \rightarrow \tau_2\langle\Exn_2\rangle\right)\!\langle\Exn\rangle$. If $\Exn$ is the empty exception set, then it may be omitted completely.
+We denote the exception-annotated type of a term by $\tau\ \&\ \Exn$ or~$\tau\langle\Exn\rangle$. For function types we occasionally write $\tau_1\langle\Exn_1\rangle \xrightarrow{\Exn} \tau_2\langle\Exn_2\rangle$ instead of $\left(\tau_1\langle\Exn_1\rangle \rightarrow \tau_2\langle\Exn_2\rangle\right)\!\langle\Exn\rangle$. If $\Exn$ is the empty exception set, then we sometimes omit this annotation completely.
 
 The fully exception-polymorphic and exception-annotated type, or \emph{exception type}, of |map| is\ThesisPaper{\TODO{cramped formatting}}{}
 \begin{code}
@@ -28,7 +32,7 @@ The exception type of the first argument |forall e_1. ThrowsArr (Throws alpha e_
 
 The exception type of the second argument |Throws ([Throws alpha e_4]) e_5| states that it should be a list. Any of the elements in the lists may be exceptional values from the exception set |e_4|. Any exceptional values among the constructors that form the spine of the list must be exceptional values from the exception set |e_5|.
 
-The result of |map| is a list with the exception type |Throws ([Throws beta (e_2 e_4 # e_3)]) e_5|. Any constructors in the spine of this list may be exceptional values from the exception set |e_5|, the same exception set as where exceptional values in the spine of the list argument |xs| come from. By looking at the definition of |map| we can see why this is the case: |map| only produces non-exceptional constructors, but the pattern-match on the list argument |xs| propagates any exceptional values encountered there. The elements of the list are produced by the function application |f y|. Recall that |f| has the exception type |forall e_1. ThrowsArr (Throws alpha e_1) (Throws beta (e_2 e_1)) (e_3)|. Now, one of two things can happen:
+The result of |map| is a list with the exception type |Throws ([Throws beta (e_2 e_4 # e_3)]) e_5|. Any exceptional constructors in the spine of this list must be exceptional values from the exception set |e_5|, the same exception set as where exceptional values in the spine of the list argument |xs| come from. By looking at the definition of |map| we can see why this is the case: |map| only produces non-exceptional constructors, but the pattern-match on the list argument |xs| propagates any exceptional values encountered there. The elements of the list are produced by the function application |f y|. Recall that |f| has the exception type |forall e_1. ThrowsArr (Throws alpha e_1) (Throws beta (e_2 e_1)) (e_3)|. Now, one of two things can happen:
     \begin{enumerate}
 
         \item If |f| is an exceptional function value, then it must be one from the exception set |e_3|. Applying the exceptional value to an argument causes the exceptional value to be propagated.
