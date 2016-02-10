@@ -187,7 +187,7 @@ if $K_i \prec K_i^\prime$.
 Given a term $t$ with the types of the free variables given by the environment $\Gamma$, we denote by $\llfloor t \rrfloor_\Gamma$ the $\beta\gamma$-normal $\eta$-long and canonically ordered derivation of the term $t$.
 
 \subsection{Pattern unification}
-Solving equations in $\lambda$-calculi is usually hard, but sometimes easy.
+Solving equations in $\lambda$-calculi is usually quite hard, but sometimes very easy.
 
 \begin{definition}\label{definition-pattern}
 A $\LambdaUnion$-term is called a \emph{pattern} if it is of the form $f(e_1, ..., e_n)$ where $f$ is a free variable and $e_1, ..., e_n$ are distinct bound variables.
@@ -197,4 +197,23 @@ Note that this definition is a special case of what is usually called a \emph{pa
 
 If $f(e_1, ..., e_n)$ is a pattern and $t$ a term, then the equation
 \[ f : \LuTy_1 \to \cdots \to \LuTy_n \to \LuTy \vdash \forall e_1 : \LuTy_1, ..., e_n : \LuTy_n. f(e_1, ..., e_n) = t \]
-can be uniquely solved by the unifier \[ \theta = \left[f \mapsto \lambda e_1 : \LuTy_1, ..., e_n : \LuTy_n. t \right]. \]
+has a unique solution given by the unifier \[ \theta = \left[f \mapsto \lambda e_1 : \LuTy_1, ..., e_n : \LuTy_n. t \right]. \]
+
+\subsection{Widening}
+
+\LORUMIPSUM
+\LORUMIPSUM
+
+\LORUMIPSUM
+\LORUMIPSUM
+
+\LORUMIPSUM
+\LORUMIPSUM
+
+\LORUMIPSUM
+\LORUMIPSUM
+
+\LORUMIPSUM
+
+
+

@@ -113,19 +113,15 @@ exceptions, higher-ranked polymorphism, polymorphic recursion, type-and-effect s
 
 %include section/introduction.lhs2tex
 %include section/lambda-union.lhs2tex
-%include figure/underlying-type-system.lhs2tex
-%include figure/operational-semantics.lhs2tex
-%include figure/type-completion.lhs2tex
 %include section/source-language.lhs2tex
 %include section/exception-type-system.lhs2tex
-\clearpage\clearpage
 %include section/type-inference.lhs2tex
 
 %include section/related-work.lhs2tex
 %include section/future-research.lhs2tex
 %include section/conclusion.lhs2tex
 
-\clearpage
+%\clearpage
 
 \bibliographystyle{plainnat}
 \bibliography{higher-ranked-exception-types}
