@@ -116,7 +116,6 @@ exceptions, higher-ranked polymorphism, polymorphic recursion, type-and-effect s
 %include section/source-language.lhs2tex
 %include section/exception-type-system.lhs2tex
 %include section/type-inference.lhs2tex
-
 %include section/related-work.lhs2tex
 %include section/future-research.lhs2tex
 %include section/conclusion.lhs2tex

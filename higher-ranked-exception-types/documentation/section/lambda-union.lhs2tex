@@ -168,7 +168,7 @@ where $k_i$ can be a free or bound variable, or a singleton-set constant, but no
 
 To be able to efficiently check two normalized terms for definitional equality up to \ACIone, we also need to deal with the commutativity of the union operator. We can bring normalized terms into a fully canonical form by defining a total order on terms and use it to order unions of terms.
 
-First pick a total order $\prec$ on variables and constants. The order must be fixed and be invariant under $\alpha$-renaming of variables (for example, choose the De Bruijn index of a variable), but can otherwise be arbitrary.
+First, pick a strict total order $\prec$ on variables and constants. The order must be fixed and be invariant under $\alpha$-renaming of variables (for example, choose the De Bruijn index of a variable), but can otherwise be arbitrary.
 We extend this order to a total order on $\beta\gamma$-normal $\eta$-long terms in the following manner:
 \begin{enumerate}
 \item Given two fully applied terms $k(v_1, ..., v_n)$ and $k^\prime(v_1^\prime, ..., v_m^\prime)$ we define:
@@ -201,8 +201,26 @@ has a unique solution given by the unifier \[ \theta = \left[f \mapsto \lambda e
 
 \subsection{Widening}
 
-\LORUMIPSUM
-\LORUMIPSUM
+Typically we want the reduction rules of a $\lambda$-calculus to respect the (observational) equivalence of terms: if $\Reduce{\LuTm_1}{\LuTm_2}$, then $\LuTm_1 \cong \LuTm_2$. As the $\LambdaUnion$-calculus does not only have the equivalence relation~$\cong$ defined on its terms, but also the subsumption preorder $\lesssim$, it is also interesting to look at reduction rules $\Reduce{\LuTm_1}{\LuTm_2}$ such that \mbox{$\LuTm_1 \lesssim \LuTm_2$}. We will call such reduction rules \emph{widening rules}. Widening rules may rewrite a closed term $\LuTm_1$ of base type to a term $\LuTm_2$ that denotes a superset of the set denoted by $\LuTm_2$, but never to a subset or incomparable set.
+
+\begin{figure}[h]
+    \begin{gather*}
+        \Rule{R-Widen}
+             {
+             }
+             {\TODO
+             }
+    \end{gather*}
+\caption{$\LambdaUnion$-calculus: widening}\label{figure-lu-widening}
+\end{figure}
+
+\begin{example} The widening rule can cause the denotation of a term to increase; it is a proper widening rule. Let $t_1$ and $t_2$ be the terms
+\begin{align*}
+t_1 &= \lambda f. f\ (\lambda x. \emptyset)\ \{C\} \cup g\ (\lambda x. x)\ \emptyset \\
+t_2 &= \lambda f. f\ (\lambda x. x)\ \{C\}
+\end{align*}
+where $C$ is an arbitrary constant. Then $t_1$ can be widened to $t_2$. However $t_1\ (\lambda g.\lambda y.g\ y)$ reduces (without using the widening rule) to $\emptyset$, while $t_2\ (\lambda g.\lambda y.g\ y)$ reduces to $\{C\}$.
+\end{example}
 
 \LORUMIPSUM
 \LORUMIPSUM
@@ -211,9 +229,5 @@ has a unique solution given by the unifier \[ \theta = \left[f \mapsto \lambda e
 \LORUMIPSUM
 
 \LORUMIPSUM
-\LORUMIPSUM
-
-\LORUMIPSUM
-
 
 

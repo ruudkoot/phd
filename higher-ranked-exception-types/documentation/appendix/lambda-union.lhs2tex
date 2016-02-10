@@ -116,7 +116,7 @@ Values $\LuVal$ are terms of the form \[ \LuAbs{\LuVar_1}{\LuTy_1}{\cdots\LuAbs{
     \Case{$t = \LuUnion{\LuTm_1}{\LuTm_2}$} $\llbracket \LuUnion{\LuTm_1}{\LuTm_2} \rrbracket_{\rho\left[\LuVar\mapsto v_1\right]} \llbracket \LuUnion{\LuTm_1}{\LuTm_2} \rrbracket_{\rho\left[\LuVar\mapsto v_2\right]} = \LuDenote{\LuTm_1}{v_1} \cup \LuDenote{\LuTm_1}{v_2} \cup \LuDenote{\LuTm_2}{v_1} \cup \LuDenote{\LuTm_2}{v_2} \IH{\subseteq} \LuDenote{\LuTm_1}{v_1 \cup v_2} \cup \LuDenote{\LuTm_2}{v_1 \cup v_2} = \LuDenote{\LuUnion{\LuTm_1}{\LuTm_2}}{v_1 \cup v_2}.$
 \end{proof}
 
-The inequality of Lemma~\ref{lu-lem-app} in not an equality.
+The inequality of Lemma~\ref{lu-lem-app} is not an equality.
 
 \begin{counterexample}
 Let $\mathrm{app} = \lambda f.\lambda x.f\ x$, then $\mathrm{app}\ (\lambda x.\emptyset)\ \{C\} \cup \mathrm{app}\ (\lambda x. x) \emptyset \leadsto \emptyset$, but $\mathrm{app}\ ((\lambda x.\emptyset) \cup (\lambda x. x))\ (\{C\} \cup \emptyset) \leadsto \{C\}$.

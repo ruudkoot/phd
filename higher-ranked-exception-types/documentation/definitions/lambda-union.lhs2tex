@@ -34,7 +34,7 @@
 \newcommand{\LuAPPLIED}[1][]{\LuVar\ \LuTm_1#1 \cdots \LuTm_n#1}
 
 \newcommand{\JudgeLuTy}[3][\LuEnv]{#1 \vdash #2 : #3}
-\newcommand{\JudgeLuSub}[3][\LuEnv]{#1 \vdash #2 \leq #3}
+\newcommand{\JudgeLuSub}[3][\LuEnv]{#1 \vdash #2 \lesssim #3}
 \newcommand{\JudgeLuEqv}[3][\LuEnv]{#1 \vdash #2 \cong #3}
 
 \newcommand{\REDUCE}{\longrightarrow}
