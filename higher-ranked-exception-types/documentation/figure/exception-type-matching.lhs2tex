@@ -17,5 +17,5 @@
                         = Subst e' ExnSol . match kienv ExnTy_2' ExnTy_2
         match  kienv  matchForall1  matchForall2  = match (kienv, e : ki) ExnTy' ExnTy
     \end{code}
-    \caption{Exception type matching ($\mathcal{M}$)}
+    \caption{Exception type matching ($\mathcal{M}$)}\label{figure-matching}
 \end{figure}

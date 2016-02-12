@@ -123,7 +123,7 @@ For base and compound types that stand in an argument position their effect and 
 \end{code}
 The type and effect of the argument are simple, while the type and effect of the result are conservative, making the whole type conservative.
 
-%format conj (a) (b) = a "\land " b
+%format conj = "\land "
 The conjunction operator |&&| can be applied to any two booleans, and---being strict in both arguments---will propagate the exceptional values:
 \begin{code}
     conj  :: forall e_1. ExnArr ExnBool e_1 ((forall e_2. ExnArr ExnBool e_2 ExnBool (e_1 # e_2))) EmptySet :&: EmptySet

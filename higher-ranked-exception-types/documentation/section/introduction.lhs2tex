@@ -66,9 +66,12 @@ In Section~\ref{section-lambda-union} we introduce the $\LambdaUnion$-calculus, 
 Section~\ref{section-source-language} describes the source language to which the analysis applies.
 In Section~\ref{section-exception-types} we present the language of exception types and two type-and-effect systems for deriving exception types: a declarative type-and-effect system and a syntax-directed elaboration system that also produces an explicitly typed term.
 A type inference algorithm for this type-and-effect system is given in Section~\ref{section-type-inference-algorithm}.
-% Finally, we present related work in this area and discuss some direction for future research in Sections~\ref{section-related-work} and~\ref{section-future-research}.
+Finally, we present related work in this area and discuss some direction for further research in Sections~\ref{section-related-work} and~\ref{section-future-research}.
 
 \subsection{Contributions}
+
+This paper makes the following contributions:
+
 \begin{itemize}
 
     \item A \emph{$\lambda$-calculus} extended with a union-operator that respect the associative, commutative, idempotent and unit structure of sets.
@@ -78,3 +81,7 @@ A type inference algorithm for this type-and-effect system is given in Section~\
     \item An \emph{inference algorithm} for these higher-ranked exception types.
 
 \end{itemize}
+
+Some of the key insights used in the inference algorithm---in particular the facts that an underlying type can be completed to a most general exception type (Figure~\ref{figure-type-completion}), and that the form of the types encountered in the inference algorithm makes it both easy to unify two types (Figure~\ref{figure-matching}) and compute the least upper bound of two types (Figure~\ref{figure-lub})---were first noted by \citet{HoldermansHage}.
+
+Our inference algorithm also differs in a number of aspects. Notably, by the use of reduction of $\lambda$-terms instead of constraint solving and how recursive definitions in the source language are handled by the algorithm. This paper is mostly self-contained.
