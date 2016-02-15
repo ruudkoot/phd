@@ -1,7 +1,10 @@
-%format reconstruct                 = "\mathcal{R}"
-%format complete                    = "\mathcal{C}"
-%format instantiate                 = "\mathcal{I}"
-%format match                       = "\mathcal{M}"
+%format RECONSTRUCT                 = "\mathcal{R}"
+%format reconstruct (gam) (del) (tm)  = "\mathcal{R}(" gam "; " del "; " tm ")"
+%format COMPLETE                    = "\mathcal{C}"
+%format complete (env) (ty)         = "\mathcal{C}(" env "; " ty ")"
+%format instantiate (ty)            = "\mathcal{I}(" ty ")"
+%format MATCH                       = "\mathcal{M}"
+%format match (env) (t1) (t2)       = "\mathcal{M}(" env "; " t1 "; " t2 ")"
 
 %format ClassEnv                    = "\ClassEnv"
 %format ClassTy                     = "\ClassTy"
@@ -9,11 +12,11 @@
 %format kenv                        = "\KiEnv"
 
 %format Var                         = "\TmVar"
-%format env_x                       = "\TyEnv_x"
+%format env_x                       = "\TyEnv(x)"
 
 %format (ConX)                      = "c_\Ty"
 %format ty                          = "\Ty"
-%format Result (a) (b)              = "\langle" a "; " b "\rangle"
+%format Result (a) (b)              = a "\ \&\ " b
 %format bottomTy                    = "\BottomTy{\Ty}"
 %format ExnEmpty                    = "\ExnEmpty"
 
@@ -21,8 +24,10 @@
 %format ExnCon                      = "\ExnCon{\ExnLbl}"
 
 %format Abs                         = "\TmAbs{\TmVar}{\Ty}{\Tm}"
-%format (Tuple  (x) (y))            = "\langle" x ";" y "\rangle"
-%format (Triple (x) (y) (z))        = "\langle" x ";" y ";" z "\rangle"
+%format (Tuple  (x) (y))            = x "\ \&\ " y
+%format (TupleI (x) (y))            = x "\triangleright " y
+%format (TripleC (x) (y) (z))       = x "\ \&\ " y "\triangleright" z
+%format (TripleX (x) (y) (z))       = x "; " y "\ \&\ " z
 %format ExnTy                       = "\ExnTy"
 %format ExnTy'                      = "\ExnTy^\prime"
 %format ExnTy''                     = "\ExnTy^{\prime\prime}"
@@ -95,7 +100,7 @@
 %format repeat                      = "\mathbf{repeat}"
 \begin{figure}[h]
 \begin{code}
-    reconstruct :: Product ClassTyEnv (Product ClassKiEnv ClassTm) -> Product ClassExnTy ClassExn
+    RECONSTRUCT :: Product ClassTyEnv (Product ClassKiEnv ClassTm) -> Product ClassExnTy ClassExn
 
     reconstruct env kenv Var         =  env_x
 
@@ -103,21 +108,21 @@
 
     reconstruct env kenv Crash       =  Result bottomTy ExnCon
 
-    reconstruct env kenv (Abs)       =
-        let     Triple ExnTy_1 e kenv'         =  complete EmptyEnv ty
+    reconstruct env kenv Abs         =
+        let     TripleC ExnTy_1 e kenv'        =  complete EmptyEnv ty
                                              
-                Tuple ExnTy_2 Exn_2            =  reconstruct ((extendTyEnv env Var ExnTy_1 e)) (kenv,kenv') Tm
+                Tuple ExnTy_2 Exn_2            =  reconstruct (extendTyEnv env Var ExnTy_1 e) (kenv,kenv') Tm
         in      Result (ExnForall kenv' (ExnTyArr ExnTy_1 e ExnTy_2 Exn_2)) ExnEmpty
 
     reconstruct env kenv (App)       =
-        let     Tuple ExnTy_1 Exn_1                                    = reconstruct env kenv tm_1
-                Tuple ExnTy_2 Exn_2                                    = reconstruct env kenv tm_2
-                Tuple (ExnTyArr ExnTy_2' ExnVar_2' ExnTy' Exn') kenv'  = instantiate ExnTy_1
-                subst                                                  = Subst ExnVar_2' Exn_2 . match EmptyEnv ExnTy_2' ExnTy_2
+        let     Tuple ExnTy_1 Exn_1                                     = reconstruct env kenv tm_1
+                Tuple ExnTy_2 Exn_2                                     = reconstruct env kenv tm_2
+                TupleI (ExnTyArr ExnTy_2' ExnVar_2' ExnTy' Exn') kenv'  = instantiate ExnTy_1
+                subst                                                   = Subst ExnVar_2' Exn_2 . match EmptyEnv ExnTy_2' ExnTy_2
         in      Tuple (simplify kenv (applySubst ExnTy')) (simplify kenv (ExnUnion (applySubst Exn') (Exn_1)))
 
     reconstruct env kenv (Fix) =
-        do      Triple ExnTy_0 Exn_0 i  <- Triple bottomTyU ExnEmpty 0
+        do      TripleX i ExnTy_0 Exn_0  <- TripleX 0 bottomTyU ExnEmpty
                 repeat
                         (Tuple ExnTy_i1 Exn_i1)  <- reconstruct (env, x :: ExnTy_i & Exn_i) kenv tm
                         i                        <- i + 1
@@ -149,7 +154,7 @@
 
     reconstruct env kenv (Case) =     
         let     Tuple (ExnTyList ExnTy_1 Exn_1') Exn_1   = reconstruct env kenv tm_1
-                Tuple ExnTy_2 Exn_2                    = reconstruct ((extendTyEnv (extendTyEnv env Var_1 ExnTy_1 Exn_1') Var_2 (ExnTyList ExnTy_1 Exn_1') Exn_1)) kenv tm_2
+                Tuple ExnTy_2 Exn_2                    = reconstruct (extendTyEnv (extendTyEnv env Var_1 ExnTy_1 Exn_1') Var_2 (ExnTyList ExnTy_1 Exn_1') Exn_1) kenv tm_2
                 Tuple ExnTy_3 Exn_3                    = reconstruct env kenv tm_3
         in      Tuple (simplify kenv (ExnTyJoin ExnTy_2 ExnTy_3)) (simplify kenv (ExnUnion Exn_1 (ExnUnion Exn_2 Exn_3)))
 \end{code}

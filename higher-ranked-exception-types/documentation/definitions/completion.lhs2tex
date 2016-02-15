@@ -10,6 +10,8 @@
 %format ClassExnVal = "\ClassExnVal"
 \newcommand{\ClassTm}{\mathbf{Tm}}
 %format ClassTm     = "\ClassTm"
+\newcommand{\ClassExnTm}{\mathbf{ExnTm}}
+%format ClassExnTm  = "\ClassExmTm"
 \newcommand{\ClassTy}{\mathbf{Ty}}
 %format Ty          = "\ClassTy"
 \newcommand{\ClassExnTy}{\mathbf{ExnTy}}

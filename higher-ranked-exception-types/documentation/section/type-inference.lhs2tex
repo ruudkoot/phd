@@ -83,7 +83,7 @@ The remaining cases of the algorithm are relatively straightforward. Several of 
         ExnTyInt                                    |_|     ExnTyInt                                    = ExnTyInt
         ExnList ExnTy Exn                           |_|     ExnList ExnTy' Exn'                         = ExnList ((lub ExnTy ExnTy')) (ExnUnion Exn Exn')
         ExnTyArr ExnTy_1 e ExnTy_2 Exn              |_|     ExnTyArr ExnTy_1 e   ExnTy_2' Exn'          = ExnTyArr ExnTy_1 e ((lub ExnTy_2 ExnTy_2')) (Exn # Exn')
-        (ExnForall (e : ki) ExnTy)                  |_|     (ExnForall (e : ki) ExnTy')                 = ExnForall (e : ki) (lub ExnTy ExnTy')
+        ExnForall (e : ki) ExnTy                    |_|     ExnForall (e : ki) ExnTy'                   = ExnForall (e : ki) ((lub ExnTy ExnTy'))
     \end{code}
     \caption{Exception types: least upper bounds ($\sqcup$)}\label{figure-lub}
 \end{figure}

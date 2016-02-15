@@ -230,12 +230,12 @@ These judgments work on an explicitly typed language and for this purpose we ext
 \begin{figure}[h]
 \paragraph{Terms}
 \begin{alignat}{2}
-\!  \Tm \in \ClassTm &\ ::=\   &&\ ...                            \notag       \\
-                     &\quad||  &&\ \TmAbs{\TmVar}{\ExnTy\ \&\ \Exn}{\Tm} \tag{term abstraction} \\
-                     &\quad||  &&\ \TmFixExn{\TmVar}{\ExnTy}{\Exn}{\Tm} \tag{fixpoint} \\
-                     &\quad||  &&\ ...                            \notag       \\
-                     &\quad||  &&\ \TmAnnAbs{\ExnVar}{\Kind}{\Tm} \tag{effect abstraction}  \\
-                     &\quad||  &&\ \TmAnnApp{\Tm}{\Exn}           \tag{effect application}
+\!  \Tm \in \ClassExnTm &\ ::=\   &&\ ...                            \notag       \\
+                        &\quad||  &&\ \TmAbs{\TmVar}{\ExnTy\ \&\ \Exn}{\Tm} \tag{term abstraction} \\
+                        &\quad||  &&\ \TmFixExn{\TmVar}{\ExnTy}{\Exn}{\Tm} \tag{fixpoint} \\
+                        &\quad||  &&\ ...                            \notag       \\
+                        &\quad||  &&\ \TmAnnAbs{\ExnVar}{\Kind}{\Tm} \tag{effect abstraction}  \\
+                        &\quad||  &&\ \TmAnnApp{\Tm}{\Exn}           \tag{effect application}
 \end{alignat}
 \caption{Source language: extended syntax}\label{figure-source-language-syntax-extended}
 \end{figure}

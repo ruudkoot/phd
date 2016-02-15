@@ -72,7 +72,20 @@
         \item $\mathcal{P}(V_{\tau_1} \to V_{\tau_2}) \simeq V_{\tau_1} \to \mathcal{P}(V_{\tau_2})$? Cardinallity suggests not: $2^{(\beta^\alpha)} \neq (2^\beta)^\alpha$.
         \item If we don't distribute unions over applications, can we ever get them deep inside terms?
         \item If we don't \emph{and} the outermost lambdas are not there because is always of kind star, can we get non-trivial terms? I.e. something other than $e_1(e_{11},...,e_{1n_1}) \cup \cdots \cup e_k(e_{k1},...,e_{kn_k}$ (note: $e$ and not $t$ as arugments).
+        
     \end{itemize}
+    
+    \subsubsection{Widening}
+
+        \begin{itemize}
+        
+            \item Does this give us any bounds on the complexity? (Or do the fact that we have arguments prevent this?)
+            
+            \item Footnote about \emph{narrowing}.
+            
+            \item Note that this is the reason $\cup$ needs to be higher-order.
+        
+        \end{itemize}
     
 \subsection{Source language}
 
