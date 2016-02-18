@@ -120,6 +120,10 @@ exceptions, higher-ranked polymorphism, polymorphic recursion, type-and-effect s
 %include section/future-research.lhs2tex
 %include section/conclusion.lhs2tex
 
+\acks
+
+We would like to thank Jurriaan Hage and the members of the Software Technology reading club at Utrecht University for their comments on earlier drafts of this paper.
+
 %\clearpage
 
 \bibliographystyle{plainnat}

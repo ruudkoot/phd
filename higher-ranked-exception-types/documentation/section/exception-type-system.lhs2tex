@@ -10,7 +10,7 @@ The syntax of well-formed exception types is given in Figure~\ref{fig-exception-
 
 For a list with exception type $\ExnTyList{\ExnTy}{\Exn}$ and effect $\ExnAlt$, the type $\ExnTy$ of the elements in the list is \emph{annotated} with an exception set expression~$\Exn$ of kind~$\KindEXN$. This expression gives a set of exceptions, from which any one may be raised when an element of the list is forced. The effect $\ExnAlt$ gives a set of exceptions, from which any one may be raised when a constructor forming the spine of the list is forced.
 
-For a function with exception type $\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}$ and effect~$\ExnAlt$, the argument of type $\ExnTy_1$ is annotated with an exception set expression $\Exn_1$ that gives set of exceptions that may be raised if the argument is forced in the body of the function. The result of type $\ExnTy_2$ is annotated with an exception set expression $\Exn_2$ that gives the set of exceptions that may be raised when the result of the function is forced. The effect $\ExnAlt$ gives the set of exceptions from which any one may be raised when the function closure is forced.
+For a function with exception type $\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}$ and effect~$\ExnAlt$, the argument of type $\ExnTy_1$ is annotated with an exception set expression $\Exn_1$ that gives a set of exceptions that may be raised if the argument is forced in the body of the function. The result of type $\ExnTy_2$ is annotated with an exception set expression $\Exn_2$ that gives the set of exceptions that may be raised when the result of the function is forced. The effect $\ExnAlt$ gives the set of exceptions from which any one may be raised when the function closure is forced.
 
 \begin{figure}[h!]
     \begin{alignat}{2}
@@ -83,11 +83,11 @@ The exceptional function value
 The exception set expressions $\Exn$ and their kinds $\Kind$ are an instance of the \mbox{$\LambdaUnion$-calculus}, where exception set expressions are terms and kinds are the types. Two exception set expressions are considered equivalent if they are convertible as $\LambdaUnion$-terms, which is to say that they reduce to the same normal form.
 
 The type system resembles \SystemFw \cite{Girard1972} in that we have quantification, abstraction and application at the type level. A key difference is that abstraction and application are restricted to the effects ($\ClassExn$) and cannot be used in the types ($\ClassExnTy$) directly.
-Quantification on the other hand is resticted to the types, over effects, and not allowed in the effect itself. The types thus remain predicative.
+Quantification on the other hand is restricted to the types, over effects, and not allowed in the effect itself. The types thus remain predicative.
 
 \subsection{Subtyping}
 
-Exception types are endowed with the usual subtyping relation for type-and-effect systems (Figure~\ref{figure-subtyping}). The function type is contravariant in its first argument for both the type and the effect. The subeffecting relation $\JudgeSubExn{\KiEnv}{\Exn_1}{\Exn_2}$ is the subsumption relation from the $\LambdaUnion$-calculus (Definition~\ref{definition-subsumption}).
+Exception types are endowed with the usual subtyping relation for type-and-effect systems (Figure~\ref{figure-subtyping}). The function type is contravariant in its first argument for both the type and the effect. The subeffecting relation $\JudgeSubExn{\KiEnv}{\Exn_1}{\Exn_2}$ is the subsumption relation $\JudgeLuSub{\LuTm_1}{\LuTm_2}$ from the $\LambdaUnion$-calculus (Definition~\ref{definition-subsumption}).
 
 %include ../figure/subtyping.lhs2tex
 
@@ -100,7 +100,7 @@ If we furthermore want the type system to be modular---allowing type checking an
 These observations lead to the following definition of \emph{conservative exception types}:\footnote{\citet{HoldermansHage} call pattern types \emph{fully parametric} and conservative types \emph{fully flexible}.}
 
 \begin{definition}
-An exception set expression $\Exn$ is \emph{simple} if it is a single exception set variable $\ExnVar$, an exception set expression is a \emph{pattern} if it fits Definition~\ref{definition-pattern}, and any is exception set expression is \emph{conservative}.
+An exception set expression $\Exn$ is \emph{simple} if it is a single exception set variable $\ExnVar$, an exception set expression is a \emph{pattern} if it fits Definition~\ref{definition-pattern}, and any exception set expression is \emph{conservative}.
 
 We lift these three judgments to exception types $\ExnTy$ in the following manner:
 
@@ -115,7 +115,7 @@ We lift these three judgments to exception types $\ExnTy$ in the following manne
     \end{itemize}
 \end{definition}
 
-For base and compound types that stand in an argument position their effect and any nested annotations must thus be able to be instantiated to any arbitrary exception set expression. They must thus be exception set variables that have been universally quantified.
+For base and compound types that stand in an argument position their effect and any nested annotations must thus be able to be instantiated to any arbitrary exception set expression. They must therefore be exception set variables that have been universally quantified.
 
 \begin{example} The function |tail| can be applied to any list, but may produce an additional exceptional value, because it is partial:
 \begin{code}
@@ -198,7 +198,7 @@ A completed exception type is always a pattern type.
 
 Note that the types of both arguments are simple types with simple exception annotations. However, as the first argument is a functional argument, the result type of that function is still a pattern.
 
-The exception annotation on the right-most function-space constructor is a pattern that depends on $\ExnVar_2$, $\ExnVar_2^\prime$ and $\ExnVar_3$. While we previously noted that the annotation on a function-space constructor cannot depend on the annotation belonging to the argument of that function, it is possible for set of exceptional values that the closure may come to depend on any previous arguments of the whole function. This is more concretely demonstrated by the following function:
+The exception annotation on the right-most function-space constructor is a pattern that depends on $\ExnVar_2$, $\ExnVar_2^\prime$ and $\ExnVar_3$. While we previously noted that the annotation on a function-space constructor cannot depend on the annotation belonging to the argument of that function, it is possible for a set of exceptional values that the closure may come to depend on any previous arguments of the whole function. This is more concretely demonstrated by the following function:
 %format fty = "\ExnTyForall{\ExnVar_1,\ExnVar_2}{\KindEXN}{\Throws{\ExnBool}{\ExnVar_1}\xrightarrow{\ExnEmpty}\Throws{\ExnBool}{\ExnVar_2}\xrightarrow{\ExnVar_1}\Throws{\ExnBool}{\ExnVar_2}}"
 %format ftm = "\lambda x : \TyBool . x\ \mathbf{seq}\ \lambda y : \TyBool. y"
     \begin{code}

@@ -51,8 +51,8 @@ similar to our typed $\LambdaUnion$-calculus.
 
 \subsection{Exception analyses}
 
-Several exception analyses have been described in the literature, these primarily target the detection of uncaught exceptions in ML.
+Several exception analyses have been described in the literature; these primarily target the detection of uncaught exceptions in ML.
 The exception analysis by \citet{kyi} is based on abstract interpretation.
 \citet{Guzman94anextended} and \citet{Fahndrich:1998:TDE:893957} describe type-based exception analyses. \citet{Leroy:2000:TAU:349214.349230} presents a row-based type system for exception analysis that contains a data-flow analysis component targeted towards tracking value-carrying exceptions.
 
-\citet{Glynn:2002:EAN:581478.581488} developed the first exception analysis for a non-strict language. It is a type-based analysis using Boolean constraints. In \cite{Koot:2015:TEA:2678015.2682542} we presented a constraint-based type system for exception analysis of a non-strict language, where the exception-flow could depend on the data-flow using conditional constraints. This increases the accuracy in the presence of exceptions raised by pattern-matching failures.
+\citet{Glynn:2002:EAN:581478.581488} developed the first exception analysis for a non-strict language; a type-based analysis using Boolean constraints. \citet{Koot:2015:TEA:2678015.2682542} present a constraint-based type system for exception analysis of a non-strict language, where the exception-flow could depend on the data-flow using conditional constraints. This increases the accuracy in the presence of exceptions raised by pattern-matching failures.

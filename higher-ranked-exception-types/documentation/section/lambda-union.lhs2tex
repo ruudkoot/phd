@@ -18,8 +18,8 @@ We let $\LuVar \in \ClassVar$ range over an infinite set of variables and $c \in
     \LuTm \in \ClassLuTm &\ ::=\    &&\LuVar \tag{variable} \\
                          &\quad||   &&\LuAbs{\LuVar}{\LuTy}{\LuTm} \tag{abstraction} \\
                          &\quad||   &&\LuApp{\LuTm_1}{\LuTm_2} \tag{application} \\
-                         &\quad||   &&\LuEmpty \tag{empty} \\
-                         &\quad||   &&\LuCon \tag{singleton} \\
+                         &\quad||   &&\LuEmpty \tag{empty set} \\
+                         &\quad||   &&\LuCon \tag{singleton set} \\
                          &\quad||   &&\LuUnion{\LuTm_1}{\LuTm_2} \tag{union}
 \end{alignat}
 
@@ -204,7 +204,7 @@ has a unique solution given by the unifier \[ \theta = \left[f \mapsto \lambda e
 
 Typically we want the reduction rules of a $\lambda$-calculus to respect the (observational) equivalence of terms: if $\Reduce{\LuTm_1}{\LuTm_2}$, then $\LuTm_1 \cong \LuTm_2$. As the $\LambdaUnion$-calculus does not only have the equivalence relation~$\cong$ defined on its terms, but also a subsumption preorder $\lesssim$, it is also interesting to look at reduction rules $\Reduce{\LuTm_1}{\LuTm_2}$ such that \mbox{$\LuTm_1 \lesssim \LuTm_2$}. We will call such reduction rules \emph{widening rules}. Widening rules may rewrite a closed term $\LuTm_1$ of base type to a term $\LuTm_2$ that denotes a superset of the set denoted by $\LuTm_2$, but never to a subset or incomparable set.
 
-A potential application of widening rules would be to reduce the complexity of a $\LambdaUnion$-term. In some contexts it may be sound to extend the denotation of a term with additional elements, as long as no elements are removed from it. Even if such a denotation is no longer a minimal sound denotation, the reduction in complexity of the term may be a worthwhile trade-off in some scenarios.
+A potential application of widening rules is to reduce the complexity of a $\LambdaUnion$-term. In some contexts it may be sound to extend the denotation of a term with additional elements, as long as no elements are removed from it. Even if such a denotation is no longer a minimal sound denotation, the reduction in complexity of the term may be a worthwhile trade-off in some scenarios.
 
 A reduction rule of the form $\Reduce{\LuCtx{\LuTm_1}}{\LuCtx{\LuTm_2}}$ is a widening rule if $\LuTm_1 \lesssim \LuTm_2$. Furthermore, it is the case that $\LuTm_1 \lesssim \LuUnion{\LuTm_1}{\LuTm_2}$ for any terms $\LuTm_1$ and $\LuTm_2$. An example of a widening rule that can be constructed using these observations is:
 
@@ -219,7 +219,7 @@ A reduction rule of the form $\Reduce{\LuCtx{\LuTm_1}}{\LuCtx{\LuTm_2}}$ is a wi
 %\caption{$\LambdaUnion$-calculus: widening}\label{figure-lu-widening}
 %\end{figure}
 
-This widening rule will merge any two terms together what have the same constant or variable at their heads.
+This widening rule will merge any two terms together that have the same constant or variable at their heads.
 
 \begin{example} The widening rule \CiteRule{R-Merge} can cause the denotation of a term to increase; it is a proper widening rule. Let $t_1$ and $t_2$ be the terms
 \begin{align*}

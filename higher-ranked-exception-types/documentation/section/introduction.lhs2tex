@@ -47,7 +47,7 @@ To get a better intuition for the behavior of these exception types and exceptio
                     id              = LAMBDA x x            :: forall e_1. ThrowsArr (Throws alpha e_1) (Throws alpha e_1) noexn    
                     const bottom_E  = LAMBDA x bottom_E     :: forall e_1. ThrowsArr (Throws alpha e_1) (Throws beta e_E) noexn     
     \end{code}
-The term |id| merely propagates its argument to the result unchanged, so it also propagates any exceptional values unchanged. The term |const bottom_E| discards its argument and always returns the exceptional value |bottom_E|. This behavior is also reflected in their exception types.
+The term |id| merely propagates its argument to the result unchanged, so it also propagates any exceptional values unchanged. The term |const bottom_E| discards its argument and always returns the exceptional value |bottom_E|. The behavior of |id| and |const bottom_E| is also reflected in their exception types.
 
 When we apply |map| to |id|, we need to unify the exception type of the formal parameter |forall e_1. ThrowsArr (Throws alpha e_1) (Throws beta (e_2 e_1)) (e_3)| with the exception type of the actual parameter |forall e_1. ThrowsArr (Throws alpha e_1) (Throws alpha e_1) noexn|. This can be accomplished by instantiating |e_3| to |noexn| and |e_2| to |LAMBDA x x|---as |(LAMBDA x x) e_1| evaluates to |e_1|---giving us the resulting exception type:
 \begin{code}
@@ -66,7 +66,7 @@ In Section~\ref{section-lambda-union} we introduce the $\LambdaUnion$-calculus, 
 Section~\ref{section-source-language} describes the source language to which the analysis applies.
 In Section~\ref{section-exception-types} we present the language of exception types and two type-and-effect systems for deriving exception types: a declarative type-and-effect system and a syntax-directed elaboration system that also produces an explicitly typed term.
 A type inference algorithm for this type-and-effect system is given in Section~\ref{section-type-inference-algorithm}.
-Finally, we present related work in this area and discuss some direction for further research in Sections~\ref{section-related-work} and~\ref{section-future-research}.
+Finally, we present related work in this area and discuss some directions for further research in Sections~\ref{section-related-work} and~\ref{section-future-research}.
 
 \subsection{Contributions}
 

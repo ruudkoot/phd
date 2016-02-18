@@ -3,10 +3,11 @@
 %At least two opportunities for further research present itself:
 
 \paragraph{Can we infer types for Kennedy's higher-ranked $\Lambda_{\delta\omega}$?} One problem that immediately presents itself is that this type system is not a conservative extension of the underlying type system: programs can be rejected because---while type correct in the underlying type system---they may still be dimensionally inconsistent.
-Unlike the system in this paper, the annotations on function arguments will no longer be of the simple form (patterns) required for the straightforward matching step in the type inference algorithm. Instead, we suspect we have to solve a higher-order (equational) unification problem, which is only semi-decidable. \citet{Snyder:1990:HOE:648229.752474} and \citet{NipkowQian1991} do give us semi-algorithms for solving such problems (although---at least in the latter approach---the equational theory is assumed to be regular, which the theory of Abelian groups is not).
+Unlike the system in this paper, the annotations on function arguments will no longer be of the simple form (patterns) required for the straightforward matching step in the type inference algorithm. Instead, we suspect we have to solve a higher-order equational (pre)unification problem, which is only semi-decidable.
+\citet{Snyder:1990:HOE:648229.752474}, \citet{NipkowQian1991} and \citet{QIAN1996401} do give us semi-algorithms for solving such problems.
     
 \paragraph{Can we further improve the precision of exception types?}
-In previous work \cite{Koot:2015:TEA:2678015.2682542} we argued
+\citet{Koot:2015:TEA:2678015.2682542} argue
 %It is argued by \citet{Koot:2015:TEA:2678015.2682542}
 that an accurate exception typing system for non-strict languages should also take the data flow of the program into account, as many exceptions that can be raised in non-strict languages are caused by incomplete case-analyses during pattern-matching. The canonical example is the |risers| function---which splits a list into monotonically increasing subsegments; for example, |risers [1, 3, 5, 1, 2]| evaluates to |[[1, 3, 5], [1, 2]]|---by \citet{Mitchell:2008:PBE:1411286.1411293}:
     
@@ -32,3 +33,10 @@ how this exception can be elided by having the exception flow depend on the data
 In our earlier work we used
 %\citet{Koot:2015:TEA:2678015.2682542} use
 a slightly ad hoc form of conditional constraints to model this dependence. We now believe extending a $\lambda$-calculus with an equational theory of Boolean rings may form the basis of a more principled approach. Booleans rings have already been successfully used to design type systems for strictness analysis \cite{Wright}, records \cite{LIX-RR-96-09} and exception tracking \cite{Benton:2007:SEA:1190315.1190320}.
+
+\paragraph{Metatheory}
+We have not yet worked out the metatheory of the type system presented in this paper. Of particular interest are the (syntactic) soundness, completeness and totality of the inference step for recursive definitions. We expect that soundness and completeness can be shown by a similar argument as in \citet{Mycroft1984} and \citet{Dussart:1995:PRS:647163.717680}.
+
+We conjectured the totality of our inference algorithm. We have a good reason to do so: we only expect the fixpoint iteration to diverge if no fixpoint exists---that is to say, the program is type incorrect. Assuming the program is well-typed in the underlying type system, there are no type incorrect programs in our exception typing system, however.
+
+To show the fixpoint iteration is guaranteed to terminate in their binding-time analysis, \citet{Dussart:1995:PRS:647163.717680} note that only a finite number of type constraints and therefore constrained type schemes can be formed over a finite number of variables (after constraints have been simplified). As it is still possible to form an infinite number of $\LambdaUnion$-normal forms over a finite number of variables, such an argument is not going to work directly.
