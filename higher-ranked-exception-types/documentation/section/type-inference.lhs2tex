@@ -1,6 +1,7 @@
 \section{Type inference}\label{section-type-inference-algorithm}
 
-In this section we give an inference algorithm for the exception types presented in the previous section. (Term elaboration is omitted, but is straightforward to implement.)
+%In this section we give an inference algorithm for the exception types presented in the previous section.
+A type inference algorithm is given in Figure~\ref{figure-type-inference-algorithm}.
 
 %include ../figure/type-inference-algorithm.lhs2tex
 

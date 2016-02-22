@@ -15,7 +15,7 @@
 \newcommand{\TmAbs}[3]{\lambda #1 : #2. #3}
 \newcommand{\TmAbsExn}[4]{\lambda #1 : #2\ \&\ #3. #4}
 \newcommand{\TmAnnAbs}[3]{\Lambda #1 :: #2. #3}
-\newcommand{\TmAnnAbsS}[3]{\Lambda \overline{#1 : #2}. #3}
+\newcommand{\TmAnnAbsS}[3]{\Lambda \overline{#1 :: #2}. #3}
 \newcommand{\TmApp}[2]{#1\ #2}
 \newcommand{\TmAnnApp}[2]{#1\ \langle #2 \rangle}
 \newcommand{\TmOp}[2]{#1 \oplus #2}
