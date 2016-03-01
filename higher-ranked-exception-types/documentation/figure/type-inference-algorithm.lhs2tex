@@ -147,15 +147,15 @@
                 until (Tuple ExnTy_i Exn_i) == Tuple ExnTy_im Exn_im
                 return (ResultF ElabFix ExnTy_i Exn_i)
 
-    reconstruct env kenv (BinOp) =
-        let     TupleR tm'_1 ExnTyInt Exn_1  = reconstruct env kenv tm_1
-                TupleR tm'_2 ExnTyInt Exn_2  = reconstruct env kenv tm_2
-        in      Result ElabBinOp ExnTyBool (simplify kenv (ExnUnion Exn_1 Exn_2))
-
     reconstruct env kenv (Seq) =      
         let     TupleR tm'_1 ExnTy_1 Exn_1  = reconstruct env kenv tm_1
                 TupleR tm'_2 ExnTy_2 Exn_2  = reconstruct env kenv tm_2
         in      Result ElabSeq ExnTy_2 (simplify kenv (ExnUnion Exn_1 Exn_2))
+
+    reconstruct env kenv (BinOp) =
+        let     TupleR tm'_1 ExnTyInt Exn_1  = reconstruct env kenv tm_1
+                TupleR tm'_2 ExnTyInt Exn_2  = reconstruct env kenv tm_2
+        in      Result ElabBinOp ExnTyBool (simplify kenv (ExnUnion Exn_1 Exn_2))
 
     reconstruct env kenv (If) =
         let     TupleR tm'_1 ExnTyBool Exn_1  = reconstruct env kenv tm_1
@@ -173,8 +173,8 @@
     reconstruct env kenv (Case) =     
         let     TupleR tm'_1 (ExnTyList ExnTy_1 Exn_1') Exn_1  = reconstruct env kenv tm_1
                 gamma'                                         = extendTyEnv (extendTyEnv env Var_1 ExnTy_1 Exn_1') Var_2 (ExnTyList ExnTy_1 Exn_1') Exn_1
-                TupleR tm'_2 ExnTy_2 Exn_2                     = reconstruct gamma' kenv tm_2
-                TupleR tm'_3 ExnTy_3 Exn_3                     = reconstruct env kenv tm_3
+                TupleR tm'_2 ExnTy_2 Exn_2                     = reconstruct env kenv tm_2
+                TupleR tm'_3 ExnTy_3 Exn_3                     = reconstruct gamma' kenv tm_3
         in      Result ElabCase
                                             (simplify kenv (ExnTyJoin ExnTy_2 ExnTy_3)) (simplify kenv (ExnUnion Exn_1 (ExnUnion Exn_2 Exn_3)))
 \end{code}

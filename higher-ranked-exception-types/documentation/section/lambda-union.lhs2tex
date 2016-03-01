@@ -1,6 +1,6 @@
 \section{The $\LambdaUnion$-calculus}\label{section-lambda-union}
 
-The $\LambdaUnion$-calculus is a simply typed $\lambda$-calculus extended with a set-union operator and singleton-set and empty-set constants at the term level. 
+The $\LambdaUnion$-calculus is a simply typed $\lambda$-calculus extended at the term-level with empty set and singleton set constants, and a set union operator.
 
 \subsection{Syntax}
 
@@ -32,7 +32,7 @@ We let $\LuVar \in \ClassVar$ range over an infinite set of variables and $c \in
 
 \subsection{Typing relation}
 
-The typing relation of the $\LambdaUnion$-calculus is an extension of the simply typed $\lambda$-calculus' typing relation.
+The typing relation of the $\LambdaUnion$-calculus is an extension of the typing relation of the simply typed $\lambda$-calculus.
 
 \begin{figure}[h]
 \begin{gather*}
@@ -63,7 +63,7 @@ The typing relation of the $\LambdaUnion$-calculus is an extension of the simply
 \caption{$\LambdaUnion$-calculus: type system}
 \end{figure}
 
-The empty-set and singleton-set constants are of base type and we can only take the set-union of two terms if they have the same type.
+The empty set and singleton set constants are of base type and the set union of two terms can only be taken if the involved terms have the same type.
 
 \subsection{Semantics}
 
@@ -123,7 +123,7 @@ Denote by $\LuCtx{}$ a \emph{context}---a $\LambdaUnion$-term with a single hole
 
 \subsection{Normalization}
 
-To reduce $\LambdaUnion$-terms to a canonical normal form we combine the $\beta$-reduction rule of the simply typed $\lambda$-calculus with rewrite rules that deal with the associativity, commutativity, idempotence and identity (\ACIone) properties of the set-union operator.
+To reduce $\LambdaUnion$-terms to a canonical normal form we combine the $\beta$-reduction rule of the simply typed $\lambda$-calculus with rewrite rules that deal with the associativity, commutativity, idempotence and identity (\ACIone) properties of the set union operator.
 
 \subsubsection{$\beta$- and $\gamma$-reduction}
 
@@ -132,9 +132,9 @@ If a term $t$ is $\eta$-long---i.e., it cannot be $\eta$-expanded without introd
     t = \lambda x_1 \cdots x_n. f_1(t_{11}, ..., t_{1q_1}) \cup \cdots \cup f_p(t_{p1}, ..., t_{pq_p})
 \end{align*}
 where $f_i$ can be a free or bound variable, a singleton-set constant, or another $\eta$-long term; and $q_i$ is equal to the arity of $f_i$ (for all $1 \leq i \leq p$).
-Here we have `forgotten' any empty set constants (unit elements), duplicate terms $f_i(t_{i1}, ..., t_{iq_i})$ (idempotent elements), and how the set union operator associates.
+Here we have removed any empty set constants (unit elements), duplicate terms $f_i(t_{i1}, ..., t_{iq_i})$ (idempotent elements), and `forgotten' how the set union operator associates.
 
-A \emph{normal form} $v$ of a term $t$---obtained by repeatedly applying the reduction rules from Figure~\ref{figure-lu-reduction}---can be written as
+A \emph{normal form} $v$ of a term $t$---obtained by repeatedly applying the reduction rules from Figure~\ref{figure-lu-reduction} and removing any empty set constants and duplicate terms---can be written as
 \begin{align*}
     v = \lambda x_1 \cdots x_n. k_1(v_{11}, ..., v_{1q_1}) \cup \cdots \cup k_p(v_{p1}, ..., v_{pq_p})
 \end{align*}
@@ -223,7 +223,7 @@ This widening rule will merge any two terms together that have the same constant
 
 \begin{example} The widening rule \CiteRule{R-Merge} can cause the denotation of a term to increase; it is a proper widening rule. Let $t_1$ and $t_2$ be the terms
 \begin{align*}
-t_1 &= \lambda f. f\ (\lambda x. \emptyset)\ \{C\} \cup g\ (\lambda x. x)\ \emptyset \\
+t_1 &= \lambda f. f\ (\lambda x. \emptyset)\ \{C\} \cup f\ (\lambda x. x)\ \emptyset \\
 t_2 &= \lambda f. f\ (\lambda x. x)\ \{C\}
 \end{align*}
 where $C$ is an arbitrary constant. Then $t_1$ can be widened to $t_2$. However $t_1\ (\lambda g.\lambda y.g\ y)$ reduces (without using the widening rule) to $\emptyset$, while $t_2\ (\lambda g.\lambda y.g\ y)$ reduces to $\{C\}$.

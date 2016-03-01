@@ -1,6 +1,6 @@
 \section{Source language}\label{section-source-language}
 
-The type-and-effect system is applicable to a simple non-strict functional language that supports Boolean, integer and list data types, as well as general recursion.
+The type-and-effect system is applicable to a simple non-strict functional language that supports boolean, integer and list data types, as well as general recursion.
 %In this section we briefly state its syntax and semantics.
 
 \begin{figure}[h]
@@ -9,9 +9,9 @@ The type-and-effect system is applicable to a simple non-strict functional langu
 \!  \Tm \in \ClassTm &\ ::=\   &&\ \TmVar                   \tag{term variable}     \\
                      &\quad||  &&\ \TmCon{\Ty}              \tag{term constant}     \\
                      &\quad||  &&\ \TmCrash{\Ty}{\ExnLbl}   \tag{exceptional constant}\\
-                     &\quad||  &&\ \TmApp{\Tm_1}{\Tm_2}     \tag{term application}  \\
                      &\quad||  &&\ \TmAbs{\TmVar}{\Ty}{\Tm} \tag{term abstraction}  \\
-                     &\quad||  &&\ \TmFIX{\TmVar}{\Ty}{\Tm} \tag{fixpoint}          \\
+                     &\quad||  &&\ \TmApp{\Tm_1}{\Tm_2}     \tag{term application}  \\
+                     &\quad||  &&\ \TmFIX{\TmVar}{\Ty}{\Tm} \tag{general recursion} \\
                      &\quad||  &&\ \TmSeq{\Tm_1}{\Tm_2}     \tag{forcing}           \\
                      &\quad||  &&\ \TmOp{\Tm_1}{\Tm_2}      \tag{operator}          \\
                      &\quad||  &&\ \TmIf{\Tm_1}{\Tm_2}{\Tm_3}\tag{conditional}      \\

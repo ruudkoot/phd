@@ -11,7 +11,7 @@ When restricted to polymorphic recursion in the effects, the problem often becom
 
 The extension to polymorphic effect-abstraction ($\lambda$-bound, higher-ranked effect polymorphism) remained less well-studied, possibly because it is of limited use without the simultaneous introduction of effect operators---in contrast to the situation of higher-ranked polymorphism in plain type systems.
 
-\paragraph{Effect operators} \citet{KennedyThesis} presents a type system that ensures the dimensional consistency of an ML-like language extended with units of measure ($\mathrm{ML}_\delta$). This language has predicative prenex dimension polymorphism. Kennedy gives an Algorithm~$\mathcal{W}$-like type inference procedure that uses equational unification to deal with the Abelian group (\textsc{ag}) structure of dimension expressions. Also described are two explicitly typed variants of the language: a System F-like language with higher-ranked dimension polymorphism ($\Lambda_\delta$), and a System~$\mathrm{F}_\omega$-like language that extends $\Lambda_\delta$ with dimension operators ($\Lambda_{\delta\omega}$). This language can type strictly more programs than the language without dimension operators:
+\paragraph{Effect operators} \citet{KennedyThesis} presents a type system that ensures the dimensional consistency of an ML-like language extended with units of measure ($\mathrm{ML}_\delta$). This language has predicative prenex dimension polymorphism. Kennedy gives an Algorithm~$\mathcal{W}$-like type inference procedure that uses equational unification to deal with the Abelian group (\textsc{ag}) structure of dimension expressions. Also described are two explicitly typed variants of the language: a System F-like language with higher-ranked dimension polymorphism ($\Lambda_\delta$), and a System~$\mathrm{F}_\omega$-like language that extends $\Lambda_\delta$ with dimension operators ($\Lambda_{\delta\omega}$). \citeauthor{KennedyThesis} notes that this language can type strictly more programs than the language without dimension operators:
     \begin{code}
         twice       ::  forall F : DIM => DIM.
                             (forall d : DIM. Real d -> Real (F d)) ->
@@ -25,12 +25,9 @@ The extension to polymorphic effect-abstraction ($\lambda$-bound, higher-ranked 
 
         fourth      ::  forall d : DIM. Real d -> Real (exp d 4)
         fourth      =   twice (Angled (LLAMBDA (d : DIM) (exp d 2))) square
-
-        sixteenth   ::  forall d : DIM. Real d -> Real (exp d 16)
-        sixteenth   =   twice (Angled (LLAMBDA (d : DIM) (exp d 4))) fourth
     \end{code}
 
-Without dimension operators the type of the higher-order function |twice| would need to be specialized to a type that is either only applicable in |fourth|, or a type that is only applicable in |sixteenth|.
+Without dimension operators the type of the higher-order function |twice| would not allow the application of the function |square| at the two distinct types |forall d : DIM. Real d -> Real (exp d 2)| and |forall d : DIM. Real (exp d 2) -> Real (exp d 4)| when invoked from the function |fourth|.
 
 The language $\Lambda_{\delta\omega}$ bears a striking resemblance to the language in Figure~\ref{fig-exception-type-syntax}: the empty and singleton exception sets constants, and the exception set union operator have been replaced with a unit dimension, and dimension product and inverse operators---as dimensions have an \textsc{ag} structure, whereas exception sets have an \ACIone structure; in the dimension type system the annotation is placed only on the real number base type instead of on the compound types, and there is no effect. No type inference algorithm is given for this language, however.
 

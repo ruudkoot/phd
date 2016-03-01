@@ -2,6 +2,10 @@
 
 \begin{itemize}
 
+    \item naming and ordering of quantified exception set variables in the examples is inconsistent.
+    
+    \item notation of type signatures in the examples is inconsisten.
+
     \item standard polyrec examples (DHM + GSM)
     
     \item polyrec does not ``come for free''
@@ -24,10 +28,6 @@
     
     \item typeset System $F_\omega$ correctly
     
-    \item re-enable more fields in bibliography, full first names
-    
-    \item Stefan's terminology: fully parametric vs. fully flexible
-    
     \item roll Metatheory into earlier sections, add new section Analysis (also add to Overview)
     
     \item Untracked exceptions can break information flow security.
@@ -35,6 +35,8 @@
     \item Elaborte in the subsection ``Contributions''. Mention prototype?
     
     \item : vs ::
+    
+    \item add function composition as an additional example
 
 \end{itemize}
 
@@ -42,8 +44,6 @@
 
     \begin{itemize}
 
-        \item Decidability is only conjectured, so far.
-        
         \item title: Higher-order effect types
     
     \end{itemize}
@@ -52,7 +52,11 @@
 
     \begin{itemize}
     
+        \item In the final example (map (const undefined)) no non-exceptional values will be \emph{actually} present in the resulting list
+    
         \item Why not |ThrowsArr (Throws alpha e_1) (Throws beta (e_2)) e_3|?! Give some examples why higher-rankedness is needed. The example on the poster/|map| isn't sufficient. Postpone to a later section?
+        
+        \item Need an example that clearly demonstrates why HRP is \emph{needed} (May be difficult without also constructing a complete subtyping-based analysis?)
 
     \end{itemize}
     
@@ -60,13 +64,11 @@
 
     \begin{itemize}
     
-        \item \TODOX{We can make union only work on base types (as we not longer \emph{need} to distribute unions over applications)?}
+        \item \TODOX{We can make union only work on base types (as we not longer \emph{need} to distribute unions over applications)? Only need during widening, now...}
 
         \item \TODOX{Prove more Lemmas about reduction rules (esp. $\gamma_1$)}
         
-        \item Counterexample for the widening rule.
-        
-        \item \TODOX{Rewrite subsection about Normalization}
+        \item Add reduction rules for $\emptyset$ and idempotence to the Figure. (Do wee need the bars above the rules?)
     
         \item Prove semantics is ACI1. We have a different unit for each type!
         \item $\mathcal{P}(V_{\tau_1} \to V_{\tau_2}) \simeq V_{\tau_1} \to \mathcal{P}(V_{\tau_2})$? Cardinallity suggests not: $2^{(\beta^\alpha)} \neq (2^\beta)^\alpha$.
@@ -94,6 +96,12 @@
         \item We either need to omit the type annotations on $\TmCrash{\Ty}{\ExnLbl}$, or add them to $\TmIf{}{}{}$ and $\TmCase{}{}{}{}{}$.
     
         \item We do not have a rule \CiteRule{E-AnnAppExn}. Check that the canonical forms lemma gives us that terms of universally quantified type cannot be exceptional values.
+        
+        \item Replace the arrow with another one? (This one clashes with the reduction relation from $\LambdaUnion$.)
+        
+        \item Define the meaning of the double brackets in the redecution rule E-Op.
+        
+        \item Let-bindings can be defined in terms of abstractions (because HRP)
 
     \end{itemize}
     
@@ -101,7 +109,15 @@
 
     \begin{itemize}
     
+        \item ``Type signatures are denoted as ...'' there are several other ways used to write this
+        
+        \item The syntax of environments is omitted from the ``syntax'' figure
+        
+        \item Merge the figures with syntax and well-formedness?
+    
         \item Elaborate on well-formedness
+        
+        \item Prove that $\xleftrightarrow{*} \iff \simeq$.
     
         \item \TODOX{Rename stuff in \CiteRule{T-App} in the elaboration system (now subtype/-effect of the result instead of the argument and clashes with the indices enumerated over by $i$!}
         
@@ -150,6 +166,8 @@
     \end{itemize}
 
     \begin{itemize}
+    
+        \item In T-AnnAbs, $\Gamma, \xi = \Delta$?
 
         \item In T-Abs and T-AnnAbs, should the term-level term-abstraction also have an explicit effect annotation?
 
@@ -194,6 +212,8 @@
         \item Note that we do not construct the elaborated term, as it is not useful other than for metatheoretic purposes.
         
         \item Lemma: The algorithm maintains the invariant that exception types and exceptions are in normal form. 
+        
+        \item Typesetting issues |simplify|
 
     \end{itemize}
     
@@ -204,6 +224,8 @@
         \item More differences between \cite{HoldermansHage} (e.g. data types)?
         
         \item Christian Mossin. ``Exact flow types'' (intersection types, also non-elementary recursive by Statman)
+        
+        \item algebraic lambda calculus: higher-order $\to$ second-order?
     
     \end{itemize}
     

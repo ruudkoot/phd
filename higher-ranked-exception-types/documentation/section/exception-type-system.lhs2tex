@@ -6,11 +6,9 @@
 
 %\subsection{Exception types}
 
-The syntax of well-formed exception types is given in Figure~\ref{fig-exception-type-syntax} and Figure~\ref{fig-exception-type-well-formed}. An exception type~$\ExnTy$ is formed out of base types (booleans and integers), compound types (lists), function types, and quantifiers (ranging over exception variables).\footnote{To avoid complicating the presentation we do \emph{not} allow quantification over type variables, i.e. polymorphism in the underlying type system.}
-
-For a list with exception type $\ExnTyList{\ExnTy}{\Exn}$ and effect $\ExnAlt$, the type $\ExnTy$ of the elements in the list is \emph{annotated} with an exception set expression~$\Exn$ of kind~$\KindEXN$. This expression gives a set of exceptions, from which any one may be raised when an element of the list is forced. The effect $\ExnAlt$ gives a set of exceptions, from which any one may be raised when a constructor forming the spine of the list is forced.
-
-For a function with exception type $\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}$ and effect~$\ExnAlt$, the argument of type $\ExnTy_1$ is annotated with an exception set expression $\Exn_1$ that gives a set of exceptions that may be raised if the argument is forced in the body of the function. The result of type $\ExnTy_2$ is annotated with an exception set expression $\Exn_2$ that gives the set of exceptions that may be raised when the result of the function is forced. The effect $\ExnAlt$ gives the set of exceptions from which any one may be raised when the function closure is forced.
+The syntax of well-formed exception types is given in Figures~\ref{fig-exception-type-syntax} and~\ref{fig-exception-type-well-formed}.
+We let $\ExnVar$ range over an infinite set of exception set variables and $\ExnLbl$ over a finite set of exception labels.
+An exception type~$\ExnTy$ is formed out of base types (booleans and integers), compound types (lists), function types, and quantifiers (ranging over exception set variables\footnote{To avoid complicating the presentation we do \emph{not} allow quantification over type variables, i.e. polymorphism in the underlying type system.}).
 
 \begin{figure}[h!]
     \begin{alignat}{2}
@@ -34,7 +32,11 @@ For a function with exception type $\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2
     \label{fig-exception-type-syntax}
 \end{figure}
 
-Type signatures are denoted as $f : \ExnTy\ \&\ \Exn$, where $\ExnTy$ is the exception type of $f$ and $\Exn$ is the (top-most) effect.
+%Type signatures are denoted as $f : \ExnTy\ \&\ \Exn$, where $\ExnTy$ is the exception type of $f$ and $\Exn$ is the (top-most) effect.
+
+For a list with exception type $\ExnTyList{\ExnTy}{\Exn}$ and effect $\ExnAlt$, the type $\ExnTy$ of the elements in the list is \emph{annotated} with an exception set expression~$\Exn$ of kind~$\KindEXN$. This expression gives a set of exceptions, from which any one may be raised when an element of the list is forced. The effect $\ExnAlt$ gives a set of exceptions, from which any one may be raised when a constructor forming the spine of the list is forced.
+
+For a function with exception type $\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}$ and effect~$\ExnAlt$, the argument of type $\ExnTy_1$ is annotated with an exception set expression $\Exn_1$ that gives a set of exceptions that may be raised if the argument is forced in the body of the function. The result of type $\ExnTy_2$ is annotated with an exception set expression $\Exn_2$ that gives the set of exceptions that may be raised when the result of the function is forced. The effect $\ExnAlt$ gives the set of exceptions from which any one may be raised when the function closure is forced.
 
 %format bottom_E_fun = "\lightning^\mathbf{E}_{\TyBool \to \TyBool}"
 \begin{example}
@@ -80,10 +82,11 @@ The exceptional function value
     \label{fig-exception-type-well-formed}
 \end{figure}
 
-The exception set expressions $\Exn$ and their kinds $\Kind$ are an instance of the \mbox{$\LambdaUnion$-calculus}, where exception set expressions are terms and kinds are the types. Two exception set expressions are considered equivalent if they are convertible as $\LambdaUnion$-terms, which is to say that they reduce to the same normal form.
+The exception set expressions $\Exn$ and their kinds $\Kind$ are an instance of the \mbox{$\LambdaUnion$-calculus}, where exception set expressions are terms and kinds are the types. As the constants we takes the set of exception labels present in the program.
+Two exception set expressions are considered equivalent if they are convertible as $\LambdaUnion$-terms, which is to say that they reduce to the same normal form.
 
 The type system resembles \SystemFw \cite{Girard1972} in that we have quantification, abstraction and application at the type level. A key difference is that abstraction and application are restricted to the effects ($\ClassExn$) and cannot be used in the types ($\ClassExnTy$) directly.
-Quantification on the other hand is restricted to the types, over effects, and not allowed in the effect itself. The types thus remain predicative.
+Quantification, on the other hand, is restricted to the types, where it ranges over effects, and is not allowed to appear in the effect itself. The types thus remain predicative.
 
 \subsection{Subtyping}
 
@@ -96,6 +99,8 @@ Exception types are endowed with the usual subtyping relation for type-and-effec
 Any program that is typeable in the underlying type system should also have an exception type: the exception type system is a \emph{conservative extension} of the underlying type system. Like type systems for strictness or control flow analysis---and unlike type systems for information flow security or dimensional analysis---we do not want to reject any program that is well-typed in the underlying type system, but merely provide more insight into its behavior.
 
 If we furthermore want the type system to be modular---allowing type checking and inference to work on individual modules instead of whole programs---we cannot and need not make any assumptions about the exception types of the arguments that are applied to any function, as the function may be called from outside the module with an argument that also comes from outside the module and which we cannot know anything about.
+
+For base and compound types that stand in an argument position their effect and any nested annotations must thus be able to be instantiated to any arbitrary exception set expression. They must therefore be exception set variables that have been universally quantified.
 
 These observations lead to the following definition of \emph{conservative exception types}:\footnote{\citet{HoldermansHage} call pattern types \emph{fully parametric} and conservative types \emph{fully flexible}.}
 
@@ -115,16 +120,14 @@ We lift these three judgments to exception types $\ExnTy$ in the following manne
     \end{itemize}
 \end{definition}
 
-For base and compound types that stand in an argument position their effect and any nested annotations must thus be able to be instantiated to any arbitrary exception set expression. They must therefore be exception set variables that have been universally quantified.
-
-\begin{example} The function |tail| can be applied to any list, but may produce an additional exceptional value, because it is partial:
+\begin{example} The function |tail| can be applied to any list, but may produce an additional exceptional value |ExnLblE|, because it is partial:
 \begin{code}
     tail :: forall e_1 e_2. ExnArr (ExnList ExnBool e_1) e_2 (ExnList ExnBool e_1) (e_2 # ExnConE) :&: EmptySet
 \end{code}
 The type and effect of the argument are simple, while the type and effect of the result are conservative, making the whole type conservative.
 
 %format conj = "\land "
-The conjunction operator |&&| can be applied to any two booleans, and---being strict in both arguments---will propagate the exceptional values:
+The conjunction operator |&&| can be applied to any two booleans, and---operators being strict in both arguments---will propagate any exceptional values:
 \begin{code}
     conj  :: forall e_1. ExnArr ExnBool e_1 ((forall e_2. ExnArr ExnBool e_2 ExnBool (e_1 # e_2))) EmptySet :&: EmptySet
 \end{code}
@@ -145,7 +148,7 @@ For function types that stand in an argument position (the functional parameters
     apply  =  LAMBDA f (LAMBDA x (f x))
 \end{code}
 
-The first (functional) argument of |apply| has exception type |forall e_1 : EXN. ExnArr ExnBool e_1 ExnBool (e_3 e_1)| and effect |e_2|. It can be instantiated with any function that accepts an argument annotated with any exception set effect, and produces a result annotated with some exception set effect depending on the exception set effect of the argument; the function closure itself may raise any exception. All functions of underlying type |Bool -> Bool| satisfy these constraints, so they do not really constrain us in any way.
+The first (functional) argument of |apply| has exception type |forall e_1 : EXN. ExnArr ExnBool e_1 ExnBool (e_3 e_1)| and effect |e_2|. It can be instantiated with any function that accepts an argument annotated with any exception set effect, and produces a result annotated with some exception set effect depending on the exception set effect of the argument; the function closure itself may raise any exception. All functions of underlying type |Bool -> Bool| satisfy these constraints, so we are not really constrained at all.
 
 As |e_1| has been quantified over, only the exception set operator~|e_3| and the effect |e_2| are left free. We quantify over them outside the outer function space constructor, allowing them to appear in the annotation |e_2 # e_3 e_4| on the result. The exception set operator |e_3| is now applied to |e_4|, as the term-level application |f x| instantiates the quantified exception set variable |e_1| to |e_4|.
 
@@ -154,7 +157,7 @@ As |e_1| has been quantified over, only the exception set operator~|e_3| and the
 
 %format CrashB2B = "\TmCrash{\TyBool\to\TyBool}{\ExnLblE}"
 \begin{example}
-    The semantics of the source language is not invariant under $\eta$-conversion in the presence of exceptional values---so neither are exception types. The term
+    The semantics of terms in the source language is not invariant under $\eta$-conversion in the presence of exceptional values---thus neither are exception types. The term
     \savecolumns
     \begin{code}
         LAMBDA (x :: Bool) (CrashB2B x)  :: forall e : EXN. ExnTyArrT ExnBool e ExnBool ExnConE EmptySet
@@ -169,7 +172,7 @@ As |e_1| has been quantified over, only the exception set operator~|e_3| and the
         (LAMBDA (x :: Bool) (CrashB2B x))  True  :: ExnBool :&: ExnConE
         CrashB2B                           True  :: ExnBool :&: ExnConE
     \end{code}
-    but they can be by forcing the closure
+    but they can be distinguished by forcing the closure
     \begin{code}
         (LAMBDA (x :: Bool) (CrashB2B x))  seq  True  :: ExnBool :&: EmptySet
         CrashB2B                           seq  True  :: ExnBool :&: ExnConE
@@ -178,7 +181,7 @@ As |e_1| has been quantified over, only the exception set operator~|e_3| and the
 
 \subsection{Exception type completion}
 
-Given an underlying type $\Ty$ we can compute the most general exception type $\ExnTy$ that erases to $\Ty$. This is done using the type completion system in Figure~\ref{figure-type-completion}, defining a type completion relation $\JudgeComplete{\KindENV}{\Ty}{\ExnTy}{\Exn}{\KindENV'}$.
+Given an underlying type $\Ty$ we can compute the most general exception type $\ExnTy$ that erases to $\Ty$. This is done using the type completion system in Figure~\ref{figure-type-completion}, that defines a type completion relation $\JudgeComplete{\KindENV}{\Ty}{\ExnTy}{\Exn}{\KindENV'}$.
 A judgment $\JudgeComplete{\KindEnv{i}}{\Ty}{\ExnTy}{\Exn}{\KindEnv{j}}$ is read: if the kinded exception set variables $\KindEnv{i}$ are in scope, then the underlying type $\Ty$ is completed to the exception type $\ExnTy$ and effect $\Exn$, while introducing the kinded free exception set variables $\KindEnv{j}$.
 A completed exception type is always a pattern type.
 
@@ -189,7 +192,7 @@ A completed exception type is always a pattern type.
         & \quad\quad (\ExnTyForall{\ExnVar_5}{\KindEXN}{\ExnTyForall{\ExnVar_5^\prime}{\KindEXN}{\Throws{[\Throws{\ExnBool}{\ExnVar_5^\prime}]}{\ExnVar_5}}} \xrightarrow{\ExnVar_6\ \ExnVar_2\ \ExnVar_2^\prime\ \ExnVar_3} \\
         & \quad\quad\quad\quad\quad\quad \Throws{\ExnTyList{\ExnBool}{\ExnVar_7^\prime\ \ExnVar_2\ \ExnVar_2^\prime\ \ExnVar_3\ \ExnVar_5\ \ExnVar_5^\prime}}{\ExnVar_7\ \ExnVar_2\ \ExnVar_2^\prime\ \ExnVar_3\ \ExnVar_5\ \ExnVar_5^\prime})
     \end{align*}
-    with effect $\ExnVar_4$, and while introducing free variables
+    with effect $\ExnVar_4$, and while introducing the free \ThesisPaper{exception set}{} variables
     \begin{align*}
         \ExnVar_4  &:: \KindEXN, \\
         \ExnVar_6 &:: \KindEXN\KindArr\KindEXN\KindArr(\KindEXN\KindArr\KindEXN)\KindArr\KindEXN, \\
@@ -206,12 +209,13 @@ The exception annotation on the right-most function-space constructor is a patte
         f  =  ftm
     \end{code}
 \end{example}
-Whether the closure that is returned after partially applying |f| to one argument is an exceptional values or not, depends on that argument |x| being exceptional or not.
+Whether the closure that is returned after partially applying |f| to one argument is an exceptional value or not, depends on that argument |x| being exceptional or not.
 
 \subsection{Least exception types}
 
+Besides completing an underlying type $\Ty$ to a most general exception type, we also want to compute a least exception type~$\bot_\Ty$.
 Given an effect kind $\overline{\kappa_i\Rightarrow}\KindEXN$, denote by $\emptyset_{\overline{\kappa_i\Rightarrow}\KindEXN}$ the effect $\lambda \overline{e_i :: \kappa_i}. \emptyset$.
-Besides completing an underlying type $\Ty$ to a most general exception type, we also want to compute a least exception type~$\bot_\Ty$. This can be accomplished by first completing the type $\Ty$ to the most general exception type, and then substituting $\emptyset_{\kappa_j}$ for all free freshly introduced exception set variables $\KindEnv{j}$.
+We can construct a least exception type by first completing the type $\Ty$ to the most general exception type, and then substituting $\emptyset_{\kappa_j}$ for all free freshly introduced exception set variables $\KindEnv{j}$.
 
 \begin{example} The least exception type \[ \bot_{\TyArr{\TyList{\TyArr{\TyBool}{\TyBool}}}{\TyArr{\TyList{\TyBool}}{\TyList{\TyBool}}}} \] is the conservative type
     \begin{align*}
@@ -225,14 +229,14 @@ Besides completing an underlying type $\Ty$ to a most general exception type, we
 
 In Figure~\ref{figure-declarative-type-system} we give a declarative system for deriving exception typing judgments $\JudgeExnTy{\TyEnv}{\KiEnv}{\Tm}{\ExnTy}{\Exn}$.
 
-These judgments work on an explicitly typed language and for this purpose we extend the terms of the source language with two new constructs: term-level effect abstraction and effect application.
+These judgments work on an explicitly typed language and for this purpose we extend the terms of the source language with two new term-level constructs: effect abstraction and effect application.
 
 \begin{figure}[h]
 \paragraph{Terms}
 \begin{alignat}{2}
 \!  \Tm \in \ClassExnTm &\ ::=\   &&\ ...                            \notag       \\
                         &\quad||  &&\ \TmAbs{\TmVar}{\ExnTy\ \&\ \Exn}{\Tm} \tag{term abstraction} \\
-                        &\quad||  &&\ \TmFixExn{\TmVar}{\ExnTy}{\Exn}{\Tm} \tag{fixpoint} \\
+                        &\quad||  &&\ \TmFixExn{\TmVar}{\ExnTy}{\Exn}{\Tm} \tag{general recursion} \\
                         &\quad||  &&\ ...                            \notag       \\
                         &\quad||  &&\ \TmAnnAbs{\ExnVar}{\Kind}{\Tm} \tag{effect abstraction}  \\
                         &\quad||  &&\ \TmAnnApp{\Tm}{\Exn}           \tag{effect application}
@@ -246,7 +250,8 @@ The auxiliary judgment $\JudgeTyElab{\KiEnv}{\ExnTy}{\Ty}$ holds for any excepti
 
 \subsection{Presentation of exception types}
 
-For most-general conservative exception types the location of the quantifiers is uniquely determined, so we can omit them from the type without introducing ambiguity. For example, the exception type of the |map| function from the introduction can be presented as:
+For most-general conservative exception types the location of the quantifiers is uniquely determined, we can therefore omit them from the type without introducing ambiguity. For example, the exception type of the |map| function from the introduction may be presented as:
+
 \begin{code}
 (ThrowsArr (Throws alpha e_1) (Throws beta (e_2 e_1)) (e_3)) -> Throws ([Throws alpha e_4]) e_5 -> Throws ([Throws beta (e_2 e_4 # e_3)]) e_5
 \end{code}

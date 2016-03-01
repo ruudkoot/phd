@@ -20,7 +20,7 @@
 \newcommand{\ClassExn}{\mathbf{Exn}}
 %format Exn         = "\ClassExn"
 %format ClassExn    = "\ClassExn"
-\newcommand{\ClassKind}{\mathbf{Ki}}
+\newcommand{\ClassKind}{\mathbf{ExnKi}}
 %format Kind        = "\ClassKind"
 \newcommand{\ClassSubst}{\mathbf{Subst}}
 %format ClassSubst  = "\ClassSubst"

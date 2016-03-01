@@ -2,7 +2,7 @@
 
 %At least two opportunities for further research present itself:
 
-\paragraph{Can we infer types for Kennedy's higher-ranked $\Lambda_{\delta\omega}$?} One problem that immediately presents itself is that this type system is not a conservative extension of the underlying type system: programs can be rejected because---while type correct in the underlying type system---they may still be dimensionally inconsistent.
+\paragraph{Can we infer types for Kennedy's higher-ranked $\Lambda_{\delta\omega}$?} One problem that immediately presents itself is that this type system is not a conservative extension of the underlying type system: programs can be rejected because they, while being type correct in the underlying type system, may still be dimensionally inconsistent.
 Unlike the system in this paper, the annotations on function arguments will no longer be of the simple form (patterns) required for the straightforward matching step in the type inference algorithm. Instead, we suspect we have to solve a higher-order equational (pre)unification problem, which is only semi-decidable.
 \citet{Snyder:1990:HOE:648229.752474}, \citet{NipkowQian1991} and \citet{QIAN1996401} do give us semi-algorithms for solving such problems.
     
@@ -27,12 +27,12 @@ The inference algorithm in Figure~\ref{figure-type-inference-algorithm} assigns 
     \end{code}
 where |ExnLblE| is the label of the exception raised when the pattern-match in the |where|-clause fails.\footnote{This exception is left implicit in the above program, but becomes explicit when the code is desugared into our core language.} However, the pattern-match happens on the result of the recursive call |risers (x_2 : xs)|. When |risers| is given a non-empty list (such as |x_2 : xs|) as an argument, it always returns a non-empty list as its result. The pattern-match can thus never fail, and the exception labelled |ExnLblE| can thus never be raised.
 
-In our previous work we demonstrated
-%\citet{Koot:2015:TEA:2678015.2682542} demonstrate
+%In our previous work we demonstrated
+\citeauthor{Koot:2015:TEA:2678015.2682542} demonstrate
 how this exception can be elided by having the exception flow depend on the data flow. The $\LambdaUnion$-calculus terms that form the effect annotations cannot express this dependence, however.
-In our earlier work we used
-%\citet{Koot:2015:TEA:2678015.2682542} use
-a slightly ad hoc form of conditional constraints to model this dependence. We now believe extending a $\lambda$-calculus with an equational theory of Boolean rings may form the basis of a more principled approach. Booleans rings have already been successfully used to design type systems for strictness analysis \cite{Wright}, records \cite{LIX-RR-96-09} and exception tracking \cite{Benton:2007:SEA:1190315.1190320}.
+%In our earlier work we used
+\citeauthor{Koot:2015:TEA:2678015.2682542} use
+a slightly ad hoc form of conditional constraints to model this dependence. We believe that extending a $\lambda$-calculus with an equational theory of Boolean rings may form the basis of a more principled approach. Boolean rings have already been successfully used to design type systems for strictness analysis \cite{Wright}, records \cite{LIX-RR-96-09} and exception tracking \cite{Benton:2007:SEA:1190315.1190320}.
 
 \paragraph{Metatheory}
 We have not yet worked out the metatheory of the type system presented in this paper. Of particular interest are the (syntactic) soundness, completeness and totality of the inference step for recursive definitions. We expect that soundness and completeness can be shown by a similar argument as in \citet{Mycroft1984} and \citet{Dussart:1995:PRS:647163.717680}.
