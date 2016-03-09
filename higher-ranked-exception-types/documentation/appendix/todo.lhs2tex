@@ -221,6 +221,8 @@
 
     \begin{itemize}
     
+        \item linear-algebriac lambda-calculi (Arrighi and Dowek, Vaux)
+    
         \item More differences between \cite{HoldermansHage} (e.g. data types)?
         
         \item Christian Mossin. ``Exact flow types'' (intersection types, also non-elementary recursive by Statman)
