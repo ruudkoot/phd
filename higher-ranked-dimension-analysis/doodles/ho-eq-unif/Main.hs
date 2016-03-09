@@ -7,10 +7,21 @@ import Control.Arrow ((***))
 import Control.Monad
 import Control.Monad.State
 
+import Data.Maybe
+
 import           Data.Set        hiding (map)
 import qualified Data.Set as Set
 
--- | Utility | ----------------------------------------------------------------
+-- | Utility | -----------------------------------------------------------------
+
+for = flip map
+
+statefulForM :: Monad m => s -> [a] -> (s -> a -> m (s, b)) -> m (s, [b])
+statefulForM s []     f = return (s, [])
+statefulForM s (x:xs) f = do
+    (s',  x' ) <- f s x
+    (s'', xs') <- statefulForM s' xs f
+    return (s'', x' : xs')
 
 -- * Debugging * ---------------------------------------------------------------
 
@@ -49,7 +60,14 @@ sig2ty (bs :=> b) = map base bs :-> b
 type UnificationProblem sort sig
     = [(AlgebraicTerm sort sig, AlgebraicTerm sort sig)]
 
-type Subst sort sig = [AlgebraicTerm sort sig]
+type Subst      sort sig = [      AlgebraicTerm sort sig ]
+type DenseSubst sort sig = [(Int, AlgebraicTerm sort sig)]
+
+sparsifySubst :: Env sort -> DenseSubst sort sig -> Subst sort sig
+sparsifySubst env subst = for [0..] $ \i ->
+    case lookup i subst of
+        Nothing -> free env i
+        Just tm -> tm
 
 class (Ord sort, Ord sig) => Theory sort sig | sig -> sort where
     -- FIXME: arbitrary Ord for Set (was Eq)
@@ -227,13 +245,38 @@ transformEUni :: Theory b s => PartConf b s -> State (Env b) (Maybe (Conf b s))
 transformEUni (theta, ss', ss) = do
     let ps = toList $ Set.map snd (unionMap' (\(u,v) -> pmfs u `union` pmfs v) ss')
     rho <- forM ps $ \w -> do
-            t <- typeOfTerm [] w
-            y <- freshAtom t
-            return (w,y)
+                 t <- typeOfTerm [] w
+                 y <- freshAtom t
+                 return (w,y)
+    let xss    = map (\(A [] _ xs,_) -> xs) rho
+    let ys     = map snd rho
     let rhoSS' = map (applyOrderReduction rho *** applyOrderReduction rho) ss'
                     -- FIXME: ^ remove duplicates (is a set)
-    let sigma  = unify rhoSS'
-    undefined
+    let Just sigma = unify rhoSS'
+                    -- FIXME: unification can fail (propagate failure)
+    (_, phis) <- statefulForM [] (zip xss ys) $ \s (xs_i, Free y) -> do
+                    let qs = toList $ pmfs (sigma !! y)
+                    statefulForM s qs $ \s' (us, z) -> do
+                        case lookup (z, xs_i, us) s' of
+                            Nothing -> do
+                                tyxs_i <- mapM (typeOfTerm []) xs_i
+                                _ :-> t <- typeOfTerm [] z
+                                z' <- freshAtom (tyxs_i ++ us :-> t)
+                                return ( ((z, xs_i, us), z') : s'
+                                       , (us, z, z')              )
+                            Just z' -> do
+                                return ( s', (us, z, z') )
+    theta <- forM (zip3 phis ys ps) $ \(phi, Free y, A [] (Free g) xs) -> do
+                ts <- mapM (typeOfTerm []) xs
+                let (A us a as) = applyConditionalMapping phi (sigma !! y)
+                return (g, A (us ++ ts) a as)
+    env <- get
+    let theta' = map (\(x,y) -> (free env x, y)) theta
+    let theta'' = sparsifySubst env theta
+    return $ Just $
+        ( error "TODO"
+        , theta' ++ map (applySubstAndReduce theta'' *** applySubstAndReduce theta'') ss
+        )
 
 type OrderReduction b s = [(AlgebraicTerm b s, Atom s)]
 
