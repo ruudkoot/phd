@@ -302,17 +302,20 @@ applyOrderReduction = undefined
 -- are we only non-deterministic locally (choice of 'b') or also globally
 --                  (choice of '(u,v)')?
 transformBin :: Theory b s => HeadConf b s -> State (Env b, Env b) [Conf b s]
-transformBin (theta, (A xs (FreeV f) us, v@(A _xs a vs)), ss) | xs == _xs && isRigid v
-    = do (_, envC) <- get
+transformBin (theta, (u@(A xs (FreeV f) us), v@(A _xs a vs)), ss) | xs == _xs && isRigid v
+    = do (envV, envC) <- get
          ts :-> t <- typeOfFreeV f
-         let bs = map Bound [0 .. length ts - 1]
+         let bs = map Bound [0 .. length ts - 1]            -- FIXME: too many
                     ++ map Const constants
                     ++ map FreeC [0 .. length envC - 1]
          pbs <- mapM (partialBinding (ts :-> t)) bs
+         (envV, envC) <- get
          return $ for pbs $ \pb ->
-            ( error "TODO"
-            , (undefined, pb) : ss
-            )
+            let subst = sparsifySubst envV [(f, pb)]
+            in ( error "TODO"
+               , (freeV envV f, pb)
+                    : map (applySubstAndReduce subst *** applySubstAndReduce subst) ss
+               )
 transformBin _ = error "transformBin: assumptions violated"
 
 -- * Control strategy (Qian & Wang) * ------------------------------------------
