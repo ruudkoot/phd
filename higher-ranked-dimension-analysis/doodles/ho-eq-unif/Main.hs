@@ -66,18 +66,21 @@ type DenseSubst sort sig = [(Int, AlgebraicTerm sort sig)]
 sparsifySubst :: Env sort -> DenseSubst sort sig -> Subst sort sig
 sparsifySubst env subst = for [0..] $ \i ->
     case lookup i subst of
-        Nothing -> free env i
+        Nothing -> freeV env i
         Just tm -> tm
 
-class (Ord sort, Ord sig) => Theory sort sig | sig -> sort where
+class (Ord sort, Bounded sig, Enum sig, Ord sig) => Theory sort sig | sig -> sort where
     -- FIXME: arbitrary Ord for Set (was Eq)
+    constants :: [sig]
+    constants =  [minBound .. maxBound]
     signature :: sig -> Signature sort
     unify     :: UnificationProblem sort sig -> Maybe (Subst sort sig)
 
 data Atom sig
-    = Bound Int     -- bound variables
-    | Free  Int     -- free variables
-    | Const sig     -- function constants
+    = Bound Int     -- lambda-bound variables       (rigid)
+    | FreeV Int     -- free variables               (flexible)
+    | FreeC Int     -- free constants               (rigid)
+    | Const sig     -- signature-bound constants    (rigid)
   deriving (Eq, Ord, Show)  -- FIXME: arbitrary Ord for Set
   
 -- NOTE: does not enforce function constants to be first-order
@@ -87,12 +90,13 @@ data AlgebraicTerm sort sig
   deriving (Eq, Ord, Show)  -- FIXME: arbitrary Ord for Set
   
 fv :: AlgebraicTerm sort sig -> [Int]
-fv (A _ (Free f) es) = f : concatMap fv es
-fv (A _ _        es) =     concatMap fv es
+fv (A _ (FreeV f) es) = f : concatMap fv es
+fv (A _ _         es) =     concatMap fv es
 
 isRigid :: AlgebraicTerm sort sig -> Bool
 isRigid (A _ (Bound _) _) = True
-isRigid (A _ (Free  _) _) = False
+isRigid (A _ (FreeV _) _) = False
+isRigid (A _ (FreeC _) _) = True
 isRigid (A _ (Const _) _) = True
 
 -- Convert an atom into an eta-long term.
@@ -100,9 +104,9 @@ atom2term :: Theory sort sig => Env sort -> Env sort -> Atom sig -> AlgebraicTer
 atom2term envF envB (Bound n) =
     let (xs :-> _) = envB !! n
      in A xs (Bound $ length xs + n) (map (bound xs) [0 .. length xs - 1])
-atom2term envF envB (Free  n) =
+atom2term envF envB (FreeV n) =
     let (xs :-> _) = envF !! n
-     in A xs (Free  $ length xs + n) (map (bound xs) [0 .. length xs - 1])
+     in A xs (FreeV $ length xs + n) (map (bound xs) [0 .. length xs - 1])
 atom2term envF envB (Const c) =
     let (xs :-> _) = sig2ty (signature c)
      in A xs (Const               c) (map (bound xs) [0 .. length xs - 1])
@@ -111,18 +115,18 @@ atom2term envF envB (Const c) =
 
 type Env sort = [SimpleType sort]
 
-free :: Env sort -> Int -> AlgebraicTerm sort sig
-free env n
+freeV :: Env sort -> Int -> AlgebraicTerm sort sig
+freeV env n
     = let (xs :-> _) = env !! n
-       in A xs (Free $ length xs + n) (map (bound xs) [0 .. length xs - 1])
+       in A xs (FreeV $ length xs + n) (map (bound xs) [0 .. length xs - 1])
 
 bound :: Env sort -> Int -> AlgebraicTerm sort sig
 bound env n
     = let (xs :-> _) = env !! n
        in A xs (Bound $ length xs + n) (map (bound xs) [0 .. length xs - 1])
 
-substForFree :: Env sort -> AlgebraicTerm sort sig -> Int -> Subst sort sig
-substForFree env v f = map (free env) [0 .. f - 1] ++ [v] ++ map (free env) [f + 1 ..]
+substForFreeV :: Env sort -> AlgebraicTerm sort sig -> Int -> Subst sort sig
+substForFreeV env v f = map (freeV env) [0 .. f - 1] ++ [v] ++ map (freeV env) [f + 1 ..]
 
 type TermPair   sort sig = (AlgebraicTerm sort sig, AlgebraicTerm sort sig)
 type TermSystem sort sig = [TermPair sort sig]
@@ -131,7 +135,7 @@ type TermSystem sort sig = [TermPair sort sig]
 -- * Substitution and reduction * ----------------------------------------------
 
 applySubstAndReduce :: Subst sort sig -> AlgebraicTerm sort sig -> AlgebraicTerm sort sig
-applySubstAndReduce subst (A xs (Free f) ys)
+applySubstAndReduce subst (A xs (FreeV f) ys)
     = let A xs' a ys' = subst !! f
        in reduce xs xs' a ys' ys
 applySubstAndReduce subst u
@@ -151,34 +155,41 @@ reduce xs xs' a ys' ys
            in case a of
                 Bound b -> let A xsB aB ysB = ys !! b
                             in reduce xs xsB aB ysB ys''
-                Free  f -> A xs (Free  f) ys''
+                FreeV f -> A xs (FreeV f) ys''
                 Const c -> A xs (Const c) ys''
     | otherwise = error "reduce: length xs' /= length ys"
 
 
 -- * Partial bindings * --------------------------------------------------------
 
-typeOfAtom :: Theory sort sig => Env sort -> Atom sig -> State (Env sort) (SimpleType sort)
+typeOfAtom :: Theory sort sig => Env sort -> Atom sig -> State (Env sort, Env sort) (SimpleType sort)
 typeOfAtom env (Bound b) = return $ env !! b
-typeOfAtom _   (Free  f) = do
-    env <- get
+typeOfAtom _   (FreeV f) = do
+    (env, _) <- get
+    return $ env !! f
+typeOfAtom _   (FreeC f) = do
+    (_, env) <- get
     return $ env !! f
 typeOfAtom _   (Const c) = return $ sig2ty (signature c)
 
+typeOfFreeV :: Int -> State (Env sort, Env sort) (SimpleType sort)
+typeOfFreeV f = do
+    (env, _) <- get
+    return $ env !! f
+
 -- NOTE: assuming eta-long as always
-typeOfTerm :: Theory sort sig => Env sort -> AlgebraicTerm sort sig -> State (Env sort) (SimpleType sort)
+typeOfTerm :: Theory sort sig => Env sort -> AlgebraicTerm sort sig -> State (Env sort, Env sort) (SimpleType sort)
 typeOfTerm envB (A xs a ys) = do
-    envF    <- get
     _ :-> r <- typeOfAtom (xs ++ envB) a
     return $ xs :-> r
 
-freshAtom :: SimpleType sort -> State (Env sort) (Atom sig)
+freshAtom :: SimpleType sort -> State (Env sort, Env sort) (Atom sig)
 freshAtom t = do
-    env <- get
-    put (env ++ [t])
-    return $ Free (length env)
+    (envV, envC) <- get
+    put (envV ++ [t], envC)
+    return $ FreeV (length envV)
 
-partialBinding :: Theory b s => SimpleType b -> Atom s -> State (Env b) (AlgebraicTerm b s)
+partialBinding :: Theory b s => SimpleType b -> Atom s -> State (Env b, Env b) (AlgebraicTerm b s)
 partialBinding (as :-> b) a = do
     cs :-> b' <- typeOfAtom as a
     if b /= b' then
@@ -201,18 +212,18 @@ pmfs = pmfs' []
 
 pmfs' :: Theory sort sig => [SimpleType sort] -> AlgebraicTerm sort sig
                             -> Set ([SimpleType sort], AlgebraicTerm sort sig)
-pmfs' ys (A xs (Free f) ss) = singleton (xs ++ ys, A [] (Free f) ss)
-pmfs' ys (A xs a        ss) = unionMap' (pmfs' (xs ++ ys)) ss
+pmfs' ys (A xs (FreeV f) ss) = singleton (xs ++ ys, A [] (FreeV f) ss)
+pmfs' ys (A xs a         ss) = unionMap' (pmfs' (xs ++ ys)) ss
 
 -- * Transformation rules (Qian & Wang) * --------------------------------------
 
-type TransformationRule b s = TermPair b s -> TermSystem b s -> State (Env b) (Maybe (TermSystem b s))
+type TransformationRule b s = TermPair b s -> TermSystem b s -> State (Env b, Env b) (Maybe (TermSystem b s))
 
 type     Conf b s = (Subst b s,                 TermSystem b s)
 type HeadConf b s = (Subst b s, TermPair   b s, TermSystem b s)
 type PartConf b s = (Subst b s, TermSystem b s, TermSystem b s)
 
-transformAbs :: Theory b s => HeadConf b s -> State (Env b) (Maybe (Conf b s))
+transformAbs :: Theory b s => HeadConf b s -> State (Env b, Env b) (Maybe (Conf b s))
 transformAbs (theta, (u,v), ss) | isRigid u || isRigid v = do
     -- maximal flexible subterms
     let ps = toList $ pmfs u `union` pmfs v
@@ -225,14 +236,15 @@ transformAbs (theta, (u,v), ss) | isRigid u || isRigid v = do
             xs' :-> r <- typeOfTerm [] w
             freshAtom (xs ++ xs' :-> r)
     let phi = zipWith (\(xs,w) h -> (xs,w,h)) ps hs
-    envF <- get
+    (envV, _) <- get
     return $ Just $
         ( error "TODO"
         , [(applyConditionalMapping phi u,applyConditionalMapping phi v)]
-          ++ map (\(xs,A xs' a' ys',h) -> (atom2term envF [] h, A (xs'++xs) a' ys')) phi
+          ++ map (\(xs,A xs' a' ys',h) -> (atom2term envV [] h, A (xs'++xs) a' ys')) phi
           ++ ss
         )
-transformAbs _ | otherwise = return Nothing
+transformAbs _ | otherwise = error "transformAbs: assumptions violated"
+                          -- return Nothing
 
 type ConditionalMapping b s = [([SimpleType b], AlgebraicTerm b s, Atom s)]
 
@@ -241,7 +253,9 @@ applyConditionalMapping :: Theory b s => ConditionalMapping b s
 applyConditionalMapping = undefined
 
 -- ss' assumed to be E-acceptable
-transformEUni :: Theory b s => PartConf b s -> State (Env b) (Maybe (Conf b s))
+-- may be non-deterministic if the unification algorithm isn't unary
+--              (AG and BR unification are of unification type 1, though!)
+transformEUni :: Theory b s => PartConf b s -> State (Env b, Env b) (Maybe (Conf b s))
 transformEUni (theta, ss', ss) = do
     let ps = toList $ Set.map snd (unionMap' (\(u,v) -> pmfs u `union` pmfs v) ss')
     rho <- forM ps $ \w -> do
@@ -254,7 +268,7 @@ transformEUni (theta, ss', ss) = do
                     -- FIXME: ^ remove duplicates (is a set)
     let Just sigma = unify rhoSS'
                     -- FIXME: unification can fail (propagate failure)
-    (_, phis) <- statefulForM [] (zip xss ys) $ \s (xs_i, Free y) -> do
+    (_, phis) <- statefulForM [] (zip xss ys) $ \s (xs_i, FreeV y) -> do
                     let qs = toList $ pmfs (sigma !! y)
                     statefulForM s qs $ \s' (us, z) -> do
                         case lookup (z, xs_i, us) s' of
@@ -266,13 +280,13 @@ transformEUni (theta, ss', ss) = do
                                        , (us, z, z')              )
                             Just z' -> do
                                 return ( s', (us, z, z') )
-    theta <- forM (zip3 phis ys ps) $ \(phi, Free y, A [] (Free g) xs) -> do
+    theta <- forM (zip3 phis ys ps) $ \(phi, FreeV y, A [] (FreeV g) xs) -> do
                 ts <- mapM (typeOfTerm []) xs
                 let (A us a as) = applyConditionalMapping phi (sigma !! y)
                 return (g, A (us ++ ts) a as)
-    env <- get
-    let theta' = map (\(x,y) -> (free env x, y)) theta
-    let theta'' = sparsifySubst env theta
+    (envV, _) <- get
+    let theta' = map (\(x,y) -> (freeV envV x, y)) theta
+    let theta'' = sparsifySubst envV theta
     return $ Just $
         ( error "TODO"
         , theta' ++ map (applySubstAndReduce theta'' *** applySubstAndReduce theta'') ss
@@ -284,9 +298,22 @@ applyOrderReduction :: Theory b s => OrderReduction b s
                                     -> AlgebraicTerm b s -> AlgebraicTerm b s
 applyOrderReduction = undefined
 
-
-transformBin :: HeadConf b s -> State (Env b) (Maybe (Conf b s))
-transformBin = undefined
+-- (u,v) assumed to be flexible-rigid (i.e., not rigid-flexible)
+-- are we only non-deterministic locally (choice of 'b') or also globally
+--                  (choice of '(u,v)')?
+transformBin :: Theory b s => HeadConf b s -> State (Env b, Env b) [Conf b s]
+transformBin (theta, (A xs (FreeV f) us, v@(A _xs a vs)), ss) | xs == _xs && isRigid v
+    = do (_, envC) <- get
+         ts :-> t <- typeOfFreeV f
+         let bs = map Bound [0 .. length ts - 1]
+                    ++ map Const constants
+                    ++ map FreeC [0 .. length envC - 1]
+         pbs <- mapM (partialBinding (ts :-> t)) bs
+         return $ for pbs $ \pb ->
+            ( error "TODO"
+            , (undefined, pb) : ss
+            )
+transformBin _ = error "transformBin: assumptions violated"
 
 -- * Control strategy (Qian & Wang) * ------------------------------------------
 
@@ -297,23 +324,23 @@ controlStrategy = undefined
 -- * Maximal flexible subterms * -----------------------------------------------
 
 data Sig' = F | G | H
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Bounded, Enum, Ord, Show)
   
 instance Theory Sort Sig' where
     signature H = [Real, Real] :=> Real
     unify       = undefined
 
-u0 = let f = 0
-         g = 1
-         x = 0
-         y = 1
+u0 = let f  = 0
+         g  = 1
+         x  = 0
+         y  = 1
          x' = 1
          y' = 2
          z  = 0
       in A [base Real, base Real] (Const H)
-            [A [] (Free f) [A [] (Bound x) []]
-            ,A [base Real] (Free f) [A [] (Bound x') []]
-            ,A [] (Free f) [A [] (Free g) [A [] (Bound x) []]]
+            [A [] (FreeV f) [A [] (Bound x) []]
+            ,A [base Real] (FreeV f) [A [] (Bound x') []]
+            ,A [] (FreeV f) [A [] (FreeV g) [A [] (Bound x) []]]
             ]
 
 -- | Higher-order dimension types | --------------------------------------------
@@ -326,7 +353,7 @@ data Sig
     = Mul
     | Inv
     | Unit
-  deriving (Eq, Ord, Show)  -- FIXME: arbitrary Ord for Set
+  deriving (Eq, Bounded, Enum, Ord, Show)  -- FIXME: arbitrary Ord for Set
 
 instance Theory Sort Sig where
     signature Mul  = [Real, Real] :=> Real
