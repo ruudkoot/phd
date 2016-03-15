@@ -76,18 +76,39 @@ class (Ord sort, Bounded sig, Enum sig, Ord sig) => Theory sort sig | sig -> sor
     signature :: sig -> Signature sort
     unify     :: UnificationProblem sort sig -> Maybe (Subst sort sig)
 
+-- NOTE: What we call 'constants', Qian & Wang call 'function symbols'. Their
+-- constants are function symbols of base type.
 data Atom sig
     = Bound Int     -- lambda-bound variables       (rigid)
     | FreeV Int     -- free variables               (flexible)
     | FreeC Int     -- free constants               (rigid)
     | Const sig     -- signature-bound constants    (rigid)
   deriving (Eq, Ord, Show)  -- FIXME: arbitrary Ord for Set
+
+isBound :: Atom sig -> Bool
+isBound (Bound _) = True
+isBound _         = False
+
+isFreeV :: Atom sig -> Bool
+isFreeV (FreeV _) = True
+isFreeV _         = False
+
+isFreeC :: Atom sig -> Bool
+isFreeC (FreeC _) = True
+isFreeC _         = False
+
+isConst :: Atom sig -> Bool
+isConst (Const _) = True
+isConst _         = False
   
 -- NOTE: does not enforce function constants to be first-order
 --       does not enforce the whole term to be first-order
 data AlgebraicTerm sort sig
     = A [SimpleType sort] (Atom sig) [AlgebraicTerm sort sig]
   deriving (Eq, Ord, Show)  -- FIXME: arbitrary Ord for Set
+  
+hd :: AlgebraicTerm sort sig -> Atom sig
+hd (A _ a _) = a
   
 fv :: AlgebraicTerm sort sig -> [Int]
 fv (A _ (FreeV f) es) = f : concatMap fv es
@@ -305,9 +326,19 @@ transformBin :: Theory b s => HeadConf b s -> State (Env b, Env b) [Conf b s]
 transformBin (theta, (u@(A xs (FreeV f) us), v@(A _xs a vs)), ss) | xs == _xs && isRigid v
     = do (envV, envC) <- get
          ts :-> t <- typeOfFreeV f
-         let bs = map Bound [0 .. length ts - 1]            -- FIXME: too many
-                    ++ map Const constants
-                    ++ map FreeC [0 .. length envC - 1]
+         let bs = concat  -- FIXME: can 'b' also be free variable?
+                    [ if isFreeC a && any
+                            (\u -> isBound (hd u) || (isFreeC (hd u) && hd u /= a)) us
+                      then
+                        []
+                      else
+                        map Bound [0 .. length ts - 1]           
+                    , map Const constants  -- FIXME: can prune this if E is collapse-free
+                    , if isFreeC a then
+                        [a]
+                      else
+                        map FreeC [0 .. length envC - 1]
+                    ]
          pbs <- mapM (partialBinding (ts :-> t)) bs
          (envV, envC) <- get
          return $ for pbs $ \pb ->
