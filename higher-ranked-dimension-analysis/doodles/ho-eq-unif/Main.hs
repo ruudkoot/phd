@@ -84,6 +84,9 @@ data Atom sig
     | FreeC Int     -- free constants               (rigid)
     | Const sig     -- signature-bound constants    (rigid)
   deriving (Eq, Ord, Show)  -- FIXME: arbitrary Ord for Set
+  
+unFreeV :: Atom sig -> Int
+unFreeV (FreeV x) = x
 
 isBound :: Atom sig -> Bool
 isBound (Bound _) = True
@@ -238,6 +241,8 @@ pmfs' ys (A xs a         ss) = unionMap' (pmfs' (xs ++ ys)) ss
 
 -- * Transformation rules (Qian & Wang) * --------------------------------------
 
+-- TODO: check invariant: length envV == length theta'
+
 type TransformationRule b s = TermPair b s -> TermSystem b s -> State (Env b, Env b) (Maybe (TermSystem b s))
 
 type     Conf b s = (Subst b s,                 TermSystem b s)
@@ -245,7 +250,7 @@ type HeadConf b s = (Subst b s, TermPair   b s, TermSystem b s)
 type PartConf b s = (Subst b s, TermSystem b s, TermSystem b s)
 
 transformAbs :: Theory b s => HeadConf b s -> State (Env b, Env b) (Maybe (Conf b s))
-transformAbs (theta, (u,v), ss) | isRigid u || isRigid v = do
+transformAbs (theta', (u,v), ss) | isRigid u || isRigid v = do
     -- maximal flexible subterms
     let ps = toList $ pmfs u `union` pmfs v
     -- conditional mapping
@@ -259,7 +264,10 @@ transformAbs (theta, (u,v), ss) | isRigid u || isRigid v = do
     let phi = zipWith (\(xs,w) h -> (xs,w,h)) ps hs
     (envV, _) <- get
     return $ Just $
-        ( error "TODO"
+        ( if length theta' /= unFreeV (head hs) then
+            error "transformAbs: assertion failed - substitution too short (or long)"
+          else
+            theta' ++ map (\(xs,A xs' a' ys',_h) -> A (xs'++xs) a' ys') phi
         , [(applyConditionalMapping phi u,applyConditionalMapping phi v)]
           ++ map (\(xs,A xs' a' ys',h) -> (atom2term envV [] h, A (xs'++xs) a' ys')) phi
           ++ ss
@@ -301,12 +309,13 @@ transformEUni (theta, ss', ss) = do
                                        , (us, z, z')              )
                             Just z' -> do
                                 return ( s', (us, z, z') )
+    -- FIXME: SHADOWS THE OTHER 'theta'!
     theta <- forM (zip3 phis ys ps) $ \(phi, FreeV y, A [] (FreeV g) xs) -> do
                 ts <- mapM (typeOfTerm []) xs
                 let (A us a as) = applyConditionalMapping phi (sigma !! y)
                 return (g, A (us ++ ts) a as)
     (envV, _) <- get
-    let theta' = map (\(x,y) -> (freeV envV x, y)) theta
+    let theta'  = map (\(x,y) -> (freeV envV x, y)) theta
     let theta'' = sparsifySubst envV theta
     return $ Just $
         ( error "TODO"
@@ -323,10 +332,11 @@ applyOrderReduction = undefined
 -- are we only non-deterministic locally (choice of 'b') or also globally
 --                  (choice of '(u,v)')?
 transformBin :: Theory b s => HeadConf b s -> State (Env b, Env b) [Conf b s]
-transformBin (theta, (u@(A xs (FreeV f) us), v@(A _xs a vs)), ss) | xs == _xs && isRigid v
+transformBin (theta', (u@(A xs (FreeV f) us), v@(A _xs a vs)), ss)
+  | xs == _xs && isRigid v
     = do (envV, envC) <- get
          ts :-> t <- typeOfFreeV f
-         let bs = concat  -- FIXME: can 'b' also be free variable?
+         let bs = concat  -- FIXME: can 'b' also be a free variable?
                     [ if isFreeC a && any
                             (\u -> isBound (hd u) || (isFreeC (hd u) && hd u /= a)) us
                       then
@@ -342,10 +352,12 @@ transformBin (theta, (u@(A xs (FreeV f) us), v@(A _xs a vs)), ss) | xs == _xs &&
          pbs <- mapM (partialBinding (ts :-> t)) bs
          (envV, envC) <- get
          return $ for pbs $ \pb ->
-            let subst = sparsifySubst envV [(f, pb)]
-            in ( error "TODO"
+            let theta = sparsifySubst envV [(f, pb)]
+            in ( let (A ys b zs) = theta' !! f
+                     theta''     = for zs $ \(A ys' b' zs') -> A (ys' ++ ys) b' zs'
+                  in theta' ++ theta''
                , (freeV envV f, pb)
-                    : map (applySubstAndReduce subst *** applySubstAndReduce subst) ss
+                    : map (applySubstAndReduce theta *** applySubstAndReduce theta) ss
                )
 transformBin _ = error "transformBin: assumptions violated"
 
