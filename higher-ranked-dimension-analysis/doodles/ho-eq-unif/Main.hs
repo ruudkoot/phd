@@ -12,7 +12,7 @@ import Data.Maybe
 import           Data.Set        hiding (map)
 import qualified Data.Set as Set
 
--- | Utility | -----------------------------------------------------------------
+-- | Utility | ------------------------------------------------------------[X]--
 
 for = flip map
 
@@ -23,23 +23,24 @@ statefulForM s (x:xs) f = do
     (s'', xs') <- statefulForM s' xs f
     return (s'', x' : xs')
 
--- * Debugging * ---------------------------------------------------------------
+-- * Debugging * ------------------------------------------- UNUSED! ------[X]--
 
 (x:xs) !!! 0 = x
 []     !!! _ = error "!!!"
 (x:xs) !!! n = xs !!! (n-1)
 
--- * Sets * --------------------------------------------------------------------
+-- * Sets * ---------------------------------------------------------------[X]--
 
+-- UNUSED
 unionMap :: Ord b => (a -> Set b) -> Set a -> Set b
 unionMap f ss = unions (map f (toList ss))
 
 unionMap' :: Ord b => (a -> Set b) -> [a] -> Set b
 unionMap' f ss = unions (map f ss)
 
--- | General framework | -------------------------------------------------------
+-- | General framework | --------------------------------------------------[ ]--
 
--- * Types * -------------------------------------------------------------------
+-- * Types * --------------------------------------------------------------[ ]--
 
 data Signature sort
     = [sort] :=> sort
@@ -142,7 +143,7 @@ type Env sort = [SimpleType sort]
 freeV :: Env sort -> Int -> AlgebraicTerm sort sig
 freeV env n
     = let (xs :-> _) = env !! n
-       in A xs (FreeV $ length xs + n) (map (bound xs) [0 .. length xs - 1])
+       in A xs (FreeV n) (map (bound xs) [0 .. length xs - 1])
 
 bound :: Env sort -> Int -> AlgebraicTerm sort sig
 bound env n
@@ -184,7 +185,7 @@ reduce xs xs' a ys' ys
     | otherwise = error "reduce: length xs' /= length ys"
 
 
--- * Partial bindings * --------------------------------------------------------
+-- * Partial bindings * ---------------------------------------------------[ ]--
 
 typeOfAtom :: Theory sort sig => Env sort -> Atom sig -> State (Env sort, Env sort) (SimpleType sort)
 typeOfAtom env (Bound b) = return $ env !! b
@@ -228,7 +229,7 @@ partialBinding (as :-> b) a = do
         gfts <- mapM generalFlexibleTerm cs
         return (A as a gfts)
 
--- * Maximal flexible subterms (Qian & Wang) * ---------------------------------
+-- * Maximal flexible subterms (Qian & Wang) * ----------------------------[ ]--
 
 pmfs :: Theory sort sig => AlgebraicTerm sort sig
                             -> Set ([SimpleType sort], AlgebraicTerm sort sig)
@@ -239,7 +240,7 @@ pmfs' :: Theory sort sig => [SimpleType sort] -> AlgebraicTerm sort sig
 pmfs' ys (A xs (FreeV f) ss) = singleton (xs ++ ys, A [] (FreeV f) ss)
 pmfs' ys (A xs a         ss) = unionMap' (pmfs' (xs ++ ys)) ss
 
--- * Transformation rules (Qian & Wang) * --------------------------------------
+-- * Transformation rules (Qian & Wang) * ---------------------------------[ ]--
 
 -- TODO: check invariant: length envV == length theta'
 
@@ -361,13 +362,13 @@ transformBin (theta', (u@(A xs (FreeV f) us), v@(A _xs a vs)), ss)
                )
 transformBin _ = error "transformBin: assumptions violated"
 
--- * Control strategy (Qian & Wang) * ------------------------------------------
+-- * Control strategy (Qian & Wang) * -------------------------------------[ ]--
 
 controlStrategy = undefined
 
--- | Examples | ----------------------------------------------------------------
+-- | Examples | -----------------------------------------------------------[ ]--
 
--- * Maximal flexible subterms * -----------------------------------------------
+-- * Maximal flexible subterms * ------------------------------------------[ ]--
 
 data Sig' = F | G | H
   deriving (Eq, Bounded, Enum, Ord, Show)
@@ -389,7 +390,7 @@ u0 = let f  = 0
             ,A [] (FreeV f) [A [] (FreeV g) [A [] (Bound x) []]]
             ]
 
--- | Higher-order dimension types | --------------------------------------------
+-- | Higher-order dimension types | ---------------------------------------[ ]--
 
 data Sort
     = Real
@@ -408,7 +409,7 @@ instance Theory Sort Sig where
     
     unify          = unify'
     
--- * Unification modulo Abelian groups * ---------------------------------------
+-- * Unification modulo Abelian groups * ----------------------------------[ ]--
 
 unify' :: UnificationProblem Sort Sig -> Maybe (Subst Sort Sig)
 unify' = undefined
