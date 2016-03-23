@@ -40,7 +40,7 @@ unionMap' f ss = unions (map f ss)
 
 -- | General framework | --------------------------------------------------[ ]--
 
--- * Types * --------------------------------------------------------------[ ]--
+-- * Types * --------------------------------------------------------------[X]--
 
 data Signature sort
     = [sort] :=> sort
@@ -85,7 +85,7 @@ data Atom sig
     | FreeC Int     -- free constants               (rigid)
     | Const sig     -- signature-bound constants    (rigid)
   deriving (Eq, Ord, Show)  -- FIXME: arbitrary Ord for Set
-  
+
 unFreeV :: Atom sig -> Int
 unFreeV (FreeV x) = x
 
@@ -101,10 +101,10 @@ isFreeC :: Atom sig -> Bool
 isFreeC (FreeC _) = True
 isFreeC _         = False
 
-isConst :: Atom sig -> Bool
+isConst :: Atom sig -> Bool -- UNUSED
 isConst (Const _) = True
 isConst _         = False
-  
+
 -- NOTE: does not enforce function constants to be first-order
 --       does not enforce the whole term to be first-order
 data AlgebraicTerm sort sig
@@ -114,65 +114,43 @@ data AlgebraicTerm sort sig
 hd :: AlgebraicTerm sort sig -> Atom sig
 hd (A _ a _) = a
   
-fv :: AlgebraicTerm sort sig -> [Int]
-fv (A _ (FreeV f) es) = f : concatMap fv es
-fv (A _ _         es) =     concatMap fv es
-
 isRigid :: AlgebraicTerm sort sig -> Bool
-isRigid (A _ (Bound _) _) = True
-isRigid (A _ (FreeV _) _) = False
-isRigid (A _ (FreeC _) _) = True
-isRigid (A _ (Const _) _) = True
-
--- Convert an atom into an eta-long term.
-atom2term :: Theory sort sig => Env sort -> Env sort -> Atom sig -> AlgebraicTerm sort sig
-atom2term envF envB (Bound n) =
-    let (xs :-> _) = envB !! n
-     in A xs (Bound $ length xs + n) (map (bound xs) [0 .. length xs - 1])
-atom2term envF envB (FreeV n) =
-    let (xs :-> _) = envF !! n
-     in A xs (FreeV $ length xs + n) (map (bound xs) [0 .. length xs - 1])
-atom2term envF envB (Const c) =
-    let (xs :-> _) = sig2ty (signature c)
-     in A xs (Const               c) (map (bound xs) [0 .. length xs - 1])
+isRigid = not . isFreeV . hd
 
 -- eta-long variables
-
 type Env sort = [SimpleType sort]
 
-freeV :: Env sort -> Int -> AlgebraicTerm sort sig
-freeV env n
-    = let (xs :-> _) = env !! n
-       in A xs (FreeV n) (map (bound xs) [0 .. length xs - 1])
-
 bound :: Env sort -> Int -> AlgebraicTerm sort sig
-bound env n
-    = let (xs :-> _) = env !! n
+bound envB n
+    = let (xs :-> _) = envB !! n
        in A xs (Bound $ length xs + n) (map (bound xs) [0 .. length xs - 1])
 
-substForFreeV :: Env sort -> AlgebraicTerm sort sig -> Int -> Subst sort sig
-substForFreeV env v f = map (freeV env) [0 .. f - 1] ++ [v] ++ map (freeV env) [f + 1 ..]
+freeV :: Env sort -> Int -> AlgebraicTerm sort sig
+freeV envV n
+    = let (xs :-> _) = envV !! n
+       in A xs (FreeV n) (map (bound xs) [0 .. length xs - 1])
+
+-- Convert an atom into an eta-long term.
+atom2term :: Theory sort sig =>
+        Env sort -> Env sort -> Env sort -> Atom sig -> AlgebraicTerm sort sig
+atom2term envB _envV _envC (Bound n) =
+    let (xs :-> _) = envB !! n
+     in A xs (Bound $ length xs + n) (map (bound xs) [0 .. length xs - 1])
+atom2term _envB envV _envC (FreeV n) =
+    let (xs :-> _) = envV !! n
+     in A xs (FreeV n) (map (bound xs) [0 .. length xs - 1])
+atom2term _envB _envV envC (FreeC n) =
+    let (xs :-> _) = envC !! n
+     in A xs (FreeC n) (map (bound xs) [0 .. length xs - 1])
+atom2term _envB _envV _envC (Const c) =
+    let (xs :-> _) = sig2ty (signature c)
+     in A xs (Const c) (map (bound xs) [0 .. length xs - 1])
 
 type TermPair   sort sig = (AlgebraicTerm sort sig, AlgebraicTerm sort sig)
 type TermSystem sort sig = [TermPair sort sig]
 
+-- * Substitution and reduction * -----------------------------------------[ ]--
 
--- * Substitution and reduction * ----------------------------------------------
-
-applySubstAndReduce :: Subst sort sig -> AlgebraicTerm sort sig -> AlgebraicTerm sort sig
-applySubstAndReduce subst (A xs (FreeV f) ys)
-    = let A xs' a ys' = subst !! f
-       in reduce xs xs' a ys' ys
-applySubstAndReduce subst u
-    = u
-
-bindAndReduce :: Subst sort sig -> AlgebraicTerm sort sig -> AlgebraicTerm sort sig
-bindAndReduce zs (A xs (Bound b) ys)
-    = let A xs' a ys' = zs !! b
-       in reduce xs xs' a ys' ys
-bindAndReduce zs u
-    = u
-    
 reduce :: Env sort -> Env sort -> Atom sig -> Subst sort sig -> Subst sort sig -> AlgebraicTerm sort sig
 reduce xs xs' a ys' ys
     | length xs' == length ys
@@ -184,7 +162,20 @@ reduce xs xs' a ys' ys
                 Const c -> A xs (Const c) ys''
     | otherwise = error "reduce: length xs' /= length ys"
 
+bindAndReduce :: Subst sort sig -> AlgebraicTerm sort sig -> AlgebraicTerm sort sig
+bindAndReduce zs (A xs (Bound b) ys)
+    = let A xs' a ys' = zs !! b
+       in reduce xs xs' a ys' ys
+bindAndReduce zs u
+    = u
 
+applySubstAndReduce :: Subst sort sig -> AlgebraicTerm sort sig -> AlgebraicTerm sort sig
+applySubstAndReduce subst (A xs (FreeV f) ys)
+    = let A xs' a ys' = subst !! f
+       in reduce xs xs' a ys' ys
+applySubstAndReduce subst u
+    = u
+   
 -- * Partial bindings * ---------------------------------------------------[ ]--
 
 typeOfAtom :: Theory sort sig => Env sort -> Atom sig -> State (Env sort, Env sort) (SimpleType sort)
@@ -263,14 +254,14 @@ transformAbs (theta', (u,v), ss) | isRigid u || isRigid v = do
             xs' :-> r <- typeOfTerm [] w
             freshAtom (xs ++ xs' :-> r)
     let phi = zipWith (\(xs,w) h -> (xs,w,h)) ps hs
-    (envV, _) <- get
+    (envV, envC) <- get
     return $ Just $
         ( if length theta' /= unFreeV (head hs) then
             error "transformAbs: assertion failed - substitution too short (or long)"
           else
             theta' ++ map (\(xs,A xs' a' ys',_h) -> A (xs'++xs) a' ys') phi
         , [(applyConditionalMapping phi u,applyConditionalMapping phi v)]
-          ++ map (\(xs,A xs' a' ys',h) -> (atom2term envV [] h, A (xs'++xs) a' ys')) phi
+          ++ map (\(xs,A xs' a' ys',h) -> (atom2term [] envV envC h, A (xs'++xs) a' ys')) phi
           ++ ss
         )
 transformAbs _ | otherwise = error "transformAbs: assumptions violated"

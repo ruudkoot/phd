@@ -9,21 +9,29 @@ import Main
 
 tests :: [(String, Bool)]
 tests =
-    [("for",            test_for)
-    ,("statefulForM 1", test_statefulForM_1)
-    ,("statefulForM 2", test_statefulForM_2)
-    ,("(!!!)",          test_III)
-    ,("unionMap",       test_unionMap)
-    ,("unionMap'",      test_unionMap')
-    ,("base",           test_base)
-    ,("sig2ty",         test_sig2ty)
-    ,("sparsifySubst",  test_sparsifySubst)
-    ,("unFreeV",        test_unFreeV)
-    ,("isBound",        test_isBound)
-    ,("isFreeV",        test_isFreeV)
-    ,("isFreeC",        test_isFreeC)
-    ,("isConst",        test_isConst)
-    ,("freeV",          test_freeV)
+    [("for",                test_for)
+    ,("statefulForM (1)",   test_statefulForM_1)
+    ,("statefulForM (2)",   test_statefulForM_2)
+    ,("(!!!)",              test_III)
+    ,("unionMap",           test_unionMap)
+    ,("unionMap'",          test_unionMap')
+    ,("base",               test_base)
+    ,("sig2ty",             test_sig2ty)
+    ,("sparsifySubst",      test_sparsifySubst)
+    ,("unFreeV",            test_unFreeV)
+    ,("isBound",            test_isBound)
+    ,("isFreeV",            test_isFreeV)
+    ,("isFreeC",            test_isFreeC)
+    ,("isConst",            test_isConst)
+    ,("hd",                 test_hd)
+    ,("isRigid",            test_isRigid)
+    ,("bound",              test_bound)
+    ,("freeV (1)",          test_freeV_1)
+    ,("freeV (2)",          test_freeV_2)
+    ,("atom2term (Bound)",  test_atom2term_Bound)
+    ,("atom2term (FreeV)",  test_atom2term_FreeV)
+    ,("atom2term (FreeC)",  test_atom2term_FreeC)
+    ,("atom2term (Const)",  test_atom2term_Const)
     ]
     
 len = maximum (map (length . fst) tests)
@@ -80,7 +88,7 @@ test_unionMap' = unionMap' f [1,2,3] =?= S.fromList [1,2,3,4,5]
 
 -- | General framework | --------------------------------------------------[ ]--
 
--- * Types * --------------------------------------------------------------[ ]--
+-- * Types * --------------------------------------------------------------[X]--
 
 test_base = base Real =?= ([] :-> Real)
 
@@ -99,16 +107,45 @@ test_sparsifySubst =
         [fr 0, tm 1, fr 2, tm 3, fr 4]
 
 test_unFreeV = unFreeV (FreeV 9) =?= 9
-test_isBound =
-    map isBound [Bound 9, FreeV 9, FreeC 9, Const Mul] =?= [True, False, False, False]
-test_isFreeV = 
-    map isFreeV [Bound 9, FreeV 9, FreeC 9, Const Mul] =?= [False, True, False, False]
-test_isFreeC = 
-    map isFreeC [Bound 9, FreeV 9, FreeC 9, Const Mul] =?= [False, False, True, False]
-test_isConst = 
-    map isConst [Bound 9, FreeV 9, FreeC 9, Const Mul] =?= [False, False, False, True]
 
-test_freeV =
+test_isBound =
+    map isBound [Bound undefined, FreeV undefined, FreeC undefined, Const Mul]
+        =?=
+    [True, False, False, False]
+test_isFreeV = 
+    map isFreeV [Bound undefined, FreeV undefined, FreeC undefined, Const Mul]
+        =?=
+    [False, True, False, False]
+test_isFreeC = 
+    map isFreeC [Bound undefined, FreeV undefined, FreeC undefined, Const Mul]
+        =?=
+    [False, False, True, False]
+test_isConst = 
+    map isConst [Bound undefined, FreeV undefined, FreeC undefined, Const Mul]
+        =?=
+    [False, False, False, True]
+
+test_hd = hd (A undefined (Const Mul) undefined) =?= Const Mul
+
+test_isRigid = 
+    map isRigid [A undefined (Bound undefined) undefined
+                ,A undefined (FreeV undefined) undefined
+                ,A undefined (FreeC undefined) undefined
+                ,A undefined (Const undefined) undefined]
+        =?=
+    [True, False, True, True]
+
+test_bound =
+    (bound [undefined,[base Real, base Real] :-> Real, undefined] 1 :: AlgebraicTerm Sort Sig)
+        =?=
+    A [base Real, base Real] (Bound 3) [A [] (Bound 0) [], A [] (Bound 1) []]
+
+test_freeV_1 =
+    (freeV [undefined,[base Real, base Real] :-> Real, undefined] 1 :: AlgebraicTerm Sort Sig)
+        =?=
+    A [base Real, base Real] (FreeV 1) [A [] (Bound 0) [], A [] (Bound 1) []]
+
+test_freeV_2 =
     let
         ty  n = replicate n (base Real) :-> Real
         env   = map ty [0..]
@@ -116,6 +153,47 @@ test_freeV =
         (freeV env 2 :: AlgebraicTerm Sort Sig)
             =?=
         A [base Real, base Real] (FreeV 2) [A [] (Bound 0) [], A [] (Bound 1) []]
+
+test_atom2term_Bound =
+    let envB = [undefined,[base Real, base Real] :-> Real,undefined]
+        envV = undefined
+        envC = undefined
+     in (atom2term envB envV envC (Bound 1) :: AlgebraicTerm Sort Sig)
+            =?=
+        A [base Real, base Real] (Bound 3) [A [] (Bound 0) [], A [] (Bound 1) []]
+
+test_atom2term_FreeV =
+    let envB = undefined
+        envV = [undefined,[base Real, base Real] :-> Real,undefined]
+        envC = undefined
+     in (atom2term envB envV envC (FreeV 1) :: AlgebraicTerm Sort Sig)
+            =?=
+        A [base Real, base Real] (FreeV 1) [A [] (Bound 0) [], A [] (Bound 1) []]
+
+test_atom2term_FreeC =
+    let envB = undefined
+        envV = undefined
+        envC = [undefined,[base Real, base Real] :-> Real,undefined]
+     in (atom2term envB envV envC (FreeC 1) :: AlgebraicTerm Sort Sig)
+            =?=
+        A [base Real, base Real] (FreeC 1) [A [] (Bound 0) [], A [] (Bound 1) []]
+
+test_atom2term_Const =
+    let envB = undefined
+        envV = undefined
+        envC = undefined
+     in (atom2term envB envV envC (Const Mul) :: AlgebraicTerm Sort Sig)
+            =?=
+        A [base Real, base Real] (Const Mul) [A [] (Bound 0) [], A [] (Bound 1) []]
+
+-- * Substitution and reduction * -----------------------------------------[ ]--
+
+
+
+
+
+
+
 
 
 
