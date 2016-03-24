@@ -151,23 +151,38 @@ type TermSystem sort sig = [TermPair sort sig]
 
 -- * Substitution and reduction * -----------------------------------------[ ]--
 
+-- reduces \xs(\xs'.a(ys'))(ys)
 reduce :: Env sort -> Env sort -> Atom sig -> Subst sort sig -> Subst sort sig -> AlgebraicTerm sort sig
 reduce xs xs' a ys' ys
     | length xs' == length ys
-        = let ys'' = map (bindAndReduce ys) ys'
+        = let ys'' = map (bindAndReduce 0 xs' ys) ys'
            in case a of
-                Bound b -> let A xsB aB ysB = ys !! b
-                            in reduce xs xsB aB ysB ys''
-                FreeV f -> A xs (FreeV f) ys''
-                Const c -> A xs (Const c) ys''
+                Bound b -> if b < length ys then
+                                let A xsB aB ysB = ys !!! b
+                                in reduce xs xsB aB ysB ys''
+                           else A xs (Bound (b - length ys)) ys''
+                a       -> A xs a ys''
     | otherwise = error "reduce: length xs' /= length ys"
 
-bindAndReduce :: Subst sort sig -> AlgebraicTerm sort sig -> AlgebraicTerm sort sig
-bindAndReduce zs (A xs (Bound b) ys)
-    = let A xs' a ys' = zs !! b
-       in reduce xs xs' a ys' ys
-bindAndReduce zs u
-    = u
+  where
+
+    bindAndReduce :: Int -> Env sort -> Subst sort sig -> AlgebraicTerm sort sig -> AlgebraicTerm sort sig
+    bindAndReduce i xs' ys (A zs a zs')
+        | length zs == length zs'
+            = case a of
+                Bound n ->
+                    let zs'' = map (bindAndReduce (i + length zs) xs' ys) zs'
+                    in if n < i then
+                        A zs (Bound n) zs''
+                      else if n < i + length xs' then
+                        let A us a vs = ys !! (n - i)
+                         in reduce zs us a vs zs'
+                      else A zs (Bound (n - length xs')) zs'
+                _ ->
+                    let zs'' = map (bindAndReduce (i + length zs) zs ys) zs'
+                    in A zs a zs''
+        | otherwise = error "bindAndReduce: length zs /= length zs'"
+
 
 applySubstAndReduce :: Subst sort sig -> AlgebraicTerm sort sig -> AlgebraicTerm sort sig
 applySubstAndReduce subst (A xs (FreeV f) ys)

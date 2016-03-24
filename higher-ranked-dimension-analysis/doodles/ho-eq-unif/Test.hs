@@ -32,6 +32,11 @@ tests =
     ,("atom2term (FreeV)",  test_atom2term_FreeV)
     ,("atom2term (FreeC)",  test_atom2term_FreeC)
     ,("atom2term (Const)",  test_atom2term_Const)
+    ,("reduce (1)",         test_reduce_1)
+    ,("reduce (2)",         test_reduce_2)
+    ,("reduce (3)",         test_reduce_3)
+    ,("reduce (4)",         test_reduce_4)
+    ,("reduce (X)",         test_reduce_X)
     ]
     
 len = maximum (map (length . fst) tests)
@@ -188,7 +193,60 @@ test_atom2term_Const =
 
 -- * Substitution and reduction * -----------------------------------------[ ]--
 
+-- (\x.x)(F1) --> F1
+test_reduce_1 =
+    let xs  = []
+        xs' = [base Real]
+        a   = Bound 0
+        ys' = []
+        ys  = [A [] (FreeV 0) []]
+     in (reduce xs xs' a ys' ys :: AlgebraicTerm Sort Sig)
+            =?=
+        A [] (FreeV 0) []
 
+-- (\xy.x(y))(\z.F1(z),F2) --> F1(F2)
+test_reduce_2 =
+    let xs  = []
+        xs' = [[base Real] :-> Real, base Real]
+        a   = Bound 0
+        ys' = [A [] (Bound 1) []]
+        ys  = [A [base Real] (FreeV 0) [A [] (Bound 0) []], A [] (FreeV 1) []]
+     in (reduce xs xs' a ys' ys :: AlgebraicTerm Sort Sig)
+            =?=
+        A [] (FreeV 0) [A [] (FreeV 1) []]
+
+-- \z.(\xy.x(y))(\u.F1(u),F2(z)) --> \z.F1(F2(z))
+test_reduce_3 =
+    let xs  = [base Real]
+        xs' = [[base Real] :-> Real, base Real]
+        a   = Bound 0
+        ys' = [A [] (Bound 1) []]
+        ys  = [A [base Real] (FreeV 0) [A [] (Bound 0) []], A [] (FreeV 1) [A [] (Bound 0) []]]
+     in (reduce xs xs' a ys' ys :: AlgebraicTerm Sort Sig)
+            =?=
+        A [base Real] (FreeV 0) [A [] (FreeV 1) [A [] (Bound 0) []]]
+
+-- \z.(\xy.x(y))(\u.F1(u),F2(z)) --> \z.F1(F2(z))
+test_reduce_4 =
+    let xs  = [base Real]
+        xs' = [[base Real] :-> Real, base Real]
+        a   = Bound 0
+        ys' = [A [] (Bound 1) []]
+        ys  = [A [base Real] (FreeV 0) [A [] (Bound 0) [],A [] (Bound 1) []], A [] (FreeV 1) [A [] (Bound 0) []]]
+     in (reduce xs xs' a ys' ys :: AlgebraicTerm Sort Sig)
+            =?=
+        A [base Real] (FreeV 0) [A [] (FreeV 1) [A [] (Bound 0) []], A [] (Bound 0) []]
+
+-- \uv.(\xy.y(\z.x(z)))(\p.v(p),\w.u(\q.w(q))) --> \uv.(u(\q.v(q)))
+test_reduce_X =
+    let xs  = [[[base Real] :-> Real] :-> Real, [base Real] :-> Real]
+        xs' = [[base Real] :-> Real, [[base Real] :-> Real] :-> Real]
+        a   = Bound 1
+        ys' = [A [base Real] (Bound 1) [A [] (Bound 0) []]]
+        ys  = [A [base Real] (Bound 2) [A [] (Bound 0) []], A [[base Real] :-> Real] (Bound 1) [A [base Real] (Bound 1) [A [] (Bound 0) []]]]
+    in (reduce xs xs' a ys' ys :: AlgebraicTerm Sort Sig)
+            =?=
+       A [[[base Real] :-> Real] :-> Real, [base Real] :-> Real] (Bound 0) [A [base Real] (Bound 2) [A [] (Bound 0) []]]
 
 
 
