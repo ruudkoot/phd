@@ -32,11 +32,29 @@ tests =
     ,("atom2term (FreeV)",  test_atom2term_FreeV)
     ,("atom2term (FreeC)",  test_atom2term_FreeC)
     ,("atom2term (Const)",  test_atom2term_Const)
+    ,("raise (1)",          test_raise_1)
+    ,("raise (2)",          test_raise_2)
+    ,("raise (3)",          test_raise_3)
+    ,("raise (4)",          test_raise_4)
+    ,("raise (5)",          test_raise_5)
+    ,("raise (6)",          test_raise_6)
+    ,("raise (7)",          test_raise_7)
+    ,("raise (8)",          test_raise_8)
+    ,("raise (9)",          test_raise_9)
+    ,("raise (10)",         test_raise_10)
+    ,("raise (11)",         test_raise_11)
+    ,("raise (12)",         test_raise_12)
+    ,("raise (13)",         test_raise_13)
+    ,("raise (14)",         test_raise_14)
+    ,("lower (1)",          test_lower_1)
+    ,("lower (2)",          test_lower_2)
+    --,("lower (3)",          test_lower_3)     -- "raise: unexpected capture"
+    --,("lower (4)",          test_lower_4)     -- "raise: unexpected capture"
     ,("reduce (1)",         test_reduce_1)
     ,("reduce (2)",         test_reduce_2)
     ,("reduce (3)",         test_reduce_3)
     ,("reduce (4)",         test_reduce_4)
-    ,("reduce (X)",         test_reduce_X)
+    ,("reduce (5)",         test_reduce_5)
     ]
     
 len = maximum (map (length . fst) tests)
@@ -193,6 +211,133 @@ test_atom2term_Const =
 
 -- * Substitution and reduction * -----------------------------------------[ ]--
 
+test_raise_1 =
+    let tm = (A [] (FreeV 0) [A [] (FreeV 1) [], A [] (FreeV 2) []]
+                :: AlgebraicTerm Sort Sig)
+     in raise 10 tm
+            =?=
+        tm
+        
+test_raise_2 =
+    let tm n = (A [] (FreeV 0) [A [] (FreeV 1) [], A [] (Bound n) []]
+                :: AlgebraicTerm Sort Sig)
+     in raise 10 (tm 0)
+            =?=
+        (tm 10)
+        
+test_raise_3 =
+    let tm n = (A [] (FreeV 0) [A [] (FreeV 1) [], A [base Real] (Bound n) []]
+                :: AlgebraicTerm Sort Sig)
+     in raise 10 (tm 0)
+            =?=
+        (tm 0)
+
+test_raise_4 =
+    let tm n = (A [] (FreeV 0) [A [] (FreeV 1) [], A [base Real] (Bound n) []]
+                :: AlgebraicTerm Sort Sig)
+     in raise 10 (tm 1)
+            =?=
+        (tm 11)
+
+test_raise_5 =
+    let tm n = (A [base Real] (FreeV 0) [A [] (FreeV 1) [], A [] (Bound n) []]
+                :: AlgebraicTerm Sort Sig)
+     in raise 10 (tm 0)
+            =?=
+        (tm 0)
+
+test_raise_6 =
+    let tm n = (A [base Real] (FreeV 0) [A [] (FreeV 1) [], A [] (Bound n) []]
+                :: AlgebraicTerm Sort Sig)
+     in raise 10 (tm 1)
+            =?=
+        (tm 11)
+
+test_raise_7 =
+    let tm n = (A [base Real] (FreeV 0) [A [] (FreeV 1) [], A [base Real] (Bound n) []]
+                :: AlgebraicTerm Sort Sig)
+     in raise 10 (tm 0)
+            =?=
+        (tm 0)
+
+test_raise_8 =
+    let tm n = (A [base Real] (FreeV 0) [A [] (FreeV 1) [], A [base Real] (Bound n) []]
+                :: AlgebraicTerm Sort Sig)
+     in raise 10 (tm 1)
+            =?=
+        (tm 1)
+
+test_raise_9 =
+    let tm n = (A [base Real] (FreeV 0) [A [] (FreeV 1) [], A [base Real] (Bound n) []]
+                :: AlgebraicTerm Sort Sig)
+     in raise 10 (tm 2)
+            =?=
+        (tm 12)
+
+test_raise_10 =
+    let tm m n = (A [base Real] (Bound m) [A [] (FreeV 1) [], A [base Real] (Bound n) []]
+                    :: AlgebraicTerm Sort Sig)
+     in raise 10 (tm 0 0)
+            =?=
+        (tm 0 0)
+
+test_raise_11 =
+    let tm m n = (A [base Real] (Bound m) [A [] (FreeV 1) [], A [base Real] (Bound n) []]
+                    :: AlgebraicTerm Sort Sig)
+     in raise 10 (tm 1 0)
+            =?=
+        (tm 11 0)
+
+test_raise_12 =
+    let tm m n = (A [base Real] (Bound m) [A [] (FreeV 1) [], A [base Real] (Bound n) []]
+                    :: AlgebraicTerm Sort Sig)
+     in raise 10 (tm 0 1)
+            =?=
+        (tm 0 1)
+
+test_raise_13 =
+    let tm m n = (A [base Real] (Bound m) [A [] (FreeV 1) [], A [base Real] (Bound n) []]
+                    :: AlgebraicTerm Sort Sig)
+     in raise 10 (tm 0 2)
+            =?=
+        (tm 0 12)
+        
+test_raise_14 =
+    let tm m n = (A [base Real] (Bound m) [A [] (FreeV 1) [], A [base Real] (Bound n) []]
+                    :: AlgebraicTerm Sort Sig)
+     in raise 10 (tm 1 2)
+            =?=
+        (tm 11 12)
+        
+test_lower_1 =
+    let tm m n = (A [base Real] (Bound m) [A [] (FreeV 1) [], A [base Real] (Bound n) []]
+                    :: AlgebraicTerm Sort Sig)
+     in lower 10 (tm 0 1)
+            =?=
+        (tm 0 1)
+        
+test_lower_2 =
+    let tm m n = (A [base Real] (Bound m) [A [] (FreeV 1) [], A [base Real] (Bound n) []]
+                    :: AlgebraicTerm Sort Sig)
+     in lower 1 (tm 2 3)
+            =?=
+        (tm 1 2)
+
+test_lower_3 =
+    let tm m n = (A [base Real] (Bound m) [A [] (FreeV 1) [], A [base Real] (Bound n) []]
+                    :: AlgebraicTerm Sort Sig)
+     in lower 2 (tm 2 4)
+            =?=
+        error "expected exception"
+
+test_lower_4 =
+    let tm m n = (A [base Real] (Bound m) [A [] (FreeV 1) [], A [base Real] (Bound n) []]
+                    :: AlgebraicTerm Sort Sig)
+     in lower 2 (tm 1 3)
+            =?=
+        error "expected exception"
+
+
 -- (\x.x)(F1) --> F1
 test_reduce_1 =
     let xs  = []
@@ -238,7 +383,7 @@ test_reduce_4 =
         A [base Real] (FreeV 0) [A [] (FreeV 1) [A [] (Bound 0) []], A [] (Bound 0) []]
 
 -- \uv.(\xy.y(\z.x(z)))(\p.v(p),\w.u(\q.w(q))) --> \uv.(u(\q.v(q)))
-test_reduce_X =
+test_reduce_5 =
     let xs  = [[[base Real] :-> Real] :-> Real, [base Real] :-> Real]
         xs' = [[base Real] :-> Real, [[base Real] :-> Real] :-> Real]
         a   = Bound 1

@@ -151,38 +151,66 @@ type TermSystem sort sig = [TermPair sort sig]
 
 -- * Substitution and reduction * -----------------------------------------[ ]--
 
--- reduces \xs(\xs'.a(ys'))(ys)
-reduce :: Env sort -> Env sort -> Atom sig -> Subst sort sig -> Subst sort sig -> AlgebraicTerm sort sig
+-- Raise the De Bruijn index of unbound variables in a term by 'k'.
+raise :: Int -> AlgebraicTerm sort sig -> AlgebraicTerm sort sig
+raise k = raise' 0
+  where
+    raise' n (A xs a ys)
+      = let ys' = map (raise' (n + length xs)) ys
+         in case a of
+              Bound b ->
+                if b < n + length xs then
+                    A xs (Bound b) ys'
+                else
+                    if b + k < n + length xs then
+                        error "raise: unexpected capture"
+                    else
+                        A xs (Bound (b + k)) ys'
+              _ -> A xs a ys'
+              
+lower :: Int -> AlgebraicTerm sort sig -> AlgebraicTerm sort sig
+lower k | k >= 0    = raise (-k)
+        | otherwise = error "lower: negative"
+
+-- Reduces \xs(\xs'.a(ys'))(ys) to \xs.a[ys/xs'](ys'[ys/xs']).
+reduce :: Env sort -> Env sort -> Atom sig -> Subst sort sig -> Subst sort sig
+                                                        -> AlgebraicTerm sort sig
 reduce xs xs' a ys' ys
     | length xs' == length ys
-        = let ys'' = map (bindAndReduce 0 xs' ys) ys'
+        = let k    = length xs'
+              ys'' = map (lower k . bindAndReduce [] xs' (map (raise k) ys)) ys'
            in case a of
-                Bound b -> if b < length ys then
-                                let A xsB aB ysB = ys !!! b
-                                in reduce xs xsB aB ysB ys''
-                           else A xs (Bound (b - length ys)) ys''
+                Bound b -> if b < k then
+                                let A xsB aB ysB = ys !! b
+                                 in reduce xs xsB aB ysB ys''
+                           else A xs (Bound (b - k)) ys''
                 a       -> A xs a ys''
-    | otherwise = error "reduce: length xs' /= length ys"
+    | length xs' > length ys
+        -- FIXME: does this case occur?
+        = error "reduce: length xs' > length ys"
+    | length xs' < length ys
+        = error "reduce: length xs' < length ys"
 
   where
 
-    bindAndReduce :: Int -> Env sort -> Subst sort sig -> AlgebraicTerm sort sig -> AlgebraicTerm sort sig
-    bindAndReduce i xs' ys (A zs a zs')
-        | length zs == length zs'
-            = case a of
-                Bound n ->
-                    let zs'' = map (bindAndReduce (i + length zs) xs' ys) zs'
-                    in if n < i then
-                        A zs (Bound n) zs''
-                      else if n < i + length xs' then
-                        let A us a vs = ys !! (n - i)
-                         in reduce zs us a vs zs'
-                      else A zs (Bound (n - length xs')) zs'
-                _ ->
-                    let zs'' = map (bindAndReduce (i + length zs) zs ys) zs'
-                    in A zs a zs''
-        | otherwise = error "bindAndReduce: length zs /= length zs'"
-
+    bindAndReduce :: Env sort -> Env sort -> Subst sort sig -> AlgebraicTerm sort sig
+                                                        -> AlgebraicTerm sort sig
+    bindAndReduce ns xs' ys (A zs a zs')
+      | length xs' == length ys
+        = let k    = length (zs ++ ns)
+              zs'' = map (bindAndReduce (zs ++ ns) xs' ys) zs'
+           in case a of
+                Bound b ->
+                    if b < k then
+                        A zs (Bound b) zs''
+                    else if b < k + length ys then
+                        let (A us a' vs) = raise k (ys !! (b - k))
+                         in reduce zs us a' vs zs'' 
+                    else
+                        A zs (Bound b) zs''
+                _ -> A zs a zs''
+      | otherwise = error
+            "bindAndReduce: length xs' /= length ys"
 
 applySubstAndReduce :: Subst sort sig -> AlgebraicTerm sort sig -> AlgebraicTerm sort sig
 applySubstAndReduce subst (A xs (FreeV f) ys)
