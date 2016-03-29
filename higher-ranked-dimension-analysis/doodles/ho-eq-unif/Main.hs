@@ -161,11 +161,10 @@ raise k = raise' 0
               Bound b ->
                 if b < n + length xs then
                     A xs (Bound b) ys'
+                else if b + k < n + length xs then
+                    error "raise: unexpected capture"
                 else
-                    if b + k < n + length xs then
-                        error "raise: unexpected capture"
-                    else
-                        A xs (Bound (b + k)) ys'
+                    A xs (Bound (b + k)) ys'
               _ -> A xs a ys'
               
 lower :: Int -> AlgebraicTerm sort sig -> AlgebraicTerm sort sig
@@ -186,7 +185,7 @@ reduce xs xs' a ys' ys
                            else A xs (Bound (b - k)) ys''
                 a       -> A xs a ys''
     | length xs' > length ys
-        -- FIXME: does this case occur?
+        -- this case should not occur if terms are always eta-long
         = error "reduce: length xs' > length ys"
     | length xs' < length ys
         = error "reduce: length xs' < length ys"
@@ -194,14 +193,14 @@ reduce xs xs' a ys' ys
   where
 
     bindAndReduce :: Env sort -> Env sort -> Subst sort sig -> AlgebraicTerm sort sig
-                                                        -> AlgebraicTerm sort sig
+                                                                -> AlgebraicTerm sort sig
     bindAndReduce ns xs' ys (A zs a zs')
       | length xs' == length ys
         = let k    = length (zs ++ ns)
               zs'' = map (bindAndReduce (zs ++ ns) xs' ys) zs'
-           in case a of
-                Bound b ->
-                    if b < k then
+           in case a of                             -- ^ why not raise here (instead)?
+                Bound b ->                          -- FIXME: double raising does not
+                    if b < k then                   --        trigger any testcase!
                         A zs (Bound b) zs''
                     else if b < k + length ys then
                         let (A us a' vs) = raise k (ys !! (b - k))
@@ -212,11 +211,12 @@ reduce xs xs' a ys' ys
       | otherwise = error
             "bindAndReduce: length xs' /= length ys"
 
-applySubstAndReduce :: Subst sort sig -> AlgebraicTerm sort sig -> AlgebraicTerm sort sig
-applySubstAndReduce subst (A xs (FreeV f) ys)
-    = let A xs' a ys' = subst !! f
-       in reduce xs xs' a ys' ys
-applySubstAndReduce subst u
+substFreeVAndReduce :: Subst sort sig -> AlgebraicTerm sort sig -> AlgebraicTerm sort sig
+substFreeVAndReduce subst (A xs (FreeV f) ys)
+    = let ys'       = map (substFreeVAndReduce subst) ys
+          A us a vs = subst !! f
+       in reduce xs us a vs ys'
+substFreeVAndReduce subst u
     = u
    
 -- * Partial bindings * ---------------------------------------------------[ ]--
@@ -354,7 +354,7 @@ transformEUni (theta, ss', ss) = do
     let theta'' = sparsifySubst envV theta
     return $ Just $
         ( error "TODO"
-        , theta' ++ map (applySubstAndReduce theta'' *** applySubstAndReduce theta'') ss
+        , theta' ++ map (substFreeVAndReduce theta'' *** substFreeVAndReduce theta'') ss
         )
 
 type OrderReduction b s = [(AlgebraicTerm b s, Atom s)]
@@ -392,7 +392,7 @@ transformBin (theta', (u@(A xs (FreeV f) us), v@(A _xs a vs)), ss)
                      theta''     = for zs $ \(A ys' b' zs') -> A (ys' ++ ys) b' zs'
                   in theta' ++ theta''
                , (freeV envV f, pb)
-                    : map (applySubstAndReduce theta *** applySubstAndReduce theta) ss
+                    : map (substFreeVAndReduce theta *** substFreeVAndReduce theta) ss
                )
 transformBin _ = error "transformBin: assumptions violated"
 
