@@ -57,6 +57,36 @@ tests =
     ,("reduce (5)",                 test_reduce_5)
     -- FIXME: additional testcases for 'reduce' and 'bindAndReduce'
     ,("substFreeVAndReduce (1)",    test_substFreeVAndReduce_1)
+    ,("typeOfAtom (Bound)",         test_typeOfAtom_Bound)
+    ,("typeOfAtom (FreeV)",         test_typeOfAtom_FreeV)
+    ,("typeOfAtom (FreeC)",         test_typeOfAtom_FreeC)
+    ,("typeOfAtom (Const)",         test_typeOfAtom_Const)
+    ,("typeOfFreeV (1)",            test_typeOfFreeV_1)
+    ,("typeOfTerm (Bound)",         test_typeOfTerm_Bound)
+    ,("typeOfTerm (FreeV)",         test_typeOfTerm_FreeV)
+    ,("typeOfTerm (FreeC)",         test_typeOfTerm_FreeC)
+    ,("typeOfTerm (Const)",         test_typeOfTerm_Const)
+    ,("freshAtom (1)",              test_freshAtom_1)
+    ,("partialBinding (Bound,1)",   test_partialBinding_Bound_1)
+    ,("partialBinding (Bound,2)",   test_partialBinding_Bound_2)
+    ,("partialBinding (Bound,3)",   test_partialBinding_Bound_3)
+    ,("partialBinding (FreeV,1)",   test_partialBinding_FreeV_1)
+    ,("partialBinding (FreeV,2)",   test_partialBinding_FreeV_2)
+    ,("partialBinding (FreeV,3)",   test_partialBinding_FreeV_3)
+    ,("partialBinding (FreeV,4)",   test_partialBinding_FreeV_4)
+    ,("partialBinding (FreeV,5)",   test_partialBinding_FreeV_5)
+    ,("partialBinding (FreeV,6)",   test_partialBinding_FreeV_6)
+    ,("partialBinding (FreeV,7)",   test_partialBinding_FreeV_7)
+    ,("partialBinding (FreeC,1)",   test_partialBinding_FreeC_1)
+    ,("partialBinding (FreeC,2)",   test_partialBinding_FreeC_2)
+    ,("partialBinding (FreeC,3)",   test_partialBinding_FreeC_3)
+    ,("partialBinding (FreeC,4)",   test_partialBinding_FreeC_4)
+    ,("partialBinding (FreeC,5)",   test_partialBinding_FreeC_5)
+    ,("partialBinding (FreeC,6)",   test_partialBinding_FreeC_6)
+    ,("partialBinding (FreeC,7)",   test_partialBinding_FreeC_7)
+    ,("partialBinding (Const,1)",   test_partialBinding_Const_1)
+    ,("partialBinding (Const,2)",   test_partialBinding_Const_2)
+    ,("partialBinding (Const,3)",   test_partialBinding_Const_3)
     ]
     
 len = maximum (map (length . fst) tests)
@@ -211,7 +241,7 @@ test_atom2term_Const =
             =?=
         A [base Real, base Real] (Const Mul) [A [] (Bound 0) [], A [] (Bound 1) []]
 
--- * Substitution and reduction * -----------------------------------------[X]--
+-- * Substitution and reduction * -----------------------------------------[.]--
 
 test_raise_1 =
     let tm = (A [] (FreeV 0) [A [] (FreeV 1) [], A [] (FreeV 2) []]
@@ -422,9 +452,292 @@ test_substFreeVAndReduce_1 =
             =?=
        (tmF0 :: AlgebraicTerm Sort Sig)
         
--- * Partial bindings * ---------------------------------------------------[ ]--
+-- * Partial bindings * ---------------------------------------------------[X]--
 
+test_typeOfAtom_Bound =
+    let envB = [[base Real] :-> Real] :: Env Sort
+        envV = []
+        envC = []
+        atom = Bound 0 :: Atom Sig
+     in runState (typeOfAtom envB atom) (envV, envC)
+            =?=
+        ([base Real] :-> Real,(envV,envC))
+        
+test_typeOfAtom_FreeV =
+    let envB = []
+        envV = [[base Real] :-> Real] :: Env Sort
+        envC = []
+        atom = FreeV 0 :: Atom Sig
+     in runState (typeOfAtom envB atom) (envV, envC)
+            =?=
+        ([base Real] :-> Real,(envV,envC))
+        
+test_typeOfAtom_FreeC =
+    let envB = []
+        envV = []
+        envC = [[base Real] :-> Real] :: Env Sort
+        atom = FreeC 0 :: Atom Sig
+     in runState (typeOfAtom envB atom) (envV, envC)
+            =?=
+        ([base Real] :-> Real,(envV,envC))
+        
+test_typeOfAtom_Const =
+    let envB = [] :: Env Sort
+        envV = []
+        envC = []
+        atom = Const Mul
+     in runState (typeOfAtom envB atom) (envV, envC)
+            =?=
+        ([base Real, base Real] :-> Real,(envV,envC))
 
+test_typeOfFreeV_1 =
+    let envV = [[base Real] :-> Real] :: Env Sort
+        envC = []
+     in runState (typeOfFreeV 0) (envV, envC)
+            =?=
+        ([base Real] :-> Real,(envV,envC))
+
+test_typeOfTerm_Bound =
+    let envB = [[base Real] :-> Real] :: Env Sort
+        envV = []
+        envC = []
+        tm   = A [base Real] (Bound 1) [A [] (Bound 0) []] :: AlgebraicTerm Sort Sig
+     in runState (typeOfTerm envB tm) (envV, envC)
+            =?=
+        ([base Real] :-> Real,(envV,envC))
+        
+test_typeOfTerm_FreeV =
+    let envB = []
+        envV = [[base Real] :-> Real] :: Env Sort
+        envC = []
+        tm   = A [base Real] (FreeV 0) [A [] (Bound 0) []] :: AlgebraicTerm Sort Sig
+     in runState (typeOfTerm envB tm) (envV, envC)
+            =?=
+        ([base Real] :-> Real,(envV,envC))
+        
+test_typeOfTerm_FreeC =
+    let envB = []
+        envV = []
+        envC = [[base Real] :-> Real] :: Env Sort
+        tm   = A [base Real] (FreeC 0) [A [] (Bound 0) []] :: AlgebraicTerm Sort Sig
+     in runState (typeOfTerm envB tm) (envV, envC)
+            =?=
+        ([base Real] :-> Real,(envV,envC))
+        
+test_typeOfTerm_Const =
+    let envB = [[base Real] :-> Real] :: Env Sort
+        envV = []
+        envC = []
+        tm   = A [base Real,base Real] (Const Mul) [A [] (Bound 0) [],A [] (Bound 1) []] :: AlgebraicTerm Sort Sig
+     in runState (typeOfTerm envB tm) (envV, envC)
+            =?=
+        ([base Real, base Real] :-> Real,(envV,envC))
+        
+test_freshAtom_1 =
+    let envV = [[base Real]                       :-> Real] :: Env Sort
+        envC = [[base Real, base Real]            :-> Real]
+        ty   = [base Real, base Real, base Real] :-> Real
+     in runState (freshAtom ty) (envV, envC)
+            =?=
+        (FreeV 1 :: Atom Sig,(envV ++ [ty],envC))
+
+test_partialBinding_Bound_1 =
+    let ty   = [base Real,[base Real,base Real]:->Real,[[base Real]:->Real]:->Real] :-> Real
+        atom = Bound 0 :: Atom Sig
+        envV = []
+        envC = []
+     in runState (partialBinding ty atom) (envV,envC)
+            =?=
+        (A [[] :-> Real,[[] :-> Real,[] :-> Real] :-> Real,[[[] :-> Real] :-> Real] :-> Real] (Bound 0) []
+        ,(envV,envC))
+
+test_partialBinding_Bound_2 =
+    let ty   = [base Real,[base Real,base Real]:->Real,[[base Real]:->Real]:->Real] :-> Real
+        atom = Bound 1 :: Atom Sig
+        envV = []
+        envC = []
+     in runState (partialBinding ty atom) (envV,envC)
+            =?=
+        (A [[] :-> Real,[[] :-> Real,[] :-> Real] :-> Real,[[[] :-> Real] :-> Real] :-> Real] (Bound 1) [A [] (FreeV 0) [A [] (Bound 0) [],A [[] :-> Real,[] :-> Real] (Bound 3) [A [] (Bound 0) [],A [] (Bound 1) []],A [[[] :-> Real] :-> Real] (Bound 3) [A [[] :-> Real] (Bound 1) [A [] (Bound 0) []]]],A [] (FreeV 1) [A [] (Bound 0) [],A [[] :-> Real,[] :-> Real] (Bound 3) [A [] (Bound 0) [],A [] (Bound 1) []],A [[[] :-> Real] :-> Real] (Bound 3) [A [[] :-> Real] (Bound 1) [A [] (Bound 0) []]]]]
+        ,(envV ++ [[[] :-> Real,[[] :-> Real,[] :-> Real] :-> Real,[[[] :-> Real] :-> Real] :-> Real] :-> Real,[[] :-> Real,[[] :-> Real,[] :-> Real] :-> Real,[[[] :-> Real] :-> Real] :-> Real] :-> Real],envC))
+
+test_partialBinding_Bound_3 =
+    let ty   = [base Real,[base Real,base Real]:->Real,[[base Real]:->Real]:->Real] :-> Real
+        atom = Bound 2 :: Atom Sig
+        envV = []
+        envC = []
+     in runState (partialBinding ty atom) (envV,envC)
+            =?=
+        (A [[] :-> Real,[[] :-> Real,[] :-> Real] :-> Real,[[[] :-> Real] :-> Real] :-> Real] (Bound 2) [A [[] :-> Real] (FreeV 0) [A [] (Bound 1) [],A [[] :-> Real,[] :-> Real] (Bound 4) [A [] (Bound 0) [],A [] (Bound 1) []],A [[[] :-> Real] :-> Real] (Bound 4) [A [[] :-> Real] (Bound 1) [A [] (Bound 0) []]],A [] (Bound 0) []]]
+        ,(envV ++ [[[] :-> Real,[[] :-> Real,[] :-> Real] :-> Real,[[[] :-> Real] :-> Real] :-> Real,[] :-> Real] :-> Real],envC))
+
+test_partialBinding_FreeV_1 =
+    let ty   = base Real
+        atom = FreeV 0 :: Atom Sig
+        envV = [base Real]
+        envC = []
+     in runState (partialBinding ty atom) (envV,envC)
+            =?=
+        (A [] (FreeV 0) [],(envV,envC))
+
+test_partialBinding_FreeV_2 =
+    let ty   = [base Real] :-> Real
+        atom = FreeV 0 :: Atom Sig
+        envV = [base Real]
+        envC = []
+     in runState (partialBinding ty atom) (envV,envC)
+            =?=
+        (A [[] :-> Real] (FreeV 0) [],(envV,envC))
+
+test_partialBinding_FreeV_3 =
+    let ty   = base Real
+        atom = FreeV 0 :: Atom Sig
+        envV = [[base Real] :-> Real]
+        envC = []
+     in runState (partialBinding ty atom) (envV,envC)
+            =?=
+        (A [] (FreeV 0) [A [] (FreeV 1) []]
+        ,(envV ++ [[] :-> Real],envC))
+        
+test_partialBinding_FreeV_4 =
+    let ty   = [base Real] :-> Real
+        atom = FreeV 0 :: Atom Sig
+        envV = [[base Real] :-> Real]
+        envC = []
+     in runState (partialBinding ty atom) (envV,envC)
+            =?=
+        (A [[] :-> Real] (FreeV 0) [A [] (FreeV 1) [A [] (Bound 0) []]]
+        ,(envV ++ [[[] :-> Real] :-> Real],envC))
+        
+test_partialBinding_FreeV_5 =
+    let ty   = base Real
+        atom = FreeV 0 :: Atom Sig
+        envV = [[[base Real]:->Real,base Real] :-> Real]
+        envC = []
+     in runState (partialBinding ty atom) (envV,envC)
+            =?=
+        (A [] (FreeV 0) [A [[] :-> Real] (FreeV 1) [A [] (Bound 0) []],A [] (FreeV 2) []]
+        ,(envV ++ [[[] :-> Real] :-> Real,[] :-> Real],envC))
+
+test_partialBinding_FreeV_6 =
+    let ty   = [base Real] :-> Real
+        atom = FreeV 0 :: Atom Sig
+        envV = [[[base Real]:->Real,base Real] :-> Real]
+        envC = []
+     in runState (partialBinding ty atom) (envV,envC)
+            =?=
+        (A [[] :-> Real] (FreeV 0) [A [[] :-> Real] (FreeV 1) [A [] (Bound 1) [],A [] (Bound 0) []],A [] (FreeV 2) [A [] (Bound 0) []]]
+        ,(envV ++ [[[] :-> Real,[] :-> Real] :-> Real,[[] :-> Real] :-> Real],envC))
+
+test_partialBinding_FreeV_7 =
+    let ty   = [base Real,[base Real]:->Real] :-> Real
+        atom = FreeV 0 :: Atom Sig
+        envV = [[[base Real]:->Real,base Real] :-> Real]
+        envC = []
+     in runState (partialBinding ty atom) (envV,envC)
+            =?=
+        (A [[] :-> Real,[[] :-> Real] :-> Real] (FreeV 0) [A [[] :-> Real] (FreeV 1) [A [] (Bound 1) [],A [[] :-> Real] (Bound 3) [A [] (Bound 0) []],A [] (Bound 0) []],A [] (FreeV 2) [A [] (Bound 0) [],A [[] :-> Real] (Bound 2) [A [] (Bound 0) []]]]
+        ,(envV ++ [[[] :-> Real,[[] :-> Real] :-> Real,[] :-> Real] :-> Real,[[] :-> Real,[[] :-> Real] :-> Real] :-> Real],envC))
+
+test_partialBinding_FreeC_1 =
+    let ty   = base Real
+        atom = FreeC 0 :: Atom Sig
+        envV = []
+        envC = [base Real]
+     in runState (partialBinding ty atom) (envV,envC)
+            =?=
+        (A [] (FreeC 0) [],(envV,envC))
+
+test_partialBinding_FreeC_2 =
+    let ty   = [base Real] :-> Real
+        atom = FreeC 0 :: Atom Sig
+        envV = []
+        envC = [base Real]
+     in runState (partialBinding ty atom) (envV,envC)
+            =?=
+        (A [[] :-> Real] (FreeC 0) [],(envV,envC))
+
+test_partialBinding_FreeC_3 =
+    let ty   = base Real
+        atom = FreeC 0 :: Atom Sig
+        envV = []
+        envC = [[base Real] :-> Real]
+     in runState (partialBinding ty atom) (envV,envC)
+            =?=
+        (A [] (FreeC 0) [A [] (FreeV 0) []]
+        ,(envV ++ [[] :-> Real],envC))
+        
+test_partialBinding_FreeC_4 =
+    let ty   = [base Real] :-> Real
+        atom = FreeC 0 :: Atom Sig
+        envV = []
+        envC = [[base Real] :-> Real]
+     in runState (partialBinding ty atom) (envV,envC)
+            =?=
+        (A [[] :-> Real] (FreeC 0) [A [] (FreeV 0) [A [] (Bound 0) []]]
+        ,(envV ++ [[[] :-> Real] :-> Real],envC))
+        
+test_partialBinding_FreeC_5 =
+    let ty   = base Real
+        atom = FreeC 0 :: Atom Sig
+        envV = []
+        envC = [[[base Real]:->Real,base Real] :-> Real]
+     in runState (partialBinding ty atom) (envV,envC)
+            =?=
+        (A [] (FreeC 0) [A [[] :-> Real] (FreeV 0) [A [] (Bound 0) []],A [] (FreeV 1) []]
+        ,(envV ++ [[[] :-> Real] :-> Real,[] :-> Real],envC))
+
+test_partialBinding_FreeC_6 =
+    let ty   = [base Real] :-> Real
+        atom = FreeC 0 :: Atom Sig
+        envV = []
+        envC = [[[base Real]:->Real,base Real] :-> Real]
+     in runState (partialBinding ty atom) (envV,envC)
+            =?=
+        (A [[] :-> Real] (FreeC 0) [A [[] :-> Real] (FreeV 0) [A [] (Bound 1) [],A [] (Bound 0) []],A [] (FreeV 1) [A [] (Bound 0) []]]
+        ,(envV ++ [[[] :-> Real,[] :-> Real] :-> Real,[[] :-> Real] :-> Real],envC))
+
+test_partialBinding_FreeC_7 =
+    let ty   = [base Real,[base Real]:->Real] :-> Real
+        atom = FreeC 0 :: Atom Sig
+        envV = []
+        envC = [[[base Real]:->Real,base Real] :-> Real]
+     in runState (partialBinding ty atom) (envV,envC)
+            =?=
+        (A [[] :-> Real,[[] :-> Real] :-> Real] (FreeC 0) [A [[] :-> Real] (FreeV 0) [A [] (Bound 1) [],A [[] :-> Real] (Bound 3) [A [] (Bound 0) []],A [] (Bound 0) []],A [] (FreeV 1) [A [] (Bound 0) [],A [[] :-> Real] (Bound 2) [A [] (Bound 0) []]]]
+        ,(envV ++ [[[] :-> Real,[[] :-> Real] :-> Real,[] :-> Real] :-> Real,[[] :-> Real,[[] :-> Real] :-> Real] :-> Real],envC))
+
+test_partialBinding_Const_1 =
+    let ty   = base Real
+        atom = Const Mul :: Atom Sig
+        envV = []
+        envC = []
+     in runState (partialBinding ty atom) (envV,envC)
+            =?=
+        (A [] (Const Mul) [A [] (FreeV 0) [],A [] (FreeV 1) []]
+        ,(envV ++ [base Real, base Real],envC))
+
+test_partialBinding_Const_2 =
+    let ty   = [base Real] :-> Real
+        atom = Const Mul :: Atom Sig
+        envV = []
+        envC = []
+     in runState (partialBinding ty atom) (envV,envC)
+            =?=
+        (A [[] :-> Real] (Const Mul) [A [] (FreeV 0) [A [] (Bound 0) []],A [] (FreeV 1) [A [] (Bound 0) []]]
+        ,(envV ++ [[base Real] :-> Real, [base Real] :-> Real],envC))
+
+test_partialBinding_Const_3 =
+    let ty   = [base Real,[base Real]:->Real] :-> Real
+        atom = Const Mul :: Atom Sig
+        envV = []
+        envC = []
+     in runState (partialBinding ty atom) (envV,envC)
+            =?=
+        (A [[] :-> Real,[[] :-> Real] :-> Real] (Const Mul) [A [] (FreeV 0) [A [] (Bound 0) [],A [[] :-> Real] (Bound 2) [A [] (Bound 0) []]],A [] (FreeV 1) [A [] (Bound 0) [],A [[] :-> Real] (Bound 2) [A [] (Bound 0) []]]]
+        ,(envV ++ [[base Real,[base Real]:->Real]:->Real, [base Real,[base Real]:->Real]:->Real],envC))
+
+-- * Maximal flexible subterms (Qian & Wang) * ----------------------------[ ]--
 
 
 

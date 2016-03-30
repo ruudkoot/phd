@@ -149,7 +149,7 @@ atom2term _envB _envV _envC (Const c) =
 type TermPair   sort sig = (AlgebraicTerm sort sig, AlgebraicTerm sort sig)
 type TermSystem sort sig = [TermPair sort sig]
 
--- * Substitution and reduction * -----------------------------------------[ ]--
+-- * Substitution and reduction * -----------------------------------------[.]--
 
 -- Raise the De Bruijn index of unbound variables in a term by 'k'.
 raise :: Int -> AlgebraicTerm sort sig -> AlgebraicTerm sort sig
@@ -219,7 +219,7 @@ substFreeVAndReduce subst (A xs (FreeV f) ys)
 substFreeVAndReduce subst u
     = u
    
--- * Partial bindings * ---------------------------------------------------[ ]--
+-- * Partial bindings * ---------------------------------------------------[X]--
 
 typeOfAtom :: Theory sort sig => Env sort -> Atom sig -> State (Env sort, Env sort) (SimpleType sort)
 typeOfAtom env (Bound b) = return $ env !! b
@@ -248,6 +248,7 @@ freshAtom t = do
     put (envV ++ [t], envC)
     return $ FreeV (length envV)
 
+-- introduces new fresh variables, like completion...
 partialBinding :: Theory b s => SimpleType b -> Atom s -> State (Env b, Env b) (AlgebraicTerm b s)
 partialBinding (as :-> b) a = do
     cs :-> b' <- typeOfAtom as a
