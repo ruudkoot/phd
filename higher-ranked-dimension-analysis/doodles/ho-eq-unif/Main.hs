@@ -264,16 +264,20 @@ partialBinding (as :-> b) a = do
         gfts <- mapM generalFlexibleTerm cs
         return (A as a gfts)
 
--- * Maximal flexible subterms (Qian & Wang) * ----------------------------[ ]--
+-- * Maximal flexible subterms (Qian & Wang) * ----------------------------[X]--
+
+-- NOTE: the binders are not returned in the same order as in the paper!
 
 pmfs :: Theory sort sig => AlgebraicTerm sort sig
                             -> Set ([SimpleType sort], AlgebraicTerm sort sig)
 pmfs = pmfs' []
 
-pmfs' :: Theory sort sig => [SimpleType sort] -> AlgebraicTerm sort sig
-                            -> Set ([SimpleType sort], AlgebraicTerm sort sig)
-pmfs' ys (A xs (FreeV f) ss) = singleton (xs ++ ys, A [] (FreeV f) ss)
-pmfs' ys (A xs a         ss) = unionMap' (pmfs' (xs ++ ys)) ss
+  where
+
+    pmfs' :: Theory sort sig => [SimpleType sort] -> AlgebraicTerm sort sig
+                                -> Set ([SimpleType sort], AlgebraicTerm sort sig)
+    pmfs' ys (A xs (FreeV f) ss) = singleton (xs ++ ys, A [] (FreeV f) ss)
+    pmfs' ys (A xs a         ss) = unionMap' (pmfs' (xs ++ ys)) ss
 
 -- * Transformation rules (Qian & Wang) * ---------------------------------[ ]--
 

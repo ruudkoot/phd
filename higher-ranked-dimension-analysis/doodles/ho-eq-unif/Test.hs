@@ -1,3 +1,6 @@
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+
 module Test where
 
 import Control.Monad
@@ -87,6 +90,7 @@ tests =
     ,("partialBinding (Const,1)",   test_partialBinding_Const_1)
     ,("partialBinding (Const,2)",   test_partialBinding_Const_2)
     ,("partialBinding (Const,3)",   test_partialBinding_Const_3)
+    ,("pmfs (1)",                   test_pmfs_1)
     ]
     
 len = maximum (map (length . fst) tests)
@@ -737,8 +741,25 @@ test_partialBinding_Const_3 =
         (A [[] :-> Real,[[] :-> Real] :-> Real] (Const Mul) [A [] (FreeV 0) [A [] (Bound 0) [],A [[] :-> Real] (Bound 2) [A [] (Bound 0) []]],A [] (FreeV 1) [A [] (Bound 0) [],A [[] :-> Real] (Bound 2) [A [] (Bound 0) []]]]
         ,(envV ++ [[base Real,[base Real]:->Real]:->Real, [base Real,[base Real]:->Real]:->Real],envC))
 
--- * Maximal flexible subterms (Qian & Wang) * ----------------------------[ ]--
+-- * Maximal flexible subterms (Qian & Wang) * ----------------------------[X]--
 
+-- Qian & Wang (p. 407)
+test_pmfs_1 =
+    let tm = A [base Real, base Real]
+               (FreeC 0)
+               [ A [] (FreeV 0) [A [] (Bound 0) []]
+               , A [base Real] (FreeV 0) [A [] (Bound 1) []]
+               , A [] (FreeV 1) [A [] (FreeV 0) [A [] (Bound 0) []]]]
+              :: AlgebraicTerm Sort Sig
+     in S.toList (pmfs tm)
+            =?=
+        [([[] :-> Real,[] :-> Real],
+            A [] (FreeV 0) [A [] (Bound 0) []])
+        ,([[] :-> Real,[] :-> Real],
+            A [] (FreeV 1) [A [] (FreeV 0) [A [] (Bound 0) []]])
+        ,([[] :-> Real,[] :-> Real,[] :-> Real],
+            A [] (FreeV 0) [A [] (Bound 1) []])
+        ]
 
 
 
