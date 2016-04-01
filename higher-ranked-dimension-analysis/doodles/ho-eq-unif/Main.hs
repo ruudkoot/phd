@@ -9,6 +9,8 @@ import Control.Monad.State
 
 import Data.Maybe
 
+import           Data.Map (Map)
+import qualified Data.Map as Map
 import           Data.Set        hiding (map)
 import qualified Data.Set as Set
 
@@ -264,26 +266,44 @@ partialBinding (as :-> b) a = do
         gfts <- mapM generalFlexibleTerm cs
         return (A as a gfts)
 
--- * Maximal flexible subterms (Qian & Wang) * ----------------------------[X]--
+-- * Maximal flexible subterms (Qian & Wang) * ----------------------------[ ]--
 
 -- NOTE: the binders are not returned in the same order as in the paper!
+--       they are also not applied in the same order by conditional mappings
+--       (this should not matter, as long as it is done consistently)
+
+type ConditionalMapping b s = Map ([SimpleType b], AlgebraicTerm b s) (Atom s)
+type OrderReduction     b s = [(AlgebraicTerm b s, Atom s)]
 
 pmfs :: Theory sort sig => AlgebraicTerm sort sig
                             -> Set ([SimpleType sort], AlgebraicTerm sort sig)
 pmfs = pmfs' []
-
   where
-
     pmfs' :: Theory sort sig => [SimpleType sort] -> AlgebraicTerm sort sig
                                 -> Set ([SimpleType sort], AlgebraicTerm sort sig)
     pmfs' ys (A xs (FreeV f) ss) = singleton (xs ++ ys, A [] (FreeV f) ss)
     pmfs' ys (A xs a         ss) = unionMap' (pmfs' (xs ++ ys)) ss
 
+
+applyConditionalMapping
+    :: Theory b s => ConditionalMapping b s -> AlgebraicTerm b s -> AlgebraicTerm b s
+applyConditionalMapping condMap = applyConditionalMapping' []
+  where
+    applyConditionalMapping' ctx (A xs (FreeV f) ss)
+        = case Map.lookup (xs ++ ctx, A [] (FreeV f) ss) condMap of
+            Nothing -> A xs (FreeV f) (map (applyConditionalMapping' (xs ++ ctx)) ss)
+            Just a  -> A xs a (map (bound (xs ++ ctx)) [0 .. length (xs ++ ctx) - 1])
+    applyConditionalMapping' curCtx (A xs a         ss)
+        = A xs a (map (applyConditionalMapping' (xs ++ curCtx)) ss)
+
+applyOrderReduction
+    :: Theory b s => OrderReduction b s -> AlgebraicTerm b s -> AlgebraicTerm b s
+applyOrderReduction = error "applyOrderReduction"
+
+
 -- * Transformation rules (Qian & Wang) * ---------------------------------[ ]--
 
 -- TODO: check invariant: length envV == length theta'
-
-type TransformationRule b s = TermPair b s -> TermSystem b s -> State (Env b, Env b) (Maybe (TermSystem b s))
 
 type     Conf b s = (Subst b s,                 TermSystem b s)
 type HeadConf b s = (Subst b s, TermPair   b s, TermSystem b s)
@@ -301,25 +321,21 @@ transformAbs (theta', (u,v), ss) | isRigid u || isRigid v = do
     hs <- forM ps $ \(xs,w) -> do
             xs' :-> r <- typeOfTerm [] w
             freshAtom (xs ++ xs' :-> r)
-    let phi = zipWith (\(xs,w) h -> (xs,w,h)) ps hs
+    let phi  = zipWith (\(xs,w) h -> ((xs,w),h)) ps hs
+    let phi' = Map.fromList phi
     (envV, envC) <- get
     return $ Just $
         ( if length theta' /= unFreeV (head hs) then
             error "transformAbs: assertion failed - substitution too short (or long)"
           else
-            theta' ++ map (\(xs,A xs' a' ys',_h) -> A (xs'++xs) a' ys') phi
-        , [(applyConditionalMapping phi u,applyConditionalMapping phi v)]
-          ++ map (\(xs,A xs' a' ys',h) -> (atom2term [] envV envC h, A (xs'++xs) a' ys')) phi
+            theta' ++ map (\((xs,A xs' a' ys'),_h) -> A (xs'++xs) a' ys') phi
+        , [(applyConditionalMapping phi' u,applyConditionalMapping phi' v)]
+          ++ map (\((xs,A xs' a' ys'),h) -> (atom2term [] envV envC h, A (xs'++xs) a' ys')) phi
           ++ ss
         )
 transformAbs _ | otherwise = error "transformAbs: assumptions violated"
                           -- return Nothing
 
-type ConditionalMapping b s = [([SimpleType b], AlgebraicTerm b s, Atom s)]
-
-applyConditionalMapping :: Theory b s => ConditionalMapping b s
-                                    -> AlgebraicTerm b s -> AlgebraicTerm b s
-applyConditionalMapping = undefined
 
 -- ss' assumed to be E-acceptable
 -- may be non-deterministic if the unification algorithm isn't unary
@@ -346,13 +362,13 @@ transformEUni (theta, ss', ss) = do
                                 _ :-> t <- typeOfTerm [] z
                                 z' <- freshAtom (tyxs_i ++ us :-> t)
                                 return ( ((z, xs_i, us), z') : s'
-                                       , (us, z, z')              )
+                                       , ((us, z), z')              )
                             Just z' -> do
-                                return ( s', (us, z, z') )
+                                return ( s', ((us, z), z') )
     -- FIXME: SHADOWS THE OTHER 'theta'!
     theta <- forM (zip3 phis ys ps) $ \(phi, FreeV y, A [] (FreeV g) xs) -> do
                 ts <- mapM (typeOfTerm []) xs
-                let (A us a as) = applyConditionalMapping phi (sigma !! y)
+                let (A us a as) = applyConditionalMapping (Map.fromList phi) (sigma !! y)
                 return (g, A (us ++ ts) a as)
     (envV, _) <- get
     let theta'  = map (\(x,y) -> (freeV envV x, y)) theta
@@ -361,12 +377,6 @@ transformEUni (theta, ss', ss) = do
         ( error "TODO"
         , theta' ++ map (substFreeVAndReduce theta'' *** substFreeVAndReduce theta'') ss
         )
-
-type OrderReduction b s = [(AlgebraicTerm b s, Atom s)]
-
-applyOrderReduction :: Theory b s => OrderReduction b s
-                                    -> AlgebraicTerm b s -> AlgebraicTerm b s
-applyOrderReduction = undefined
 
 -- (u,v) assumed to be flexible-rigid (i.e., not rigid-flexible)
 -- are we only non-deterministic locally (choice of 'b') or also globally
@@ -403,31 +413,7 @@ transformBin _ = error "transformBin: assumptions violated"
 
 -- * Control strategy (Qian & Wang) * -------------------------------------[ ]--
 
-controlStrategy = undefined
-
--- | Examples | -----------------------------------------------------------[ ]--
-
--- * Maximal flexible subterms * ------------------------------------------[ ]--
-
-data Sig' = F | G | H
-  deriving (Eq, Bounded, Enum, Ord, Show)
-  
-instance Theory Sort Sig' where
-    signature H = [Real, Real] :=> Real
-    unify       = undefined
-
-u0 = let f  = 0
-         g  = 1
-         x  = 0
-         y  = 1
-         x' = 1
-         y' = 2
-         z  = 0
-      in A [base Real, base Real] (Const H)
-            [A [] (FreeV f) [A [] (Bound x) []]
-            ,A [base Real] (FreeV f) [A [] (Bound x') []]
-            ,A [] (FreeV f) [A [] (FreeV g) [A [] (Bound x) []]]
-            ]
+controlStrategy = error "controlStrategy"
 
 -- | Higher-order dimension types | ---------------------------------------[ ]--
 
@@ -451,4 +437,4 @@ instance Theory Sort Sig where
 -- * Unification modulo Abelian groups * ----------------------------------[ ]--
 
 unify' :: UnificationProblem Sort Sig -> Maybe (Subst Sort Sig)
-unify' = undefined
+unify' = error "unify'"

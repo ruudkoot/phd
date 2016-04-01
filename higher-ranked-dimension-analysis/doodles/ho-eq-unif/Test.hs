@@ -6,91 +6,96 @@ module Test where
 import Control.Monad
 import Control.Monad.State
 
+import Data.Maybe
+import qualified Data.Map as M
 import qualified Data.Set as S
 
-import Main
+import Main hiding (u0)
 
 tests :: [(String, Bool)]
 tests =
-    [("for",                        test_for)
-    ,("statefulForM (1)",           test_statefulForM_1)
-    ,("statefulForM (2)",           test_statefulForM_2)
-    ,("(!!!)",                      test_III)
-    ,("unionMap",                   test_unionMap)
-    ,("unionMap'",                  test_unionMap')
-    ,("base",                       test_base)
-    ,("sig2ty",                     test_sig2ty)
-    ,("sparsifySubst",              test_sparsifySubst)
-    ,("unFreeV",                    test_unFreeV)
-    ,("isBound",                    test_isBound)
-    ,("isFreeV",                    test_isFreeV)
-    ,("isFreeC",                    test_isFreeC)
-    ,("isConst",                    test_isConst)
-    ,("hd",                         test_hd)
-    ,("isRigid",                    test_isRigid)
-    ,("bound",                      test_bound)
-    ,("freeV (1)",                  test_freeV_1)
-    ,("freeV (2)",                  test_freeV_2)
-    ,("atom2term (Bound)",          test_atom2term_Bound)
-    ,("atom2term (FreeV)",          test_atom2term_FreeV)
-    ,("atom2term (FreeC)",          test_atom2term_FreeC)
-    ,("atom2term (Const)",          test_atom2term_Const)
-    ,("raise (1)",                  test_raise_1)
-    ,("raise (2)",                  test_raise_2)
-    ,("raise (3)",                  test_raise_3)
-    ,("raise (4)",                  test_raise_4)
-    ,("raise (5)",                  test_raise_5)
-    ,("raise (6)",                  test_raise_6)
-    ,("raise (7)",                  test_raise_7)
-    ,("raise (8)",                  test_raise_8)
-    ,("raise (9)",                  test_raise_9)
-    ,("raise (10)",                 test_raise_10)
-    ,("raise (11)",                 test_raise_11)
-    ,("raise (12)",                 test_raise_12)
-    ,("raise (13)",                 test_raise_13)
-    ,("raise (14)",                 test_raise_14)
-    ,("lower (1)",                  test_lower_1)
-    ,("lower (2)",                  test_lower_2)
-    --,("lower (3)",                test_lower_3)     -- "raise: unexpected capture"
-    --,("lower (4)",                test_lower_4)     -- "raise: unexpected capture"
-    ,("reduce (1)",                 test_reduce_1)
-    ,("reduce (2)",                 test_reduce_2)
-    ,("reduce (3)",                 test_reduce_3)
-    ,("reduce (4)",                 test_reduce_4)
-    ,("reduce (5)",                 test_reduce_5)
+    [("for",                            test_for)
+    ,("statefulForM (1)",               test_statefulForM_1)
+    ,("statefulForM (2)",               test_statefulForM_2)
+    ,("(!!!)",                          test_III)
+    ,("unionMap",                       test_unionMap)
+    ,("unionMap'",                      test_unionMap')
+    ,("base",                           test_base)
+    ,("sig2ty",                         test_sig2ty)
+    ,("sparsifySubst",                  test_sparsifySubst)
+    ,("unFreeV",                        test_unFreeV)
+    ,("isBound",                        test_isBound)
+    ,("isFreeV",                        test_isFreeV)
+    ,("isFreeC",                        test_isFreeC)
+    ,("isConst",                        test_isConst)
+    ,("hd",                             test_hd)
+    ,("isRigid",                        test_isRigid)
+    ,("bound",                          test_bound)
+    ,("freeV (1)",                      test_freeV_1)
+    ,("freeV (2)",                      test_freeV_2)
+    ,("atom2term (Bound)",              test_atom2term_Bound)
+    ,("atom2term (FreeV)",              test_atom2term_FreeV)
+    ,("atom2term (FreeC)",              test_atom2term_FreeC)
+    ,("atom2term (Const)",              test_atom2term_Const)
+    ,("raise (1)",                      test_raise_1)
+    ,("raise (2)",                      test_raise_2)
+    ,("raise (3)",                      test_raise_3)
+    ,("raise (4)",                      test_raise_4)
+    ,("raise (5)",                      test_raise_5)
+    ,("raise (6)",                      test_raise_6)
+    ,("raise (7)",                      test_raise_7)
+    ,("raise (8)",                      test_raise_8)
+    ,("raise (9)",                      test_raise_9)
+    ,("raise (10)",                     test_raise_10)
+    ,("raise (11)",                     test_raise_11)
+    ,("raise (12)",                     test_raise_12)
+    ,("raise (13)",                     test_raise_13)
+    ,("raise (14)",                     test_raise_14)
+    ,("lower (1)",                      test_lower_1)
+    ,("lower (2)",                      test_lower_2)
+    --,("lower (3)",                    test_lower_3)     -- "raise: unexpected capture"
+    --,("lower (4)",                    test_lower_4)     -- "raise: unexpected capture"
+    ,("reduce (1)",                     test_reduce_1)
+    ,("reduce (2)",                     test_reduce_2)
+    ,("reduce (3)",                     test_reduce_3)
+    ,("reduce (4)",                     test_reduce_4)
+    ,("reduce (5)",                     test_reduce_5)
     -- FIXME: additional testcases for 'reduce' and 'bindAndReduce'
-    ,("substFreeVAndReduce (1)",    test_substFreeVAndReduce_1)
-    ,("typeOfAtom (Bound)",         test_typeOfAtom_Bound)
-    ,("typeOfAtom (FreeV)",         test_typeOfAtom_FreeV)
-    ,("typeOfAtom (FreeC)",         test_typeOfAtom_FreeC)
-    ,("typeOfAtom (Const)",         test_typeOfAtom_Const)
-    ,("typeOfFreeV (1)",            test_typeOfFreeV_1)
-    ,("typeOfTerm (Bound)",         test_typeOfTerm_Bound)
-    ,("typeOfTerm (FreeV)",         test_typeOfTerm_FreeV)
-    ,("typeOfTerm (FreeC)",         test_typeOfTerm_FreeC)
-    ,("typeOfTerm (Const)",         test_typeOfTerm_Const)
-    ,("freshAtom (1)",              test_freshAtom_1)
-    ,("partialBinding (Bound,1)",   test_partialBinding_Bound_1)
-    ,("partialBinding (Bound,2)",   test_partialBinding_Bound_2)
-    ,("partialBinding (Bound,3)",   test_partialBinding_Bound_3)
-    ,("partialBinding (FreeV,1)",   test_partialBinding_FreeV_1)
-    ,("partialBinding (FreeV,2)",   test_partialBinding_FreeV_2)
-    ,("partialBinding (FreeV,3)",   test_partialBinding_FreeV_3)
-    ,("partialBinding (FreeV,4)",   test_partialBinding_FreeV_4)
-    ,("partialBinding (FreeV,5)",   test_partialBinding_FreeV_5)
-    ,("partialBinding (FreeV,6)",   test_partialBinding_FreeV_6)
-    ,("partialBinding (FreeV,7)",   test_partialBinding_FreeV_7)
-    ,("partialBinding (FreeC,1)",   test_partialBinding_FreeC_1)
-    ,("partialBinding (FreeC,2)",   test_partialBinding_FreeC_2)
-    ,("partialBinding (FreeC,3)",   test_partialBinding_FreeC_3)
-    ,("partialBinding (FreeC,4)",   test_partialBinding_FreeC_4)
-    ,("partialBinding (FreeC,5)",   test_partialBinding_FreeC_5)
-    ,("partialBinding (FreeC,6)",   test_partialBinding_FreeC_6)
-    ,("partialBinding (FreeC,7)",   test_partialBinding_FreeC_7)
-    ,("partialBinding (Const,1)",   test_partialBinding_Const_1)
-    ,("partialBinding (Const,2)",   test_partialBinding_Const_2)
-    ,("partialBinding (Const,3)",   test_partialBinding_Const_3)
-    ,("pmfs (1)",                   test_pmfs_1)
+    ,("substFreeVAndReduce (1)",        test_substFreeVAndReduce_1)
+    ,("typeOfAtom (Bound)",             test_typeOfAtom_Bound)
+    ,("typeOfAtom (FreeV)",             test_typeOfAtom_FreeV)
+    ,("typeOfAtom (FreeC)",             test_typeOfAtom_FreeC)
+    ,("typeOfAtom (Const)",             test_typeOfAtom_Const)
+    ,("typeOfFreeV (1)",                test_typeOfFreeV_1)
+    ,("typeOfTerm (Bound)",             test_typeOfTerm_Bound)
+    ,("typeOfTerm (FreeV)",             test_typeOfTerm_FreeV)
+    ,("typeOfTerm (FreeC)",             test_typeOfTerm_FreeC)
+    ,("typeOfTerm (Const)",             test_typeOfTerm_Const)
+    ,("freshAtom (1)",                  test_freshAtom_1)
+    ,("partialBinding (Bound,1)",       test_partialBinding_Bound_1)
+    ,("partialBinding (Bound,2)",       test_partialBinding_Bound_2)
+    ,("partialBinding (Bound,3)",       test_partialBinding_Bound_3)
+    ,("partialBinding (FreeV,1)",       test_partialBinding_FreeV_1)
+    ,("partialBinding (FreeV,2)",       test_partialBinding_FreeV_2)
+    ,("partialBinding (FreeV,3)",       test_partialBinding_FreeV_3)
+    ,("partialBinding (FreeV,4)",       test_partialBinding_FreeV_4)
+    ,("partialBinding (FreeV,5)",       test_partialBinding_FreeV_5)
+    ,("partialBinding (FreeV,6)",       test_partialBinding_FreeV_6)
+    ,("partialBinding (FreeV,7)",       test_partialBinding_FreeV_7)
+    ,("partialBinding (FreeC,1)",       test_partialBinding_FreeC_1)
+    ,("partialBinding (FreeC,2)",       test_partialBinding_FreeC_2)
+    ,("partialBinding (FreeC,3)",       test_partialBinding_FreeC_3)
+    ,("partialBinding (FreeC,4)",       test_partialBinding_FreeC_4)
+    ,("partialBinding (FreeC,5)",       test_partialBinding_FreeC_5)
+    ,("partialBinding (FreeC,6)",       test_partialBinding_FreeC_6)
+    ,("partialBinding (FreeC,7)",       test_partialBinding_FreeC_7)
+    ,("partialBinding (Const,1)",       test_partialBinding_Const_1)
+    ,("partialBinding (Const,2)",       test_partialBinding_Const_2)
+    ,("partialBinding (Const,3)",       test_partialBinding_Const_3)
+    ,("pmfs (1)",                       test_pmfs_1)
+    ,("pmfs (2)",                       test_pmfs_2)
+    ,("applyConditionalMapping (1)",    test_applyConditionalMapping_1)
+    ,("applyConditionalMapping (2)",    test_applyConditionalMapping_2)
     ]
     
 len = maximum (map (length . fst) tests)
@@ -741,16 +746,31 @@ test_partialBinding_Const_3 =
         (A [[] :-> Real,[[] :-> Real] :-> Real] (Const Mul) [A [] (FreeV 0) [A [] (Bound 0) [],A [[] :-> Real] (Bound 2) [A [] (Bound 0) []]],A [] (FreeV 1) [A [] (Bound 0) [],A [[] :-> Real] (Bound 2) [A [] (Bound 0) []]]]
         ,(envV ++ [[base Real,[base Real]:->Real]:->Real, [base Real,[base Real]:->Real]:->Real],envC))
 
--- * Maximal flexible subterms (Qian & Wang) * ----------------------------[X]--
+-- * Maximal flexible subterms (Qian & Wang) * ----------------------------[ ]--
 
 -- Qian & Wang (p. 407)
+
+u0, u1 :: AlgebraicTerm Sort Sig
+
+u0 = A [base Real, base Real]
+       (FreeC 0)
+       [ A [] (FreeV 0) [A [] (Bound 0) []]
+       , A [base Real] (FreeV 0) [A [] (Bound 1) []]
+       , A [] (FreeV 1) [A [] (FreeV 0) [A [] (Bound 0) []]]]
+
+-- \x:R->R\y:R->R.C(F(\p:R.x(p)),\z:R->R.F(\q:R.x(q)),\r:R->R.G(F(\s:R.x(s)),\t:R.r(t)))
+u1 = A [[base Real] :-> Real, [base Real] :-> Real]
+       (FreeC 0)
+       [ A [] (FreeV 0) [A [base Real] (Bound 1) [A [] (Bound 0) []]]
+       , A [[base Real] :-> Real] (FreeV 0) [A [base Real] (Bound 2) [A [] (Bound 0) []]]
+       , A [[base Real] :-> Real]
+           (FreeV 1)
+           [A [] (FreeV 0) [A [base Real] (Bound 2) [A [] (Bound 0) []]]
+           ,A [base Real] (Bound 1) [A [] (Bound 0) []]]
+       ]
+
 test_pmfs_1 =
-    let tm = A [base Real, base Real]
-               (FreeC 0)
-               [ A [] (FreeV 0) [A [] (Bound 0) []]
-               , A [base Real] (FreeV 0) [A [] (Bound 1) []]
-               , A [] (FreeV 1) [A [] (FreeV 0) [A [] (Bound 0) []]]]
-              :: AlgebraicTerm Sort Sig
+    let tm = u0
      in S.toList (pmfs tm)
             =?=
         [([[] :-> Real,[] :-> Real],
@@ -760,6 +780,82 @@ test_pmfs_1 =
         ,([[] :-> Real,[] :-> Real,[] :-> Real],
             A [] (FreeV 0) [A [] (Bound 1) []])
         ]
+
+test_pmfs_2 =
+    let tm = u1
+     in S.toList (pmfs tm)
+            =?=
+        [([[[] :-> Real] :-> Real,[[] :-> Real] :-> Real]
+          ,A [] (FreeV 0) [A [[] :-> Real] (Bound 1) [A [] (Bound 0) []]])
+        ,([[[] :-> Real] :-> Real,[[] :-> Real] :-> Real,[[] :-> Real] :-> Real]
+          ,A [] (FreeV 0) [A [[] :-> Real] (Bound 2) [A [] (Bound 0) []]])
+        ,([[[] :-> Real] :-> Real,[[] :-> Real] :-> Real,[[] :-> Real] :-> Real]
+          ,A [] (FreeV 1)
+            [A [] (FreeV 0) [A [[] :-> Real] (Bound 2) [A [] (Bound 0) []]]
+            ,A [[] :-> Real] (Bound 1) [A [] (Bound 0) []]])]
+
+test_applyConditionalMapping_1 =
+    let tm      = u0
+        condMap = M.fromList $ [(([base Real,base Real]
+                                 ,A [] (FreeV 0) [A [] (Bound 0) []])
+                                ,FreeV 2)
+                               ,(([base Real,base Real,base Real]
+                                 ,A [] (FreeV 0) [A [] (Bound 1) []])
+                                ,FreeV 3)
+                               ,(([base Real,base Real]
+                                 ,A [] (FreeV 1) [A [] (FreeV 0) [A [] (Bound 0) []]])
+                                ,FreeV 4)]
+     in applyConditionalMapping condMap tm
+            =?=
+        A   [[] :-> Real,[] :-> Real]
+            (FreeC 0)
+            [A [] (FreeV 2) [A [] (Bound 0) [],A [] (Bound 1) []]
+            ,A [[] :-> Real] (FreeV 3) [A [] (Bound 0) [],A [] (Bound 1) [],A [] (Bound 2) []]
+            ,A [] (FreeV 4) [A [] (Bound 0) [],A [] (Bound 1) []]]
+     
+test_applyConditionalMapping_2 =
+    let tm      = u1
+        condMap = M.fromList $
+            [(([[base Real]:->Real,[base Real]:->Real]
+              ,A [] (FreeV 0) [A [[] :-> Real] (Bound 1) [A [] (Bound 0) []]])
+             ,FreeV 2)
+            ,(([[base Real]:->Real,[base Real]:->Real,[base Real]:->Real]
+              ,A [] (FreeV 0) [A [[] :-> Real] (Bound 2) [A [] (Bound 0) []]])
+             ,FreeV 3)
+            ,(([[base Real]:->Real,[base Real]:->Real]
+              ,A [] (FreeV 1)
+                [A [] (FreeV 0) [A [[] :-> Real] (Bound 2) [A [] (Bound 0) []]]
+                ,A [[] :-> Real] (Bound 1) [A [] (Bound 0) []]])
+             ,FreeV 4)]
+     in applyConditionalMapping condMap tm
+            =?=
+        A [] (Bound 0) []
+
+-- * Transformation rules (Qian & Wang) * ---------------------------------[ ]--
+
+-- \x.F(x) =?= \x.F(x)*G(x)*x
+--         === \x.*(F(x),*(G(x),x))
+test_transformAbs_1 =
+    let subst      = []   -- needs to be as long as envV?
+        termPair   = (A [base Real] (FreeV 0) [A [] (Bound 0) []]
+                     ,A [base Real] (Const Mul)
+                        [A [] (FreeV 0) [A [] (Bound 0) []]
+                        ,A [] (Const Mul)
+                            [A [] (FreeV 1) [A [] (Bound 0) []]
+                            ,A [] (Bound 0) []]
+                        ]
+                     )
+        termSystem = []
+        envV       = [[base Real] :-> Real, [base Real] :-> Real]
+        envC       = []
+     in runState (transformAbs (subst,termPair,termSystem)) (envV,envC)
+        
+test_transformAbs_1' = snd . fromJust . fst $ test_transformAbs_1
+
+
+
+
+
 
 
 
