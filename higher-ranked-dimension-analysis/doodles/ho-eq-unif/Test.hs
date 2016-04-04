@@ -822,14 +822,14 @@ test_applyConditionalMapping_2 =
             ,(([[base Real]:->Real,[base Real]:->Real,[base Real]:->Real]
               ,A [] (FreeV 0) [A [[] :-> Real] (Bound 2) [A [] (Bound 0) []]])
              ,FreeV 3)
-            ,(([[base Real]:->Real,[base Real]:->Real]
+            ,(([[base Real] :-> Real,[base Real]:->Real,[base Real]:->Real]
               ,A [] (FreeV 1)
                 [A [] (FreeV 0) [A [[] :-> Real] (Bound 2) [A [] (Bound 0) []]]
                 ,A [[] :-> Real] (Bound 1) [A [] (Bound 0) []]])
              ,FreeV 4)]
      in applyConditionalMapping condMap tm
             =?=
-        A [] (Bound 0) []
+        A [[[] :-> Real] :-> Real,[[] :-> Real] :-> Real] (FreeC 0) [A [] (FreeV 2) [A [[] :-> Real] (Bound 1) [A [] (Bound 0) []],A [[] :-> Real] (Bound 2) [A [] (Bound 0) []]],A [[[] :-> Real] :-> Real] (FreeV 3) [A [[] :-> Real] (Bound 1) [A [] (Bound 0) []],A [[] :-> Real] (Bound 2) [A [] (Bound 0) []],A [[] :-> Real] (Bound 3) [A [] (Bound 0) []]],A [[[] :-> Real] :-> Real] (FreeV 4) [A [[] :-> Real] (Bound 1) [A [] (Bound 0) []],A [[] :-> Real] (Bound 2) [A [] (Bound 0) []],A [[] :-> Real] (Bound 3) [A [] (Bound 0) []]]]
 
 -- * Transformation rules (Qian & Wang) * ---------------------------------[ ]--
 
