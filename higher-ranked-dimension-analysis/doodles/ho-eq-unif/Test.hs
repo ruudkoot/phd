@@ -99,6 +99,7 @@ tests =
     ,("applyConditionalMapping (2)",    test_applyConditionalMapping_2)
     ,("applyConditionalMapping (3)",    test_applyConditionalMapping_3)
     ,("applyOrderReduction (1)",        test_applyOrderReduction_1)
+    ,("transformAbs (1)",               test_transformAbs_1)
     ]
     
 len = maximum (map (length . fst) tests)
@@ -749,7 +750,7 @@ test_partialBinding_Const_3 =
         (A [[] :-> Real,[[] :-> Real] :-> Real] (Const Mul) [A [] (FreeV 0) [A [] (Bound 0) [],A [[] :-> Real] (Bound 2) [A [] (Bound 0) []]],A [] (FreeV 1) [A [] (Bound 0) [],A [[] :-> Real] (Bound 2) [A [] (Bound 0) []]]]
         ,(envV ++ [[base Real,[base Real]:->Real]:->Real, [base Real,[base Real]:->Real]:->Real],envC))
 
--- * Maximal flexible subterms (Qian & Wang) * ----------------------------[ ]--
+-- * Maximal flexible subterms (Qian & Wang) * ----------------------------[X]--
 
 -- Qian & Wang (p. 407)
 
@@ -882,13 +883,13 @@ test_applyOrderReduction_1 =
             ,A [] (Const Mul) [A [] (FreeV 3) [],A [] (Bound 0) []]]
             
 
-
 -- * Transformation rules (Qian & Wang) * ---------------------------------[ ]--
 
 -- \x.F(x) =?= \x.F(x)*G(x)*x
 --         === \x.*(F(x),*(G(x),x))
 test_transformAbs_1 =
-    let subst      = []   -- needs to be as long as envV?
+    let subst      = [A [base Real] (FreeV 0) [A [] (Bound 0) []]
+                     ,A [base Real] (FreeV 1) [A [] (Bound 0) []]]
         termPair   = (A [base Real] (FreeV 0) [A [] (Bound 0) []]
                      ,A [base Real] (Const Mul)
                         [A [] (FreeV 0) [A [] (Bound 0) []]
@@ -901,9 +902,41 @@ test_transformAbs_1 =
         envV       = [[base Real] :-> Real, [base Real] :-> Real]
         envC       = []
      in runState (transformAbs (subst,termPair,termSystem)) (envV,envC)
-        
-test_transformAbs_1' = snd . fromJust . fst $ test_transformAbs_1
+          =?=
+        (Just ( -- substitution
+                subst ++
+                [A [[] :-> Real] (FreeV 0) [A [] (Bound 0) []]
+                ,A [[] :-> Real] (FreeV 1) [A [] (Bound 0) []]]
+              , -- term system
+                [(A [[] :-> Real]
+                    (FreeV 2)
+                    [A [] (Bound 0) []]
+                 ,A [[] :-> Real] 
+                    (Const Mul)
+                    [A [] (FreeV 2) [A [] (Bound 0) []]
+                    ,A [] (Const Mul) [A [] (FreeV 3) [A [] (Bound 0) []]
+                                      ,A [] (Bound 0) []]])
 
+
+                ,(A [[] :-> Real]
+                    (FreeV 2) 
+                    [A [] (Bound 0) []]
+                 ,A [[] :-> Real]
+                    (FreeV 0)
+                    [A [] (Bound 0) []])
+
+
+                ,(A [[] :-> Real]
+                    (FreeV 3)
+                    [A [] (Bound 0) []]
+                 ,A [[] :-> Real] 
+                    (FreeV 1)
+                    [A [] (Bound 0) []])]
+              )
+         , -- environment
+           ( envV ++ [[base Real] :-> Real, [base Real] :-> Real]
+           , envC )
+         )
 
 
 

@@ -266,7 +266,7 @@ partialBinding (as :-> b) a = do
         gfts <- mapM generalFlexibleTerm cs
         return (A as a gfts)
 
--- * Maximal flexible subterms (Qian & Wang) * ----------------------------[ ]--
+-- * Maximal flexible subterms (Qian & Wang) * ----------------------------[X]--
 
 -- NOTE: the binders are not returned in the same order as in the paper!
 --       they are also not applied in the same order by conditional mappings
@@ -311,6 +311,7 @@ applyOrderReduction ordRedMap (A xs a ss)
 
 -- * Transformation rules (Qian & Wang) * ---------------------------------[ ]--
 
+-- FIXME: does theta' apply only to FreeV's or also to FreeC's?
 -- TODO: check invariant: length envV == length theta'
 
 type     Conf b s = (Subst b s,                 TermSystem b s)
@@ -336,7 +337,8 @@ transformAbs (theta', (u,v), ss) | isRigid u || isRigid v = do
         ( if length theta' /= unFreeV (head hs) then
             error "transformAbs: assertion failed - substitution too short (or long)"
           else
-            theta' ++ map (\((xs,A xs' a' ys'),_h) -> A (xs'++xs) a' ys') phi
+            theta' ++ for phi (\((xs,A xs' a' ys'),_h) ->
+                                    substFreeVAndReduce theta' (A (xs'++xs) a' ys'))
         , [(applyConditionalMapping phi' u,applyConditionalMapping phi' v)]
           ++ map (\((xs,A xs' a' ys'),h) -> (atom2term [] envV envC h, A (xs'++xs) a' ys')) phi
           ++ ss
