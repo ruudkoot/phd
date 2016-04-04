@@ -94,8 +94,11 @@ tests =
     ,("partialBinding (Const,3)",       test_partialBinding_Const_3)
     ,("pmfs (1)",                       test_pmfs_1)
     ,("pmfs (2)",                       test_pmfs_2)
+    ,("pmfs (3)",                       test_pmfs_3)
     ,("applyConditionalMapping (1)",    test_applyConditionalMapping_1)
     ,("applyConditionalMapping (2)",    test_applyConditionalMapping_2)
+    ,("applyConditionalMapping (3)",    test_applyConditionalMapping_3)
+    ,("applyOrderReduction (1)",        test_applyOrderReduction_1)
     ]
     
 len = maximum (map (length . fst) tests)
@@ -750,7 +753,18 @@ test_partialBinding_Const_3 =
 
 -- Qian & Wang (p. 407)
 
-u0, u1 :: AlgebraicTerm Sort Sig
+t1, u0, u1 :: AlgebraicTerm Sort Sig
+
+-- \x.F(x)*G(x)*x === \x.*(F(x),*(G(x),x))
+t1 = A  [base Real]
+        (Const Mul)
+        [A  [] (FreeV 0) [A [] (Bound 0) []]
+        ,A  []
+            (Const Mul)
+            [A [] (FreeV 1) [A [] (Bound 0) []]
+            ,A [] (Bound 0) []
+            ]
+        ]
 
 u0 = A [base Real, base Real]
        (FreeC 0)
@@ -770,6 +784,13 @@ u1 = A [[base Real] :-> Real, [base Real] :-> Real]
        ]
 
 test_pmfs_1 =
+    let tm = t1
+     in S.toList (pmfs tm)
+            =?=
+        [([[] :-> Real],A [] (FreeV 0) [A [] (Bound 0) []])
+        ,([[] :-> Real],A [] (FreeV 1) [A [] (Bound 0) []])]
+
+test_pmfs_2 =
     let tm = u0
      in S.toList (pmfs tm)
             =?=
@@ -781,7 +802,7 @@ test_pmfs_1 =
             A [] (FreeV 0) [A [] (Bound 1) []])
         ]
 
-test_pmfs_2 =
+test_pmfs_3 =
     let tm = u1
      in S.toList (pmfs tm)
             =?=
@@ -795,6 +816,23 @@ test_pmfs_2 =
             ,A [[] :-> Real] (Bound 1) [A [] (Bound 0) []]])]
 
 test_applyConditionalMapping_1 =
+    let tm      = t1
+        condMap = M.fromList $ [(([[] :-> Real],A [] (FreeV 0) [A [] (Bound 0) []])
+                                    ,FreeV 2)
+                               ,(([[] :-> Real],A [] (FreeV 1) [A [] (Bound 0) []])
+                                    ,FreeV 3)]
+     in applyConditionalMapping condMap tm
+            =?=
+        -- \x.*(F2(x),*(F3(x),x))
+        A   [[] :-> Real]
+            (Const Mul)
+            [A  [] 
+                (FreeV 2)
+                [A [] (Bound 0) []]
+                ,A [] (Const Mul) [A [] (FreeV 3) [A [] (Bound 0) []]
+                                  ,A [] (Bound 0) []]]
+
+test_applyConditionalMapping_2 =
     let tm      = u0
         condMap = M.fromList $ [(([base Real,base Real]
                                  ,A [] (FreeV 0) [A [] (Bound 0) []])
@@ -812,8 +850,8 @@ test_applyConditionalMapping_1 =
             [A [] (FreeV 2) [A [] (Bound 0) [],A [] (Bound 1) []]
             ,A [[] :-> Real] (FreeV 3) [A [] (Bound 0) [],A [] (Bound 1) [],A [] (Bound 2) []]
             ,A [] (FreeV 4) [A [] (Bound 0) [],A [] (Bound 1) []]]
-     
-test_applyConditionalMapping_2 =
+
+test_applyConditionalMapping_3 =
     let tm      = u1
         condMap = M.fromList $
             [(([[base Real]:->Real,[base Real]:->Real]
@@ -830,6 +868,20 @@ test_applyConditionalMapping_2 =
      in applyConditionalMapping condMap tm
             =?=
         A [[[] :-> Real] :-> Real,[[] :-> Real] :-> Real] (FreeC 0) [A [] (FreeV 2) [A [[] :-> Real] (Bound 1) [A [] (Bound 0) []],A [[] :-> Real] (Bound 2) [A [] (Bound 0) []]],A [[[] :-> Real] :-> Real] (FreeV 3) [A [[] :-> Real] (Bound 1) [A [] (Bound 0) []],A [[] :-> Real] (Bound 2) [A [] (Bound 0) []],A [[] :-> Real] (Bound 3) [A [] (Bound 0) []]],A [[[] :-> Real] :-> Real] (FreeV 4) [A [[] :-> Real] (Bound 1) [A [] (Bound 0) []],A [[] :-> Real] (Bound 2) [A [] (Bound 0) []],A [[] :-> Real] (Bound 3) [A [] (Bound 0) []]]]
+
+test_applyOrderReduction_1 =
+    let tm          = t1
+        ordRedMap   = M.fromList [(A [] (FreeV 0) [A [] (Bound 0) []],FreeV 2)
+                                 ,(A [] (FreeV 1) [A [] (Bound 0) []],FreeV 3)]
+     in applyOrderReduction ordRedMap tm
+            =?=
+        -- \x.*(F2,*(F3,x))
+        A   [[] :-> Real]
+            (Const Mul)
+            [A [] (FreeV 2) []
+            ,A [] (Const Mul) [A [] (FreeV 3) [],A [] (Bound 0) []]]
+            
+
 
 -- * Transformation rules (Qian & Wang) * ---------------------------------[ ]--
 

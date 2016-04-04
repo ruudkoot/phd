@@ -272,8 +272,10 @@ partialBinding (as :-> b) a = do
 --       they are also not applied in the same order by conditional mappings
 --       (this should not matter, as long as it is done consistently)
 
+
 type ConditionalMapping b s = Map ([SimpleType b], AlgebraicTerm b s) (Atom s)
-type OrderReduction     b s = [(AlgebraicTerm b s, Atom s)]
+type OrderReduction     b s = Map (AlgebraicTerm b s) (Atom s)
+
 
 pmfs :: Theory sort sig => AlgebraicTerm sort sig
                             -> Set ([SimpleType sort], AlgebraicTerm sort sig)
@@ -293,12 +295,18 @@ applyConditionalMapping condMap = applyConditionalMapping' []
         = case Map.lookup (xs ++ ctx, A [] (FreeV f) ss) condMap of
             Nothing -> A xs (FreeV f) (map (applyConditionalMapping' (xs ++ ctx)) ss)
             Just a  -> A xs a (map (bound (xs ++ ctx)) [0 .. length (xs ++ ctx) - 1])
-    applyConditionalMapping' curCtx (A xs a         ss)
-        = A xs a (map (applyConditionalMapping' (xs ++ curCtx)) ss)
+    applyConditionalMapping' ctx (A xs a ss)
+        = A xs a (map (applyConditionalMapping' (xs ++ ctx)) ss)
 
+
+-- FIXME: this can make a term non eta-long
+--        (do this while making a term first-order instead?)
 applyOrderReduction
     :: Theory b s => OrderReduction b s -> AlgebraicTerm b s -> AlgebraicTerm b s
-applyOrderReduction = error "applyOrderReduction"
+applyOrderReduction ordRedMap (A xs a ss)
+    = case Map.lookup (A [] a ss) ordRedMap of
+        Nothing -> A xs a (map (applyOrderReduction ordRedMap) ss)
+        Just a' -> A xs a' []
 
 
 -- * Transformation rules (Qian & Wang) * ---------------------------------[ ]--
@@ -347,9 +355,12 @@ transformEUni (theta, ss', ss) = do
                  t <- typeOfTerm [] w
                  y <- freshAtom t
                  return (w,y)
+    let rho'   = Map.fromList rho
     let xss    = map (\(A [] _ xs,_) -> xs) rho
     let ys     = map snd rho
-    let rhoSS' = map (applyOrderReduction rho *** applyOrderReduction rho) ss'
+    -- FIXME: applyOrderReduction seems superflous, just drop the arguments
+    --        from G, to obtain Y (or do it in a more straightforward fashion)?
+    let rhoSS' = map (applyOrderReduction rho' *** applyOrderReduction rho') ss'
                     -- FIXME: ^ remove duplicates (is a set)
     let Just sigma = unify rhoSS'
                     -- FIXME: unification can fail (propagate failure)
