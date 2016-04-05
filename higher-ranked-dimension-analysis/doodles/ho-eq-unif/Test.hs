@@ -99,6 +99,13 @@ tests =
     ,("applyConditionalMapping (2)",    test_applyConditionalMapping_2)
     ,("applyConditionalMapping (3)",    test_applyConditionalMapping_3)
     ,("applyOrderReduction (1)",        test_applyOrderReduction_1)
+    ,("isTrivialFlexibleSubterm (1)",   test_isTrivialFlexibleSubterm_1)
+    ,("isTrivialFlexibleSubterm (2)",   test_isTrivialFlexibleSubterm_2)
+    ,("isTrivialFlexibleSubterm (3)",   test_isTrivialFlexibleSubterm_3)
+    ,("isEAcceptable (1)",              test_isEAcceptable_1)
+    ,("isEAcceptable (2)",              test_isEAcceptable_2)
+    ,("isEAcceptable (3)",              test_isEAcceptable_3)
+    ,("isEAcceptable (4)",              test_isEAcceptable_4)
     ,("transformAbs (1)",               test_transformAbs_1)
     ]
     
@@ -882,22 +889,91 @@ test_applyOrderReduction_1 =
             [A [] (FreeV 2) []
             ,A [] (Const Mul) [A [] (FreeV 3) [],A [] (Bound 0) []]]
             
+test_isTrivialFlexibleSubterm_1 =
+    let env = [base Real, base Real]
+        tm  = A []
+                (FreeV 1)
+                [A [] (Bound 0) [], A [] (Bound 1) []]
+     in isTrivialFlexibleSubterm env (tm :: AlgebraicTerm Sort Sig)
+            =?=
+        True
+        
+test_isTrivialFlexibleSubterm_2 =
+    let env = [[base Real] :-> Real]
+        tm  = A []
+                (FreeV 0)
+                [A [base Real] (Bound 1) [A [] (Bound 0) []]]
+     in isTrivialFlexibleSubterm env (tm :: AlgebraicTerm Sort Sig)
+            =?=
+        True
+        
+test_isTrivialFlexibleSubterm_3 =
+    let env = [base Real]
+        tm  = A []
+                (FreeV 0)
+                [A [] (FreeV 1) []]
+     in isTrivialFlexibleSubterm env (tm :: AlgebraicTerm Sort Sig)
+            =?=
+        False           
+        
+-- \x.f(\y.(F(y,x))) =?= \x.G(x)      [note that the aruments of F are permuted]
+test_isEAcceptable_1 =
+    let termSystem = [(A [base Real]
+                         (FreeC 0)
+                         [A [base Real] (FreeV 0) [A [] (Bound 0) []
+                                                  ,A [] (Bound 1) []]]
+                      ,A [base Real]
+                         (FreeC 1)
+                         [A [] (Bound 0) []]
+                      )]
+     in isEAcceptable (termSystem :: TermSystem Sort Sig)
+            =?=
+        True
+
+test_isEAcceptable_2 =
+    let termSystem = [(A [] (FreeV 0) [A [] (FreeC 0) []],A [] (FreeC 0) [])]
+     in isEAcceptable (termSystem :: TermSystem Sort Sig)
+            =?=
+        False
+        
+test_isEAcceptable_3 =
+    let termSystem = [(A [] (FreeC 0) [A [] (FreeV 0) []
+                                      ,A [base Real] (FreeV 0) []]
+                      ,A [] (FreeC 1) [])]
+     in isEAcceptable (termSystem :: TermSystem Sort Sig)
+            =?=
+        False
+        
+test_isEAcceptable_4 =
+    let termSystem = [(A [base Real] (FreeV 0) [A [] (Bound 0) []]
+                      ,A [base Real] (Const Mul)
+                         [A [] (FreeV 0) [A [] (Bound 0) []]
+                         ,A [] (Const Mul)
+                             [A [] (FreeV 1) [A [] (Bound 0) []]
+                             ,A [] (Bound 0) []]
+                         ]
+                      )]
+     in isEAcceptable (termSystem :: TermSystem Sort Sig)
+            =?=
+        True
 
 -- * Transformation rules (Qian & Wang) * ---------------------------------[ ]--
 
+-- FIXME: this example is "meh", as it is already E-acceptable and the
+--        application of theta' is an identity.
 -- \x.F(x) =?= \x.F(x)*G(x)*x
 --         === \x.*(F(x),*(G(x),x))
 test_transformAbs_1 =
     let subst      = [A [base Real] (FreeV 0) [A [] (Bound 0) []]
-                     ,A [base Real] (FreeV 1) [A [] (Bound 0) []]]
+                      ,A [base Real] (FreeV 1) [A [] (Bound 0) []]]
         termPair   = (A [base Real] (FreeV 0) [A [] (Bound 0) []]
-                     ,A [base Real] (Const Mul)
-                        [A [] (FreeV 0) [A [] (Bound 0) []]
-                        ,A [] (Const Mul)
-                            [A [] (FreeV 1) [A [] (Bound 0) []]
-                            ,A [] (Bound 0) []]
-                        ]
-                     )
+                      ,A [base Real] (Const Mul)
+                         [A [] (FreeV 0) [A [] (Bound 0) []]
+                         ,A [] (Const Mul)
+                             [A [] (FreeV 1) [A [] (Bound 0) []]
+                             ,A [] (Bound 0) []]
+                         ]
+                      )
         termSystem = []
         envV       = [[base Real] :-> Real, [base Real] :-> Real]
         envC       = []
@@ -938,9 +1014,23 @@ test_transformAbs_1 =
            , envC )
          )
 
-
-
-
+-- \x.F(x) =?= \x.F(x)*G(x)*x
+--         === \x.*(F(x),*(G(x),x))
+test_transformEUni_1 =
+    let subst       = [A [base Real] (FreeV 0) [A [] (Bound 0) []]
+                      ,A [base Real] (FreeV 1) [A [] (Bound 0) []]]
+        termSystem' = [(A [base Real] (FreeV 0) [A [] (Bound 0) []]
+                       ,A [base Real] (Const Mul)
+                          [A [] (FreeV 0) [A [] (Bound 0) []]
+                          ,A [] (Const Mul)
+                              [A [] (FreeV 1) [A [] (Bound 0) []]
+                              ,A [] (Bound 0) []]
+                          ]
+                      )]
+        termSystem  = []
+        envV        = [[base Real] :-> Real, [base Real] :-> Real]
+        envC        = []
+     in runState (transformEUni (subst,termSystem',termSystem)) (envV,envC)
 
 
 

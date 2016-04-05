@@ -307,11 +307,23 @@ applyOrderReduction ordRedMap (A xs a ss)
     = case Map.lookup (A [] a ss) ordRedMap of
         Nothing -> A xs a (map (applyOrderReduction ordRedMap) ss)
         Just a' -> A xs a' []
+        
+isTrivialFlexibleSubterm :: Theory b s => Env b -> AlgebraicTerm b s -> Bool
+isTrivialFlexibleSubterm ctx (A [] (FreeV _) ys)
+    = ys == map (\n -> bound ctx n) [0 .. length ctx - 1]
+isTrivialFlexibleSubterm _ _
+    = False
+        
+isEAcceptable :: Theory b s => TermSystem b s -> Bool
+isEAcceptable ss
+    = let ps = toList $ unionMap' (\(u,v) -> pmfs u `union` pmfs v) ss
+       in all (uncurry isTrivialFlexibleSubterm) ps
 
 
 -- * Transformation rules (Qian & Wang) * ---------------------------------[ ]--
 
 -- FIXME: does theta' apply only to FreeV's or also to FreeC's?
+-- FIXME: do we need the Maybe in the return type (or handle this in controlStrategy?)
 -- TODO: check invariant: length envV == length theta'
 
 type     Conf b s = (Subst b s,                 TermSystem b s)
@@ -344,14 +356,13 @@ transformAbs (theta', (u,v), ss) | isRigid u || isRigid v = do
           ++ ss
         )
 transformAbs _ | otherwise = error "transformAbs: assumptions violated"
-                          -- return Nothing
 
 
--- ss' assumed to be E-acceptable
--- may be non-deterministic if the unification algorithm isn't unary
+-- NOTE: ss' assumed to be E-acceptable
+-- NOTE: may be non-deterministic if the unification algorithm isn't unary
 --              (AG and BR unification are of unification type 1, though!)
 transformEUni :: Theory b s => PartConf b s -> State (Env b, Env b) (Maybe (Conf b s))
-transformEUni (theta, ss', ss) = do
+transformEUni (theta', ss', ss) | isEAcceptable ss' = do
     let ps = toList $ Set.map snd (unionMap' (\(u,v) -> pmfs u `union` pmfs v) ss')
     rho <- forM ps $ \w -> do
                  t <- typeOfTerm [] w
@@ -384,12 +395,13 @@ transformEUni (theta, ss', ss) = do
                 let (A us a as) = applyConditionalMapping (Map.fromList phi) (sigma !! y)
                 return (g, A (us ++ ts) a as)
     (envV, _) <- get
-    let theta'  = map (\(x,y) -> (freeV envV x, y)) theta
-    let theta'' = sparsifySubst envV theta
+    let thetaD  = map (\(x,y) -> (freeV envV x, y)) theta
+    let thetaS = sparsifySubst envV theta
     return $ Just $
         ( error "TODO"
-        , theta' ++ map (substFreeVAndReduce theta'' *** substFreeVAndReduce theta'') ss
+        , thetaD ++ map (substFreeVAndReduce thetaS *** substFreeVAndReduce thetaS) ss
         )
+transformEUni _ | otherwise = error "transformEUni: assumptions violated"
 
 -- (u,v) assumed to be flexible-rigid (i.e., not rigid-flexible)
 -- are we only non-deterministic locally (choice of 'b') or also globally
