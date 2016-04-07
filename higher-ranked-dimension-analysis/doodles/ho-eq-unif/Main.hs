@@ -27,9 +27,11 @@ statefulForM s (x:xs) f = do
 
 -- * Debugging * ------------------------------------------- UNUSED! ------[X]--
 
-(x:xs) !!! 0 = x
-[]     !!! _ = error "!!!"
-(x:xs) !!! n = xs !!! (n-1)
+xxs !!! m = xxs !!!~ m
+ where
+    (x:xs) !!!~ 0 = x
+    []     !!!~ _ = error $ show xxs ++ " !!! " ++ show m
+    (x:xs) !!!~ n = xs !!!~ (n-1)
 
 -- * Sets * ---------------------------------------------------------------[X]--
 
@@ -72,7 +74,7 @@ sparsifySubst env subst = for [0..] $ \i ->
         Nothing -> freeV env i
         Just tm -> tm
 
-class (Ord sort, Bounded sig, Enum sig, Ord sig) => Theory sort sig | sig -> sort where
+class (Ord sort, Bounded sig, Enum sig, Ord sig, Show sort, Show sig) => Theory sort sig | sig -> sort where
     -- FIXME: arbitrary Ord for Set (was Eq)
     constants :: [sig]
     constants =  [minBound .. maxBound]
@@ -358,49 +360,77 @@ transformAbs (theta', (u,v), ss) | isRigid u || isRigid v = do
 transformAbs _ | otherwise = error "transformAbs: assumptions violated"
 
 
--- NOTE: ss' assumed to be E-acceptable
+-- FIXME: we "lose" the top-level binder in an inconvienent way. e.g.,
+--        * the mock [base Real]s we have to pass to typeOfTerm
+--        * when reconstruction the binder and arguments of the higher order term
 -- NOTE: may be non-deterministic if the unification algorithm isn't unary
---              (AG and BR unification are of unification type 1, though!)
-transformEUni :: Theory b s => PartConf b s -> State (Env b, Env b) (Maybe (Conf b s))
+--       (AG and BR unification are of unification type 1, though!)
+-- transformEUni :: Theory b s => PartConf b s -> State (Env b, Env b) (Maybe (Conf b s))
+transformEUni :: PartConf Sort Sig -> State (Env Sort, Env Sort) (Maybe (Conf Sort Sig))
 transformEUni (theta', ss', ss) | isEAcceptable ss' = do
     let ps = toList $ Set.map snd (unionMap' (\(u,v) -> pmfs u `union` pmfs v) ss')
+
     rho <- forM ps $ \w -> do
                  t <- typeOfTerm [] w
                  y <- freshAtom t
                  return (w,y)
     let rho'   = Map.fromList rho
-    let xss    = map (\(A [] _ xs,_) -> xs) rho
-    let ys     = map snd rho
     -- FIXME: applyOrderReduction seems superflous, just drop the arguments
     --        from G, to obtain Y (or do it in a more straightforward fashion)?
     let rhoSS' = map (applyOrderReduction rho' *** applyOrderReduction rho') ss'
                     -- FIXME: ^ remove duplicates (is a set)
+
+    -- FIXME: reinterpret rhoSS' as a first-order system here!
+    --        (fold in applyOrderReduction?)
+
     let Just sigma = unify rhoSS'
                     -- FIXME: unification can fail (propagate failure)
+                    
+    {- MOCK!!! -}
+    FreeV 4 <- freshAtom (base Real)    -- FIXME: or FreeC?
+    FreeV 5 <- freshAtom (base Real)
+    let sigma = [error "F0"             -- FIXME: rather not see those in here...
+                ,error "F1"             --        (env ++ sigma) !! y
+                ,A  [base Real]         -- FIXME: [base Real] shouldn't be here, yet
+                    (Const Mul)         --        make everything so much easier...
+                    [A [] (FreeV 4) []  --        ("reconstructing the missing binder")
+                    ,A [] (Const Mul) [A [] (Bound 0) [], A [] (FreeV 5) []]]
+                ,A [base Real] (FreeV 4) []
+                ]
+    {- MOCK!!! -}
+
+    let xss    = map (\(A [] _ xs,_) -> xs) rho
+    let ys     = map snd rho
+    -- FIXME: commented out code is related to "reconstructing the missing binder"
     (_, phis) <- statefulForM [] (zip xss ys) $ \s (xs_i, FreeV y) -> do
                     let qs = toList $ pmfs (sigma !! y)
                     statefulForM s qs $ \s' (us, z) -> do
                         case lookup (z, xs_i, us) s' of
                             Nothing -> do
-                                tyxs_i <- mapM (typeOfTerm []) xs_i
-                                _ :-> t <- typeOfTerm [] z
-                                z' <- freshAtom (tyxs_i ++ us :-> t)
+                                tyxs_i <- mapM (typeOfTerm [{-!-}base Real{-!-}]) xs_i
+                                _ :-> t <- typeOfTerm [{-!-}base Real{-!-}] z
+                                -- z' <- freshAtom (tyxs_i ++ us :-> t)
+                                z' <- freshAtom ({- tyxs_i ++ -} us :-> t)  -- FIXME
                                 return ( ((z, xs_i, us), z') : s'
                                        , ((us, z), z')              )
                             Just z' -> do
                                 return ( s', ((us, z), z') )
-    -- FIXME: SHADOWS THE OTHER 'theta'!
+
+    -- FIXME: commented out code is related to "reconstructing the missing binder"
     theta <- forM (zip3 phis ys ps) $ \(phi, FreeV y, A [] (FreeV g) xs) -> do
-                ts <- mapM (typeOfTerm []) xs
+                -- ts <- mapM (typeOfTerm [{-!-}base Real{-!-}]) xs
                 let (A us a as) = applyConditionalMapping (Map.fromList phi) (sigma !! y)
-                return (g, A (us ++ ts) a as)
+                -- return (g, A (us ++ ts) a as)
+                return (g, A us a as)
     (envV, _) <- get
-    let thetaD  = map (\(x,y) -> (freeV envV x, y)) theta
+    let thetaD = map (\(x,y) -> (freeV envV x, y)) theta
     let thetaS = sparsifySubst envV theta
+
     return $ Just $
         ( error "TODO"
         , thetaD ++ map (substFreeVAndReduce thetaS *** substFreeVAndReduce thetaS) ss
         )
+
 transformEUni _ | otherwise = error "transformEUni: assumptions violated"
 
 -- (u,v) assumed to be flexible-rigid (i.e., not rigid-flexible)

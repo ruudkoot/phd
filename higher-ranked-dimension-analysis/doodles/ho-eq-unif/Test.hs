@@ -107,6 +107,7 @@ tests =
     ,("isEAcceptable (3)",              test_isEAcceptable_3)
     ,("isEAcceptable (4)",              test_isEAcceptable_4)
     ,("transformAbs (1)",               test_transformAbs_1)
+    ,("transformEUni (1)",              test_transformEUni_1)   -- FIXME: partial
     ]
     
 len = maximum (map (length . fst) tests)
@@ -1030,7 +1031,30 @@ test_transformEUni_1 =
         termSystem  = []
         envV        = [[base Real] :-> Real, [base Real] :-> Real]
         envC        = []
-     in runState (transformEUni (subst,termSystem',termSystem)) (envV,envC)
+
+        (Just (theta',ss),(envV',envC'))
+            = runState (transformEUni (subst,termSystem',termSystem)) (envV,envC)
+            
+     in ss =?= 
+            [(A [[] :-> Real] (FreeV 0) [A [] (Bound 0) []]
+             ,A [[] :-> Real] (Const Mul) [A [] (FreeV 6) [A [] (Bound 0) []]
+                                          ,A [] (Const Mul) [A [] (Bound 0) []
+                                                            ,A [] (FreeV 7) [A [] (Bound 0) []]]])
+            ,(A [[] :-> Real] (FreeV 1) [A [] (Bound 0) []]
+             ,A [[] :-> Real] (FreeV 6) [A [] (Bound 0) []])]
+        &&
+            envV'
+                =?=
+            [[[] :-> Real] :-> Real     -- F0 / F
+            ,[[] :-> Real] :-> Real     -- F1 / G
+            ,[] :-> Real                -- F2 / Y1
+            ,[] :-> Real                -- F3 / Y2
+            ,[] :-> Real                -- F4 / Z1
+            ,[] :-> Real                -- F5 / Z2
+            ,[[] :-> Real] :-> Real     -- F6 / Z1'
+            ,[[] :-> Real] :-> Real]    -- F7 / Z2'
+        &&
+            envC' =?= []
 
 
 
