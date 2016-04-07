@@ -107,7 +107,8 @@ tests =
     ,("isEAcceptable (3)",              test_isEAcceptable_3)
     ,("isEAcceptable (4)",              test_isEAcceptable_4)
     ,("transformAbs (1)",               test_transformAbs_1)
-    ,("transformEUni (1)",              test_transformEUni_1)   -- FIXME: partial
+    ,("transformEUni (1)",              test_transformEUni_1)   -- FIXME: incomplete
+    ,("transformBin (1)",               test_transformBin_1)    -- FIXME: incomplete
     ]
     
 len = maximum (map (length . fst) tests)
@@ -1047,16 +1048,60 @@ test_transformEUni_1 =
                 =?=
             [[[] :-> Real] :-> Real     -- F0 / F
             ,[[] :-> Real] :-> Real     -- F1 / G
-            ,[] :-> Real                -- F2 / Y1
-            ,[] :-> Real                -- F3 / Y2
-            ,[] :-> Real                -- F4 / Z1
-            ,[] :-> Real                -- F5 / Z2
+            ,[] :-> Real                -- F2 / Y1  (temp)
+            ,[] :-> Real                -- F3 / Y2  (temp)
+            ,[] :-> Real                -- F4 / Z1  (temp)
+            ,[] :-> Real                -- F5 / Z2  (temp)
             ,[[] :-> Real] :-> Real     -- F6 / Z1'
             ,[[] :-> Real] :-> Real]    -- F7 / Z2'
         &&
             envC' =?= []
 
+test_transformBin_1 =
+    let subst       = error "subst"
+        termPair    = (A [] (FreeV 0)   [A [] (FreeC 0) [], A [] (FreeC 1) []]
+                      ,A [] (Const Mul) [A [] (FreeC 1) [], A [] (FreeC 0) []])
+                            :: TermPair Sort Sig
+        termSystem  = []
+        envV        = [[base Real, base Real] :-> Real]
+        envC        = [base Real, base Real]
 
+        (xs,(envV',envC'))
+            = runState (transformBin (subst,termPair,termSystem)) (envV, envC)
+            
+     in map snd xs
+            =?=
+        -- projection (Bound)
+        [[(A [[] :-> Real,[] :-> Real] (FreeV 0) [A [] (Bound 0) [],A [] (Bound 1) []]
+          ,A [[] :-> Real,[] :-> Real] (Bound 0) [])]
+
+        ,[(A [[] :-> Real,[] :-> Real] (FreeV 0) [A [] (Bound 0) [],A [] (Bound 1) []]
+          ,A [[] :-> Real,[] :-> Real] (Bound 1) [])]
+
+        -- imitation (Const)
+        ,[(A [[] :-> Real,[] :-> Real] (FreeV 0) [A [] (Bound 0) [],A [] (Bound 1) []]
+          ,A [[] :-> Real,[] :-> Real] (Const Mul)
+                [A [] (FreeV 1) [A [] (Bound 0) [],A [] (Bound 1) []]
+                ,A [] (FreeV 2) [A [] (Bound 0) [],A [] (Bound 1) []]])]
+
+        ,[(A [[] :-> Real,[] :-> Real] (FreeV 0) [A [] (Bound 0) [],A [] (Bound 1) []]
+          ,A [[] :-> Real,[] :-> Real] (Const Inv)
+                [A [] (FreeV 3) [A [] (Bound 0) [],A [] (Bound 1) []]])]
+
+        ,[(A [[] :-> Real,[] :-> Real] (FreeV 0) [A [] (Bound 0) [],A [] (Bound 1) []]
+          ,A [[] :-> Real,[] :-> Real] (Const Unit) [])]
+
+        -- imitation (FreeC)
+        ,[(A [[] :-> Real,[] :-> Real] (FreeV 0) [A [] (Bound 0) [],A [] (Bound 1) []]
+          ,A [[] :-> Real,[] :-> Real] (FreeC 0) [])]
+
+        ,[(A [[] :-> Real,[] :-> Real] (FreeV 0) [A [] (Bound 0) [],A [] (Bound 1) []]
+          ,A [[] :-> Real,[] :-> Real] (FreeC 1) [])]]
+
+        && envV' =?= (envV ++ envV ++ envV ++ envV)
+        
+        && envC' =?= envC
+            
 
 
 

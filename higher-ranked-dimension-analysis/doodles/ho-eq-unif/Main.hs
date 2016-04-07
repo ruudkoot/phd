@@ -360,9 +360,11 @@ transformAbs (theta', (u,v), ss) | isRigid u || isRigid v = do
 transformAbs _ | otherwise = error "transformAbs: assumptions violated"
 
 
--- FIXME: we "lose" the top-level binder in an inconvienent way. e.g.,
+-- FIXME: we "lose" the top-level binder in an inconvenient way. e.g.,
 --        * the mock [base Real]s we have to pass to typeOfTerm
 --        * when reconstruction the binder and arguments of the higher order term
+-- FIXME: substitutions should be partial?
+-- FIXME: don't pollute the environment with temporary variables (Y_i, Z_i)
 -- NOTE: may be non-deterministic if the unification algorithm isn't unary
 --       (AG and BR unification are of unification type 1, though!)
 -- transformEUni :: Theory b s => PartConf b s -> State (Env b, Env b) (Maybe (Conf b s))
@@ -375,7 +377,7 @@ transformEUni (theta', ss', ss) | isEAcceptable ss' = do
                  y <- freshAtom t
                  return (w,y)
     let rho'   = Map.fromList rho
-    -- FIXME: applyOrderReduction seems superflous, just drop the arguments
+    -- FIXME: applyOrderReduction seems superfluous, just drop the arguments
     --        from G, to obtain Y (or do it in a more straightforward fashion)?
     let rhoSS' = map (applyOrderReduction rho' *** applyOrderReduction rho') ss'
                     -- FIXME: ^ remove duplicates (is a set)
@@ -436,6 +438,7 @@ transformEUni _ | otherwise = error "transformEUni: assumptions violated"
 -- (u,v) assumed to be flexible-rigid (i.e., not rigid-flexible)
 -- are we only non-deterministic locally (choice of 'b') or also globally
 --                  (choice of '(u,v)')?
+-- FIXME: don't cross-pollute the environments of different branches
 transformBin :: Theory b s => HeadConf b s -> State (Env b, Env b) [Conf b s]
 transformBin (theta', (u@(A xs (FreeV f) us), v@(A _xs a vs)), ss)
   | xs == _xs && isRigid v
