@@ -109,6 +109,16 @@ tests =
     ,("transformAbs (1)",               test_transformAbs_1)
     ,("transformEUni (1)",              test_transformEUni_1)   -- FIXME: incomplete
     ,("transformBin (1)",               test_transformBin_1)    -- FIXME: incomplete
+    ,("count (1)",                      test_count_1)
+    ,("set (1)",                        test_set_1)
+    ,("divides (1)",                    test_divides_1)
+    ,("divides (2)",                    test_divides_2)
+    ,("agIdSubst (1)",                  test_adIdSubst_1)
+    ,("agApplySubst (1)",               test_agApplySubst_1)
+    ,("agCompSubst (1)",                test_agCompSubst_1)
+    ,("agUnif1 (1)",                    test_agUnif1_1)
+    ,("agUnif1 (1')",                   test_agUnif1_1')
+    ,("agUnif1 (2)",                    test_agUnif1_2)
     ]
     
 len = maximum (map (length . fst) tests)
@@ -1057,6 +1067,9 @@ test_transformEUni_1 =
         &&
             envC' =?= []
 
+-- FIXME: test if substitutions are applied correctly to S
+-- FIXME: test if theta' is updated correctly
+-- FIXME: test_transformBin_2: more interesting types and terms
 test_transformBin_1 =
     let subst       = error "subst"
         termPair    = (A [] (FreeV 0)   [A [] (FreeC 0) [], A [] (FreeC 1) []]
@@ -1102,6 +1115,89 @@ test_transformBin_1 =
         
         && envC' =?= envC
             
+-- * Control strategy (Qian & Wang) * -------------------------------------[ ]--
+
+
+-- | Higher-order dimension types | ---------------------------------------[ ]--
+
+
+-- | Unification modulo Abelian groups | ----------------------------------[ ]--
+
+-- * AG-unification with free nullary constants * -------------------------[ ]--
+
+test_count_1 = count odd [1..9] =?= 5
+
+test_set_1 = set "abcdefghij" 4 'E' =?= "abcdEfghij"
+
+test_divides_1 = 5 `divides` 10 =?= True
+test_divides_2 = 5 `divides` 11 =?= False
+
+test_adIdSubst_1 =
+    agIdSubst 3 2
+        =?=
+    [([1,0,0],[0,0])
+    ,([0,1,0],[0,0])
+    ,([0,0,1],[0,0])]
+
+test_agApplySubst_1 =
+    let ss  = [([0,1,2],[3,4])
+              ,([5,6,7],[8,9])
+              ,([0,2,4],[6,8])]
+        exp = ([1,2,3],[4,5])
+     in agApplySubst ss exp
+            =?=
+        ([10,19,28],[41,51])
+
+test_agCompSubst_1 =
+    let ss = [([0,1],[2])
+             ,([3,4],[5])]
+        us = [([1,3],[5])
+             ,([2,4],[6])]
+     in agCompSubst ss us
+            =?=
+        [([ 9,13],[22])
+        ,([12,18],[30])]
+
+-- Lankford, Butler & Brady (EXAMPLE 1)
+-- FIXME: not in (Hermite?) normal form...
+test_agUnif1_1 =
+    let exp = ([2,3,-1,-4],[-5])
+     in agUnif1 exp
+            =?=
+        Just [([ 1, 0, 0, 0],[ 0])
+             ,([ 0, 1, 0, 0],[ 0])
+             ,([ 2, 3, 0,-4],[-5])
+             ,([ 0, 0, 0, 1],[ 0])]
+             
+test_agUnif1_1' =
+    let exp = ([2,3,-1,-4],[-5])
+     in agApplySubst (fromJust $ agUnif1 exp) exp
+            =?=
+        ([0,0,0,0],[0])
+
+-- Lankford, Butler & Brady (EXAMPLE 2)
+-- FIXME: not in (Hermite?) normal form...
+test_agUnif1_2 =
+    let exp = ([3827,-2223,1934,-3400,8418,-6646,7833,-9433,4584,-4462],[])
+     in agApplySubst (fromJust $ agUnif1 exp) exp
+            =?=
+        (replicate 10 0, [])
+
+{-
+        Just [([   1,    0, 0,    0,    0,    0,    0,   0,    0,   0],[])
+             ,([   0,    1, 0,    0,    0,    0,    0,   0,    0,   0],[])
+             ,([ 977, -678, 0,  680, 1953, 1166, -129, 320,  381,  74],[])
+             ,([   0,    0, 0,    1,    0,    0,    0,   0,    0,   0],[])
+             ,([  44,  -31, 0,   34,   91,   53,   -2,  16,   18,   4],[])
+             ,([   0,    0, 0,    0,    0,    1,    0,   0,    0,   0],[])
+             ,([-289,  201, 0, -204, -580, -344,   34, -95, -114, -22],[])
+             ,([   0,    0, 0,    0,    0,    0,    0,   1,    0,   0],[])
+             ,([   0,    0, 0,    0,    0,    0,    0,   0,    1,   0],[])
+             ,([   0,    0, 0,    0,    0,    0,    0,   0,    0,   1],[])]
+-}
+
+
+
 
 
 

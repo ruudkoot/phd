@@ -1,5 +1,6 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE ViewPatterns           #-}
 
 module Main where
 
@@ -7,11 +8,13 @@ import Control.Arrow ((***))
 import Control.Monad
 import Control.Monad.State
 
+import Data.Function
+import Data.List (minimumBy, sort)
 import Data.Maybe
 
 import           Data.Map (Map)
 import qualified Data.Map as Map
-import           Data.Set        hiding (map)
+import           Data.Set        hiding (filter, foldr, map)
 import qualified Data.Set as Set
 
 -- | Utility | ------------------------------------------------------------[X]--
@@ -492,7 +495,65 @@ instance Theory Sort Sig where
     
     unify          = unify'
     
--- * Unification modulo Abelian groups * ----------------------------------[ ]--
+-- | Unification modulo Abelian groups | ----------------------------------[ ]--
 
 unify' :: UnificationProblem Sort Sig -> Maybe (Subst Sort Sig)
 unify' = error "unify'"
+
+
+
+-- * AG-unification with free nullary constants * -------------------------[ ]--
+
+count p = length . filter p
+
+set :: [a] -> Int -> a -> [a]
+set xs n x = let (xs1,_:xs2) = splitAt n xs in xs1 ++ [x] ++ xs2
+
+divides :: Integral a => a -> a -> Bool
+x `divides` y = y `mod` x == 0
+
+type AGExp1   = ([Int],[Int])
+type AGSubst1 = [AGExp1]
+
+agIdSubst :: Int -> Int -> AGSubst1
+agIdSubst m' n' = map idRow [0 .. m' - 1]
+  where idRow x = (replicate x 0 ++ [1] ++ replicate (m' - x - 1) 0, replicate n' 0)
+
+-- matrix-vector multiplication
+agApplySubst :: AGSubst1 -> AGExp1 -> AGExp1
+agApplySubst ss (ds@(length -> m'),bs) | length ss == m'
+    = foldr f (replicate m' 0, bs) (zip ss ds)
+        where f ((ds',bs'),d) (ds'',bs'')
+                = (zipWith (\d' d'' -> d * d' + d'') ds' ds''
+                  ,zipWith (\b' b'' -> d * b' + b'') bs' bs'')
+
+-- matrix-matrix multiplication
+agCompSubst :: AGSubst1 -> AGSubst1 -> AGSubst1
+agCompSubst ss us = map (agApplySubst ss) us
+
+agUnif1 :: AGExp1 -> Maybe AGSubst1
+agUnif1 delta@(xs@(length -> m'), ys@(length -> n')) =
+    let m     = count (/= 0) xs
+        n     = count (/= 0) ys
+        (d,x) = minimumBy (compare `on` (abs . snd)) (filter ((/= 0) . snd) (zip [0..] xs))
+     in case (m,n) of
+            (0,0) -> Just (agIdSubst m' n')
+            (0,_) -> Nothing
+            (1,_) | all (x `divides`) ys -> Just $
+                      set (agIdSubst m' n') d (replicate m' 0, map (\y -> -y `div` x) ys)
+                  | otherwise            -> Nothing
+            (_,_) -> do
+                -- 'div' always rounds down (also for a negative lhs)
+                let us = set (agIdSubst m' n') d
+                             (set (map (\x' -> -(x' `div` x)) xs) d 1
+                             ,     map (\y  -> -(y  `div` x)) ys     )
+                ss <- agUnif1 (agApplySubst us delta)
+                return $ agCompSubst ss us
+
+
+
+
+
+
+
+
