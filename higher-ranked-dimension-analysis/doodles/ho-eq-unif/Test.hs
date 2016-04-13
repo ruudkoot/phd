@@ -116,9 +116,12 @@ tests =
     ,("agIdSubst (1)",                  test_adIdSubst_1)
     ,("agApplySubst (1)",               test_agApplySubst_1)
     ,("agCompSubst (1)",                test_agCompSubst_1)
-    ,("agUnif1 (1)",                    test_agUnif1_1)
-    ,("agUnif1 (1')",                   test_agUnif1_1')
-    ,("agUnif1 (2)",                    test_agUnif1_2)
+    ,("agUnif1 (1)",                    test_agUnif1_1)         -- FIXME: normal form
+    ,("agUnif1 (1')",                   test_agUnif1_1')        -- FIXME: normal form
+    ,("agUnif1 (2)",                    test_agUnif1_2)         -- FIXME: normal form
+    ,("newT (1)",                       test_newT_1)
+    ,("homogeneous (1)",                test_homogeneous_1)
+    ,("homogeneous' (1)",               test_homogeneous'_1)
     ]
     
 len = maximum (map (length . fst) tests)
@@ -1123,7 +1126,7 @@ test_transformBin_1 =
 
 -- | Unification modulo Abelian groups | ----------------------------------[ ]--
 
--- * AG-unification with free nullary constants * -------------------------[ ]--
+-- * AG-unification with free nullary constants * -------------------------[X]--
 
 test_count_1 = count odd [1..9] =?= 5
 
@@ -1196,9 +1199,26 @@ test_agUnif1_2 =
              ,([   0,    0, 0,    0,    0,    0,    0,   0,    0,   1],[])]
 -}
 
+-- * AG-unification with free function symbols * --------------------------[ ]--
 
+test_newT_1 =
+    runState (newT (F Mul [F' "a" [],X 0])) [F' "b" [X' 1]]
+        =?=
+    (1,[F' "b" [X' 1],F Mul [F' "a" [],X 0]])
 
+test_homogeneous_1 =
+    let t = F Mul [F' "f" [F' "a" []],F Mul [F' "f" [F Unit []],X "x"]]
+     in runState (homogeneous t) []
+            =?=
+        (F Mul [X' 0,F Mul [X' 1,X "x"]]
+        ,[F' "f" [F' "a" []],F' "f" [F Unit []]])
 
+test_homogeneous'_1 =
+    let t = F' Mul [F "f" [F "a" []],F' Mul [F "f" [F' Unit []],X "x"]]
+     in runState (homogeneous' t) []
+            =?=
+        (F' Mul [X' 0,F' Mul [X' 1,X "x"]]
+        ,[F "f" [F "a" []],F "f" [F' Unit []]])
 
 
 

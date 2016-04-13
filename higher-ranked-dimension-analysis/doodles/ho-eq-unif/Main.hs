@@ -4,6 +4,7 @@
 
 module Main where
 
+import Control.Applicative ((<$>))
 import Control.Arrow ((***))
 import Control.Monad
 import Control.Monad.State
@@ -369,7 +370,8 @@ transformAbs _ | otherwise = error "transformAbs: assumptions violated"
 -- FIXME: substitutions should be partial?
 -- FIXME: don't pollute the environment with temporary variables (Y_i, Z_i)
 -- NOTE: may be non-deterministic if the unification algorithm isn't unary
---       (AG and BR unification are of unification type 1, though!)
+--       (while AG and BR unification with nullary constants are of unitary,
+--       AG and BR unification with function symbols is finitary!)
 -- transformEUni :: Theory b s => PartConf b s -> State (Env b, Env b) (Maybe (Conf b s))
 transformEUni :: PartConf Sort Sig -> State (Env Sort, Env Sort) (Maybe (Conf Sort Sig))
 transformEUni (theta', ss', ss) | isEAcceptable ss' = do
@@ -502,7 +504,9 @@ unify' = error "unify'"
 
 
 
--- * AG-unification with free nullary constants * -------------------------[ ]--
+-- * AG-unification with free nullary constants (unitary) * ---------------[X]--
+
+-- Kennedy (1996) / Lankford, Butler & Brady (1984) + Knuth (1969)
 
 count p = length . filter p
 
@@ -531,6 +535,7 @@ agApplySubst ss (ds@(length -> m'),bs) | length ss == m'
 agCompSubst :: AGSubst1 -> AGSubst1 -> AGSubst1
 agCompSubst ss us = map (agApplySubst ss) us
 
+-- FIXME: verify solution is valid
 agUnif1 :: AGExp1 -> Maybe AGSubst1
 agUnif1 delta@(xs@(length -> m'), ys@(length -> n')) =
     let m     = count (/= 0) xs
@@ -549,6 +554,42 @@ agUnif1 delta@(xs@(length -> m'), ys@(length -> n')) =
                              ,     map (\y  -> -(y  `div` x)) ys     )
                 ss <- agUnif1 (agApplySubst us delta)
                 return $ agCompSubst ss us
+
+-- * AG-unification with free function symbols * --------------------------[ ]--
+
+-- Boudet, Jouannaud & Schmidt-Schauß (1989)
+
+newT :: T f f' x -> State [T f f' x] Int
+newT t = do xs' <- get
+            modify (++[t])
+            return (length xs')
+
+data T f f' x
+    = X  x
+    | X' Int
+    | F  f  [T f f' x]
+    | F' f' [T f f' x]
+  deriving (Eq, Show)
+
+homogeneous :: T f f' x -> State [T f f' x] (T f f' x)
+homogeneous (X  x    ) = return (X  x )
+homogeneous (X' x'   ) = return (X' x')
+homogeneous (F  f  ts) = F f <$> mapM homogeneous ts
+homogeneous (F' f' ts) = X'  <$> newT (F' f' ts)
+
+homogeneous' :: T f f' x -> State [T f f' x] (T f f' x)
+homogeneous' (X  x    ) = return (X  x )
+homogeneous' (X' x'   ) = return (X' x')
+homogeneous' (F  f  ts) = X'    <$> newT (F f ts)
+homogeneous' (F' f' ts) = F' f' <$> mapM homogeneous' ts
+
+
+
+
+
+
+
+
 
 
 
