@@ -122,6 +122,11 @@ tests =
     ,("newT (1)",                       test_newT_1)
     ,("homogeneous (1)",                test_homogeneous_1)
     ,("homogeneous' (1)",               test_homogeneous'_1)
+    ,("homogeneous'' (1)",              test_homogeneous''_1)
+    ,("homogeneous'' (2)",              test_homogeneous''_2)
+    ,("isHomogeneous (1)",              test_isHomogeneous_1)
+    ,("isHomogeneous (2)",              test_isHomogeneous_2)
+    ,("freeUnif (1)",                   test_freeUnif_1)
     ]
     
 len = maximum (map (length . fst) tests)
@@ -147,7 +152,7 @@ x =?= y =
     else
         error $ "\n" ++ show x ++ "\n\n" ++ show y
 
--- | Utility | ------------------------------------------------------------[X]--
+-- | Utility | ------------------------------------------------------------[ ]--
 
 test_for = for [0..9] (*2) == map (*2) [0..9]
 
@@ -1202,23 +1207,66 @@ test_agUnif1_2 =
 -- * AG-unification with free function symbols * --------------------------[ ]--
 
 test_newT_1 =
-    runState (newT (F Mul [F' "a" [],X 0])) [F' "b" [X' 1]]
-        =?=
-    (1,[F' "b" [X' 1],F Mul [F' "a" [],X 0]])
+    let env = [(X' 13,F' "b" [X' 1])]
+     in runState (newT (F Mul [F' "a" [],X 0])) (42,env)
+            =?=
+        (42,(43,env ++ [(X' 42,F Mul [F' "a" [],X 0])]))
 
 test_homogeneous_1 =
     let t = F Mul [F' "f" [F' "a" []],F Mul [F' "f" [F Unit []],X "x"]]
-     in runState (homogeneous t) []
+     in runState (homogeneous t) (0,[])
             =?=
         (F Mul [X' 0,F Mul [X' 1,X "x"]]
-        ,[F' "f" [F' "a" []],F' "f" [F Unit []]])
+        ,(2,[(X' 0, F' "f" [F' "a" []])
+            ,(X' 1, F' "f" [F Unit []])]))
 
 test_homogeneous'_1 =
     let t = F' Mul [F "f" [F "a" []],F' Mul [F "f" [F' Unit []],X "x"]]
-     in runState (homogeneous' t) []
+     in runState (homogeneous' t) (0,[])
             =?=
         (F' Mul [X' 0,F' Mul [X' 1,X "x"]]
-        ,[F "f" [F "a" []],F "f" [F' Unit []]])
+        ,(2,[(X' 0, F "f" [F "a" []])
+            ,(X' 1, F "f" [F' Unit []])]))
+
+test_homogeneous''_1 =
+    let t = F Mul [F' "f" [F' "a" []],F Mul [F' "f" [F Unit []],X "x"]]
+     in runState (homogeneous'' t) 0
+            =?=
+        ((F Mul [X' 0,F Mul [X' 1,X "x"]]
+         ,[(X' 0, F' "f" [F' "a" []])
+          ,(X' 1, F' "f" [F Unit []])])
+        ,2)
+
+test_homogeneous''_2 =
+    let t = F' Mul [F "f" [F "a" []],F' Mul [F "f" [F' Unit []],X "x"]]
+     in runState (homogeneous'' t) 0
+            =?=
+        ((F' Mul [X' 0,F' Mul [X' 1,X "x"]]
+         ,[(X' 0, F "f" [F "a" []])
+          ,(X' 1, F "f" [F' Unit []])])
+        ,2)
+
+test_isHomogeneous_1 =
+    let t = F' Mul [F' Mul [F' Unit []],F' Inv [F' Mul [F' Unit []],X "x"]]
+     in isHomogeneous t
+            =?=
+        False
+
+test_isHomogeneous_2 =
+    let t = F' Mul [F "f" [F "a" []],F' Mul [F "f" [F' Unit []],X "x"]]
+     in isHomogeneous t
+            =?=
+        True
+
+test_freeUnif_1 =
+    let prob = [(X "x"              , F "f" [F "a" []])
+               ,(F "g" [X "x",X "x"], F "g" [X "x",X "y"])]
+     in freeUnif (prob :: AGUnifProb String String String)
+            =?=
+        Just [(X "x",F "f" [F "a" []]),(X "y",F "f" [F "a" []])]
+
+
+
 
 
 

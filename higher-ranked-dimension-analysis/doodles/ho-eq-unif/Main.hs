@@ -10,15 +10,15 @@ import Control.Monad
 import Control.Monad.State
 
 import Data.Function
-import Data.List (minimumBy, sort)
+import Data.List (minimumBy, sort, sortBy)
 import Data.Maybe
 
 import           Data.Map (Map)
 import qualified Data.Map as Map
-import           Data.Set        hiding (filter, foldr, map)
+import           Data.Set        hiding (filter, foldr, map, null)
 import qualified Data.Set as Set
 
--- | Utility | ------------------------------------------------------------[X]--
+-- | Utility | ------------------------------------------------------------[ ]--
 
 for = flip map
 
@@ -28,6 +28,10 @@ statefulForM s (x:xs) f = do
     (s',  x' ) <- f s x
     (s'', xs') <- statefulForM s' xs f
     return (s'', x' : xs')
+    
+uncons :: [a] -> Maybe (a,[a])
+uncons []     = Nothing
+uncons (x:xs) = Just (x,xs)
 
 -- * Debugging * ------------------------------------------- UNUSED! ------[X]--
 
@@ -559,32 +563,178 @@ agUnif1 delta@(xs@(length -> m'), ys@(length -> n')) =
 
 -- Boudet, Jouannaud & Schmidt-Schauß (1989)
 
-newT :: T f f' x -> State [T f f' x] Int
-newT t = do xs' <- get
-            modify (++[t])
-            return (length xs')
+newT :: T f f' x -> State (Int, [(T f f' x, T f f' x)]) Int
+newT t = do (n, xs') <- get
+            modify (\(n, xs') -> (n+1, xs'++[(X' n,t)]))   -- performance...
+            return n
 
 data T f f' x
     = X  x
     | X' Int
     | F  f  [T f f' x]
     | F' f' [T f f' x]
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
-homogeneous :: T f f' x -> State [T f f' x] (T f f' x)
+vars :: T f f' x -> [x]
+vars (X  x   ) = [x]
+vars (X' _   ) = []
+vars (F  _ ts) = concatMap vars ts
+vars (F' _ ts) = concatMap vars ts
+
+vars' :: T f f' x -> [Int]
+vars' (X  _   ) = []
+vars' (X' x   ) = [x]
+vars' (F  _ ts) = concatMap vars' ts
+vars' (F' _ ts) = concatMap vars' ts
+
+homogeneous :: T f f' x -> State (Int, [(T f f' x, T f f' x)]) (T f f' x)
 homogeneous (X  x    ) = return (X  x )
 homogeneous (X' x'   ) = return (X' x')
 homogeneous (F  f  ts) = F f <$> mapM homogeneous ts
 homogeneous (F' f' ts) = X'  <$> newT (F' f' ts)
 
-homogeneous' :: T f f' x -> State [T f f' x] (T f f' x)
+homogeneous' :: T f f' x -> State (Int, [(T f f' x, T f f' x)]) (T f f' x)
 homogeneous' (X  x    ) = return (X  x )
 homogeneous' (X' x'   ) = return (X' x')
 homogeneous' (F  f  ts) = X'    <$> newT (F f ts)
 homogeneous' (F' f' ts) = F' f' <$> mapM homogeneous' ts
 
+homogeneous'' :: T f f' x -> State Int (T f f' x, [(T f f' x, T f f' x)])
+homogeneous'' (X  x   ) = return (X  x , [])
+homogeneous'' (X' x'  ) = return (X' x', [])
+homogeneous'' t@(F _ _) = do
+    n <- get
+    let (t',(n',xs)) = runState (homogeneous t) (n, [])
+    put n'
+    return (t', xs)
+homogeneous'' t@(F' _ _) = do
+    n <- get
+    let (t',(n',xs)) = runState (homogeneous' t) (n, [])
+    put n'
+    return (t', xs)
+
+isHomogeneous :: T f f' x -> Bool
+isHomogeneous t = let ((_,rs),_) = runState (homogeneous'' t) 0 in not (null rs)
+
+isPureE :: T f f' x -> Bool
+isPureE (X     x ) = True
+isPureE (X'    x ) = True
+isPureE (F  f  ts) = all isPureE ts
+isPureE (F' f' ts) = False
+
+isPureE' :: T f f' x -> Bool
+isPureE' (X     x ) = True
+isPureE' (X'    x ) = True
+isPureE' (F  f  ts) = False
+isPureE' (F' f' ts) = all isPureE' ts
 
 
+type AGUnifProb f f' x = [(T f f' x, T f f' x)]
+
+
+subst :: Eq x => x -> T f f' x -> T f f' x -> T f f' x
+subst x t t'@(X x')  | x == x'   = t
+                     | otherwise = t'
+subst x t (F  f  ts) = F  f  (map (subst x t) ts)
+subst x t (F' f' ts) = F' f' (map (subst x t) ts)
+
+subst' :: Int -> T f f' x -> T f f' x -> T f f' x
+subst' x t t'@(X' x') | x == x'   = t
+                      | otherwise = t'
+subst' x t (F  f  ts) = F  f  (map (subst' x t) ts)
+subst' x t (F' f' ts) = F' f' (map (subst' x t) ts)
+
+
+-- FIXME: can all these combinations occur when called from agUnifN?
+freeUnif :: (Ord f, Ord f', Ord x) => AGUnifProb f f' x -> Maybe (AGUnifProb f f' x)
+freeUnif = freeUnif' []
+  where
+    freeUnif' sol [] = Just (sortBy (compare `on` fst) sol)
+    -- Clash / Decompose
+    freeUnif' sol ((F f1 ts1, F f2 ts2):prob)
+        | f1 == f2  = freeUnif' sol (zip ts1 ts2 ++ prob)
+        | otherwise = Nothing
+    freeUnif' sol ((F' f1 ts1, F' f2 ts2):prob)
+        | f1 == f2  = freeUnif' sol (zip ts1 ts2 ++ prob)
+        | otherwise = Nothing
+    freeUnif' _ ((F  _ _, F' _ _):_) = Nothing
+    freeUnif' _ ((F' _ _, F  _ _):_) = Nothing
+    -- Orient
+    freeUnif' sol ((t@(F  _ _),x@(X  _)):prob) = freeUnif' sol ((x,t):prob)
+    freeUnif' sol ((t@(F  _ _),x@(X' _)):prob) = freeUnif' sol ((x,t):prob)
+    freeUnif' sol ((t@(F' _ _),x@(X  _)):prob) = freeUnif' sol ((x,t):prob)
+    freeUnif' sol ((t@(F' _ _),x@(X' _)):prob) = freeUnif' sol ((x,t):prob)
+    freeUnif' sol ((   X' x1  ,   X x2 ):prob) = freeUnif' sol ((X x2, X' x1):prob)
+    -- Delete / Eliminate
+    freeUnif' sol (p@(X x1, X x2):prob)
+        | x1 == x2  = freeUnif' sol prob
+        | otherwise = freeUnif' (p:elim sol) (elim prob)
+            where elim = map (subst x1 (X x2) *** subst x1 (X x2))
+    freeUnif' sol (p@(X' x1, X' x2):prob)
+        | x1 == x2  = freeUnif' sol prob
+        | otherwise = freeUnif' (p:elim sol) (elim prob)
+            where elim = map (subst' x1 (X' x2) *** subst' x1 (X' x2))
+    freeUnif' sol (p@(X x1, X' x2):prob)
+        = freeUnif' (p:elim sol) (elim prob)
+            where elim = map (subst x1 (X' x2) *** subst x1 (X' x2))
+    -- Eliminate / Occurs-Check
+    freeUnif' sol (p@(X x, t@(F f ts)):prob)
+        | x `elem` vars t = Nothing
+        | otherwise       = freeUnif' (p:elim sol) (elim prob)
+            where elim = map (subst x t *** subst x t)
+    freeUnif' sol (p@(X x, t@(F' f ts)):prob)    -- duplicates code...
+        | x `elem` vars t = Nothing
+        | otherwise       = freeUnif' (p:elim sol) (elim prob)
+            where elim = map (subst x t *** subst x t)
+    freeUnif' sol (p@(X' x, t@(F f ts)):prob)
+        | x `elem` vars' t = Nothing
+        | otherwise        = freeUnif' (p:elim sol) (elim prob)
+            where elim = map (subst' x t *** subst' x t)
+    freeUnif' sol (p@(X' x, t@(F' f ts)):prob)   -- duplicates code...
+        | x `elem` vars' t = Nothing
+        | otherwise        = freeUnif' (p:elim sol) (elim prob)
+            where elim = map (subst' x t *** subst' x t)
+
+
+type AGClasUnifProb f f' x = (AGUnifProb f f' x
+                             ,AGUnifProb f f' x
+                             ,AGUnifProb f f' x
+                             ,AGUnifProb f f' x)
+
+
+-- FIXME: orient equations with variable on the rhs?
+classify :: AGUnifProb f f' x -> AGClasUnifProb f f' x
+classify [] = ([],[],[],[])
+classify (p@(s,t):ps)
+    = let (pe,pe',pi,ph) = classify ps
+       in case p of
+            -- {x=y} in P_E'
+            (s,t) | isPureE' s && isPureE' t
+                -> (pe, (s,t):pe', pi, ph)
+            (s,t) | isPureE s && isPureE t
+                -> ((s,t):pe, pe', pi, ph)
+            (s,t) | isPureE s && isPureE' t
+                ->  (pe, pe', (s,t):pi, ph)
+            (s,t) | isPureE' s && isPureE t
+                ->  (pe, pe', (t,s):pi, ph)
+            (s,t) | isHomogeneous s || isHomogeneous t         -- performance...
+                -> (pe,pe',pi,(s,t):ph)
+            _ -> error "classify: should not happen"
+
+
+agUnifN :: AGUnifProb f f' x -> State Int (AGUnifProb f f' x)
+agUnifN ps@(classify -> (pe,pe',pi,ph))
+    -- VA
+    | Just ((s,t),ph') <- uncons ph
+        = do (s',rs) <- homogeneous'' s
+             (t',rt) <- homogeneous'' t
+             agUnifN (pe ++ pe' ++ pi ++ ph' ++ rs ++ rt)
+    -- E-Res
+    
+    -- E'-Res
+    -- E-Match
+    -- Merge-E-Match
+    -- Var-Rep
 
 
 
