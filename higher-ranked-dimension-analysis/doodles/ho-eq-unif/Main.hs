@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE ViewPatterns           #-}
@@ -559,6 +560,14 @@ agUnif1 delta@(xs@(length -> m'), ys@(length -> n')) =
                 ss <- agUnif1 (agApplySubst us delta)
                 return $ agCompSubst ss us
 
+-- solve a system of equations
+-- FIXME: verify solution is valid
+agUnif1' :: [AGExp1] -> Maybe AGSubst1
+agUnif1' [x]    = agUnif1 x
+agUnif1' (x:xs) = do s <- agUnif1 x
+                     t <- agUnif1' (map (agApplySubst s) xs)
+                     return $ agCompSubst t s
+
 -- * AG-unification with free function symbols * --------------------------[ ]--
 
 -- Boudet, Jouannaud & Schmidt-Schauß (1989)
@@ -574,6 +583,9 @@ data T f f' x
     | F  f  [T f f' x]
     | F' f' [T f f' x]
   deriving (Eq, Ord, Show)
+  
+class    (Ord f, Ord f', Ord x) => TermAlg f f' x
+instance (Ord f, Ord f', Ord x) => TermAlg f f' x
 
 vars :: T f f' x -> [x]
 vars (X  x   ) = [x]
@@ -632,7 +644,7 @@ isPureE' (F' f' ts) = all isPureE' ts
 type AGUnifProb f f' x = [(T f f' x, T f f' x)]
 
 
-subst :: Eq x => x -> T f f' x -> T f f' x -> T f f' x
+subst :: TermAlg f f' x => x -> T f f' x -> T f f' x -> T f f' x
 subst x t t'@(X x')  | x == x'   = t
                      | otherwise = t'
 subst x t (F  f  ts) = F  f  (map (subst x t) ts)
@@ -646,7 +658,7 @@ subst' x t (F' f' ts) = F' f' (map (subst' x t) ts)
 
 
 -- FIXME: can all these combinations occur when called from agUnifN?
-freeUnif :: (Ord f, Ord f', Ord x) => AGUnifProb f f' x -> Maybe (AGUnifProb f f' x)
+freeUnif :: TermAlg f f' x => AGUnifProb f f' x -> Maybe (AGUnifProb f f' x)
 freeUnif = freeUnif' []
   where
     freeUnif' sol [] = Just (sortBy (compare `on` fst) sol)
@@ -708,7 +720,7 @@ classify [] = ([],[],[],[])
 classify (p@(s,t):ps)
     = let (pe,pe',pi,ph) = classify ps
        in case p of
-            -- {x=y} in P_E'
+            -- order matters: {x=y} in P_E'
             (s,t) | isPureE' s && isPureE' t
                 -> (pe, (s,t):pe', pi, ph)
             (s,t) | isPureE s && isPureE t
@@ -722,7 +734,20 @@ classify (p@(s,t):ps)
             _ -> error "classify: should not happen"
 
 
-agUnifN :: AGUnifProb f f' x -> State Int (AGUnifProb f f' x)
+-- FIXME: does not check for idempotency (costly, might not be necessary)
+inSolvedForm :: AGUnifProb f f' x -> Bool
+inSolvedForm = all inSolvedForm'
+  where inSolvedForm' (X  _, _) = True
+        inSolvedForm' (X' _, _) = True
+        inSolvedForm' _         = False
+
+
+toExp :: (T f f' x, T f f' x) -> AGExp1
+toExp = undefined
+
+-- FIXME: propagate failure
+-- also need nullary constants... T(C U F U F',X)!?
+agUnifN :: TermAlg f f' x => AGUnifProb f f' x -> State Int (Maybe (AGUnifProb f f' x))
 agUnifN ps@(classify -> (pe,pe',pi,ph))
     -- VA
     | Just ((s,t),ph') <- uncons ph
@@ -730,8 +755,11 @@ agUnifN ps@(classify -> (pe,pe',pi,ph))
              (t',rt) <- homogeneous'' t
              agUnifN (pe ++ pe' ++ pi ++ ph' ++ rs ++ rt)
     -- E-Res
-    
+    | (not . inSolvedForm) pe
+        = return $ undefined (agUnif1' (map toExp pe))
     -- E'-Res
+    | (not . inSolvedForm) pe'
+        = return $ freeUnif pe'
     -- E-Match
     -- Merge-E-Match
     -- Var-Rep

@@ -113,12 +113,14 @@ tests =
     ,("set (1)",                        test_set_1)
     ,("divides (1)",                    test_divides_1)
     ,("divides (2)",                    test_divides_2)
-    ,("agIdSubst (1)",                  test_adIdSubst_1)
+    ,("agIdSubst (1)",                  test_agIdSubst_1)
     ,("agApplySubst (1)",               test_agApplySubst_1)
     ,("agCompSubst (1)",                test_agCompSubst_1)
     ,("agUnif1 (1)",                    test_agUnif1_1)         -- FIXME: normal form
     ,("agUnif1 (1')",                   test_agUnif1_1')        -- FIXME: normal form
     ,("agUnif1 (2)",                    test_agUnif1_2)         -- FIXME: normal form
+    ,("agUnif1' (1)",                   test_agUnif1'_1)
+    ,("agUnif1' (1')",                  test_agUnif1'_1')
     ,("newT (1)",                       test_newT_1)
     ,("homogeneous (1)",                test_homogeneous_1)
     ,("homogeneous' (1)",               test_homogeneous'_1)
@@ -1140,7 +1142,7 @@ test_set_1 = set "abcdefghij" 4 'E' =?= "abcdEfghij"
 test_divides_1 = 5 `divides` 10 =?= True
 test_divides_2 = 5 `divides` 11 =?= False
 
-test_adIdSubst_1 =
+test_agIdSubst_1 =
     agIdSubst 3 2
         =?=
     [([1,0,0],[0,0])
@@ -1203,6 +1205,22 @@ test_agUnif1_2 =
              ,([   0,    0, 0,    0,    0,    0,    0,   0,    1,   0],[])
              ,([   0,    0, 0,    0,    0,    0,    0,   0,    0,   1],[])]
 -}
+
+test_agUnif1'_1 =
+    let exps = [([3,-4,0],[])
+               ,([0,2,-3],[])]
+     in agUnif1' exps
+            =?=
+        Just [([0,4,0],[])
+             ,([0,3,0],[])
+             ,([0,2,0],[])]
+
+test_agUnif1'_1' =
+    let exps = [([3,-4,0],[])
+               ,([0,2,-3],[])]
+     in map (agApplySubst (fromJust $ agUnif1' exps)) exps
+            =?=
+        [([0,0,0],[]),([0,0,0],[])]
 
 -- * AG-unification with free function symbols * --------------------------[ ]--
 
