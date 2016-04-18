@@ -657,16 +657,37 @@ subst' x t (F  f  ts) = F  f  (map (subst' x t) ts)
 subst' x t (F' f' ts) = F' f' (map (subst' x t) ts)
 
 
--- FIXME: can all these combinations occur when called from agUnifN?
 freeUnif :: TermAlg f f' x => AGUnifProb f f' x -> Maybe (AGUnifProb f f' x)
 freeUnif = freeUnif' []
   where
+
     freeUnif' sol [] = Just (sortBy (compare `on` fst) sol)
-    -- Clash / Decompose
-    freeUnif' sol ((F f1 ts1, F f2 ts2):prob)
-        | f1 == f2  = freeUnif' sol (zip ts1 ts2 ++ prob)
-        | otherwise = Nothing
+    
     freeUnif' sol ((F' f1 ts1, F' f2 ts2):prob)
+        -- Decompose
+        | f1 == f2  = freeUnif' sol (zip ts1 ts2 ++ prob)
+        -- Clash
+        | otherwise = Nothing
+
+    -- Orient
+    freeUnif' sol ((t@(F' _ _),x@(X' _)):prob) = freeUnif' sol ((x,t):prob)    
+    
+    freeUnif' sol (p@(X' x1, X' x2):prob)
+        -- Delete
+        | x1 == x2  = freeUnif' sol prob
+        -- Eliminate
+        | otherwise = freeUnif' (p:elim sol) (elim prob)
+            where elim = map (subst' x1 (X' x2) *** subst' x1 (X' x2))
+
+    freeUnif' sol (p@(X' x, t@(F' f ts)):prob)
+        -- Occurs-Check
+        | x `elem` vars' t = Nothing
+        -- Eliminate
+        | otherwise        = freeUnif' (p:elim sol) (elim prob)
+            where elim = map (subst' x t *** subst' x t)
+
+{-  -- Clash / Decompose
+    freeUnif' sol ((F f1 ts1, F f2 ts2):prob)
         | f1 == f2  = freeUnif' sol (zip ts1 ts2 ++ prob)
         | otherwise = Nothing
     freeUnif' _ ((F  _ _, F' _ _):_) = Nothing
@@ -675,17 +696,12 @@ freeUnif = freeUnif' []
     freeUnif' sol ((t@(F  _ _),x@(X  _)):prob) = freeUnif' sol ((x,t):prob)
     freeUnif' sol ((t@(F  _ _),x@(X' _)):prob) = freeUnif' sol ((x,t):prob)
     freeUnif' sol ((t@(F' _ _),x@(X  _)):prob) = freeUnif' sol ((x,t):prob)
-    freeUnif' sol ((t@(F' _ _),x@(X' _)):prob) = freeUnif' sol ((x,t):prob)
     freeUnif' sol ((   X' x1  ,   X x2 ):prob) = freeUnif' sol ((X x2, X' x1):prob)
     -- Delete / Eliminate
     freeUnif' sol (p@(X x1, X x2):prob)
         | x1 == x2  = freeUnif' sol prob
         | otherwise = freeUnif' (p:elim sol) (elim prob)
             where elim = map (subst x1 (X x2) *** subst x1 (X x2))
-    freeUnif' sol (p@(X' x1, X' x2):prob)
-        | x1 == x2  = freeUnif' sol prob
-        | otherwise = freeUnif' (p:elim sol) (elim prob)
-            where elim = map (subst' x1 (X' x2) *** subst' x1 (X' x2))
     freeUnif' sol (p@(X x1, X' x2):prob)
         = freeUnif' (p:elim sol) (elim prob)
             where elim = map (subst x1 (X' x2) *** subst x1 (X' x2))
@@ -701,12 +717,7 @@ freeUnif = freeUnif' []
     freeUnif' sol (p@(X' x, t@(F f ts)):prob)
         | x `elem` vars' t = Nothing
         | otherwise        = freeUnif' (p:elim sol) (elim prob)
-            where elim = map (subst' x t *** subst' x t)
-    freeUnif' sol (p@(X' x, t@(F' f ts)):prob)   -- duplicates code...
-        | x `elem` vars' t = Nothing
-        | otherwise        = freeUnif' (p:elim sol) (elim prob)
-            where elim = map (subst' x t *** subst' x t)
-
+            where elim = map (subst' x t *** subst' x t)                      -}
 
 type AGClasUnifProb f f' x = (AGUnifProb f f' x
                              ,AGUnifProb f f' x
@@ -743,7 +754,11 @@ inSolvedForm = all inSolvedForm'
 
 
 toExp :: (T f f' x, T f f' x) -> AGExp1
-toExp = undefined
+toExp (s,t) = add (toExp' s) (inv (toExp' t))
+  where
+    toExp' = undefined
+    add = undefined
+    inv = undefined
 
 -- FIXME: propagate failure
 -- also need nullary constants... T(C U F U F',X)!?
