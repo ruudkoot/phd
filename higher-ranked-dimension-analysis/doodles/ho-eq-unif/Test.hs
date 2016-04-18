@@ -1225,13 +1225,14 @@ test_agUnif1'_1' =
 -- * AG-unification with free function symbols * --------------------------[ ]--
 
 test_newT_1 =
-    let env = [(X' 13,F' "b" [X' 1])]
+    let env = [(X' 13,F' "b" [X' 1])] :: AGUnifProb Sig String String Int
      in runState (newT (F Mul [F' "a" [],X 0])) (42,env)
             =?=
         (42,(43,env ++ [(X' 42,F Mul [F' "a" [],X 0])]))
 
 test_homogeneous_1 =
     let t = F Mul [F' "f" [F' "a" []],F Mul [F' "f" [F Unit []],X "x"]]
+                :: T Sig String String String
      in runState (homogeneous t) (0,[])
             =?=
         (F Mul [X' 0,F Mul [X' 1,X "x"]]
@@ -1240,6 +1241,7 @@ test_homogeneous_1 =
 
 test_homogeneous'_1 =
     let t = F' Mul [F "f" [F "a" []],F' Mul [F "f" [F' Unit []],X "x"]]
+                 :: T String Sig String String
      in runState (homogeneous' t) (0,[])
             =?=
         (F' Mul [X' 0,F' Mul [X' 1,X "x"]]
@@ -1248,6 +1250,7 @@ test_homogeneous'_1 =
 
 test_homogeneous''_1 =
     let t = F Mul [F' "f" [F' "a" []],F Mul [F' "f" [F Unit []],X "x"]]
+                 :: T Sig String String String
      in runState (homogeneous'' t) 0
             =?=
         ((F Mul [X' 0,F Mul [X' 1,X "x"]]
@@ -1257,6 +1260,7 @@ test_homogeneous''_1 =
 
 test_homogeneous''_2 =
     let t = F' Mul [F "f" [F "a" []],F' Mul [F "f" [F' Unit []],X "x"]]
+                 :: T String Sig String String
      in runState (homogeneous'' t) 0
             =?=
         ((F' Mul [X' 0,F' Mul [X' 1,X "x"]]
@@ -1266,22 +1270,24 @@ test_homogeneous''_2 =
 
 test_isHomogeneous_1 =
     let t = F' Mul [F' Mul [F' Unit []],F' Inv [F' Mul [F' Unit []],X "x"]]
+                 :: T String Sig String String
      in isHomogeneous t
             =?=
         False
 
 test_isHomogeneous_2 =
     let t = F' Mul [F "f" [F "a" []],F' Mul [F "f" [F' Unit []],X "x"]]
+                 :: T String Sig String String
      in isHomogeneous t
             =?=
         True
 
 test_freeUnif_1 =
-    let prob = [(X "x"              , F "f" [F "a" []])
-               ,(F "g" [X "x",X "x"], F "g" [X "x",X "y"])]
-     in freeUnif (prob :: AGUnifProb String String String)
+    let prob = [(X 0             , F' "f" [F' "a" []])
+               ,(F' "g" [X 0,X 0], F' "g" [X 0,X 1])]
+     in freeUnif (prob :: AGUnifProb String String String Int)
             =?=
-        Just [(X "x",F "f" [F "a" []]),(X "y",F "f" [F "a" []])]
+        Just [(X 0,F' "f" [F' "a" []]),(X 1,F' "f" [F' "a" []])]
 
 
 

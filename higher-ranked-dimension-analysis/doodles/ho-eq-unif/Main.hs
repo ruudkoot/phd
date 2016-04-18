@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
@@ -572,48 +573,54 @@ agUnif1' (x:xs) = do s <- agUnif1 x
 
 -- Boudet, Jouannaud & Schmidt-Schauß (1989)
 
-newT :: T f f' x -> State (Int, [(T f f' x, T f f' x)]) Int
+newT :: T f f' c x -> State (Int, [(T f f' c x, T f f' c x)]) Int
 newT t = do (n, xs') <- get
             modify (\(n, xs') -> (n+1, xs'++[(X' n,t)]))   -- performance...
             return n
 
-data T f f' x
-    = X  x
-    | X' Int
-    | F  f  [T f f' x]
-    | F' f' [T f f' x]
+data T f f' c x
+    = X  x              -- variables            (E and E')
+    | X' Int            -- fresh variables      (E and E')
+    | C  c              -- nullary constants    (E)
+    | F  f  [T f f' c x]  -- function symbols     (E)
+    | F' f' [T f f' c x]  -- function symbols     (E')
   deriving (Eq, Ord, Show)
   
-class    (Ord f, Ord f', Ord x) => TermAlg f f' x
-instance (Ord f, Ord f', Ord x) => TermAlg f f' x
+class    (Ord f, Ord f', Ord c, Ord x) => TermAlg f f' c x
+instance (Ord f, Ord f', Ord c, Ord x) => TermAlg f f' c x
 
-vars :: T f f' x -> [x]
+vars :: T f f' c x -> [x]
 vars (X  x   ) = [x]
 vars (X' _   ) = []
+vars (C  _   ) = []
 vars (F  _ ts) = concatMap vars ts
 vars (F' _ ts) = concatMap vars ts
 
-vars' :: T f f' x -> [Int]
+vars' :: T f f' c x -> [Int]
 vars' (X  _   ) = []
 vars' (X' x   ) = [x]
+vars' (C  _   ) = []
 vars' (F  _ ts) = concatMap vars' ts
 vars' (F' _ ts) = concatMap vars' ts
 
-homogeneous :: T f f' x -> State (Int, [(T f f' x, T f f' x)]) (T f f' x)
+homogeneous :: T f f' c x -> State (Int, [(T f f' c x, T f f' c x)]) (T f f' c x)
 homogeneous (X  x    ) = return (X  x )
 homogeneous (X' x'   ) = return (X' x')
+homogeneous (C  c    ) = return (C  c )
 homogeneous (F  f  ts) = F f <$> mapM homogeneous ts
 homogeneous (F' f' ts) = X'  <$> newT (F' f' ts)
 
-homogeneous' :: T f f' x -> State (Int, [(T f f' x, T f f' x)]) (T f f' x)
+homogeneous' :: T f f' c x -> State (Int, [(T f f' c x, T f f' c x)]) (T f f' c x)
 homogeneous' (X  x    ) = return (X  x )
 homogeneous' (X' x'   ) = return (X' x')
+homogeneous' (C  c    ) = X'    <$> newT (C c)
 homogeneous' (F  f  ts) = X'    <$> newT (F f ts)
 homogeneous' (F' f' ts) = F' f' <$> mapM homogeneous' ts
 
-homogeneous'' :: T f f' x -> State Int (T f f' x, [(T f f' x, T f f' x)])
+homogeneous'' :: T f f' c x -> State Int (T f f' c x, [(T f f' c x, T f f' c x)])
 homogeneous'' (X  x   ) = return (X  x , [])
 homogeneous'' (X' x'  ) = return (X' x', [])
+homogeneous'' (C  c   ) = return (C  c , [])
 homogeneous'' t@(F _ _) = do
     n <- get
     let (t',(n',xs)) = runState (homogeneous t) (n, [])
@@ -625,39 +632,42 @@ homogeneous'' t@(F' _ _) = do
     put n'
     return (t', xs)
 
-isHomogeneous :: T f f' x -> Bool
+isHomogeneous :: T f f' c x -> Bool
 isHomogeneous t = let ((_,rs),_) = runState (homogeneous'' t) 0 in not (null rs)
 
-isPureE :: T f f' x -> Bool
-isPureE (X     x ) = True
-isPureE (X'    x ) = True
-isPureE (F  f  ts) = all isPureE ts
-isPureE (F' f' ts) = False
+isPureE :: T f f' c x -> Bool
+isPureE (X  _   ) = True
+isPureE (X' _   ) = True
+isPureE (C  _   ) = True
+isPureE (F  _ ts) = all isPureE ts
+isPureE (F' _ _ ) = False
 
-isPureE' :: T f f' x -> Bool
-isPureE' (X     x ) = True
-isPureE' (X'    x ) = True
-isPureE' (F  f  ts) = False
-isPureE' (F' f' ts) = all isPureE' ts
+isPureE' :: T f f' c x -> Bool
+isPureE' (X  _   ) = True
+isPureE' (X' _   ) = True
+isPureE' (C  _   ) = False
+isPureE' (F  _ _ ) = False
+isPureE' (F' _ ts) = all isPureE' ts
 
 
-type AGUnifProb f f' x = [(T f f' x, T f f' x)]
+type AGUnifProb f f' c x = [(T f f' c x, T f f' c x)]
 
 
-subst :: TermAlg f f' x => x -> T f f' x -> T f f' x -> T f f' x
+subst :: TermAlg f f' c x => x -> T f f' c x -> T f f' c x -> T f f' c x
 subst x t t'@(X x')  | x == x'   = t
                      | otherwise = t'
+subst x t (C  c    ) = C  c
 subst x t (F  f  ts) = F  f  (map (subst x t) ts)
 subst x t (F' f' ts) = F' f' (map (subst x t) ts)
 
-subst' :: Int -> T f f' x -> T f f' x -> T f f' x
+subst' :: Int -> T f f' c x -> T f f' c x -> T f f' c x
 subst' x t t'@(X' x') | x == x'   = t
                       | otherwise = t'
+subst' x t (C  c    ) = C  c
 subst' x t (F  f  ts) = F  f  (map (subst' x t) ts)
 subst' x t (F' f' ts) = F' f' (map (subst' x t) ts)
 
-
-freeUnif :: TermAlg f f' x => AGUnifProb f f' x -> Maybe (AGUnifProb f f' x)
+freeUnif :: TermAlg f f' c Int => AGUnifProb f f' c Int -> Maybe (AGUnifProb f f' c Int)
 freeUnif = freeUnif' []
   where
 
@@ -670,7 +680,21 @@ freeUnif = freeUnif' []
         | otherwise = Nothing
 
     -- Orient
-    freeUnif' sol ((t@(F' _ _),x@(X' _)):prob) = freeUnif' sol ((x,t):prob)    
+    freeUnif' sol ((   X x1   ,   X' x2 ):prob) = freeUnif' sol ((X' x2, X x1):prob)
+    freeUnif' sol ((t@(F' _ _),x@(X  _ )):prob) = freeUnif' sol ((x,t):prob)
+    freeUnif' sol ((t@(F' _ _),x@(X' _ )):prob) = freeUnif' sol ((x,t):prob)    
+
+    freeUnif' sol (p@(X' x1, X x2):prob)
+        -- Elimintate
+        = freeUnif' (p:elim sol) (elim prob)
+            where elim = map (subst' x1 (X' x2) *** subst' x1 (X' x2))
+
+    freeUnif' sol (p@(X x1, X x2):prob)
+        -- Delete
+        | x1 == x2  = freeUnif' sol prob
+        -- Eliminate
+        | otherwise = freeUnif' (p:elim sol) (elim prob)
+            where elim = map (subst x1 (X x2) *** subst x1 (X x2))
     
     freeUnif' sol (p@(X' x1, X' x2):prob)
         -- Delete
@@ -678,6 +702,13 @@ freeUnif = freeUnif' []
         -- Eliminate
         | otherwise = freeUnif' (p:elim sol) (elim prob)
             where elim = map (subst' x1 (X' x2) *** subst' x1 (X' x2))
+
+    freeUnif' sol (p@(X x, t@(F' f ts)):prob)
+        -- Occurs-Check
+        | x `elem` vars t = Nothing
+        -- Eliminate
+        | otherwise       = freeUnif' (p:elim sol) (elim prob)
+            where elim = map (subst x t *** subst x t)
 
     freeUnif' sol (p@(X' x, t@(F' f ts)):prob)
         -- Occurs-Check
@@ -695,22 +726,8 @@ freeUnif = freeUnif' []
     -- Orient
     freeUnif' sol ((t@(F  _ _),x@(X  _)):prob) = freeUnif' sol ((x,t):prob)
     freeUnif' sol ((t@(F  _ _),x@(X' _)):prob) = freeUnif' sol ((x,t):prob)
-    freeUnif' sol ((t@(F' _ _),x@(X  _)):prob) = freeUnif' sol ((x,t):prob)
-    freeUnif' sol ((   X' x1  ,   X x2 ):prob) = freeUnif' sol ((X x2, X' x1):prob)
-    -- Delete / Eliminate
-    freeUnif' sol (p@(X x1, X x2):prob)
-        | x1 == x2  = freeUnif' sol prob
-        | otherwise = freeUnif' (p:elim sol) (elim prob)
-            where elim = map (subst x1 (X x2) *** subst x1 (X x2))
-    freeUnif' sol (p@(X x1, X' x2):prob)
-        = freeUnif' (p:elim sol) (elim prob)
-            where elim = map (subst x1 (X' x2) *** subst x1 (X' x2))
     -- Eliminate / Occurs-Check
     freeUnif' sol (p@(X x, t@(F f ts)):prob)
-        | x `elem` vars t = Nothing
-        | otherwise       = freeUnif' (p:elim sol) (elim prob)
-            where elim = map (subst x t *** subst x t)
-    freeUnif' sol (p@(X x, t@(F' f ts)):prob)    -- duplicates code...
         | x `elem` vars t = Nothing
         | otherwise       = freeUnif' (p:elim sol) (elim prob)
             where elim = map (subst x t *** subst x t)
@@ -719,14 +736,14 @@ freeUnif = freeUnif' []
         | otherwise        = freeUnif' (p:elim sol) (elim prob)
             where elim = map (subst' x t *** subst' x t)                      -}
 
-type AGClasUnifProb f f' x = (AGUnifProb f f' x
-                             ,AGUnifProb f f' x
-                             ,AGUnifProb f f' x
-                             ,AGUnifProb f f' x)
+type AGClasUnifProb f f' c x = (AGUnifProb f f' c x
+                               ,AGUnifProb f f' c x
+                               ,AGUnifProb f f' c x
+                               ,AGUnifProb f f' c x)
 
 
 -- FIXME: orient equations with variable on the rhs?
-classify :: AGUnifProb f f' x -> AGClasUnifProb f f' x
+classify :: AGUnifProb f f' c x -> AGClasUnifProb f f' c x
 classify [] = ([],[],[],[])
 classify (p@(s,t):ps)
     = let (pe,pe',pi,ph) = classify ps
@@ -746,23 +763,28 @@ classify (p@(s,t):ps)
 
 
 -- FIXME: does not check for idempotency (costly, might not be necessary)
-inSolvedForm :: AGUnifProb f f' x -> Bool
+inSolvedForm :: AGUnifProb f f' c x -> Bool
 inSolvedForm = all inSolvedForm'
   where inSolvedForm' (X  _, _) = True
         inSolvedForm' (X' _, _) = True
         inSolvedForm' _         = False
 
 
-toExp :: (T f f' x, T f f' x) -> AGExp1
-toExp (s,t) = add (toExp' s) (inv (toExp' t))
+toExp :: Int -> Int -> (T Sig f' Int Int, T Sig f' Int Int) -> AGExp1
+toExp v c (s,t) = mul (toExp' s) (inv (toExp' t))
   where
-    toExp' = undefined
-    add = undefined
-    inv = undefined
+    toExp' (X x           ) = let (vs,cs) = unit in (set vs x 1, cs)
+    toExp' (C c           ) = let (vs,cs) = unit in (cs, set cs c 1)
+    toExp' (F Unit [     ]) = unit
+    toExp' (F Inv  [t    ]) = inv (toExp' t)
+    toExp' (F Mul  [t1,t2]) = mul (toExp' t1) (toExp' t2)
+
+    unit = (replicate v 0, replicate c 0)
+    inv  = map negate *** map negate
+    mul (xs,xs') (ys,ys') = (zipWith (+) xs ys, zipWith (+) xs' ys')
 
 -- FIXME: propagate failure
--- also need nullary constants... T(C U F U F',X)!?
-agUnifN :: TermAlg f f' x => AGUnifProb f f' x -> State Int (Maybe (AGUnifProb f f' x))
+agUnifN :: TermAlg Sig f' Int Int => AGUnifProb Sig f' Int Int -> State Int (Maybe (AGUnifProb Sig f' Int Int))
 agUnifN ps@(classify -> (pe,pe',pi,ph))
     -- VA
     | Just ((s,t),ph') <- uncons ph
@@ -771,13 +793,14 @@ agUnifN ps@(classify -> (pe,pe',pi,ph))
              agUnifN (pe ++ pe' ++ pi ++ ph' ++ rs ++ rt)
     -- E-Res
     | (not . inSolvedForm) pe
-        = return $ undefined (agUnif1' (map toExp pe))
+        = return $ undefined (agUnif1' (map (toExp (error "!") (error "!")) pe))
     -- E'-Res
     | (not . inSolvedForm) pe'
         = return $ freeUnif pe'
     -- E-Match
     -- Merge-E-Match
     -- Var-Rep
+    -- DONE
 
 
 
