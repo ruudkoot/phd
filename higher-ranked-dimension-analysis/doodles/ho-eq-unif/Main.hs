@@ -575,7 +575,7 @@ agUnif1' (x:xs) = do s <- agUnif1 x
 
 newT :: T f f' c x -> State (Int, [(T f f' c x, T f f' c x)]) Int
 newT t = do (n, xs') <- get
-            modify (\(n, xs') -> (n+1, xs'++[(X' n,t)]))   -- performance...
+            modify (\(n, xs') -> (n+1, xs' ++ [(X' n,t)]))     -- performance...
             return n
 
 data T f f' c x
@@ -770,20 +770,64 @@ inSolvedForm = all inSolvedForm'
         inSolvedForm' _         = False
 
 
-toExp :: Int -> Int -> (T Sig f' Int Int, T Sig f' Int Int) -> AGExp1
-toExp v c (s,t) = mul (toExp' s) (inv (toExp' t))
-  where
-    toExp' (X x           ) = let (vs,cs) = unit in (set vs x 1, cs)
-    toExp' (C c           ) = let (vs,cs) = unit in (cs, set cs c 1)
-    toExp' (F Unit [     ]) = unit
-    toExp' (F Inv  [t    ]) = inv (toExp' t)
-    toExp' (F Mul  [t1,t2]) = mul (toExp' t1) (toExp' t2)
+numX :: T f f' c Int -> Int
+numX (X  x   ) = x + 1
+numX (X' _   ) = 0
+numX (C  _   ) = 0
+numX (F  _ ts) = maximum (map numX ts)
+numX (F' _ ts) = maximum (map numX ts)
 
-    unit = (replicate v 0, replicate c 0)
+
+numX' :: T f f' c x -> Int
+numX' (X  _   ) = 0
+numX' (X' x'  ) = x' + 1
+numX' (C  _   ) = 0
+numX' (F  _ ts) = maximum (map numX' ts)
+numX' (F' _ ts) = maximum (map numX' ts)
+
+
+numC :: T f f' Int x -> Int
+numC (X  _   ) = 0
+numC (X' _   ) = 0
+numC (C  c   ) = c + 1
+numC (F  _ ts) = maximum (map numC ts)
+numC (F' _ ts) = maximum (map numC ts)
+
+
+toExp :: Int -> Int -> Int -> (T Sig f' Int Int, T Sig f' Int Int) -> AGExp1
+toExp v1 v2 c (s,t) = mul (toExp' s) (inv (toExp' t))
+  where
+    toExp' (X  x           ) = let (vs,cs) = unit in (set vs       x   1, cs)
+    toExp' (X' x'          ) = let (vs,cs) = unit in (set vs (v1 + x') 1, cs)
+    toExp' (C  c           ) = let (vs,cs) = unit in (cs, set cs c 1)
+    toExp' (F  Unit [     ]) = unit
+    toExp' (F  Inv  [t    ]) = inv (toExp' t)
+    toExp' (F  Mul  [t1,t2]) = mul (toExp' t1) (toExp' t2)
+
+    unit = (replicate (v1 + v2) 0, replicate c 0)
     inv  = map negate *** map negate
     mul (xs,xs') (ys,ys') = (zipWith (+) xs ys, zipWith (+) xs' ys')
 
--- FIXME: propagate failure
+
+fromExp :: Int -> AGSubst1 -> AGUnifProb Sig f' Int Int
+fromExp v1 ss@(length -> v)
+    = zipWith (\x t -> (x, fromExp' t)) (map X [0 .. v1 - 1] ++ map X' [0 .. v - v1]) ss
+  where
+    fromExp' :: AGExp1 -> T Sig f' Int Int
+    fromExp' (splitAt v1 -> (vs,vs'),cs)
+        = let xs =    map (fromExp'' X ) (filter ((/=0) . snd) (zip [0 .. v1]     vs ))
+                   ++ map (fromExp'' X') (filter ((/=0) . snd) (zip [0 .. v - v1] vs'))
+                   ++ map (fromExp'' C ) (filter ((/=0) . snd) (zip [0 .. ]       cs ))
+           in case xs of
+                [] -> F Unit []
+                _  -> foldr1 (\x y -> F Mul [x,y]) xs
+
+    fromExp'' :: (Int -> T Sig f' Int Int) -> (Int, Int) -> T Sig f' Int Int
+    fromExp'' con (x,n)
+        | n < 0     = F Inv [fromExp'' con (x,-n)]
+        | otherwise = foldr1 (\_ y -> F Mul [con x,y]) (replicate n (con x))
+
+
 agUnifN :: TermAlg Sig f' Int Int => AGUnifProb Sig f' Int Int -> State Int (Maybe (AGUnifProb Sig f' Int Int))
 agUnifN ps@(classify -> (pe,pe',pi,ph))
     -- VA
@@ -793,7 +837,11 @@ agUnifN ps@(classify -> (pe,pe',pi,ph))
              agUnifN (pe ++ pe' ++ pi ++ ph' ++ rs ++ rt)
     -- E-Res
     | (not . inSolvedForm) pe
-        = return $ undefined (agUnif1' (map (toExp (error "!") (error "!")) pe))
+        = let numV1 = maximum (map (uncurry max . (numX  *** numX )) pe)
+              numV2 = maximum (map (uncurry max . (numX' *** numX')) pe)
+              numC' = maximum (map (uncurry max . (numC  *** numC )) pe)
+           in return $ do exp <- agUnif1' (map (toExp numV1 numV2 numC') pe)
+                          return $ fromExp numV1 exp
     -- E'-Res
     | (not . inSolvedForm) pe'
         = return $ freeUnif pe'
@@ -801,6 +849,8 @@ agUnifN ps@(classify -> (pe,pe',pi,ph))
     -- Merge-E-Match
     -- Var-Rep
     -- DONE
+
+
 
 
 
