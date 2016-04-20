@@ -568,6 +568,11 @@ agUnif1' [x]    = agUnif1 x
 agUnif1' (x:xs) = do s <- agUnif1 x
                      t <- agUnif1' (map (agApplySubst s) xs)
                      return $ agCompSubst t s
+                     
+-- solve the constant matching problem
+-- FIXME: verify solution is valid
+agConstMatch :: AGExp1 -> Maybe AGSubst1
+agConstMatch (vs, cs) = agUnif1 (vs, cs ++ [-1])
 
 -- * AG-unification with free function symbols * --------------------------[ ]--
 
@@ -577,13 +582,18 @@ newT :: T f f' c x -> State (Int, [(T f f' c x, T f f' c x)]) Int
 newT t = do (n, xs') <- get
             modify (\(n, xs') -> (n+1, xs' ++ [(X' n,t)]))     -- performance...
             return n
+            
+newV :: State Int (T f f' c x)
+newV = do n <- get
+          modify (+1)
+          return (X' n)
 
 data T f f' c x
-    = X  x              -- variables            (E and E')
-    | X' Int            -- fresh variables      (E and E')
-    | C  c              -- nullary constants    (E)
-    | F  f  [T f f' c x]  -- function symbols     (E)
-    | F' f' [T f f' c x]  -- function symbols     (E')
+    = X  x                  -- variables            (E and E')
+    | X' Int                -- fresh variables      (E and E')
+    | C  c                  -- nullary constants    (E)
+    | F  f  [T f f' c x]    -- function symbols     (E)
+    | F' f' [T f f' c x]    -- function symbols     (E')
   deriving (Eq, Ord, Show)
   
 class    (Ord f, Ord f', Ord c, Ord x) => TermAlg f f' c x
@@ -656,16 +666,26 @@ type AGUnifProb f f' c x = [(T f f' c x, T f f' c x)]
 subst :: TermAlg f f' c x => x -> T f f' c x -> T f f' c x -> T f f' c x
 subst x t t'@(X x')  | x == x'   = t
                      | otherwise = t'
-subst x t (C  c    ) = C  c
+subst x _ t'@(X' _)   = t'
+subst x _ t'@(C  _)   = t'
 subst x t (F  f  ts) = F  f  (map (subst x t) ts)
 subst x t (F' f' ts) = F' f' (map (subst x t) ts)
 
 subst' :: Int -> T f f' c x -> T f f' c x -> T f f' c x
+subst' _ _ t'@(X  _ ) = t'
 subst' x t t'@(X' x') | x == x'   = t
                       | otherwise = t'
-subst' x t (C  c    ) = C  c
+subst' _ _ t'@(C  _ ) = t'
 subst' x t (F  f  ts) = F  f  (map (subst' x t) ts)
 subst' x t (F' f' ts) = F' f' (map (subst' x t) ts)
+
+substC :: TermAlg f f' c x => c -> T f f' c x -> T f f' c x -> T f f' c x
+substC c t t'@(X  _ ) = t'
+substC _ _ t'@(X' _ ) = t'
+substC c t t'@(C  c') | c == c'   = t
+                      | otherwise = t'
+substC c t (F  f  ts) = F  f  (map (substC c t) ts)
+substC c t (F' f' ts) = F' f' (map (substC c t) ts)
 
 freeUnif :: TermAlg f f' c Int => AGUnifProb f f' c Int -> Maybe (AGUnifProb f f' c Int)
 freeUnif = freeUnif' []
@@ -755,9 +775,9 @@ classify (p@(s,t):ps)
                 -> ((s,t):pe, pe', pi, ph)
             (s,t) | isPureE s && isPureE' t
                 ->  (pe, pe', (s,t):pi, ph)
-            (s,t) | isPureE' s && isPureE t
+            (s,t) | isPureE' s && isPureE t                 -- orient
                 ->  (pe, pe', (t,s):pi, ph)
-            (s,t) | isHomogeneous s || isHomogeneous t         -- performance...
+            (s,t) | isHomogeneous s || isHomogeneous t      -- performance...
                 -> (pe,pe',pi,(s,t):ph)
             _ -> error "classify: should not happen"
 
@@ -777,7 +797,6 @@ numX (C  _   ) = 0
 numX (F  _ ts) = maximum (map numX ts)
 numX (F' _ ts) = maximum (map numX ts)
 
-
 numX' :: T f f' c x -> Int
 numX' (X  _   ) = 0
 numX' (X' x'  ) = x' + 1
@@ -785,14 +804,12 @@ numX' (C  _   ) = 0
 numX' (F  _ ts) = maximum (map numX' ts)
 numX' (F' _ ts) = maximum (map numX' ts)
 
-
 numC :: T f f' Int x -> Int
 numC (X  _   ) = 0
 numC (X' _   ) = 0
 numC (C  c   ) = c + 1
 numC (F  _ ts) = maximum (map numC ts)
 numC (F' _ ts) = maximum (map numC ts)
-
 
 toExp :: Int -> Int -> Int -> (T Sig f' Int Int, T Sig f' Int Int) -> AGExp1
 toExp v1 v2 c (s,t) = mul (toExp' s) (inv (toExp' t))
@@ -807,7 +824,6 @@ toExp v1 v2 c (s,t) = mul (toExp' s) (inv (toExp' t))
     unit = (replicate (v1 + v2) 0, replicate c 0)
     inv  = map negate *** map negate
     mul (xs,xs') (ys,ys') = (zipWith (+) xs ys, zipWith (+) xs' ys')
-
 
 fromExp :: Int -> AGSubst1 -> AGUnifProb Sig f' Int Int
 fromExp v1 ss@(length -> v)
@@ -828,7 +844,13 @@ fromExp v1 ss@(length -> v)
         | otherwise = foldr1 (\_ y -> F Mul [con x,y]) (replicate n (con x))
 
 
-agUnifN :: TermAlg Sig f' Int Int => AGUnifProb Sig f' Int Int -> State Int (Maybe (AGUnifProb Sig f' Int Int))
+-- FIXME: unification problems are sets of UNORDERED pairs
+-- FIXME: swap State and Maybe?
+-- FIXME: this code is anti-monadic ("Nothing -> return Nothing")
+-- FIXME: that "numV1" stuff is horrible and slow (find better representation)
+-- FIXME: for better performance, only classify newly generated equations
+agUnifN :: TermAlg Sig f' Int Int
+            => AGUnifProb Sig f' Int Int -> State Int (Maybe (AGUnifProb Sig f' Int Int))
 agUnifN ps@(classify -> (pe,pe',pi,ph))
     -- VA
     | Just ((s,t),ph') <- uncons ph
@@ -840,12 +862,25 @@ agUnifN ps@(classify -> (pe,pe',pi,ph))
         = let numV1 = maximum (map (uncurry max . (numX  *** numX )) pe)
               numV2 = maximum (map (uncurry max . (numX' *** numX')) pe)
               numC' = maximum (map (uncurry max . (numC  *** numC )) pe)
-           in return $ do exp <- agUnif1' (map (toExp numV1 numV2 numC') pe)
-                          return $ fromExp numV1 exp
+           in case agUnif1' (map (toExp numV1 numV2 numC') pe) of
+                Nothing -> return Nothing
+                Just ee -> let qe = fromExp numV1 ee
+                            in agUnifN (qe ++ pe' ++ pi ++ ph)
     -- E'-Res
     | (not . inSolvedForm) pe'
-        = return $ freeUnif pe'
-    -- E-Match
+        = case freeUnif pe' of
+            Nothing  -> return Nothing
+            Just qe' -> agUnifN (pe ++ qe' ++ pi ++ ph)
+    -- E-Match    (s in E, t in E'; guaranteed by 'classify')
+    | Just ((s,t),pi') <- uncons pi
+        = let numV1 = max (numX  s) (numX  t)
+              numV2 = max (numX' s) (numX' t)
+              numC' = max (numC  s) (numC  t)
+           in do z <- newV
+                 case agConstMatch (toExp numV1 numV2 numC' (s,t)) of
+                    Nothing -> return Nothing
+                    Just (map (id *** substC numC' z) . fromExp numV1 -> qI) ->
+                         agUnifN (pe ++ pe' ++ qI ++ [(z,t)] ++ pi' ++ ph)
     -- Merge-E-Match
     -- Var-Rep
     -- DONE
