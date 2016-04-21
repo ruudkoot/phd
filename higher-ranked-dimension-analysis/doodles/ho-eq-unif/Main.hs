@@ -12,12 +12,12 @@ import Control.Monad
 import Control.Monad.State
 
 import Data.Function
-import Data.List (minimumBy, sort, sortBy)
+import Data.List (minimumBy, partition, sort, sortBy)
 import Data.Maybe
 
 import           Data.Map (Map)
 import qualified Data.Map as Map
-import           Data.Set        hiding (filter, foldr, map, null)
+import           Data.Set        hiding (filter, foldr, map, partition, null)
 import qualified Data.Set as Set
 
 -- | Utility | ------------------------------------------------------------[ ]--
@@ -687,6 +687,18 @@ substC c t t'@(C  c') | c == c'   = t
 substC c t (F  f  ts) = F  f  (map (substC c t) ts)
 substC c t (F' f' ts) = F' f' (map (substC c t) ts)
 
+-- the unification problem sigma is assumed to be in solved form
+applySubst :: TermAlg f f' x c => AGUnifProb f f' c x -> T f f' c x -> T f f' c x
+apllySubst sigma (X x)
+    | Just t <- lookup (X  x ) sigma = t
+    | otherwise                      = X x
+applySubst sigma (X' x')
+    | Just t <- lookup (X' x') sigma = t
+    | otherwise                      = X' x'
+applySubst sigma (C c     ) = C c
+applySubst sigma (F  f  ts) = F  f  (map (applySubst sigma) ts)
+applySubst sigma (F' f' ts) = F' f' (map (applySubst sigma) ts)
+
 freeUnif :: TermAlg f f' c Int => AGUnifProb f f' c Int -> Maybe (AGUnifProb f f' c Int)
 freeUnif = freeUnif' []
   where
@@ -811,19 +823,23 @@ numC (C  c   ) = c + 1
 numC (F  _ ts) = maximum (map numC ts)
 numC (F' _ ts) = maximum (map numC ts)
 
-toExp :: Int -> Int -> Int -> (T Sig f' Int Int, T Sig f' Int Int) -> AGExp1
-toExp v1 v2 c (s,t) = mul (toExp' s) (inv (toExp' t))
+toExp :: Int -> Int -> Int -> T Sig f' Int Int -> AGExp1
+toExp v1 v2 c s = toExp' v1 v2 c (s, F Unit [])
+
+toExp' :: Int -> Int -> Int -> (T Sig f' Int Int, T Sig f' Int Int) -> AGExp1
+toExp' v1 v2 c (s,t) = mul (toExp'' s) (inv (toExp'' t))
   where
-    toExp' (X  x           ) = let (vs,cs) = unit in (set vs       x   1, cs)
-    toExp' (X' x'          ) = let (vs,cs) = unit in (set vs (v1 + x') 1, cs)
-    toExp' (C  c           ) = let (vs,cs) = unit in (cs, set cs c 1)
-    toExp' (F  Unit [     ]) = unit
-    toExp' (F  Inv  [t    ]) = inv (toExp' t)
-    toExp' (F  Mul  [t1,t2]) = mul (toExp' t1) (toExp' t2)
+    toExp'' (X  x           ) = let (vs,cs) = unit in (set vs       x   1, cs)
+    toExp'' (X' x'          ) = let (vs,cs) = unit in (set vs (v1 + x') 1, cs)
+    toExp'' (C  c           ) = let (vs,cs) = unit in (cs, set cs c 1)
+    toExp'' (F  Unit [     ]) = unit
+    toExp'' (F  Inv  [t    ]) = inv (toExp'' t)
+    toExp'' (F  Mul  [t1,t2]) = mul (toExp'' t1) (toExp'' t2)
 
     unit = (replicate (v1 + v2) 0, replicate c 0)
     inv  = map negate *** map negate
     mul (xs,xs') (ys,ys') = (zipWith (+) xs ys, zipWith (+) xs' ys')
+    
 
 fromExp :: Int -> AGSubst1 -> AGUnifProb Sig f' Int Int
 fromExp v1 ss@(length -> v)
@@ -845,8 +861,8 @@ fromExp v1 ss@(length -> v)
 
 
 -- FIXME: unification problems are sets of UNORDERED pairs
--- FIXME: swap State and Maybe?
 -- FIXME: this code is anti-monadic ("Nothing -> return Nothing")
+-- FIXME: swap State and Maybe?
 -- FIXME: that "numV1" stuff is horrible and slow (find better representation)
 -- FIXME: for better performance, only classify newly generated equations
 agUnifN :: TermAlg Sig f' Int Int
@@ -862,7 +878,7 @@ agUnifN ps@(classify -> (pe,pe',pi,ph))
         = let numV1 = maximum (map (uncurry max . (numX  *** numX )) pe)
               numV2 = maximum (map (uncurry max . (numX' *** numX')) pe)
               numC' = maximum (map (uncurry max . (numC  *** numC )) pe)
-           in case agUnif1' (map (toExp numV1 numV2 numC') pe) of
+           in case agUnif1' (map (toExp' numV1 numV2 numC') pe) of
                 Nothing -> return Nothing
                 Just ee -> let qe = fromExp numV1 ee
                             in agUnifN (qe ++ pe' ++ pi ++ ph)
@@ -877,13 +893,37 @@ agUnifN ps@(classify -> (pe,pe',pi,ph))
               numV2 = max (numX' s) (numX' t)
               numC' = max (numC  s) (numC  t)
            in do z <- newV
-                 case agConstMatch (toExp numV1 numV2 numC' (s,t)) of
+                 case agConstMatch (toExp' numV1 numV2 numC' (s,t)) of
                     Nothing -> return Nothing
                     Just (map (id *** substC numC' z) . fromExp numV1 -> qI) ->
                          agUnifN (pe ++ pe' ++ qI ++ [(z,t)] ++ pi' ++ ph)
-    -- Merge-E-Match
+    -- Merge-E-Match    (P_E and P_E' can both assumed to be solved at this point)
+    -- FIXME: this is the non-terminating version of the rule
+    | Just (x,_) <- minView $ dom pe `intersection` domNotMappingToVar pe'
+    , ((_,s):pe1,pe2) <- partition ((==x) . fst) pe
+        = case agConstMatch (toExp (numX s) (numX' s) (numC s) s) of
+                Nothing -> return Nothing
+                Just (map (id *** substC (numC s) x) . fromExp (numX s) -> sigma) ->
+                    -- FIXME: pe and sigma should have disjunct domains (ASSERT),
+                    --        so can 'map (id *** applySubst sigma) pe'!
+                    agUnifN (map (applySubst sigma *** applySubst sigma) pe
+                                ++ sigma ++ pe' ++ pi ++ ph)
     -- Var-Rep
+    
     -- DONE
+
+
+dom :: TermAlg f f' c x => AGUnifProb f f' c x -> Set (T f f' c x)
+dom []             = Set.empty
+dom ((X  x ,_):xs) = Set.insert (X  x ) (dom xs)
+dom ((X' x',_):xs) = Set.insert (X' x') (dom xs)
+
+domNotMappingToVar :: TermAlg f f' c x => AGUnifProb f f' c x -> Set (T f f' c x)
+domNotMappingToVar []             = Set.empty
+domNotMappingToVar ((_,X  _ ):xs) = domNotMappingToVar xs
+domNotMappingToVar ((_,X' _ ):xs) = domNotMappingToVar xs
+domNotMappingToVar ((X  x ,_):xs) = Set.insert (X  x ) (domNotMappingToVar xs)
+domNotMappingToVar ((X' x',_):xs) = Set.insert (X' x') (domNotMappingToVar xs)
 
 
 
