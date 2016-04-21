@@ -35,6 +35,16 @@ uncons :: [a] -> Maybe (a,[a])
 uncons []     = Nothing
 uncons (x:xs) = Just (x,xs)
 
+-- order in which the list elements are fed to 'f' is weird,
+-- (but that does not matter if they represent sets)
+forEachWithContext :: (a -> [a] -> Maybe b) -> [a] -> [b]
+forEachWithContext f = forEachWithContext' []
+  where
+    forEachWithContext' ys []     = []
+    forEachWithContext' ys (x:xs) = case f x (ys ++ xs) of
+                            Nothing ->     forEachWithContext' (x : ys) xs
+                            Just z  -> z : forEachWithContext' (x : ys) xs
+
 -- * Debugging * ------------------------------------------- UNUSED! ------[X]--
 
 xxs !!! m = xxs !!!~ m
@@ -599,6 +609,11 @@ data T f f' c x
 class    (Ord f, Ord f', Ord c, Ord x) => TermAlg f f' c x
 instance (Ord f, Ord f', Ord c, Ord x) => TermAlg f f' c x
 
+isVar :: T f f' x c -> Bool
+isVar (X  _) = True
+isVar (X' _) = True
+isVar _      = False
+
 vars :: T f f' c x -> [x]
 vars (X  x   ) = [x]
 vars (X' _   ) = []
@@ -612,6 +627,15 @@ vars' (X' x   ) = [x]
 vars' (C  _   ) = []
 vars' (F  _ ts) = concatMap vars' ts
 vars' (F' _ ts) = concatMap vars' ts
+
+allVars :: TermAlg f f' c x => [(T f f' c x, T f f' c x)] -> Set (T f f' c x)
+allVars = unionMap' (\(s,t) -> allVars' s `union` allVars' t)
+  where
+    allVars' t@(X  _   ) = singleton t
+    allVars' t@(X' _   ) = singleton t
+    allVars'   (C  _   ) = empty
+    allVars'   (F  _ ts) = unionMap' allVars' ts
+    allVars'   (F' _ ts) = unionMap' allVars' ts
 
 homogeneous :: T f f' c x -> State (Int, [(T f f' c x, T f f' c x)]) (T f f' c x)
 homogeneous (X  x    ) = return (X  x )
@@ -867,7 +891,7 @@ fromExp v1 ss@(length -> v)
 -- FIXME: for better performance, only classify newly generated equations
 agUnifN :: TermAlg Sig f' Int Int
             => AGUnifProb Sig f' Int Int -> State Int (Maybe (AGUnifProb Sig f' Int Int))
-agUnifN ps@(classify -> (pe,pe',pi,ph))
+agUnifN p@(classify -> (pe,pe',pi,ph))
     -- VA
     | Just ((s,t),ph') <- uncons ph
         = do (s',rs) <- homogeneous'' s
@@ -908,9 +932,26 @@ agUnifN ps@(classify -> (pe,pe',pi,ph))
                     --        so can 'map (id *** applySubst sigma) pe'!
                     agUnifN (map (applySubst sigma *** applySubst sigma) pe
                                 ++ sigma ++ pe' ++ pi ++ ph)
-    -- Var-Rep
-    
+    -- FIXME: prefer to eliminate X' over X (already taken care by classify?)
+    -- Var-Rep          (need to check both possible orientations here!)
+    -- FIXME: allVars is a very expensive computation than can be done incrementally
+    --        (e.g. tuple each equation with the variables occurring in that equation)
+    |  (((x,y),p'):_) <- forEachWithContext (\(x,y) p' ->
+            if
+                isVar x && isVar y && x `member` allVars p' && y `member` allVars p'
+            then
+                if not (isShared x pe pe') || isShared y pe pe' then
+                    Just ((x,y), p')
+                else if not (isShared y pe pe') || isShared x pe pe' then
+                    Just ((y,x), p')
+                else
+                    Nothing
+            else
+                Nothing
+            ) p
+        = agUnifN ([(x,y)] ++ map (applySubst [(x,y)] *** applySubst [(x,y)]) p')
     -- DONE
+    | otherwise = return (Just p)
 
 
 dom :: TermAlg f f' c x => AGUnifProb f f' c x -> Set (T f f' c x)
@@ -925,6 +966,13 @@ domNotMappingToVar ((_,X' _ ):xs) = domNotMappingToVar xs
 domNotMappingToVar ((X  x ,_):xs) = Set.insert (X  x ) (domNotMappingToVar xs)
 domNotMappingToVar ((X' x',_):xs) = Set.insert (X' x') (domNotMappingToVar xs)
 
+
+isShared :: TermAlg f f' c x =>
+                    T f f' c x -> AGUnifProb f f' c x -> AGUnifProb f f' c x -> Bool
+isShared x pe pe'
+    = x `member` allVars pe
+        &&
+      x `member` allVars (filter (\(s,t) -> not (isVar s && isVar t)) pe')
 
 
 
