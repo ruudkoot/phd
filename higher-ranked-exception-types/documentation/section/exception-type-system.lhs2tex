@@ -82,7 +82,7 @@ The exceptional function value
     \label{fig-exception-type-well-formed}
 \end{figure}
 
-The exception set expressions $\Exn$ and their kinds $\Kind$ are an instance of the \mbox{$\LambdaUnion$-calculus}, where exception set expressions are terms and kinds are the types. As the constants we takes the set of exception labels present in the program.
+The exception set expressions $\Exn$ and their kinds $\Kind$ are an instance of the \mbox{$\LambdaUnion$-calculus}, where exception set expressions are terms and kinds are the types. As the constants we take the set of exception labels present in the program.
 Two exception set expressions are considered equivalent if they are convertible as $\LambdaUnion$-terms, which is to say that they reduce to the same normal form.
 
 The type system resembles \SystemFw \cite{Girard1972} in that we have quantification, abstraction and application at the type level. A key difference is that abstraction and application are restricted to the effects ($\ClassExn$) and cannot be used in the types ($\ClassExnTy$) directly.

@@ -977,8 +977,10 @@ isShared x pe pe'
 
 
 
-
-
+-- STILL TO DO FOR agUnifN:
+-- * Replace Merge-E-Match with (Mem-Int Mem-Rec*)
+-- * Elim (variable and constant elimination)
+-- * Rep (replacement)
 
 
 
