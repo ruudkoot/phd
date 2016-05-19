@@ -10,7 +10,7 @@ import Data.Maybe
 import qualified Data.Map as M
 import qualified Data.Set as S
 
-import Main hiding (u0)
+import Main hiding (main, u0)
 
 tests :: [(String, Bool)]
 tests =
@@ -130,13 +130,30 @@ tests =
     ,("agConstMatch (2')",              test_agConstMatch_2')
     ,("agConstMatch (3)",               test_agConstMatch_3)
     ,("newT (1)",                       test_newT_1)
+    ,("newV (1)",                       test_newV_1)
+    ,("isVar (1)",                      test_isVar_1)
+    ,("vars (1)",                       test_vars_1)
+    ,("vars' (1)",                      test_vars'_1)
+    ,("allVars (1)",                    test_allVars_1)
     ,("homogeneous (1)",                test_homogeneous_1)
     ,("homogeneous' (1)",               test_homogeneous'_1)
     ,("homogeneous'' (1)",              test_homogeneous''_1)
     ,("homogeneous'' (2)",              test_homogeneous''_2)
-    ,("isHomogeneous (1)",              test_isHomogeneous_1)
-    ,("isHomogeneous (2)",              test_isHomogeneous_2)
-    ,("freeUnif (1)",                   test_freeUnif_1)
+    ,("isPureE",                        test_isPureE)
+    ,("isPureE'",                       test_isPureE')
+    ,("isHeterogeneous (1)",            test_isHeterogeneous_1)
+    ,("isHeterogeneous (2)",            test_isHeterogeneous_2)
+    ,("subst (1)",                      test_subst_1)
+    ,("subst' (1)",                     test_subst'_1)
+    ,("applySubst (1)",                 test_applySubst_1)
+    ,("freeUnif (1)",                   test_freeUnif_1)    -- FIXME: test for each rule
+    ,("freeUnif (2)",                   test_freeUnif_2)
+    ,("classify (1)",                   test_classify_1)
+    ,("inSolvedForm (1)",               test_inSolvedForm_1)
+    ,("inSolvedForm (2)",               test_inSolvedForm_2)
+    ,("numX",                           test_numX)
+    ,("numX'",                          test_numX')
+    ,("numC",                           test_numC)
     ]
     
 len = maximum (map (length . fst) tests)
@@ -1284,6 +1301,34 @@ test_newT_1 =
             =?=
         (42,(43,env ++ [(X' 42,F Mul [F' "a" [],X 0])]))
 
+test_newV_1 =
+    runState newV 42
+        =?=
+    (X' 42 :: T () () () (), 43)
+
+test_isVar_1 =
+    map isVar [X undefined, X' undefined, C undefined, F undefined undefined, F' undefined undefined]
+        =?=
+    [True, True, False, False, False]
+    
+test_vars_1 =
+    vars (F undefined [C undefined, F' undefined [X 666, X' undefined], X 42])
+        =?=
+    [666,42]
+
+test_vars'_1 =
+    vars' (F undefined [C undefined, F' undefined [X' 666, X undefined], X' 42])
+        =?=
+    [666,42]
+
+test_allVars_1 =
+    allVars
+        [(F undefined [C undefined, F' undefined [X  1, X' 2], X  3]
+        ,F undefined [C undefined, F' undefined [X' 4, X  5], X' 6]
+        )]
+        =?=
+    (S.fromList [X  1, X' 2, X  3, X' 4, X  5, X' 6] :: S.Set (T () () () Int))
+
 test_homogeneous_1 =
     let t = F Mul [F' "f" [F' "a" []],F Mul [F' "f" [F Unit []],X "x"]]
                 :: T Sig String String String
@@ -1322,26 +1367,129 @@ test_homogeneous''_2 =
           ,(X' 1, F "f" [F' Unit []])])
         ,2)
 
-test_isHomogeneous_1 =
+test_isPureE =
+    map isPureE
+        [X undefined, X' undefined, C undefined
+        ,F undefined [X undefined], F undefined [F' undefined undefined]
+        ,F' undefined undefined
+        ]
+            =?=
+    [True, True, True
+    ,True, False
+    ,False]
+
+test_isPureE' =
+    map isPureE'
+        [X undefined, X' undefined, C undefined
+        ,F undefined undefined
+        ,F' undefined [X undefined], F' undefined [F undefined undefined]
+        ]
+            =?=
+    [True, True, False
+    ,False
+    ,True, False]
+
+test_isHeterogeneous_1 =
     let t = F' Mul [F' Mul [F' Unit []],F' Inv [F' Mul [F' Unit []],X "x"]]
                  :: T String Sig String String
-     in isHomogeneous t
+     in isHeterogeneous t
             =?=
         False
 
-test_isHomogeneous_2 =
+test_isHeterogeneous_2 =
     let t = F' Mul [F "f" [F "a" []],F' Mul [F "f" [F' Unit []],X "x"]]
                  :: T String Sig String String
-     in isHomogeneous t
+     in isHeterogeneous t
             =?=
         True
 
+test_subst_1 =
+    let theta = F 2 [X 2, C 222] :: T Int Int Int Int
+        exp x = F 2 [F' 2 [X 1, x, X' 3, C 2], x]
+     in subst 2 theta (exp (X 2))
+            =?=
+        exp theta
+
+test_subst'_1 =
+    let theta = F 2 [X' 2, C 222] :: T Int Int Int Int
+        exp x = F 2 [F' 2 [X 1, x, X' 3, C 2], x]
+     in subst' 2 theta (exp (X' 2))
+            =?=
+        exp theta
+
+test_applySubst_1 =
+    let theta    = F  2 [X  2, X' 2, C 2] :: T Int Int Int Int
+        theta'   = F' 2 [X' 2, X  2, C 2]
+        theta''  = [(X 2, theta), (X' 2, theta')]
+        exp x x' = F 2 [x, F' 2 [X 1, X' 1, x', x, C 2], x']
+     in applySubst theta'' (exp (X 2) (X' 2))
+            =?=
+        exp theta theta'
+
 test_freeUnif_1 =
-    let prob = [(X 0             , F' "f" [F' "a" []])
-               ,(F' "g" [X 0,X 0], F' "g" [X 0,X 1])]
+    let prob = [(X 0              , F' "f" [F' "a" []])
+               ,(F' "g" [X 0, X 0], F' "g" [X 0, X 1] )]
      in freeUnif (prob :: AGUnifProb String String String Int)
             =?=
         Just [(X 0,F' "f" [F' "a" []]),(X 1,F' "f" [F' "a" []])]
+
+test_freeUnif_2 =
+    let prob = [(X 0, F' "f" [X 0])]
+     in freeUnif (prob :: AGUnifProb String String String Int)
+            =?=
+        Nothing
+
+
+-- FIXME: more tests for freeUnif (triggering each rule)
+
+test_classify_1 =
+    let t1 = (F  "f" [X 1, X' 2, C 3],           F  "g" [X 1, X' 2, C 3]        )
+        t2 = (F' "f" [X 1, X' 2     ],           F' "g" [X 1, X' 2     ]        )
+        t3 = (F  "f" [X 1, X' 2, C 3],           F' "g" [X 1, X' 2     ]        )
+        t4 = (F  "f" [F' "f'" [X 1, X' 2, C 3]], F' "g" [F "f" [X 1, X' 2, C 3]])
+        ts = [t1, t2, t3, t4]
+     in classify ts
+            =?=
+        ([t1],[t2],[t3],[t4])
+
+test_inSolvedForm_1 =
+    let ts = [(X  1, F "f" [C 1])
+             ,(X' 1, F "f" [C 1])
+             ]
+     in inSolvedForm ts
+            =?=
+        True
+
+test_inSolvedForm_2 =
+    let ts = [(X  1, F "f" [C 1])
+             ,(X' 1, F "f" [C 1])
+             ,(C  1, F "f" [C 1])
+             ]
+     in inSolvedForm ts
+            =?=
+        False
+
+test_numX =
+    numX (F "f" [F' "f'" [X 42, X' 666, C 666]])
+        =?=
+    (42 + 1)
+
+test_numX' =
+    numX' (F "f" [F' "f'" [X 666, X' 42, C 666]])
+        =?=
+    (42 + 1)
+    
+test_numC =
+    numC (F "f" [F' "f'" [X 666, X' 666, C 42]])
+        =?=
+    (42 + 1)
+
+
+
+
+
+
+
 
 
 

@@ -597,7 +597,20 @@ agConstMatch (vs1@(length -> m ), cs1@(length -> n ))
 
 -- Boudet, Jouannaud & Schmidt-Schauß (1989)
 
-newT :: T f f' c x -> State (Int, [(T f f' c x, T f f' c x)]) Int
+data T f f' c x
+    = X  x                  -- variables            (E and E')
+    | X' Int                -- fresh variables      (E and E')
+    | C  c                  -- nullary constants    (E)
+    | F  f  [T f f' c x]    -- function symbols     (E)
+    | F' f' [T f f' c x]    -- function symbols     (E')
+  deriving (Eq, Ord, Show)
+
+type AGUnifProb f f' c x = [(T f f' c x, T f f' c x)]
+  
+class    (Ord f, Ord f', Ord c, Ord x) => TermAlg f f' c x
+instance (Ord f, Ord f', Ord c, Ord x) => TermAlg f f' c x
+
+newT :: T f f' c x -> State (Int, AGUnifProb f f' c x) Int
 newT t = do (n, xs') <- get
             modify (\(n, xs') -> (n+1, xs' ++ [(X' n,t)]))     -- performance...
             return n
@@ -606,17 +619,6 @@ newV :: State Int (T f f' c x)
 newV = do n <- get
           modify (+1)
           return (X' n)
-
-data T f f' c x
-    = X  x                  -- variables            (E and E')
-    | X' Int                -- fresh variables      (E and E')
-    | C  c                  -- nullary constants    (E)
-    | F  f  [T f f' c x]    -- function symbols     (E)
-    | F' f' [T f f' c x]    -- function symbols     (E')
-  deriving (Eq, Ord, Show)
-  
-class    (Ord f, Ord f', Ord c, Ord x) => TermAlg f f' c x
-instance (Ord f, Ord f', Ord c, Ord x) => TermAlg f f' c x
 
 isVar :: T f f' x c -> Bool
 isVar (X  _) = True
@@ -637,7 +639,7 @@ vars' (C  _   ) = []
 vars' (F  _ ts) = concatMap vars' ts
 vars' (F' _ ts) = concatMap vars' ts
 
-allVars :: TermAlg f f' c x => [(T f f' c x, T f f' c x)] -> Set (T f f' c x)
+allVars :: TermAlg f f' c x => AGUnifProb f f' c x -> Set (T f f' c x)
 allVars = unionMap' (\(s,t) -> allVars' s `union` allVars' t)
   where
     allVars' t@(X  _   ) = singleton t
@@ -646,21 +648,21 @@ allVars = unionMap' (\(s,t) -> allVars' s `union` allVars' t)
     allVars'   (F  _ ts) = unionMap' allVars' ts
     allVars'   (F' _ ts) = unionMap' allVars' ts
 
-homogeneous :: T f f' c x -> State (Int, [(T f f' c x, T f f' c x)]) (T f f' c x)
+homogeneous :: T f f' c x -> State (Int, AGUnifProb f f' c x) (T f f' c x)
 homogeneous (X  x    ) = return (X  x )
 homogeneous (X' x'   ) = return (X' x')
 homogeneous (C  c    ) = return (C  c )
 homogeneous (F  f  ts) = F f <$> mapM homogeneous ts
 homogeneous (F' f' ts) = X'  <$> newT (F' f' ts)
 
-homogeneous' :: T f f' c x -> State (Int, [(T f f' c x, T f f' c x)]) (T f f' c x)
+homogeneous' :: T f f' c x -> State (Int, AGUnifProb f f' c x) (T f f' c x)
 homogeneous' (X  x    ) = return (X  x )
 homogeneous' (X' x'   ) = return (X' x')
 homogeneous' (C  c    ) = X'    <$> newT (C c)
 homogeneous' (F  f  ts) = X'    <$> newT (F f ts)
 homogeneous' (F' f' ts) = F' f' <$> mapM homogeneous' ts
 
-homogeneous'' :: T f f' c x -> State Int (T f f' c x, [(T f f' c x, T f f' c x)])
+homogeneous'' :: T f f' c x -> State Int (T f f' c x, AGUnifProb f f' c x)
 homogeneous'' (X  x   ) = return (X  x , [])
 homogeneous'' (X' x'  ) = return (X' x', [])
 homogeneous'' (C  c   ) = return (C  c , [])
@@ -674,9 +676,6 @@ homogeneous'' t@(F' _ _) = do
     let (t',(n',xs)) = runState (homogeneous' t) (n, [])
     put n'
     return (t', xs)
-
-isHomogeneous :: T f f' c x -> Bool
-isHomogeneous t = let ((_,rs),_) = runState (homogeneous'' t) 0 in not (null rs)
 
 isPureE :: T f f' c x -> Bool
 isPureE (X  _   ) = True
@@ -692,15 +691,14 @@ isPureE' (C  _   ) = False
 isPureE' (F  _ _ ) = False
 isPureE' (F' _ ts) = all isPureE' ts
 
-
-type AGUnifProb f f' c x = [(T f f' c x, T f f' c x)]
-
+isHeterogeneous :: T f f' c x -> Bool
+isHeterogeneous t = let ((_,rs),_) = runState (homogeneous'' t) 0 in not (null rs)
 
 subst :: TermAlg f f' c x => x -> T f f' c x -> T f f' c x -> T f f' c x
-subst x t t'@(X x')  | x == x'   = t
+subst x t t'@(X  x') | x == x'   = t
                      | otherwise = t'
-subst x _ t'@(X' _)   = t'
-subst x _ t'@(C  _)   = t'
+subst x _ t'@(X' _ ) = t'
+subst x _ t'@(C  _ ) = t'
 subst x t (F  f  ts) = F  f  (map (subst x t) ts)
 subst x t (F' f' ts) = F' f' (map (subst x t) ts)
 
@@ -714,7 +712,7 @@ subst' x t (F' f' ts) = F' f' (map (subst' x t) ts)
 
 -- the unification problem sigma is assumed to be in solved form
 applySubst :: TermAlg f f' x c => AGUnifProb f f' c x -> T f f' c x -> T f f' c x
-apllySubst sigma (X x)
+applySubst sigma (X x)
     | Just t <- lookup (X  x ) sigma = t
     | otherwise                      = X x
 applySubst sigma (X' x')
@@ -793,14 +791,14 @@ freeUnif = freeUnif' []
         | otherwise        = freeUnif' (p:elim sol) (elim prob)
             where elim = map (subst' x t *** subst' x t)                      -}
 
-type AGClasUnifProb f f' c x = (AGUnifProb f f' c x
-                               ,AGUnifProb f f' c x
-                               ,AGUnifProb f f' c x
-                               ,AGUnifProb f f' c x)
+type AGClassifiedUnifProb f f' c x = (AGUnifProb f f' c x
+                                     ,AGUnifProb f f' c x
+                                     ,AGUnifProb f f' c x
+                                     ,AGUnifProb f f' c x)
 
 
 -- FIXME: orient equations with variable on the rhs?
-classify :: AGUnifProb f f' c x -> AGClasUnifProb f f' c x
+classify :: AGUnifProb f f' c x -> AGClassifiedUnifProb f f' c x
 classify [] = ([],[],[],[])
 classify (p@(s,t):ps)
     = let (pe,pe',pi,ph) = classify ps
@@ -814,7 +812,7 @@ classify (p@(s,t):ps)
                 ->  (pe, pe', (s,t):pi, ph)
             (s,t) | isPureE' s && isPureE t                 -- orient
                 ->  (pe, pe', (t,s):pi, ph)
-            (s,t) | isHomogeneous s || isHomogeneous t      -- performance...
+            (s,t) | isHeterogeneous s || isHeterogeneous t  -- performance...
                 -> (pe,pe',pi,(s,t):ph)
             _ -> error "classify: should not happen"
 
