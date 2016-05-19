@@ -30,7 +30,7 @@ statefulForM s (x:xs) f = do
     (s',  x' ) <- f s x
     (s'', xs') <- statefulForM s' xs f
     return (s'', x' : xs')
-    
+
 uncons :: [a] -> Maybe (a,[a])
 uncons []     = Nothing
 uncons (x:xs) = Just (x,xs)
@@ -578,11 +578,20 @@ agUnif1' [x]    = agUnif1 x
 agUnif1' (x:xs) = do s <- agUnif1 x
                      t <- agUnif1' (map (agApplySubst s) xs)
                      return $ agCompSubst t s
-                     
+
 -- solve the constant matching problem
 -- FIXME: verify solution is valid
-agConstMatch :: AGExp1 -> Maybe AGSubst1
-agConstMatch (vs, cs) = agUnif1 (vs, cs ++ [-1])
+agConstMatch :: AGExp1 -> AGExp1 -> Maybe AGSubst1
+agConstMatch (vs1@(length -> m ), cs1@(length -> n ))
+             (vs2@(length -> m'), cs2@(length -> n'))
+  | m == m' && n == n'
+    = let vs = vs1
+          cs = zipWith (\c1 c2 -> c1 - c2) (cs1 ++ replicate m 0) (cs2 ++ vs2)
+       in case agUnif1 (vs, cs) of
+            Nothing    -> Nothing
+            Just subst -> Just (map f subst)
+                where f (vs, splitAt n -> (cs, cs')) = (zipWith (+) vs cs', cs)
+  | otherwise = error "agConstMatch: m /= m' || n /= n'"
 
 -- * AG-unification with free function symbols * --------------------------[ ]--
 
@@ -702,14 +711,6 @@ subst' x t t'@(X' x') | x == x'   = t
 subst' _ _ t'@(C  _ ) = t'
 subst' x t (F  f  ts) = F  f  (map (subst' x t) ts)
 subst' x t (F' f' ts) = F' f' (map (subst' x t) ts)
-
-substC :: TermAlg f f' c x => c -> T f f' c x -> T f f' c x -> T f f' c x
-substC c t t'@(X  _ ) = t'
-substC _ _ t'@(X' _ ) = t'
-substC c t t'@(C  c') | c == c'   = t
-                      | otherwise = t'
-substC c t (F  f  ts) = F  f  (map (substC c t) ts)
-substC c t (F' f' ts) = F' f' (map (substC c t) ts)
 
 -- the unification problem sigma is assumed to be in solved form
 applySubst :: TermAlg f f' x c => AGUnifProb f f' c x -> T f f' c x -> T f f' c x
@@ -913,21 +914,26 @@ agUnifN p@(classify -> (pe,pe',pi,ph))
             Just qe' -> agUnifN (pe ++ qe' ++ pi ++ ph)
     -- E-Match    (s in E, t in E'; guaranteed by 'classify')
     | Just ((s,t),pi') <- uncons pi
-        = let numV1 = max (numX  s) (numX  t)
-              numV2 = max (numX' s) (numX' t)
-              numC' = max (numC  s) (numC  t)
-           in do z <- newV
-                 case agConstMatch (toExp' numV1 numV2 numC' (s,t)) of
-                    Nothing -> return Nothing
-                    Just (map (id *** substC numC' z) . fromExp numV1 -> qI) ->
-                         agUnifN (pe ++ pe' ++ qI ++ [(z,t)] ++ pi' ++ ph)
+        = do z <- newV
+             let numV1 = max (numX  s) (numX  z)
+             let numV2 = max (numX' s) (numX' z)
+             let numC' = max (numC  s) (numC  z)
+             case agConstMatch (toExp numV1 numV2 numC' s)
+                               (toExp numV1 numV2 numC' z) of
+                Nothing -> return Nothing
+                Just (fromExp numV1 -> qI) ->
+                     agUnifN (pe ++ pe' ++ qI ++ [(z,t)] ++ pi' ++ ph)
     -- Merge-E-Match    (P_E and P_E' can both assumed to be solved at this point)
     -- FIXME: this is the non-terminating version of the rule
     | Just (x,_) <- minView $ dom pe `intersection` domNotMappingToVar pe'
     , ((_,s):pe1,pe2) <- partition ((==x) . fst) pe
-        = case agConstMatch (toExp (numX s) (numX' s) (numC s) s) of
+        = let numV1 = max (numX  s) (numX  x)
+              numV2 = max (numX' s) (numX' x)
+              numC' = max (numC  s) (numX  x)
+           in case agConstMatch (toExp numV1 numV2 numC' s)
+                                (toExp numV1 numV2 numC' x) of
                 Nothing -> return Nothing
-                Just (map (id *** substC (numC s) x) . fromExp (numX s) -> sigma) ->
+                Just (fromExp numV1 -> sigma) ->
                     -- FIXME: pe and sigma should have disjunct domains (ASSERT),
                     --        so can 'map (id *** applySubst sigma) pe'!
                     agUnifN (map (applySubst sigma *** applySubst sigma) pe

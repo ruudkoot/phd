@@ -17,6 +17,9 @@ tests =
     [("for",                            test_for)
     ,("statefulForM (1)",               test_statefulForM_1)
     ,("statefulForM (2)",               test_statefulForM_2)
+    ,("uncons (1)",                     test_uncons_1)
+    ,("uncons (2)",                     test_uncons_2)
+    ,("forEachWithContext (1)",         test_forEachWithContext_1)
     ,("(!!!)",                          test_III)
     ,("unionMap",                       test_unionMap)
     ,("unionMap'",                      test_unionMap')
@@ -121,6 +124,11 @@ tests =
     ,("agUnif1 (2)",                    test_agUnif1_2)         -- FIXME: normal form
     ,("agUnif1' (1)",                   test_agUnif1'_1)
     ,("agUnif1' (1')",                  test_agUnif1'_1')
+    ,("agConstMatch (1)",               test_agConstMatch_1)
+    ,("agConstMatch (1')",              test_agConstMatch_1')
+    ,("agConstMatch (2)",               test_agConstMatch_2)
+    ,("agConstMatch (2')",              test_agConstMatch_2')
+    ,("agConstMatch (3)",               test_agConstMatch_3)
     ,("newT (1)",                       test_newT_1)
     ,("homogeneous (1)",                test_homogeneous_1)
     ,("homogeneous' (1)",               test_homogeneous'_1)
@@ -166,6 +174,14 @@ test_statefulForM_2 = statefulForM (0::Int) [10,9..0] f =?= Nothing
                     return (t + 1, x - t)
                   else
                     fail "negative"
+                    
+test_uncons_1 = uncons ([]::[Int]) =?= Nothing
+
+test_uncons_2 = uncons [1..9] =?= Just (1, [2..9])
+
+test_forEachWithContext_1 = forEachWithContext f [1..9] =?= [43,41,39,37]
+    where f x xs | even x    = Just (sum xs)
+                 | otherwise = Nothing
                     
 -- * Debugging * ----------------------------------------------------------[X]--
 
@@ -1221,6 +1237,44 @@ test_agUnif1'_1' =
      in map (agApplySubst (fromJust $ agUnif1' exps)) exps
             =?=
         [([0,0,0],[]),([0,0,0],[])]
+
+test_agConstMatch_1 =
+    let exp1 = ([1,1,0],[1,1])
+        exp2 = ([0,0,0],[1,0])
+     in agConstMatch exp1 exp2
+            =?=
+        Just [([0,-1,0],[0,-1])
+             ,([0, 1,0],[0, 0])
+             ,([0, 0,1],[0, 0])
+             ]
+             
+test_agConstMatch_1' =
+    let exp1 = ([1,1,0],[1,1])
+        exp2 = ([0,0,0],[1,0])
+     in agApplySubst (fromJust $ agConstMatch exp1 exp2) exp1
+            =?=
+        agApplySubst (fromJust $ agConstMatch exp1 exp2) exp2
+        
+test_agConstMatch_2 =
+    let exp1 = ([1],[1,0])
+        exp2 = ([0],[0,1])
+     in agConstMatch exp1 exp2
+            =?=
+        Just [([0],[-1,1])]
+             
+test_agConstMatch_2' =
+    let exp1 = ([1],[1,0])
+        exp2 = ([0],[0,1])
+     in agApplySubst (fromJust $ agConstMatch exp1 exp2) exp1
+            =?=
+        agApplySubst (fromJust $ agConstMatch exp1 exp2) exp2
+        
+test_agConstMatch_3 =
+    let exp1 = ([0],[1,0])
+        exp2 = ([1],[0,1])
+     in agConstMatch exp1 exp2
+            =?=
+        Nothing
 
 -- * AG-unification with free function symbols * --------------------------[ ]--
 
