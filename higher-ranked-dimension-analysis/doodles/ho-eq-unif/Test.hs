@@ -158,6 +158,9 @@ tests =
     ,("toExp (1)",                      test_toExp_1)
     ,("toExp' (1)",                     test_toExp'_1)
     ,("fromExp (1)",                    test_fromExp_1)
+    ,("dom (1)",                        test_dom_1)
+    ,("domNotMappingToVar (1)",         test_domNotMappingToVar_1)
+    ,("isShared (1)",                   test_isShared_1)
     ]
     
 len = maximum (map (length . fst) tests)
@@ -1510,6 +1513,23 @@ test_fromExp_1 =
      in map (id *** toExp 2 2 2) (fromExp 2 (replicate 4 ([1,-2,3,-4],[5,-6])))
             =?=
         [(X 0 :: T Sig Sig Int Int, exp), (X 1, exp), (X' 0, exp), (X' 1, exp)]
+
+test_dom_1 =
+    dom [(X 0, undefined), (X 42, undefined), (X' 0, undefined), (X' 666, undefined)]
+        =?=
+    S.fromList [X 0 :: T Sig Sig Int Int, X 42, X' 0, X' 666]
+
+test_domNotMappingToVar_1 =
+    domNotMappingToVar [(X 0, X' 0), (X 42, F Unit []), (X' 0, X 0), (X' 666, C 1)]
+        =?=
+    S.fromList [X 42, X' 666 :: T Sig Sig Int Int]
+
+test_isShared_1 =
+    let pe  = [(X 0, X' 1), (X' 2, X 3)] :: AGUnifProb Sig Sig Int Int
+        pe' = [(X 0, C 0), (C 0, X' 1), (X 3, X' 2)]
+     in map (\x -> isShared x pe pe') [X 0, X' 1, X' 2, X 3]
+            =?=
+        [True, True, False, False]
 
 
 

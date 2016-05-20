@@ -883,6 +883,28 @@ fromExp v1 ss@(length -> v)
         | otherwise = foldr1 (\_ y -> F Mul [con x,y]) (replicate n (con x))
 
 
+dom :: TermAlg f f' c x => AGUnifProb f f' c x -> Set (T f f' c x)
+dom []             = Set.empty
+dom ((X  x ,_):xs) = Set.insert (X  x ) (dom xs)
+dom ((X' x',_):xs) = Set.insert (X' x') (dom xs)
+
+domNotMappingToVar :: TermAlg f f' c x => AGUnifProb f f' c x -> Set (T f f' c x)
+domNotMappingToVar []             = Set.empty
+domNotMappingToVar ((_,X  _ ):xs) = domNotMappingToVar xs
+domNotMappingToVar ((_,X' _ ):xs) = domNotMappingToVar xs
+domNotMappingToVar ((X  x ,_):xs) = Set.insert (X  x ) (domNotMappingToVar xs)
+domNotMappingToVar ((X' x',_):xs) = Set.insert (X' x') (domNotMappingToVar xs)
+
+isShared :: TermAlg f f' c x =>
+                    T f f' c x -> AGUnifProb f f' c x -> AGUnifProb f f' c x -> Bool
+isShared x pe pe'
+    = x `member` allVars pe
+        &&
+      x `member` allVars (filter (\(s,t) -> not (isVar s && isVar t)) pe')
+
+
+
+
 -- FIXME: unification problems are sets of UNORDERED pairs
 -- FIXME: this code is anti-monadic ("Nothing -> return Nothing")
 -- FIXME: swap State and Maybe?
@@ -956,27 +978,6 @@ agUnifN p@(classify -> (pe,pe',pi,ph))
         = agUnifN ([(x,y)] ++ map (applySubst [(x,y)] *** applySubst [(x,y)]) p')
     -- DONE
     | otherwise = return (Just p)
-
-
-dom :: TermAlg f f' c x => AGUnifProb f f' c x -> Set (T f f' c x)
-dom []             = Set.empty
-dom ((X  x ,_):xs) = Set.insert (X  x ) (dom xs)
-dom ((X' x',_):xs) = Set.insert (X' x') (dom xs)
-
-domNotMappingToVar :: TermAlg f f' c x => AGUnifProb f f' c x -> Set (T f f' c x)
-domNotMappingToVar []             = Set.empty
-domNotMappingToVar ((_,X  _ ):xs) = domNotMappingToVar xs
-domNotMappingToVar ((_,X' _ ):xs) = domNotMappingToVar xs
-domNotMappingToVar ((X  x ,_):xs) = Set.insert (X  x ) (domNotMappingToVar xs)
-domNotMappingToVar ((X' x',_):xs) = Set.insert (X' x') (domNotMappingToVar xs)
-
-
-isShared :: TermAlg f f' c x =>
-                    T f f' c x -> AGUnifProb f f' c x -> AGUnifProb f f' c x -> Bool
-isShared x pe pe'
-    = x `member` allVars pe
-        &&
-      x `member` allVars (filter (\(s,t) -> not (isVar s && isVar t)) pe')
 
 
 
