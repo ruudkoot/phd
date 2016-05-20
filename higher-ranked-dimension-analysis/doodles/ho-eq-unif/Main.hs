@@ -329,7 +329,7 @@ applyOrderReduction ordRedMap (A xs a ss)
     = case Map.lookup (A [] a ss) ordRedMap of
         Nothing -> A xs a (map (applyOrderReduction ordRedMap) ss)
         Just a' -> A xs a' []
-        
+
 isTrivialFlexibleSubterm :: Theory b s => Env b -> AlgebraicTerm b s -> Bool
 isTrivialFlexibleSubterm ctx (A [] (FreeV _) ys)
     = ys == map (\n -> bound ctx n) [0 .. length ctx - 1]
@@ -854,7 +854,7 @@ toExp' v1 v2 c (s,t) = mul (toExp'' s) (inv (toExp'' t))
   where
     toExp'' (X  x           ) = let (vs,cs) = unit in (set vs       x   1, cs)
     toExp'' (X' x'          ) = let (vs,cs) = unit in (set vs (v1 + x') 1, cs)
-    toExp'' (C  c           ) = let (vs,cs) = unit in (cs, set cs c 1)
+    toExp'' (C  c           ) = let (vs,cs) = unit in (vs, set cs c 1)
     toExp'' (F  Unit [     ]) = unit
     toExp'' (F  Inv  [t    ]) = inv (toExp'' t)
     toExp'' (F  Mul  [t1,t2]) = mul (toExp'' t1) (toExp'' t2)

@@ -3,6 +3,7 @@
 
 module Test where
 
+import Control.Arrow
 import Control.Monad
 import Control.Monad.State
 
@@ -154,6 +155,9 @@ tests =
     ,("numX",                           test_numX)
     ,("numX'",                          test_numX')
     ,("numC",                           test_numC)
+    ,("toExp (1)",                      test_toExp_1)
+    ,("toExp' (1)",                     test_toExp'_1)
+    ,("fromExp (1)",                    test_fromExp_1)
     ]
     
 len = maximum (map (length . fst) tests)
@@ -1484,11 +1488,28 @@ test_numC =
         =?=
     (42 + 1)
 
+test_toExp_1 =
+    toExp 2 2 2 (F Mul [F Mul [X 1, F Mul [X' 0, F Inv [X' 1]]]
+                       ,F Inv [F Mul [C 0, C 1]]
+                       ]
+                )
+        =?=
+    ([0,1,1,-1],[-1,-1])
 
+test_toExp'_1 =
+    let exp = (F Mul [F Mul [X 1, F Mul [X' 0, F Inv [X' 1]]]
+                     ,F Inv [F Mul [C 0, C 1]]
+                     ]
+              ) :: T Sig () Int Int
+     in toExp' 2 2 2 (exp, exp)
+            =?=
+        ([0,0,0,0],[0,0])
 
-
-
-
+test_fromExp_1 =
+    let exp = ([1,-2,3,-4],[5,-6])
+     in map (id *** toExp 2 2 2) (fromExp 2 (replicate 4 ([1,-2,3,-4],[5,-6])))
+            =?=
+        [(X 0 :: T Sig Sig Int Int, exp), (X 1, exp), (X' 0, exp), (X' 1, exp)]
 
 
 
