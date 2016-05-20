@@ -903,8 +903,6 @@ isShared x pe pe'
       x `member` allVars (filter (\(s,t) -> not (isVar s && isVar t)) pe')
 
 
-
-
 -- FIXME: unification problems are sets of UNORDERED pairs
 -- FIXME: this code is anti-monadic ("Nothing -> return Nothing")
 -- FIXME: swap State and Maybe?

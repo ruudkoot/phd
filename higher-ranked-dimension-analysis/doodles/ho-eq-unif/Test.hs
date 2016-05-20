@@ -140,6 +140,7 @@ tests =
     ,("homogeneous' (1)",               test_homogeneous'_1)
     ,("homogeneous'' (1)",              test_homogeneous''_1)
     ,("homogeneous'' (2)",              test_homogeneous''_2)
+    ,("homogeneous'' (3)",              test_homogeneous''_3)
     ,("isPureE",                        test_isPureE)
     ,("isPureE'",                       test_isPureE')
     ,("isHeterogeneous (1)",            test_isHeterogeneous_1)
@@ -150,6 +151,7 @@ tests =
     ,("freeUnif (1)",                   test_freeUnif_1)    -- FIXME: test for each rule
     ,("freeUnif (2)",                   test_freeUnif_2)
     ,("classify (1)",                   test_classify_1)
+    ,("classify (2)",                   test_classify_2)
     ,("inSolvedForm (1)",               test_inSolvedForm_1)
     ,("inSolvedForm (2)",               test_inSolvedForm_2)
     ,("numX",                           test_numX)
@@ -1261,6 +1263,8 @@ test_agUnif1'_1' =
      in map (agApplySubst (fromJust $ agUnif1' exps)) exps
             =?=
         [([0,0,0],[]),([0,0,0],[])]
+        
+-- FIXME: add Example 1 (p. 452)
 
 test_agConstMatch_1 =
     let exp1 = ([1,1,0],[1,1])
@@ -1373,6 +1377,17 @@ test_homogeneous''_2 =
          ,[(X' 0, F "f" [F "a" []])
           ,(X' 1, F "f" [F' Unit []])])
         ,2)
+        
+-- Example 3 (p. 454)
+test_homogeneous''_3 =
+    let t = F "*" [F' "f" [C "a"], F "*" [F' "f" [F "0" []], X "x"]]
+     in runState (homogeneous'' t) 0
+            =?=
+        ((F "*" [X' 0, F "*" [X' 1, X "x"]]
+         ,[(X' 0, F' "f" [C "a"])
+          ,(X' 1, F' "f" [F "0" []])]
+         )
+        ,2)
 
 test_isPureE =
     map isPureE
@@ -1449,15 +1464,27 @@ test_freeUnif_2 =
 
 -- FIXME: more tests for freeUnif (triggering each rule)
 
+-- Example 2 (p. 453)
 test_classify_1 =
-    let t1 = (F  "f" [X 1, X' 2, C 3],           F  "g" [X 1, X' 2, C 3]        )
-        t2 = (F' "f" [X 1, X' 2     ],           F' "g" [X 1, X' 2     ]        )
-        t3 = (F  "f" [X 1, X' 2, C 3],           F' "g" [X 1, X' 2     ]        )
-        t4 = (F  "f" [F' "f'" [X 1, X' 2, C 3]], F' "g" [F "f" [X 1, X' 2, C 3]])
-        ts = [t1, t2, t3, t4]
-     in classify ts
+    let t1  = (F "+" [X "x", F "1" []], F "0" [])
+        t2  = (X "x", F "*" [X "y", X "z"])
+        t3  = (F' "f" [X "x"], F "+" [X "y", X "z"])    -- gets reordered!
+        t3' = (F "+" [X "y", X "z"], F' "f" [X "x"])
+        t4  = (F' "f" [F "0" []], F' "f" [C "a"])
+     in classify [t1, t2, t3, t4]
             =?=
-        ([t1],[t2],[t3],[t4])
+        ([t1, t2], [], [t3'], [t4])
+
+test_classify_2 =
+    let t1  = (F  "f" [X 1, X' 2, C 3],           F  "g" [X 1, X' 2, C 3]        )
+        t2  = (F' "f" [X 1, X' 2     ],           F' "g" [X 1, X' 2     ]        )
+        t3  = (F  "f" [X 1, X' 2, C 3],           F' "g" [X 1, X' 2     ]        )
+        t3' = (F' "g" [X 1, X' 2     ],           F  "f" [X 1, X' 2, C 3]        )
+        t4  = (F  "f" [F' "f'" [X 1, X' 2, C 3]], F' "g" [F "f" [X 1, X' 2, C 3]])
+        t5  = (X 1, X' 1)
+     in classify [t1, t2, t3, t3', t4, t5]
+            =?=
+        ([t1],[t2, t5],[t3, t3],[t4])
 
 test_inSolvedForm_1 =
     let ts = [(X  1, F "f" [C 1])
