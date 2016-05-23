@@ -168,6 +168,7 @@ tests =
     ,("agUnifN (E-Res, 1)",             test_agUnifN_ERes_1)
     ,("agUnifN (E-Res, 1')",            test_agUnifN_ERes_1')
     ,("agUnifN (E'-Res, 1)",            test_agUnifN_E'Res_1)
+    ,("agUnifN (E-Match, 1)",           test_agUnifN_EMatch_1)
     ]
     
 len = maximum (map (length . fst) tests)
@@ -1615,7 +1616,18 @@ test_agUnifN_E'Res_1 =
         ,42
         )
 
-
+test_agUnifN_EMatch_1 =
+    let pi = [(F' "f'" [X 0, X 1]
+              ,F Mul [X 0, F Mul [C 0, X 1]]
+              )
+             ]
+     in runState (agUnifN $ pi) 0
+            =?=
+        (Just
+            [(X  0,F Mul [F Inv [X 1],F Mul [X' 0,F Inv [C 0]]])
+            ,(X' 0,F' "f'" [X 0,X 1])]
+        ,1
+        )
 
 
 
