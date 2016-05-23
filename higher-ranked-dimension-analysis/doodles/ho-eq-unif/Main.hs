@@ -916,8 +916,7 @@ agUnifN :: (TermAlg Sig f' Int Int, Show f')
 agUnifN p@(classify -> (pe,pe',pi,ph))
     -- VA
     | Just ((s,t),ph') <- uncons ph
-        = do -- () <- error "BREAK VA"
-             (s',rs) <- homogeneous'' s
+        = do (s',rs) <- homogeneous'' s
              (t',rt) <- homogeneous'' t
              agUnifN (pe ++ pe' ++ pi ++ ph' ++ [(s',t')] ++ rs ++ rt)
     -- E-Res
@@ -929,18 +928,14 @@ agUnifN p@(classify -> (pe,pe',pi,ph))
                 Nothing -> return Nothing
                 Just ee -> let qe = fromExp numV1 ee
                             in agUnifN (qe ++ pe' ++ pi ++ ph)
-    -- BREAK
-    -- | error "BREAK1" = error "BREAK1'"
     -- E'-Res
     | (not . inSolvedForm) pe'
-        = let () = error "BREAK E'-Res"
-           in case freeUnif pe' of
-                Nothing  -> return Nothing
-                Just qe' -> agUnifN (pe ++ qe' ++ pi ++ ph)
+        = case freeUnif pe' of
+            Nothing  -> return Nothing
+            Just qe' -> agUnifN (pe ++ qe' ++ pi ++ ph)
     -- E-Match    (s in E, t in E'; guaranteed by 'classify')
     | Just ((s,t),pi') <- uncons pi
-        = do () <- error "BREAK E-Match"
-             z <- newV
+        = do z <- newV
              let numV1 = max (numX  s) (numX  z)
              let numV2 = max (numX' s) (numX' z)
              let numC' = max (numC  s) (numC  z)
@@ -953,8 +948,7 @@ agUnifN p@(classify -> (pe,pe',pi,ph))
     -- FIXME: this is the non-terminating version of the rule
     | Just (x,_) <- minView $ dom pe `intersection` domNotMappingToVar pe'
     , ((_,s):pe1,pe2) <- partition ((==x) . fst) pe
-        = let ()    = error "BREAK Merge-E-Match"
-              numV1 = max (numX  s) (numX  x)
+        = let numV1 = max (numX  s) (numX  x)
               numV2 = max (numX' s) (numX' x)
               numC' = max (numC  s) (numX  x)
            in case agConstMatch (toExp numV1 numV2 numC' s)

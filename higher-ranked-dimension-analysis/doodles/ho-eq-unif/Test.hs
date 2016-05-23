@@ -167,6 +167,7 @@ tests =
     ,("agUnifN (VA, 1)",                test_agUnifN_VA_1)
     ,("agUnifN (E-Res, 1)",             test_agUnifN_ERes_1)
     ,("agUnifN (E-Res, 1')",            test_agUnifN_ERes_1')
+    ,("agUnifN (E'-Res, 1)",            test_agUnifN_E'Res_1)
     ]
     
 len = maximum (map (length . fst) tests)
@@ -1597,7 +1598,22 @@ test_agUnifN_ERes_1' =
             =?=
         True
 
-
+test_agUnifN_E'Res_1 =
+    let pe' = [(F' "f'" [F' "C0" [], X 0, X 1], F' "f'" [X 2, F' "C1" [], X 3])
+              ,(F' "f'" [X 2, F' "C1" [], X 4], F' "f'" [X 5, X 6, F' "C2" []])
+              ] :: AGUnifProb Sig String Int Int
+     in runState (agUnifN $ pe') 42
+            =?=
+        (Just
+             [(X 0,F' "C1" [])
+             ,(X 1,X 3)
+             ,(X 2,F' "C0" [])
+             ,(X 4,F' "C2" [])
+             ,(X 5,F' "C0" [])
+             ,(X 6,F' "C1" [])
+         ]
+        ,42
+        )
 
 
 
