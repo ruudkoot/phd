@@ -35,6 +35,9 @@ uncons :: [a] -> Maybe (a,[a])
 uncons []     = Nothing
 uncons (x:xs) = Just (x,xs)
 
+maximum' :: Ord a => a -> [a] -> a
+maximum' x xs = maximum (x : xs)
+
 -- order in which the list elements are fed to 'f' is weird,
 -- (but that does not matter if they represent sets)
 forEachWithContext :: (a -> [a] -> Maybe b) -> [a] -> [b]
@@ -829,22 +832,22 @@ numX :: T f f' c Int -> Int
 numX (X  x   ) = x + 1
 numX (X' _   ) = 0
 numX (C  _   ) = 0
-numX (F  _ ts) = maximum (map numX ts)
-numX (F' _ ts) = maximum (map numX ts)
+numX (F  _ ts) = maximum' 0 (map numX ts)
+numX (F' _ ts) = maximum' 0 (map numX ts)
 
 numX' :: T f f' c x -> Int
 numX' (X  _   ) = 0
 numX' (X' x'  ) = x' + 1
 numX' (C  _   ) = 0
-numX' (F  _ ts) = maximum (map numX' ts)
-numX' (F' _ ts) = maximum (map numX' ts)
+numX' (F  _ ts) = maximum' 0 (map numX' ts)
+numX' (F' _ ts) = maximum' 0 (map numX' ts)
 
 numC :: T f f' Int x -> Int
 numC (X  _   ) = 0
 numC (X' _   ) = 0
 numC (C  c   ) = c + 1
-numC (F  _ ts) = maximum (map numC ts)
-numC (F' _ ts) = maximum (map numC ts)
+numC (F  _ ts) = maximum' 0 (map numC ts)
+numC (F' _ ts) = maximum' 0 (map numC ts)
 
 toExp :: Int -> Int -> Int -> T Sig f' Int Int -> AGExp1
 toExp v1 v2 c s = toExp' v1 v2 c (s, F Unit [])
@@ -913,26 +916,31 @@ agUnifN :: (TermAlg Sig f' Int Int, Show f')
 agUnifN p@(classify -> (pe,pe',pi,ph))
     -- VA
     | Just ((s,t),ph') <- uncons ph
-        = do (s',rs) <- homogeneous'' s
+        = do -- () <- error "BREAK VA"
+             (s',rs) <- homogeneous'' s
              (t',rt) <- homogeneous'' t
              agUnifN (pe ++ pe' ++ pi ++ ph' ++ [(s',t')] ++ rs ++ rt)
     -- E-Res
     | (not . inSolvedForm) pe
-        = let numV1 = maximum (map (uncurry max . (numX  *** numX )) pe)
-              numV2 = maximum (map (uncurry max . (numX' *** numX')) pe)
-              numC' = maximum (map (uncurry max . (numC  *** numC )) pe)
+        = let numV1 = maximum' 0 (map (uncurry max . (numX  *** numX )) pe)
+              numV2 = maximum' 0 (map (uncurry max . (numX' *** numX')) pe)
+              numC' = maximum' 0 (map (uncurry max . (numC  *** numC )) pe)
            in case agUnif1' (map (toExp' numV1 numV2 numC') pe) of
                 Nothing -> return Nothing
                 Just ee -> let qe = fromExp numV1 ee
                             in agUnifN (qe ++ pe' ++ pi ++ ph)
+    -- BREAK
+    -- | error "BREAK1" = error "BREAK1'"
     -- E'-Res
     | (not . inSolvedForm) pe'
-        = case freeUnif pe' of
-            Nothing  -> return Nothing
-            Just qe' -> agUnifN (pe ++ qe' ++ pi ++ ph)
+        = let () = error "BREAK E'-Res"
+           in case freeUnif pe' of
+                Nothing  -> return Nothing
+                Just qe' -> agUnifN (pe ++ qe' ++ pi ++ ph)
     -- E-Match    (s in E, t in E'; guaranteed by 'classify')
     | Just ((s,t),pi') <- uncons pi
-        = do z <- newV
+        = do () <- error "BREAK E-Match"
+             z <- newV
              let numV1 = max (numX  s) (numX  z)
              let numV2 = max (numX' s) (numX' z)
              let numC' = max (numC  s) (numC  z)
@@ -945,7 +953,8 @@ agUnifN p@(classify -> (pe,pe',pi,ph))
     -- FIXME: this is the non-terminating version of the rule
     | Just (x,_) <- minView $ dom pe `intersection` domNotMappingToVar pe'
     , ((_,s):pe1,pe2) <- partition ((==x) . fst) pe
-        = let numV1 = max (numX  s) (numX  x)
+        = let ()    = error "BREAK Merge-E-Match"
+              numV1 = max (numX  s) (numX  x)
               numV2 = max (numX' s) (numX' x)
               numC' = max (numC  s) (numX  x)
            in case agConstMatch (toExp numV1 numV2 numC' s)
@@ -956,6 +965,7 @@ agUnifN p@(classify -> (pe,pe',pi,ph))
                     --        so can 'map (id *** applySubst sigma) pe'!
                     agUnifN (map (applySubst sigma *** applySubst sigma) pe
                                 ++ sigma ++ pe' ++ pi ++ ph)
+
     -- FIXME: prefer to eliminate X' over X (already taken care by classify?)
     -- Var-Rep          (need to check both possible orientations here!)
     -- FIXME: allVars is a very expensive computation than can be done incrementally
@@ -973,7 +983,8 @@ agUnifN p@(classify -> (pe,pe',pi,ph))
             else
                 Nothing
             ) p
-        = agUnifN ([(x,y)] ++ map (applySubst [(x,y)] *** applySubst [(x,y)]) p')
+        = agUnifN (map (applySubst [(x,y)] *** applySubst [(x,y)]) p')
+        
     -- DONE
     | otherwise = return (Just p)
 
@@ -984,6 +995,9 @@ agUnifN p@(classify -> (pe,pe',pi,ph))
 -- * Replace Merge-E-Match with (Mem-Int Mem-Rec*)
 -- * Elim (variable and constant elimination)
 -- * Rep (replacement)
+
+
+
 
 
 

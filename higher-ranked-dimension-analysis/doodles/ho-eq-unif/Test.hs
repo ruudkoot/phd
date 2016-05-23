@@ -1,5 +1,6 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE ViewPatterns           #-}
 
 module Test where
 
@@ -164,6 +165,8 @@ tests =
     ,("domNotMappingToVar (1)",         test_domNotMappingToVar_1)
     ,("isShared (1)",                   test_isShared_1)
     ,("agUnifN (VA, 1)",                test_agUnifN_VA_1)
+    ,("agUnifN (E-Res, 1)",             test_agUnifN_ERes_1)
+    ,("agUnifN (E-Res, 1')",            test_agUnifN_ERes_1')
     ]
     
 len = maximum (map (length . fst) tests)
@@ -1568,6 +1571,39 @@ test_agUnifN_VA_1 =
         (Just $ [(X 0,F Inv [X' 0]),(X' 0,F' "f'" [X' 1]),(X' 1,C 1)]
         ,2
         )
+
+test_agUnifN_ERes_1 =
+    let exp = ([2,3,-1,-4],[-5])
+        pe  = [((snd . head) (fromExp 4 [exp])
+               ,F Unit []
+               )] :: AGUnifProb Sig String Int Int
+     in runState (agUnifN $ pe) 42
+            =?=
+        (Just $ (:[]) $ (!!2) $ fromExp 4 $
+             [([ 1, 0, 0, 0],[ 0])
+             ,([ 0, 1, 0, 0],[ 0])
+             ,([ 2, 3, 0,-4],[-5])
+             ,([ 0, 0, 0, 1],[ 0])]
+        ,42
+        )
+
+test_agUnifN_ERes_1' =
+    let exp = ([2,3,-1,-4],[-5])
+        pe  = [((snd . head) (fromExp 4 [exp])
+               ,F Unit []
+               )] :: AGUnifProb Sig String Int Int
+        (Just up, _) = runState (agUnifN $ pe) 42
+     in inSolvedForm up
+            =?=
+        True
+
+
+
+
+
+
+
+
 
 
 
