@@ -908,14 +908,14 @@ isShared x pe pe'
 -- FIXME: swap State and Maybe?
 -- FIXME: that "numV1" stuff is horrible and slow (find better representation)
 -- FIXME: for better performance, only classify newly generated equations
-agUnifN :: TermAlg Sig f' Int Int
+agUnifN :: (TermAlg Sig f' Int Int, Show f')
             => AGUnifProb Sig f' Int Int -> State Int (Maybe (AGUnifProb Sig f' Int Int))
 agUnifN p@(classify -> (pe,pe',pi,ph))
     -- VA
     | Just ((s,t),ph') <- uncons ph
         = do (s',rs) <- homogeneous'' s
              (t',rt) <- homogeneous'' t
-             agUnifN (pe ++ pe' ++ pi ++ ph' ++ rs ++ rt)
+             agUnifN (pe ++ pe' ++ pi ++ ph' ++ [(s',t')] ++ rs ++ rt)
     -- E-Res
     | (not . inSolvedForm) pe
         = let numV1 = maximum (map (uncurry max . (numX  *** numX )) pe)

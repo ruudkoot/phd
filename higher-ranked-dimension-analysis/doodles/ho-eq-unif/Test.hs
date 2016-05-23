@@ -163,6 +163,7 @@ tests =
     ,("dom (1)",                        test_dom_1)
     ,("domNotMappingToVar (1)",         test_domNotMappingToVar_1)
     ,("isShared (1)",                   test_isShared_1)
+    ,("agUnifN (VA, 1)",                test_agUnifN_VA_1)
     ]
     
 len = maximum (map (length . fst) tests)
@@ -1558,7 +1559,15 @@ test_isShared_1 =
             =?=
         [True, True, False, False]
 
-
+test_agUnifN_VA_1 =
+    let ph = [(X 0
+              ,F Inv [F' "f'" [C 1]]
+              )] :: AGUnifProb Sig String Int Int
+     in runState (agUnifN $ ph) 0
+            =?=
+        (Just $ [(X 0,F Inv [X' 0]),(X' 0,F' "f'" [X' 1]),(X' 1,C 1)]
+        ,2
+        )
 
 
 
