@@ -596,10 +596,63 @@ agConstMatch (vs1@(length -> m ), cs1@(length -> n ))
                 where f (vs, splitAt n -> (cs, cs')) = (zipWith (+) vs cs', cs)
   | otherwise = error "agConstMatch: m /= m' || n /= n'"
 
+-- Solve a single equation in AG, while treating a set of given variables as
+-- constants.
+agUnif1TreatingAsConstant
+    :: TermAlg Sig f' Int Int
+    => [T Sig f' Int Int]               -- set of marked variables SMV
+    -> T Sig f' Int Int                 -- expression s
+    -> T Sig f' Int Int                 -- expression t
+    -> Maybe (AGUnifProb Sig f' Int Int)
+agUnif1TreatingAsConstant smv s t
+    = let numV1  = max (numX  s) (numX  t)
+          numV2  = max (numX' s) (numX' t)
+          numC'  = max (numC  s) (numC  t)
+          s'     = constantify numC' smv s
+          t'     = constantify numC' smv t
+          numC'' = max (numC s') (numC t')
+       in case agUnif1 (toExp' numV1 numV2 numC'' (s', t')) of
+            Nothing -> Nothing
+            Just agSubst -> Just $ map (deconstantify numC' *** deconstantify numC')
+                                       (fromExp numV1 agSubst)
+       
+constantify
+    :: TermAlg Sig f' Int Int
+    => Int
+    -> [T Sig f' Int Int]
+    -> T Sig f' Int Int
+    -> T Sig f' Int Int
+constantify numC' smv = constantify'
+  where
+    constantify' (X  x    ) | X  x  `elem` smv = C (numC' + 2 * x)
+                            | otherwise        = X x
+    constantify' (X' x'   ) | X' x' `elem` smv = C (numC' + 2 * x' + 1)
+                            | otherwise        = X' x'
+    constantify' (C  c    ) = C  c
+    constantify' (F  f  ts) = F  f  (map constantify' ts)
+    constantify' (F' f' ts) = F' f' (map constantify' ts)
+    
+deconstantify
+    :: TermAlg Sig f' Int Int
+    => Int
+    -> T Sig f' Int Int
+    -> T Sig f' Int Int
+deconstantify numC' = deconstantify'
+  where
+    deconstantify' (X  x ) = X  x
+    deconstantify' (X' x') = X' x'
+    deconstantify' (C  c ) | c < numC'                        = C  c
+                           | (x ,0) <- (c - numC') `divMod` 2 = X  x
+                           | (x',1) <- (c - numC') `divMod` 2 = X' x'
+    deconstantify' (F  f  ts) = F  f  (map deconstantify' ts)
+    deconstantify' (F' f' ts) = F' f' (map deconstantify' ts)
+
 -- * AG-unification with free function symbols * --------------------------[ ]--
 
 -- Boudet, Jouannaud & Schmidt-Schauß (1989)
 
+-- FIXME: instead of X and X': x --> Either x Int?
+-- FIXME: combine C and F?
 data T f f' c x
     = X  x                  -- variables            (E and E')
     | X' Int                -- fresh variables      (E and E')
@@ -950,19 +1003,11 @@ agUnifN p@(classify -> (pe,pe',pi,ph))
 
     -- Merge-E-Match    (P_E and P_E' can both assumed to be solved at this point)
     -- FIXME: this is the non-terminating version of the rule
-    | Just (x,_) <- minView $ dom pe `intersection` domNotMappingToVar pe'
+    -- FIXME: in Mem-Init: s in T(F,X)\X; in Merge-E-Match: s in T(F,X)?
+    | Just (x,_) <- minView $
+                        domNotMappingToVar pe `intersection` domNotMappingToVar pe'
     , ((_,s):pe1,pe2) <- partition ((==x) . fst) pe
-        = let numV1 = max (numX  s) (numX  x)
-              numV2 = max (numX' s) (numX' x)
-              numC' = max (numC  s) (numX  x)
-           in case agConstMatch (toExp numV1 numV2 numC' s)
-                                (toExp numV1 numV2 numC' x) of
-                Nothing -> return Nothing
-                Just (fromExp numV1 -> sigma) ->
-                    -- FIXME: pe and sigma should have disjunct domains (ASSERT),
-                    --        so can 'map (id *** applySubst sigma) pe'!
-                    agUnifN (map (applySubst sigma *** applySubst sigma) pe
-                                ++ sigma ++ pe' ++ pi ++ ph)
+        = memRec [((s,x),[x])] (pe1 ++ pe2 ++ pe' ++ pi ++ ph)
 
     -- Var-Rep          (need to check both possible orientations here!)
     -- FIXME: prefer to eliminate X' over X (already taken care by classify?)
@@ -987,7 +1032,17 @@ agUnifN p@(classify -> (pe,pe',pi,ph))
     | otherwise = return (Just p)
 
 
-
+memRec
+    :: (TermAlg Sig f' Int Int, Show f')
+    => [((T Sig f' Int Int, T Sig f' Int Int), [T Sig f' Int Int])]
+    -> AGUnifProb Sig f' Int Int
+    -> State Int (Maybe (AGUnifProb Sig f' Int Int))
+memRec [] p
+    = agUnifN p
+memRec (((s,x),smv):stack) p@(classify -> (pe,pe',pi,ph))
+    = let sigma = agUnif1TreatingAsConstant smv s x
+          theta = error "THETA"
+       in memRec (_ ++ stack) (_ ++ pe' ++ pi ++ ph)
 
 -- STILL TO DO FOR agUnifN:
 -- * Replace Merge-E-Match with (Mem-Init Mem-Rec*)
