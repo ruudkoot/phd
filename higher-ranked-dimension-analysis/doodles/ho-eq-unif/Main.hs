@@ -919,6 +919,7 @@ agUnifN p@(classify -> (pe,pe',pi,ph))
         = do (s',rs) <- homogeneous'' s
              (t',rt) <- homogeneous'' t
              agUnifN (pe ++ pe' ++ pi ++ ph' ++ [(s',t')] ++ rs ++ rt)
+
     -- E-Res
     | (not . inSolvedForm) pe
         = let numV1 = maximum' 0 (map (uncurry max . (numX  *** numX )) pe)
@@ -928,11 +929,13 @@ agUnifN p@(classify -> (pe,pe',pi,ph))
                 Nothing -> return Nothing
                 Just ee -> let qe = fromExp numV1 ee
                             in agUnifN (qe ++ pe' ++ pi ++ ph)
+
     -- E'-Res
     | (not . inSolvedForm) pe'
         = case freeUnif pe' of
             Nothing  -> return Nothing
             Just qe' -> agUnifN (pe ++ qe' ++ pi ++ ph)
+
     -- E-Match    (s in E, t in E'; guaranteed by 'classify')
     | Just ((s,t),pi') <- uncons pi
         = do z <- newV
@@ -944,6 +947,7 @@ agUnifN p@(classify -> (pe,pe',pi,ph))
                 Nothing -> return Nothing
                 Just (fromExp numV1 -> qI) ->
                      agUnifN (pe ++ pe' ++ qI ++ [(z,t)] ++ pi' ++ ph)
+
     -- Merge-E-Match    (P_E and P_E' can both assumed to be solved at this point)
     -- FIXME: this is the non-terminating version of the rule
     | Just (x,_) <- minView $ dom pe `intersection` domNotMappingToVar pe'
@@ -960,8 +964,8 @@ agUnifN p@(classify -> (pe,pe',pi,ph))
                     agUnifN (map (applySubst sigma *** applySubst sigma) pe
                                 ++ sigma ++ pe' ++ pi ++ ph)
 
-    -- FIXME: prefer to eliminate X' over X (already taken care by classify?)
     -- Var-Rep          (need to check both possible orientations here!)
+    -- FIXME: prefer to eliminate X' over X (already taken care by classify?)
     -- FIXME: allVars is a very expensive computation than can be done incrementally
     --        (e.g. tuple each equation with the variables occurring in that equation)
     |  (((x,y),p'):_) <- forEachWithContext (\(x,y) p' ->
@@ -986,7 +990,7 @@ agUnifN p@(classify -> (pe,pe',pi,ph))
 
 
 -- STILL TO DO FOR agUnifN:
--- * Replace Merge-E-Match with (Mem-Int Mem-Rec*)
+-- * Replace Merge-E-Match with (Mem-Init Mem-Rec*)
 -- * Elim (variable and constant elimination)
 -- * Rep (replacement)
 
