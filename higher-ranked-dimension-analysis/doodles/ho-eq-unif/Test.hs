@@ -188,6 +188,9 @@ tests =
     ,("agUnifN (Var-Rep, 4'')",         test_agUnifN_VarRep_4'')
     ,("agUnifN (Var-Rep, 4''')",        test_agUnifN_VarRep_4''')
     ,("agUnifN (Var-Rep, 5)",           test_agUnifN_VarRep_5)
+    ,("constantify (1)",                test_constantify_1)
+    ,("deconstantify (1)",              test_deconstantify_1)
+    ,("agUnif1TreatingAsConstant (1)",  test_agUnif1TreatingAsConstant_1)
     ]
     
 len = maximum (map (length . fst) tests)
@@ -1328,6 +1331,36 @@ test_agConstMatch_3 =
      in agConstMatch exp1 exp2
             =?=
         Nothing
+        
+test_constantify_1 =
+    let exp   = (F' "f'" [X 0, X 1, X' 0, X' 1, C 0, C 1]) :: T Sig String Int Int
+        exp'  = (F' "f'" [C 2, X 1, X' 0, C  5, C 0, C 1]) :: T Sig String Int Int
+        smv   = [X 0, X' 1] :: [T Sig String Int Int]
+        numC' = numC exp
+     in constantify numC' smv exp
+            =?=
+        exp'
+
+test_deconstantify_1 =
+    let exp   = (F' "f'" [X 0, X 1, X' 0, X' 1, C 0, C 1]) :: T Sig String Int Int
+        exp'  = (F' "f'" [C 2, X 1, X' 0, C  5, C 0, C 1]) :: T Sig String Int Int
+        numC' = numC exp
+     in deconstantify numC' exp'
+            =?=
+        exp
+        
+test_agUnif1TreatingAsConstant_1 =
+    let exp1 = (snd . head) (fromExp 5 [([2,3,-1,-4,-5],[])])
+        exp2 = (snd . head) (fromExp 5 [([0,0, 0, 0, 0],[])])
+        smv  = [X 4]
+     in (agUnif1TreatingAsConstant smv exp1 exp2 :: Maybe (AGUnifProb Sig String Int Int))
+            =?=
+        (Just $ fromExp 5 $
+             [([ 1, 0, 0, 0, 0],[])
+             ,([ 0, 1, 0, 0, 0],[])
+             ,([ 2, 3, 0,-4,-5],[])
+             ,([ 0, 0, 0, 1, 0],[])
+             ,([ 0, 0, 0, 0, 1],[])])    -- this last row!
 
 -- * AG-unification with free function symbols * --------------------------[ ]--
 

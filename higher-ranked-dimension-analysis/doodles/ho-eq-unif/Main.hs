@@ -1042,7 +1042,7 @@ memRec [] p
 memRec (((s,x),smv):stack) p@(classify -> (pe,pe',pi,ph))
     = let sigma = agUnif1TreatingAsConstant smv s x
           theta = error "THETA"
-       in memRec (_ ++ stack) (_ ++ pe' ++ pi ++ ph)
+       in memRec (undefined ++ stack) (undefined ++ pe' ++ pi ++ ph)
 
 -- STILL TO DO FOR agUnifN:
 -- * Replace Merge-E-Match with (Mem-Init Mem-Rec*)
