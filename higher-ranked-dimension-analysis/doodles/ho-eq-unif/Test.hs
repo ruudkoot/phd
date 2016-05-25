@@ -1680,15 +1680,15 @@ test_agUnifN_EMatch_1 =
             ,(X' 0,F' "f'" [X 0,X 1])]
         ,1
         )
-        
-        
+
+
 -- p. 458
 test_agUnifN_MergeEMatch_1 =
     let p = [(X 0, F' "f" [C 0])
             ,(X 1, F' "f" [C 1])
             ,(X 0, F Mul [X 1, X 2])
             ]
-     in runState (agUnifN p) 42
+     in runState (agUnifN p) 0
             =?=
         (Nothing
         ,666

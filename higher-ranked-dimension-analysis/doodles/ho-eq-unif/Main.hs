@@ -1032,6 +1032,7 @@ agUnifN p@(classify -> (pe,pe',pi,ph))
     | otherwise = return (Just p)
 
 
+-- FIXME: propagate failure of agUnif1TreatingAsConstant
 memRec
     :: (TermAlg Sig f' Int Int, Show f')
     => [((T Sig f' Int Int, T Sig f' Int Int), [T Sig f' Int Int])]
@@ -1040,9 +1041,20 @@ memRec
 memRec [] p
     = agUnifN p
 memRec (((s,x),smv):stack) p@(classify -> (pe,pe',pi,ph))
-    = let sigma = agUnif1TreatingAsConstant smv s x
-          theta = error "THETA"
-       in memRec (undefined ++ stack) (undefined ++ pe' ++ pi ++ ph)
+    = let Just sigma = agUnif1TreatingAsConstant smv s x
+          Just (z,_) = minView (domNotMappingToVar pe')             -- maxView?
+          theta  = [(z, x)]
+          sigma' = filter (\(x,_) -> not (x `member` domNotMappingToVar pe')) sigma
+          ys     = toList $
+                        domNotMappingToVar pe' `intersection` domNotMappingToVar sigma
+       in memRec
+            (map (\y -> ((applySubst theta (applySubst sigma y), applySubst theta y)
+                        ,applySubst theta y : smv)
+                        ) ys
+                ++ stack)
+            (map (applySubst theta *** applySubst theta)
+                    (map (applySubst sigma *** applySubst sigma) pe)
+                ++ sigma' ++ theta ++ pe' ++ pi ++ ph)
 
 -- STILL TO DO FOR agUnifN:
 -- * Replace Merge-E-Match with (Mem-Init Mem-Rec*)
