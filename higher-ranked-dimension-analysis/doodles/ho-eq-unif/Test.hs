@@ -171,6 +171,7 @@ tests =
     ,("agUnifN (E-Res, 1')",            test_agUnifN_ERes_1')
     ,("agUnifN (E'-Res, 1)",            test_agUnifN_E'Res_1)
     ,("agUnifN (E-Match, 1)",           test_agUnifN_EMatch_1)
+    ,("agUnifN (Merge-E-Match, 1)",     test_agUnifN_MergeEMatch_1)
     ,("agUnifN (Var-Rep, 1)",           test_agUnifN_VarRep_1)
     ,("agUnifN (Var-Rep, 1')",          test_agUnifN_VarRep_1')
     ,("agUnifN (Var-Rep, 1'')",         test_agUnifN_VarRep_1'')
@@ -1540,14 +1541,14 @@ test_classify_2 =
         t3' = (F' "g" [X 1, X' 2     ],           F  "f" [X 1, X' 2, C 3]        )
         t4  = (F  "f" [F' "f'" [X 1, X' 2, C 3]], F' "g" [F "f" [X 1, X' 2, C 3]])
         t5  = (X 1, X' 1)
-     in classify [t1, t2, t3, t3', t4, t5]
+     in classify ([t1, t2, t3, t3', t4, t5] :: AGUnifProb String String Int Int)
             =?=
         ([t1],[t2, t5],[t3, t3],[t4])
 
 test_inSolvedForm_1 =
     let ts = [(X  1, F "f" [C 1])
              ,(X' 1, F "f" [C 1])
-             ]
+             ] :: AGUnifProb String String Int Int
      in inSolvedForm ts
             =?=
         True
@@ -1556,7 +1557,7 @@ test_inSolvedForm_2 =
     let ts = [(X  1, F "f" [C 1])
              ,(X' 1, F "f" [C 1])
              ,(C  1, F "f" [C 1])
-             ]
+             ] :: AGUnifProb String String Int Int
      in inSolvedForm ts
             =?=
         False
@@ -1680,8 +1681,7 @@ test_agUnifN_EMatch_1 =
             ,(X' 0,F' "f'" [X 0,X 1])]
         ,1
         )
-
-
+        
 -- p. 458
 test_agUnifN_MergeEMatch_1 =
     let p = [(X 0, F' "f" [C 0])
@@ -1690,9 +1690,21 @@ test_agUnifN_MergeEMatch_1 =
             ]
      in runState (agUnifN p) 0
             =?=
-        (Nothing
-        ,666
+        (Just
+            [(X' 0,C 0)
+            ,(X' 1,C 1)
+            ,(X  2,F Mul [X 0,F Inv [X 1]])
+            ,(X  0,F' "f" [X' 0])
+            ,(X  1,F' "f" [X' 1])
+            ]
+        ,2
         )
+
+test1 = memRec [((F Mul [F Inv [X 2],X 0],X 1),[X 1,X 0])]
+               ([(X' 0 :: T Sig String Int Int,C 0),(X' 1,C 1)] ++ [] ++ [] ++ [(X 0,F' "f" [X' 0]),(X 1,F' "f" [X' 1])] ++ [] ++ [])
+
+test2 = memRec []
+               ([(X' 0,C 0),(X' 1,C 1)] ++ [(X 2,F Mul [X 0,F Inv [X 1]])] ++ [(X 0,X 1)] ++ [(X 0,F' "f" [X' 0]),(X 1,F' "f" [X' 1])] ++ [] ++ [])
 
 
 test_agUnifN_VarRep_1 =

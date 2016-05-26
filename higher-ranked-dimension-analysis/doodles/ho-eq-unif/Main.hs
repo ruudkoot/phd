@@ -874,8 +874,9 @@ classify (p@(s,t):ps)
 
 
 -- FIXME: does not check for idempotency (costly, might not be necessary)
-inSolvedForm :: AGUnifProb f f' c x -> Bool
-inSolvedForm = all inSolvedForm'
+inSolvedForm :: TermAlg f f' c x => AGUnifProb f f' c x -> Bool
+inSolvedForm xs = all inSolvedForm' xs
+                    && length xs == Set.size (Set.fromList (map fst xs))
   where inSolvedForm' (X  _, _) = True
         inSolvedForm' (X' _, _) = True
         inSolvedForm' _         = False
@@ -1029,7 +1030,9 @@ agUnifN p@(classify -> (pe,pe',pi,ph))
         = agUnifN (map (applySubst [(x,y)] *** applySubst [(x,y)]) p')
         
     -- DONE
-    | otherwise = return (Just p)
+    | otherwise      = return (Just p)
+    | inSolvedForm p = return (Just p)
+    | otherwise      = return Nothing
 
 
 -- FIXME: propagate failure of agUnif1TreatingAsConstant
@@ -1040,24 +1043,46 @@ memRec
     -> State Int (Maybe (AGUnifProb Sig f' Int Int))
 memRec [] p
     = agUnifN p
-memRec (((s,x),smv):stack) p@(classify -> (pe,pe',pi,ph))
+memRec (((s,x),smv):stack) p@(classify -> p'@(pe,pe',pi,ph))
     = let Just sigma = agUnif1TreatingAsConstant smv s x
-          Just (z,_) = minView (domNotMappingToVar pe')             -- maxView?
-          theta  = [(z, x)]
-          sigma' = filter (\(x,_) -> not (x `member` domNotMappingToVar pe')) sigma
+          -- FIXME: don't KNOW non-determinism..!
+          Just (z,_) = if x `member` domNotMappingToVar pe' then
+                        Just (x, undefined)
+                       else
+                        minView (domNotMappingToVar pe')             -- maxView?
+          theta  = if z == x then [] else [(z, x)]
+          sigma' = filter (\(x,y) -> not (x `member` domNotMappingToVar pe') && x /= y) sigma
           ys     = toList $
                         domNotMappingToVar pe' `intersection` domNotMappingToVar sigma
-       in memRec
-            (map (\y -> ((applySubst theta (applySubst sigma y), applySubst theta y)
+          pe_sigma_theta = map (applySubst theta *** applySubst theta)
+                                (map (applySubst sigma *** applySubst sigma) pe)
+          stack' = map (\y -> ((applySubst theta (applySubst sigma y), applySubst theta y)
                         ,applySubst theta y : smv)
                         ) ys
-                ++ stack)
-            (map (applySubst theta *** applySubst theta)
-                    (map (applySubst sigma *** applySubst sigma) pe)
-                ++ sigma' ++ theta ++ pe' ++ pi ++ ph)
-
+       in memRec
+                (stack' ++ stack)
+                (pe_sigma_theta ++ sigma' ++ theta ++ pe' ++ pi ++ ph)
+        {-
+          error $
+            "\ns              = "   ++ show s ++
+            "\nx              = "   ++ show x ++
+            "\nsmv            = "   ++ show smv ++
+            "\nstack          = "   ++ show stack ++
+            "\np'             = "   ++ show p' ++
+            "\nsigma          = "   ++ show sigma ++
+            "\nz              = "   ++ show z ++
+            "\ntheta          = "   ++ show theta ++
+            "\nys             = "   ++ show ys ++
+            "\npe_sigma_theta = "   ++ show pe_sigma_theta ++
+            "\nsigma'         = "   ++ show sigma' ++
+            "\nstack'         = "   ++ show stack' ++
+            "\np''            = "   ++ show (pe' ++ pi ++ ph)
+        -}
+          
+         
 -- STILL TO DO FOR agUnifN:
--- * Replace Merge-E-Match with (Mem-Init Mem-Rec*)
+-- * Unsure of Merge-E-Match
+--   - don't KNOW or don't CARE non-determinism when choosing 'z'?
 -- * Elim (variable and constant elimination)
 -- * Rep (replacement)
 
