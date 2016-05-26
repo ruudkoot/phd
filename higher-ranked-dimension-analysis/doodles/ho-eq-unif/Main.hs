@@ -10,6 +10,8 @@ import Control.Applicative ((<$>))
 import Control.Arrow ((***))
 import Control.Monad
 import Control.Monad.State
+import Control.Monad.Trans.Maybe
+import Control.Monad.Trans.List
 
 import Data.Function
 import Data.List (minimumBy, partition, sort, sortBy)
@@ -960,18 +962,29 @@ isShared x pe pe'
       x `member` allVars (filter (\(s,t) -> not (isVar s && isVar t)) pe')
 
 
+maybeT :: Monad m => Maybe a -> MaybeT m a
+maybeT = MaybeT . return
+
+listT :: Monad m => [a] -> ListT m a
+listT = ListT . return
+
+maybeToListT :: Monad m => Maybe a -> ListT m a
+maybeToListT Nothing  = listT []
+maybeToListT (Just x) = listT [x]
+
+
 -- FIXME: unification problems are sets of UNORDERED pairs
--- FIXME: this code is anti-monadic ("Nothing -> return Nothing")
--- FIXME: swap State and Maybe?
 -- FIXME: that "numV1" stuff is horrible and slow (find better representation)
 -- FIXME: for better performance, only classify newly generated equations
-agUnifN :: (TermAlg Sig f' Int Int, Show f')
-            => AGUnifProb Sig f' Int Int -> State Int (Maybe (AGUnifProb Sig f' Int Int))
-agUnifN p@(classify -> (pe,pe',pi,ph))
-    -- VA
+agUnifN
+    :: (TermAlg Sig f' Int Int, Show f')
+    => AGUnifProb Sig f' Int Int
+    -> ListT (State Int) (AGUnifProb Sig f' Int Int)
+agUnifN p@(classify -> (pe, pe', pi, ph))
+    -- VA (variable abstraction)
     | Just ((s,t),ph') <- uncons ph
-        = do (s',rs) <- homogeneous'' s
-             (t',rt) <- homogeneous'' t
+        = do (s',rs) <- lift $ homogeneous'' s
+             (t',rt) <- lift $ homogeneous'' t
              agUnifN (pe ++ pe' ++ pi ++ ph' ++ [(s',t')] ++ rs ++ rt)
 
     -- E-Res
@@ -979,28 +992,24 @@ agUnifN p@(classify -> (pe,pe',pi,ph))
         = let numV1 = maximum' 0 (map (uncurry max . (numX  *** numX )) pe)
               numV2 = maximum' 0 (map (uncurry max . (numX' *** numX')) pe)
               numC' = maximum' 0 (map (uncurry max . (numC  *** numC )) pe)
-           in case agUnif1' (map (toExp' numV1 numV2 numC') pe) of
-                Nothing -> return Nothing
-                Just ee -> let qe = fromExp numV1 ee
-                            in agUnifN (qe ++ pe' ++ pi ++ ph)
+           in do ee <- maybeToListT $ agUnif1' (map (toExp' numV1 numV2 numC') pe)
+                 let qe = fromExp numV1 ee
+                 agUnifN (qe ++ pe' ++ pi ++ ph)
 
     -- E'-Res
     | (not . inSolvedForm) pe'
-        = case freeUnif pe' of
-            Nothing  -> return Nothing
-            Just qe' -> agUnifN (pe ++ qe' ++ pi ++ ph)
+        = do qe' <- maybeToListT $ freeUnif pe'
+             agUnifN (pe ++ qe' ++ pi ++ ph)
 
     -- E-Match    (s in E, t in E'; guaranteed by 'classify')
     | Just ((s,t),pi') <- uncons pi
-        = do z <- newV
+        = do z <- lift $ newV
              let numV1 = max (numX  s) (numX  z)
              let numV2 = max (numX' s) (numX' z)
              let numC' = max (numC  s) (numC  z)
-             case agConstMatch (toExp numV1 numV2 numC' s)
-                               (toExp numV1 numV2 numC' z) of
-                Nothing -> return Nothing
-                Just (fromExp numV1 -> qI) ->
-                     agUnifN (pe ++ pe' ++ qI ++ [(z,t)] ++ pi' ++ ph)
+             (fromExp numV1 -> qI) <- maybeToListT $
+                agConstMatch (toExp numV1 numV2 numC' s) (toExp numV1 numV2 numC' z)
+             agUnifN (pe ++ pe' ++ qI ++ [(z,t)] ++ pi' ++ ph)
 
     -- Merge-E-Match    (P_E and P_E' can both assumed to be solved at this point)
     -- FIXME: this is the non-terminating version of the rule
@@ -1030,9 +1039,8 @@ agUnifN p@(classify -> (pe,pe',pi,ph))
         = agUnifN (map (applySubst [(x,y)] *** applySubst [(x,y)]) p')
         
     -- DONE
-    | otherwise      = return (Just p)
-    | inSolvedForm p = return (Just p)
-    | otherwise      = return Nothing
+    | inSolvedForm p = return p
+    | otherwise      = mzero
 
 
 -- FIXME: propagate failure of agUnif1TreatingAsConstant
@@ -1040,49 +1048,31 @@ memRec
     :: (TermAlg Sig f' Int Int, Show f')
     => [((T Sig f' Int Int, T Sig f' Int Int), [T Sig f' Int Int])]
     -> AGUnifProb Sig f' Int Int
-    -> State Int (Maybe (AGUnifProb Sig f' Int Int))
+    -> ListT (State Int) (AGUnifProb Sig f' Int Int)
 memRec [] p
     = agUnifN p
 memRec (((s,x),smv):stack) p@(classify -> p'@(pe,pe',pi,ph))
-    = let Just sigma = agUnif1TreatingAsConstant smv s x
-          -- FIXME: don't KNOW non-determinism..!
-          Just (z,_) = if x `member` domNotMappingToVar pe' then
-                        Just (x, undefined)
-                       else
-                        minView (domNotMappingToVar pe')             -- maxView?
-          theta  = if z == x then [] else [(z, x)]
-          sigma' = filter (\(x,y) -> not (x `member` domNotMappingToVar pe') && x /= y) sigma
-          ys     = toList $
+    = do sigma <- maybeToListT $ agUnif1TreatingAsConstant smv s x
+    
+         -- NON-DETERMINISTICALLY (DON'T KNOW) CHOOSE z!
+         z <- (listT . toList) (domNotMappingToVar pe')
+
+         let theta  = if z == x then [] else [(z, x)]
+         let sigma' = filter (\(x,y) -> not (x `member` domNotMappingToVar pe') && x /= y) sigma
+         let ys     = toList $
                         domNotMappingToVar pe' `intersection` domNotMappingToVar sigma
-          pe_sigma_theta = map (applySubst theta *** applySubst theta)
+         let pe_sigma_theta = map (applySubst theta *** applySubst theta)
                                 (map (applySubst sigma *** applySubst sigma) pe)
-          stack' = map (\y -> ((applySubst theta (applySubst sigma y), applySubst theta y)
-                        ,applySubst theta y : smv)
-                        ) ys
-       in memRec
-                (stack' ++ stack)
-                (pe_sigma_theta ++ sigma' ++ theta ++ pe' ++ pi ++ ph)
-        {-
-          error $
-            "\ns              = "   ++ show s ++
-            "\nx              = "   ++ show x ++
-            "\nsmv            = "   ++ show smv ++
-            "\nstack          = "   ++ show stack ++
-            "\np'             = "   ++ show p' ++
-            "\nsigma          = "   ++ show sigma ++
-            "\nz              = "   ++ show z ++
-            "\ntheta          = "   ++ show theta ++
-            "\nys             = "   ++ show ys ++
-            "\npe_sigma_theta = "   ++ show pe_sigma_theta ++
-            "\nsigma'         = "   ++ show sigma' ++
-            "\nstack'         = "   ++ show stack' ++
-            "\np''            = "   ++ show (pe' ++ pi ++ ph)
-        -}
-          
+         let stack' = map (\y ->
+                            ((applySubst theta (applySubst sigma y), applySubst theta y)
+                            ,applySubst theta y : smv)
+                          ) ys
+
+         memRec (stack' ++ stack) (pe_sigma_theta ++ sigma' ++ theta ++ pe' ++ pi ++ ph)
+
          
 -- STILL TO DO FOR agUnifN:
--- * Unsure of Merge-E-Match
---   - don't KNOW or don't CARE non-determinism when choosing 'z'?
+-- * Simplif
 -- * Elim (variable and constant elimination)
 -- * Rep (replacement)
 

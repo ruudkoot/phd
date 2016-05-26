@@ -7,6 +7,8 @@ module Test where
 import Control.Arrow
 import Control.Monad
 import Control.Monad.State
+import Control.Monad.Trans.Maybe (runMaybeT)
+import Control.Monad.Trans.List  (runListT)
 
 import Data.Function
 import Data.List
@@ -1621,9 +1623,9 @@ test_agUnifN_VA_1 =
     let ph = [(X 0
               ,F Inv [F' "f'" [C 1]]
               )] :: AGUnifProb Sig String Int Int
-     in runState (agUnifN $ ph) 0
+     in runState (runListT . agUnifN $ ph) 0
             =?=
-        (Just $ [(X 0,F Inv [X' 0]),(X' 0,F' "f'" [X' 1]),(X' 1,C 1)]
+        (return $ [(X 0,F Inv [X' 0]),(X' 0,F' "f'" [X' 1]),(X' 1,C 1)]
         ,2
         )
 
@@ -1632,9 +1634,9 @@ test_agUnifN_ERes_1 =
         pe  = [((snd . head) (fromExp 4 [exp])
                ,F Unit []
                )] :: AGUnifProb Sig String Int Int
-     in runState (agUnifN $ pe) 42
+     in runState (runListT . agUnifN $ pe) 42
             =?=
-        (Just $ (:[]) $ (!!2) $ fromExp 4 $
+        (return $ (:[]) $ (!!2) $ fromExp 4 $
              [([ 1, 0, 0, 0],[ 0])
              ,([ 0, 1, 0, 0],[ 0])
              ,([ 2, 3, 0,-4],[-5])
@@ -1647,7 +1649,7 @@ test_agUnifN_ERes_1' =
         pe  = [((snd . head) (fromExp 4 [exp])
                ,F Unit []
                )] :: AGUnifProb Sig String Int Int
-        (Just up, _) = runState (agUnifN $ pe) 42
+        ([up], _) = runState (runListT . agUnifN $ pe) 42
      in inSolvedForm up
             =?=
         True
@@ -1656,9 +1658,9 @@ test_agUnifN_E'Res_1 =
     let pe' = [(F' "f'" [F' "C0" [], X 0, X 1], F' "f'" [X 2, F' "C1" [], X 3])
               ,(F' "f'" [X 2, F' "C1" [], X 4], F' "f'" [X 5, X 6, F' "C2" []])
               ] :: AGUnifProb Sig String Int Int
-     in runState (agUnifN $ pe') 42
+     in runState (runListT . agUnifN $ pe') 42
             =?=
-        (Just
+        (return
              [(X 0,F' "C1" [])
              ,(X 1,X 3)
              ,(X 2,F' "C0" [])
@@ -1674,9 +1676,9 @@ test_agUnifN_EMatch_1 =
               ,F Mul [X 0, F Mul [C 0, X 1]]
               )
              ]
-     in runState (agUnifN $ pi) 0
+     in runState (runListT . agUnifN $ pi) 0
             =?=
-        (Just
+        (return
             [(X  0,F Mul [F Inv [X 1],F Mul [X' 0,F Inv [C 0]]])
             ,(X' 0,F' "f'" [X 0,X 1])]
         ,1
@@ -1688,9 +1690,9 @@ test_agUnifN_MergeEMatch_1 =
             ,(X 1, F' "f" [C 1])
             ,(X 0, F Mul [X 1, X 2])
             ]
-     in runState (agUnifN p) 0
+     in runState (runListT . agUnifN $ p) 0
             =?=
-        (Just
+        (return
             [(X' 0,C 0)
             ,(X' 1,C 1)
             ,(X  2,F Mul [X 0,F Inv [X 1]])
@@ -1712,7 +1714,8 @@ test_agUnifN_VarRep_1 =
         notShared x = [(X 2, F Inv [x])]
         p           = [(X 3, X 4)] ++ notShared (X 3) ++ shared (X 4)
                             :: AGUnifProb Sig String Int Int
-        (Just (sortBy (compare `on` fst) -> p'), 0) = runState (agUnifN p) 0
+        ([sortBy (compare `on` fst) -> p'], 0)
+            = runState (runListT . agUnifN $ p) 0
      in p'
             =?=
         (shared (X 4) ++ notShared (X 4))
@@ -1722,7 +1725,8 @@ test_agUnifN_VarRep_1' =
         notShared x = [(X 2, F Inv [x])]
         p           = [(X 4, X 3)] ++ notShared (X 3) ++ shared (X 4)
                             :: AGUnifProb Sig String Int Int
-        (Just (sortBy (compare `on` fst) -> p'), 0) = runState (agUnifN p) 0
+        ([sortBy (compare `on` fst) -> p'], 0)
+            = runState (runListT . agUnifN $ p) 0
      in p'
             =?=
         (shared (X 4) ++ notShared (X 4))
@@ -1732,7 +1736,8 @@ test_agUnifN_VarRep_1'' =
         notShared x = [(X 2, F Inv [x])]
         p           = [(X 3, X' 4)] ++ notShared (X 3) ++ shared (X' 4)
                             :: AGUnifProb Sig String Int Int
-        (Just (sortBy (compare `on` fst) -> p'), 0) = runState (agUnifN p) 0
+        ([sortBy (compare `on` fst) -> p'], 0)
+            = runState (runListT . agUnifN $ p) 0
      in p'
             =?=
         (shared (X' 4) ++ notShared (X' 4))
@@ -1742,7 +1747,8 @@ test_agUnifN_VarRep_1''' =
         notShared x = [(X 2, F Inv [x])]
         p           = [(X' 3, X 4)] ++ notShared (X' 3) ++ shared (X 4)
                             :: AGUnifProb Sig String Int Int
-        (Just (sortBy (compare `on` fst) -> p'), 0) = runState (agUnifN p) 0
+        ([sortBy (compare `on` fst) -> p'], 0)
+            = runState (runListT . agUnifN $ p) 0
      in p'
             =?=
         (shared (X 4) ++ notShared (X 4))
@@ -1752,7 +1758,8 @@ test_agUnifN_VarRep_2 =
         notShared x = [(X 2, F Inv [x])]
         p           = [(X 3, X 4)] ++ shared (X 3) ++ notShared (X 4)
                             :: AGUnifProb Sig String Int Int
-        (Just (sortBy (compare `on` fst) -> p'), 0) = runState (agUnifN p) 0
+        ([sortBy (compare `on` fst) -> p'], 0)
+            = runState (runListT . agUnifN $ p) 0
      in p'
             =?=
         (shared (X 3) ++ notShared (X 3))
@@ -1762,7 +1769,8 @@ test_agUnifN_VarRep_2' =
         notShared x = [(X 2, F Inv [x])]
         p           = [(X 4, X 3)] ++ shared (X 3) ++ notShared (X 4)
                             :: AGUnifProb Sig String Int Int
-        (Just (sortBy (compare `on` fst) -> p'), 0) = runState (agUnifN p) 0
+        ([sortBy (compare `on` fst) -> p'], 0)
+            = runState (runListT . agUnifN $ p) 0
      in p'
             =?=
         (shared (X 3) ++ notShared (X 3))
@@ -1772,7 +1780,8 @@ test_agUnifN_VarRep_2'' =
         notShared x = [(X 2, F Inv [x])]
         p           = [(X 4, X' 3)] ++ shared (X' 3) ++ notShared (X 4)
                             :: AGUnifProb Sig String Int Int
-        (Just (sortBy (compare `on` fst) -> p'), 0) = runState (agUnifN p) 0
+        ([sortBy (compare `on` fst) -> p'], 0)
+            = runState (runListT . agUnifN $ p) 0
      in p'
             =?=
         (shared (X' 3) ++ notShared (X' 3))
@@ -1782,7 +1791,8 @@ test_agUnifN_VarRep_2''' =
         notShared x = [(X 2, F Inv [x])]
         p           = [(X' 4, X 3)] ++ shared (X 3) ++ notShared (X' 4)
                             :: AGUnifProb Sig String Int Int
-        (Just (sortBy (compare `on` fst) -> p'), 0) = runState (agUnifN p) 0
+        ([sortBy (compare `on` fst) -> p'], 0)
+            = runState (runListT . agUnifN $ p) 0
      in p'
             =?=
         (shared (X 3) ++ notShared (X 3))
@@ -1792,7 +1802,8 @@ test_agUnifN_VarRep_3 =
         notShared' x = [(X 1, F' "f'" [x])]
         p            = [(X 2, X 3)] ++ notShared (X 2) ++ notShared' (X 3)
                             :: AGUnifProb Sig String Int Int
-        (Just (sortBy (compare `on` fst) -> p'), 0) = runState (agUnifN p) 0
+        ([sortBy (compare `on` fst) -> p'], 0)
+            = runState (runListT . agUnifN $ p) 0
      in p'
             =?=
         (notShared (X 3) ++ notShared' (X 3))
@@ -1802,7 +1813,8 @@ test_agUnifN_VarRep_3' =
         notShared' x = [(X 1, F' "f'" [x])]
         p            = [(X 3, X 2)] ++ notShared (X 2) ++ notShared' (X 3)
                             :: AGUnifProb Sig String Int Int
-        (Just (sortBy (compare `on` fst) -> p'), 0) = runState (agUnifN p) 0
+        ([sortBy (compare `on` fst) -> p'], 0)
+            = runState (runListT . agUnifN $ p) 0
      in p'
             =?=
         (notShared (X 2) ++ notShared' (X 2))
@@ -1812,7 +1824,8 @@ test_agUnifN_VarRep_3'' =
         notShared' x = [(X 1, F' "f'" [x])]
         p            = [(X 2, X' 3)] ++ notShared (X 2) ++ notShared' (X' 3)
                             :: AGUnifProb Sig String Int Int
-        (Just (sortBy (compare `on` fst) -> p'), 0) = runState (agUnifN p) 0
+        ([sortBy (compare `on` fst) -> p'], 0)
+            = runState (runListT . agUnifN $ p) 0
      in p'
             =?=
         (notShared (X' 3) ++ notShared' (X' 3))
@@ -1822,7 +1835,8 @@ test_agUnifN_VarRep_3''' =
         notShared' x = [(X 1, F' "f'" [x])]
         p            = [(X' 2, X 3)] ++ notShared (X' 2) ++ notShared' (X 3)
                             :: AGUnifProb Sig String Int Int
-        (Just (sortBy (compare `on` fst) -> p'), 0) = runState (agUnifN p) 0
+        ([sortBy (compare `on` fst) -> p'], 0)
+            = runState (runListT . agUnifN $ p) 0
      in p'
             =?=
         (notShared (X 3) ++ notShared' (X 3))
@@ -1832,7 +1846,8 @@ test_agUnifN_VarRep_4 =
         shared' x = [(X 2, F' "f'" [x]), (X 3, F Inv [x])]
         p         = [(X 4, X 5)] ++ shared (X 4) ++ shared' (X 5)
                             :: AGUnifProb Sig String Int Int
-        (Just (sortBy (compare `on` fst) -> p'), 0) = runState (agUnifN p) 0
+        ([sortBy (compare `on` fst) -> p'], 0)
+            = runState (runListT . agUnifN $ p) 0
      in p'
             =?=
         (shared (X 5) ++ shared' (X 5))
@@ -1842,7 +1857,8 @@ test_agUnifN_VarRep_4' =
         shared' x = [(X 2, F' "f'" [x]), (X 3, F Inv [x])]
         p         = [(X 5, X 4)] ++ shared (X 4) ++ shared' (X 5)
                             :: AGUnifProb Sig String Int Int
-        (Just (sortBy (compare `on` fst) -> p'), 0) = runState (agUnifN p) 0
+        ([sortBy (compare `on` fst) -> p'], 0)
+            = runState (runListT . agUnifN $ p) 0
      in p'
             =?=
         (shared (X 4) ++ shared' (X 4))
@@ -1852,7 +1868,8 @@ test_agUnifN_VarRep_4'' =
         shared' x = [(X 2, F' "f'" [x]), (X 3, F Inv [x])]
         p         = [(X 4, X' 5)] ++ shared (X 4) ++ shared' (X' 5)
                             :: AGUnifProb Sig String Int Int
-        (Just (sortBy (compare `on` fst) -> p'), 0) = runState (agUnifN p) 0
+        ([sortBy (compare `on` fst) -> p'], 0)
+            = runState (runListT . agUnifN $ p) 0
      in p'
             =?=
         (shared (X' 5) ++ shared' (X' 5))
@@ -1862,7 +1879,8 @@ test_agUnifN_VarRep_4''' =
         shared' x = [(X 2, F' "f'" [x]), (X 3, F Inv [x])]
         p         = [(X' 4, X 5)] ++ shared (X' 4) ++ shared' (X 5)
                             :: AGUnifProb Sig String Int Int
-        (Just (sortBy (compare `on` fst) -> p'), 0) = runState (agUnifN p) 0
+        ([sortBy (compare `on` fst) -> p'], 0)
+            = runState (runListT . agUnifN $ p) 0
      in p'
             =?=
         (shared (X 5) ++ shared' (X 5))
@@ -1870,7 +1888,8 @@ test_agUnifN_VarRep_4''' =
 test_agUnifN_VarRep_5 =
     let p = [(X 0, X 1), (X 2, F Inv [X 0])]
                 :: AGUnifProb Sig String Int Int
-        (Just (sortBy (compare `on` fst) -> p'), 0) = runState (agUnifN p) 0
+        ([sortBy (compare `on` fst) -> p'], 0)
+            = runState (runListT . agUnifN $ p) 0
      in p'
             =?=
         p
