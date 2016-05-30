@@ -1702,13 +1702,6 @@ test_agUnifN_MergeEMatch_1 =
         ,2
         )
 
-test1 = memRec [((F Mul [F Inv [X 2],X 0],X 1),[X 1,X 0])]
-               ([(X' 0 :: T Sig String Int Int,C 0),(X' 1,C 1)] ++ [] ++ [] ++ [(X 0,F' "f" [X' 0]),(X 1,F' "f" [X' 1])] ++ [] ++ [])
-
-test2 = memRec []
-               ([(X' 0,C 0),(X' 1,C 1)] ++ [(X 2,F Mul [X 0,F Inv [X 1]])] ++ [(X 0,X 1)] ++ [(X 0,F' "f" [X' 0]),(X 1,F' "f" [X' 1])] ++ [] ++ [])
-
-
 test_agUnifN_VarRep_1 =
     let shared    x = [(X 0, F Inv [x]), (X 1, F' "f'" [x])]
         notShared x = [(X 2, F Inv [x])]
@@ -1893,4 +1886,38 @@ test_agUnifN_VarRep_5 =
      in p'
             =?=
         p
+
+-- should have 2! = 2 unique solutions (Liu & Lynch)
+test_agUnifN_1 =
+    let p = [(F Mul [F' "f" [X 0], F' "f" [X 1]]
+             ,F Mul [F' "f" [C 0], F' "f" [C 1]])]
+                :: AGUnifProb Sig String Int Int
+        (nub . map (sortBy (compare `on` fst)) -> ps', _)
+            = runState (runListT . agUnifN $ p) 0
+     in ps'
+            =?=
+        []
+        
+-- should have 3! = 6 unique solutions (Liu & Lynch)
+test_agUnifN_2 =
+    let p = [(F Mul [F' "f" [X 0], F Mul [F' "f" [X 1], F' "f" [X 2]]]
+             ,F Mul [F' "f" [C 0], F Mul [F' "f" [C 1], F' "f" [C 2]]])]
+                :: AGUnifProb Sig String Int Int
+        (nub . map (sortBy (compare `on` fst)) -> ps', _)
+            = runState (runListT . agUnifN $ p) 0
+     in ps'
+            =?=
+        []
+        
+-- should have 4! = 24 unique solutions (Liu & Lynch)
+test_agUnifN_3 =
+    let p = [(F Mul [F' "f" [X 0], F Mul [F' "f" [X 1], F Mul [F' "f" [X 2], F' "f" [X 3]]]]
+             ,F Mul [F' "f" [C 0], F Mul [F' "f" [C 1], F Mul [F' "f" [C 2], F' "f" [C 3]]]])]
+                :: AGUnifProb Sig String Int Int
+        (nub . map (sortBy (compare `on` fst)) -> ps', _)
+            = runState (runListT . agUnifN $ p) 0
+     in ps'
+            =?=
+        []
+        
 
