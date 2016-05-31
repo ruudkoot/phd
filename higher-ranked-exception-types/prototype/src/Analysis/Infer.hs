@@ -15,6 +15,61 @@ x # y = (x, y)
 infixr 0 #
 
 inferenceExamples = map (\(l,x) -> (l, show x, mathjax' x)) [
+    "map"                           # exMap,
+    "id"                            # exId,
+    "constE"                        # exConstE,
+    "map id"                        # App exMap exId,
+    "map constE"                    # App exMap exConstE,
+    "tail"                          # exTail,
+    "binOp"                         # exBinOp,
+    "apply"                         # exApply,
+    "etaExpandedExn"                # exEtaExpandedExn,
+    "etaContractedExn"              # exEtaContractedExn,
+    "etaExpandedExn True"           # App exEtaExpandedExn (Con True),
+    "etaContractedExn True"         # App exEtaContractedExn (Con True),
+    "etaExpandedExn `seq` True"     # Seq exEtaExpandedExn (Con True),
+    "etaContractedExn `seq` True"   # Seq exEtaContractedExn (Con True),
+    "f"                             # exF,
+    "dussartHengleinMossin"         # exDHM,
+    -- TODO: Glynn, Stuckey, Sulzman (not in paper)
+    "risers"                        # exRisers
+  ] -- ++ inferenceExamples'
+  where
+    exMap
+        = FIX 1 ((Bool :-> Bool) :-> (List Bool :-> List Bool)) $
+            Abs 2 (Bool :-> Bool) $ Abs 3 (List Bool) $
+                Case (Var 3) (Nil Bool) 4 5 $
+                    Cons (App (Var 2) (Var 4)) (App (App (Var 1) (Var 2)) (Var 5))
+    exId
+        = Abs 6 (Bool) (Var 6)
+    exConstE
+        = Abs 6 (Bool) (Crash "E" Bool)
+    exTail
+        = Abs 1 (List Bool) (Case (Var 1) (Crash "EmptyList" (List Bool)) 2 3 (Var 3))
+    exBinOp
+        = Abs 1 (Int) $ Abs 2 (Int) $ BinOp (Var 1) (Var 2)
+    exApply
+        = Abs 4 (Bool :-> Bool) $ Abs 5 Bool $ App (Var 4) (Var 5)
+    exEtaExpandedExn
+        = Abs 1 Bool $ Crash "E" Bool
+    exEtaContractedExn
+        = Crash "E" (Bool :-> Bool)
+    exF
+        = Abs 1 Bool $ Seq (Var 1) (Abs 2 Bool $ Var 2)
+    exDHM
+        = FIX 1 (Bool :-> (Bool :-> Bool)) $ Abs 2 Bool $ Abs 3 Bool $
+                If (Var 2) (Con True) (App (App (Var 1) (Var 3)) (Var 2))
+    exRisers
+        = FIX 1 (List Int :-> List (List Int)) $ Abs 2 (List Int) $
+            Case (Var 2) (Nil (List Int)) 3 4 $
+                Case (Var 4) (Cons (Cons (Var 3) (Nil Int)) (Nil (List Int))) 5 6 $
+                    Case (App (Var 1) (Cons (Var 5) (Var 6)))
+                         (Crash "IrrefutablePattern" (List (List Int))) 7 8 $
+                        If (BinOp (Var 3) (Var 5))
+                           (Cons (Cons (Var 3) (Var 7)) (Var 8))
+                           (Cons (Cons (Var 3) (Nil Int)) (Cons (Var 7) (Var 8)))
+
+inferenceExamples' = map (\(l,x) -> (l, show x, mathjax' x)) [
     -- eta-conversion
     "eta1" # exEta1,
     "eta2" # exEta2,

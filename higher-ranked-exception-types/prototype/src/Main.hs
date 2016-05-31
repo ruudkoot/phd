@@ -176,7 +176,7 @@ inferencePage = msum [ viewForm, processForm ] where
         let ((dt,de,re), elabTm, exnTy, exn)
                 = An.evalFresh (An.reconstruct [] [] expr) 1
         let elabTy
-                = An.evalFresh (An.checkElabTm' [] [] elabTm) 666
+                = An.evalFresh (An.checkElabTm' [] [] elabTm) 1
 
         ok $ template title $ do
 

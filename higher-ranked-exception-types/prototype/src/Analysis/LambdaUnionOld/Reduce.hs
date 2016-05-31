@@ -41,15 +41,13 @@ reduce (Union (Var x) (Union (Var x') e))
     | x == x' = return (Union (Var x) e)
 reduce (Union (Con c) (Union (Con c') e))
     | c == c' = return (Union (Con c) e)
--- ∪-congruence(?) [WIDENING!]
-{-
+-- ∪-congruence(?) [WIDENING!] [NEEDED FOR MAP, WHY? NOT FOR RISERS?]
 reduce (Union e1 e2)
     | Just x1 <- applicee e1, Just x2 <- applicee e2, x1 == x2
         = return (congrue e1 e2)
 reduce (Union e1 (Union e2 e3))
     | Just x1 <- applicee e1, Just x2 <- applicee e2, x1 == x2
         = return (Union (congrue e1 e2) e3)
--}
 -- ∪-associativity
 reduce (Union (Union e1 e2) e3)
     = return (Union e1 (Union e2 e3))
