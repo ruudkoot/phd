@@ -30,8 +30,8 @@ data DerivType
     | TypeAnnAbs                         DerivType                     JudgeType
     | TypeApp                            DerivType DerivType           JudgeType
     | TypeAnnApp JudgeKind               DerivType                     JudgeType
-    | TypeFix    JudgeSubEff JudgeSubEff DerivType                     JudgeType
-    | TypeFIX                            DerivType                     JudgeType
+    | TypeFix                            DerivType                     JudgeType
+    | TypeFix'   JudgeSubEff JudgeSubEff DerivType                     JudgeType
     | TypeOp                             DerivType DerivType           JudgeType
     | TypeSeq                            DerivType DerivType           JudgeType
     | TypeIf                             DerivType DerivType DerivType JudgeType
@@ -48,8 +48,8 @@ getJT (TypeAbs    _       jt) = jt
 getJT (TypeAnnAbs _       jt) = jt
 getJT (TypeApp    _ _     jt) = jt
 getJT (TypeAnnApp _ _     jt) = jt
-getJT (TypeFix    _ _ _   jt) = jt
-getJT (TypeFIX        _   jt) = jt
+getJT (TypeFix        _   jt) = jt
+getJT (TypeFix'   _ _ _   jt) = jt
 getJT (TypeOp     _ _     jt) = jt
 getJT (TypeSeq    _ _     jt) = jt
 getJT (TypeIf     _ _ _   jt) = jt
@@ -69,8 +69,8 @@ data DerivElab
     | ElabCrash                                                        JudgeElab
     | ElabAbs   JudgeTyWff JudgeKind               DerivElab           JudgeElab
     | ElabApp   JudgeSubTy JudgeSubEff [JudgeKind] DerivElab DerivElab JudgeElab
-    | ElabFix   JudgeSubTy JudgeSubEff [JudgeKind] DerivElab           JudgeElab
-    | ElabFIX                                      DerivElab           JudgeElab
+    | ElabFix                                      DerivElab           JudgeElab
+    | ElabFix'  JudgeSubTy JudgeSubEff [JudgeKind] DerivElab           JudgeElab
     | ElabOp                                       DerivElab DerivElab JudgeElab
     | ElabSeq                                      DerivElab DerivElab JudgeElab
     | ElabIf                            DerivElab  DerivElab DerivElab JudgeElab
@@ -112,10 +112,10 @@ data Reconstruct
                        Reconstruct' Reconstruct'
                        Result
     | ReconstructFix   Env KindEnv Expr
-                       Reconstruct' Instantiate' ExnTy Exn KleeneMycroft'
-                       Result
-    | ReconstructFIX   Env KindEnv Expr
                        Reconstruct' ExnTy Exn KleeneMycroft''
+                       Result
+    | ReconstructFix'  Env KindEnv Expr
+                       Reconstruct' Instantiate' ExnTy Exn KleeneMycroft'
                        Result
     | ReconstructNil   Env KindEnv Expr
                        Result

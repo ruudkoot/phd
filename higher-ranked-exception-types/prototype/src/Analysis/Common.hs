@@ -54,8 +54,8 @@ data Expr
     | If Expr Expr Expr
     | Crash Lbl Ty
     | Seq Expr Expr
-    | Fix Expr
-    | FIX Name Ty Expr
+    | Fix Name Ty Expr
+    | Fix_ Expr
     | Nil Ty
     | Cons Expr Expr
     | Case Expr Expr Name Name Expr
@@ -69,8 +69,8 @@ data ElabTm
     | AnnAbs Name Kind ElabTm
     | App' ElabTm ElabTm
     | AnnApp ElabTm Exn
-    | Fix' ElabTm
-    | FIX' Name ExnTy Exn ElabTm
+    | Fix' Name ExnTy Exn ElabTm
+    | Fix'_ ElabTm
     | BinOp' ElabTm ElabTm
     | Seq' ElabTm ElabTm
     | If' ElabTm ElabTm ElabTm
@@ -113,15 +113,15 @@ checkExpr env (Crash _ t)
 checkExpr env (Seq e1 e2)
     = do _ <- checkExpr env e1
          checkExpr env e2
-checkExpr env (Fix e)
-    = case checkExpr env e of
-        Just (t1 :-> t2) -> if t1 == t2 then return t1 else error "type (Fix, type 2)"
-        _                -> error $ "type (Fix, type 1)"
-checkExpr env (FIX x t e)
+checkExpr env (Fix x t e)
     = case lookup x env of
         Nothing -> do t' <- checkExpr ((x,t):env) e
-                      if t == t' then return t else error "type (FIX)"
-        _       -> error "shadowing (FIX)"
+                      if t == t' then return t else error "type (Fix)"
+        _       -> error "shadowing (Fix)"
+checkExpr env (Fix_ e)
+    = case checkExpr env e of
+        Just (t1 :-> t2) -> if t1 == t2 then return t1 else error "type (Fix_, type 2)"
+        _                -> error $ "type (Fix_, type 1)"
 checkExpr env (Nil t)
     = return (List t)
 checkExpr env (Cons e1 e2)
@@ -166,10 +166,10 @@ instance Latex Expr where
         = "(⚡_{\\mathrm{" ++ l ++ "}}:" ++ latex t ++ ")"
     latex (Seq e1 e2)
         = "(" ++ latex e1 ++ "\\ \\mathbf{seq}\\ " ++ latex e2 ++ ")"
-    latex (Fix e)
-        = "(\\mathbf{fix}\\ " ++ latex e ++ ")"
-    latex (FIX x t e)
-        = "(\\mathbf{FIX}\\ x_{" ++ show x ++ "}:" ++ latex t ++ "." ++ latex e ++ ")"
+    latex (Fix x t e)
+        = "(\\mathbf{fix}\\ x_{" ++ show x ++ "}:" ++ latex t ++ "." ++ latex e ++ ")"
+    latex (Fix_ e)
+        = "(\\mathbf{fix'}\\ " ++ latex e ++ ")"
     latex (Nil t)
         = "(\\varepsilon:" ++ latex t ++ ")"
     latex (Cons e1 e2)
@@ -203,10 +203,10 @@ instance Latex ElabTm where
         = "(⚡_{\\mathrm{" ++ l ++ "}}:" ++ latex t ++ ")"
     latex (Seq' e1 e2)
         = "(" ++ latex e1 ++ "\\ \\mathbf{seq}\\ " ++ latex e2 ++ ")"
-    latex (Fix' e)
-        = "(\\mathbf{fix}\\ " ++ latex e ++ ")"
-    latex (FIX' x ty exn e)
-        = "(\\mathbf{FIX}\\ x_{" ++ show x ++ "}:" ++ latex ty ++ "\\ \\&\\ " ++ latex exn ++ "." ++ latex e ++ ")"
+    latex (Fix'_ e)
+        = "(\\mathbf{fix'}\\ " ++ latex e ++ ")"
+    latex (Fix' x ty exn e)
+        = "(\\mathbf{fix}\\ x_{" ++ show x ++ "}:" ++ latex ty ++ "\\ \\&\\ " ++ latex exn ++ "." ++ latex e ++ ")"
     latex (Nil' t)
         = "(\\varepsilon:" ++ latex t ++ ")"
     latex (Cons' e1 e2)

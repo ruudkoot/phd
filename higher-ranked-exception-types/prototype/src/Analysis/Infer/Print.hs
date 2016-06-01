@@ -52,12 +52,12 @@ instance ToMarkup DerivType where
     toMarkup dt@(TypeAnnApp jk dt1 jt)
         = derive (checkDerivType dt) "T-AnnApp"
             [H.toMarkup dt1, judgeKind jk] (judgeType jt)
-    toMarkup dt@(TypeFix jse1 jse2 dt1 jt)
+    toMarkup dt@(TypeFix dt1 jt)
         = derive (checkDerivType dt) "T-Fix"
-            [H.toMarkup dt1, judgeSubEff jse1, judgeSubEff jse2] (judgeType jt)
-    toMarkup dt@(TypeFIX dt1 jt)
-        = derive (checkDerivType dt) "T-FIX"
             [H.toMarkup dt1] (judgeType jt)
+    toMarkup dt@(TypeFix' jse1 jse2 dt1 jt)
+        = derive (checkDerivType dt) "T-Fix'"
+            [H.toMarkup dt1, judgeSubEff jse1, judgeSubEff jse2] (judgeType jt)
     toMarkup dt@(TypeOp dt1 dt2 jt)
         = derive (checkDerivType dt) "T-Op"
             (map H.toMarkup [dt1, dt2]) (judgeType jt)
@@ -114,8 +114,14 @@ checkDerivType (TypeAnnApp (_,ann',k') dt1
      in exnEq kenv exn exn' && exnEq kenv ann ann'
             && checkKind kenv ann' == Just k'
             && exnTyEq kenv exnTy (substExnTy' [(e,ann)] exnTy')
-checkDerivType (TypeFix (_,exn1,exn2) (_,exn3,exn4) dt1
-                                        (env,kenv,Fix' tm,exnTy,exn5)) = boolToColor $
+checkDerivType (TypeFix dt1 (env,kenv,Fix' x exnTy exn tm,exnTy',exn')) = boolToColor $
+    let (env1, kenv1, tm1', exnTy1, exn1) = getJT dt1
+     in exnTyEq kenv exnTy exnTy' && exnEq kenv exn exn'
+            && exnTyEq kenv exnTy exnTy1 && exnEq kenv exn exn1
+            -- && env
+            -- && tm
+checkDerivType (TypeFix' (_,exn1,exn2) (_,exn3,exn4) dt1
+                                        (env,kenv,Fix'_ tm,exnTy,exn5)) = boolToColor $
     let (env1, kenv1, tm1', ExnArr exnTy1 exn6 exnTy2 exn7, exn8) = getJT dt1
      in exnEq kenv exn2 exn5 && exnEq kenv exn4 exn5 && exnEq kenv exn8 exn3 
             && exnEq kenv exn6 exn1 && exnEq kenv exn7 exn1
@@ -123,12 +129,6 @@ checkDerivType (TypeFix (_,exn1,exn2) (_,exn3,exn4) dt1
             && isSubeffect kenv exn1 exn2 && isSubeffect kenv exn3 exn4
             -- && env==env1 && env==env2 && kenv==kenv1 && kenv==kenv2
             -- && tm1==tm1' && tm2==tm2'
-checkDerivType (TypeFIX dt1 (env,kenv,FIX' x exnTy exn tm,exnTy',exn')) = boolToColor $
-    let (env1, kenv1, tm1', exnTy1, exn1) = getJT dt1
-     in exnTyEq kenv exnTy exnTy' && exnEq kenv exn exn'
-            && exnTyEq kenv exnTy exnTy1 && exnEq kenv exn exn1
-            -- && env
-            -- && tm
 checkDerivType (TypeOp dt1 dt2 (env,kenv,BinOp' tm1 tm2,ExnBool,exn)) = boolToColor $
     let (env1, kenv1, tm1', ExnInt, exn1) = getJT dt1
         (env2, kenv2, tm2', ExnInt, exn2) = getJT dt2
@@ -183,34 +183,34 @@ checkDerivType (TypeSub (kenvT,exnTy1',exnTy') (kenvE,exn1',exn') dt1
 
 instance ToMarkup DerivElab where
     toMarkup (ElabVar je)
-        = derive Black "TE-Var" [] (judgeElab je)
+        = derive Black "L-Var" [] (judgeElab je)
     toMarkup (ElabCon je)
-        = derive Black "TE-Con" [] (judgeElab je)
+        = derive Black "L-Con" [] (judgeElab je)
     toMarkup (ElabCrash je)
-        = derive Black "TE-Crash" [] (judgeElab je)
+        = derive Black "L-Crash" [] (judgeElab je)
     toMarkup (ElabAbs jt jk de je)
-        = derive Black "TE-Abs" (map H.toMarkup [de] ++ [judgeKind jk] ++ [judgeTyWff jt])
+        = derive Black "L-Abs" (map H.toMarkup [de] ++ [judgeKind jk] ++ [judgeTyWff jt])
             (judgeElab je)
     toMarkup (ElabApp jst jse jks de1 de2 je)
-        = derive Black "TE-App" (map H.toMarkup [de1, de2] ++ map judgeKind jks
+        = derive Black "L-App" (map H.toMarkup [de1, de2] ++ map judgeKind jks
             ++ [judgeSubTy jst, judgeSubEff jse]) (judgeElab je)
-    toMarkup (ElabFix jst jse jks de je)
-        = derive Black "TE-Fix" (map H.toMarkup [de] ++ map judgeKind jks
+    toMarkup (ElabFix de je)
+        = derive Black "L-Fix" (map H.toMarkup [de]) (judgeElab je)
+    toMarkup (ElabFix' jst jse jks de je)
+        = derive Black "L-Fix'" (map H.toMarkup [de] ++ map judgeKind jks
             ++ [judgeSubTy jst, judgeSubEff jse]) (judgeElab je)
-    toMarkup (ElabFIX de je)
-        = derive Black "TE-FIX" (map H.toMarkup [de]) (judgeElab je)
     toMarkup (ElabOp de1 de2 je)
-        = derive Black "TE-Op" (map H.toMarkup [de1, de2]) (judgeElab je)
+        = derive Black "L-Op" (map H.toMarkup [de1, de2]) (judgeElab je)
     toMarkup (ElabSeq de1 de2 je)
-        = derive Black "TE-Seq" (map H.toMarkup [de1, de2]) (judgeElab je)
+        = derive Black "L-Seq" (map H.toMarkup [de1, de2]) (judgeElab je)
     toMarkup (ElabIf de1 de2 de3 je)
-        = derive Black "TE-If" (map H.toMarkup [de1, de2, de3]) (judgeElab je)
+        = derive Black "L-If" (map H.toMarkup [de1, de2, de3]) (judgeElab je)
     toMarkup (ElabNil je)
-        = derive Black "TE-Nil" [] (judgeElab je)
+        = derive Black "L-Nil" [] (judgeElab je)
     toMarkup (ElabCons de1 de2  je)
-        = derive Black "TE-Cons" (map H.toMarkup [de1, de2]) (judgeElab je)
+        = derive Black "L-Cons" (map H.toMarkup [de1, de2]) (judgeElab je)
     toMarkup (ElabCase de1 de2 de3 je)
-        = derive Black "TE-Case" (map H.toMarkup [de1, de2, de3]) (judgeElab je)
+        = derive Black "L-Case" (map H.toMarkup [de1, de2, de3]) (judgeElab je)
 
 judgeType :: JudgeType -> H.Html
 judgeType (tyEnv, kiEnv, elabTm, exnTy, exn)
@@ -344,7 +344,29 @@ reconstructHtml (ReconstructSeq env kenv tm re1 re2 result)
         htmlReconstruct kenv re2 "2"
         htmlResult kenv result
       ) ++ recurse [re1, re2]
-reconstructHtml (ReconstructFix env kenv tm re ins t_0 exn_0 km@(trace, t_w, exn_w, subst_w) result)
+reconstructHtml (ReconstructFix env kenv tm re t_0 exn_0 km@(trace, re_w) result)     -- FIXME: IMPLEMENT!
+    = (return $ H.table $ do
+        htmlHeader env kenv tm
+        -- initialization
+        H.tr $ do
+            H.td $ ""
+            H.td $ "t_0"
+            H.td ! A.colspan "3" $ "= bottomExnTy ty"
+        rowRes $ mathjax' t_0
+        H.tr $ do
+            H.td $ ""
+            H.td $ "exn_0"
+            H.td ! A.colspan "3" $ "= emptyset"
+        -- iterations
+        forM trace $ \(env_i, re_i@(_,_,_,_)) -> do
+            H.tr $ do
+                H.td $ ""
+                H.td $ ""
+                H.td ! A.colspan "3" $ "-- iteration"
+        -- result
+        htmlResult kenv result
+      ) ++ recurse [re]
+reconstructHtml (ReconstructFix' env kenv tm re ins t_0 exn_0 km@(trace, t_w, exn_w, subst_w) result)
     = (return $ H.table $ do
         htmlHeader env kenv tm
         htmlDo "reconstruct env kenv e1"
@@ -380,28 +402,6 @@ reconstructHtml (ReconstructFix env kenv tm re ins t_0 exn_0 km@(trace, t_w, exn
             trReduce    (latex t_j)
             trNormalize (latex t_j')
         -- RESULT
-        htmlResult kenv result
-      ) ++ recurse [re]
-reconstructHtml (ReconstructFIX env kenv tm re t_0 exn_0 km@(trace, re_w) result)     -- FIXME: IMPLEMENT!
-    = (return $ H.table $ do
-        htmlHeader env kenv tm
-        -- initialization
-        H.tr $ do
-            H.td $ ""
-            H.td $ "t_0"
-            H.td ! A.colspan "3" $ "= bottomExnTy ty"
-        rowRes $ mathjax' t_0
-        H.tr $ do
-            H.td $ ""
-            H.td $ "exn_0"
-            H.td ! A.colspan "3" $ "= emptyset"
-        -- iterations
-        forM trace $ \(env_i, re_i@(_,_,_,_)) -> do
-            H.tr $ do
-                H.td $ ""
-                H.td $ ""
-                H.td ! A.colspan "3" $ "-- iteration"
-        -- result
         htmlResult kenv result
       ) ++ recurse [re]
 reconstructHtml (ReconstructNil env kenv tm result)

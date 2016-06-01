@@ -204,9 +204,11 @@ inferencePage = msum [ viewForm, processForm ] where
             H.p $ toHtml dt
             H.h3 "Syntax-directed elaboration"
             H.p $ toHtml de
-            
+
+{-            
             H.h2 "Algorithm"
             mapM_ H.p (An.reconstructHtml re)
+-}
 
 matchPage :: ServerPart Response
 matchPage = msum [ viewForm, processForm ] where
