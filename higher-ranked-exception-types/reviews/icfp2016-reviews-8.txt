@@ -1,0 +1,464 @@
+===========================================================================
+                           ICFP 2016 Review #8A
+---------------------------------------------------------------------------
+                  Paper #8: Higher-ranked Exception Types
+---------------------------------------------------------------------------
+
+                      Overall merit: C. Weak paper, though I will not fight
+                                        strongly against it
+                         Confidence: X. I am an expert in this area
+
+                         ===== Paper summary =====
+
+This paper presents a type-and-effect system for a simply-typed
+non-strict higher-order language (with recursion and lists) where the
+effect of a term describes the set of exception values that may arise
+when forcing a term.  In contrast to an exception-tracking analysis
+for a first-order language, the analysis for a higher-order language
+requires exception-effect polymorphism (for any non-trivial degree of
+precision).  And, in contrast to an exception-tracking type-and-effect
+system for a strict language, the system for a non-strict language
+must track the exception effect of all terms (in particular, function
+arguments and data structure components), not simply the latent effect
+of functions.
+
+The paper presents a declarative type-and-effect system (for annotated
+terms), a syntax-directed elaboration system (yielding annotated
+terms), and an inference algorithm.  Although the underlying type
+system is simply typed, the "language" of exception effects is rather
+rich: it is itself a simply-typed algebraic $\lambda$-calculus with
+the ACI1-structure of sets, yielding an enriched notion of term
+normalization.  Thus, the type-and-effect system admits effect
+polymorphism, higher-rank polymorphism, higher-order effect operators,
+and polymorphic recursion.  As has been observed previously (e.g.,
+Holdermans&Hage; ICFP'10), although inference of these features is
+undecidable with respect to types (inferred from untyped terms), the
+problems are tractable with respect to effects (inferred from
+well-typed (but effect unannotated) terms), utilizing the existing
+type structure.
+
+The paper is well-written and this reviewer had no difficulty
+following the main developments.  A strength of the paper is that it
+is clearly presented and, although there are some subtle technical
+details, they are well explained.
+
+However, the work appears to be somewhat preliminary.  In particular,
+although a number of formal systems are presented, there are no proofs
+or even statements of the theorems that relate them.  While the
+statement/proof of the soundness of the underlying (simply typed) type
+system with respect to the operational semantics may be reasonably
+left implicit, it is critical to relate the declarative
+type-and-effect system to the operational semantics to demonstrate
+that the effect system is, indeed, properly tracking exceptions.
+Similarly, it is left as future work to prove the correctness of the
+inference algorithm; inference for the fix-construct requires a
+Kleene-My croft iteration which is conjectured to always converge in
+this context.  Also, the authors argue convincingly that a modular
+system is desired --- whereby type checking/inference work on
+individual modules, rather than the whole program.  This motivates
+using most general exception types and least exception types at
+various places in the type inference algorithm.  Again, stating and
+proving that these are indeed most general and least exception types
+is due diligence and a more careful statement of modularity would be
+necessary to evaluate whether or not the type inference algorithm
+actually achieves it.  Somewhat more difficult, but of interest, would
+be a statement of non-triviality; that is, that inference is
+systematically better than simply inferring the complete set of
+exception names for every expression.
+
+Another weakness of the paper is that it does not sufficiently
+motivate the utility of this kind of exception inference.  I'm not
+convinced by the "Java has it, why not Haskell" argument of the
+introduction; anecdotal evidence seems to suggest that throws
+annotations are not universally loved by Java developers.
+Furthermore, the paper argues that the exception type system should be
+conservative, never rejecting any program that is well-typed in the
+underlying type system.  How, then, would a programmer make use of the
+inferred exception types, if not by asserting that a particular
+exception (or set of exceptions) was or was not present in a
+particular term?  Alternatively, the inferred exception types might be
+simply used as part of compilation (like type systems for strictness
+or control flow analysis), in which case it would be good to present
+some motivating examples of how the compiler would use the inferred
+exception types to improve the program.
+
+                      ===== Comments for author =====
+
+p.1, col. 2 (Higher-order functions):  
+Having motivated tracking of uncaught exceptions by reference to OO
+languages, it would be good to explain a little more about how OO
+languages deal (or do not) with exception tracking in the context of
+higher-order idioms.  Most (if not all) mainstream OO languages have
+$\lambda$ of some form or another.  As I understand, one is forced to
+choose a maximal throws annotation for the formal argument to a
+"higher-order" method (via the class/interface of the argument) and
+one cannot exploit more precise knowledge of the exceptions at a
+particular call with an actual argument.
+
+p.1, col. 2 (map example):  
+When presenting the alternative syntax of exception-annotated function
+types, for those more familiar with type-and-effect systems for strict
+languages, it might be helpful to warn that the $\xi$ above the arrow
+is not the latent function effect, but rather the effect of forcing
+the function closure; the $\xi_2$ is the closest approximation of the
+latent function effect.
+
+p. 3, col. 1 (Subsumption and observational equivalence):  
+In Definition 3 (observationally equivalent), why doesn't condition #2
+follow directly from condition #1?  That is, why isn't it sufficient
+to take
+> $\Gamma \vdash \tau_1 \cong \tau_2$ iff $\Gamma \vdash \tau_1 \lesssim \tau_2$ and $\Gamma \vdash \tau_2 \lesssim \tau_1$
+
+p. 3, col. 2 ($\beta$- and $\gamma$-reduction):  
+The text starts talking about arity of functions and writing
+application with tuple notation.  These should be more carefully
+introduced, as they do not follow immediately from the syntax of the
+$\lambda^{\cup}$-calculus given earlier.
+
+p. 3, col. 2 (Canonical ordering):  
+> "derivation of the term $t$" ==>  
+> "reduction of the term $t$"
+
+p. 4, col. 1 (Widening):  
+It required searching the PDF for "widen" to determine why this
+section was included; i.e., where it was used again in the paper.  
+
+p. 6 (Figs. 9 and 10):  
+These figures seem to occur earlier in the paper than necessary; could
+be moved forward a few pages.
+
+p. 6 (Fig. 9) and p. 9, col. 1 (Exception typing and elaboration):  
+A little more description of the declarative type system would be
+helpful.  In particular, call out how subsumption is used to
+"simplify" a number of the typing rules (e.g., T-App, T-If), whereby
+many sub-terms are assumed to have the same effect type.  This might
+be particular important for T-App, since many examples of functions
+show a function type with distinct result expression exception effect
+and function closure exception effect.  But, given that observation,
+it would be helpful to explain why T-Case requires an explicit
+sub-effecting assumption, rather than simply unifying $\xi'$ and
+$\xi$.
+
+p. 7, col. 1 (Exception types):  
+> "The syntax of well-formed exception types is given" ==>  
+> "The syntax and well-formedness of exception types is given"
+
+p. 9, col. 2 (inference algorithm):  
+The inference algorithm introduces the notation
+$\llfloor \tau \rrfloor_\Delta$.  This seems to extend effect type
+normalization to full types.  In general the description of the
+inference algorithm doesn't do a good job of explaining when and why
+normalization occurs.  Presumably, it is to establish invariants for 
+the exception type matching ($\mathcal{M}$) and the fixed-point
+iteration (places where equality of types are checked), but is it
+important that the normalization occur pervasively or could
+normalization be invoked simply as a part of the type equality?
+
+p. 9, col. 1 (Polymorphic recursion):  
+Should include
+> $y : \hat{\mathbf{bool}} ~ \& ~ e_2$
+
+among the assumptions.  Also,
+> $f ~ \langle e_2 \rangle ~ y ~ \langle e_1 \rangle ~ x$ ==>  
+> $f' ~ \langle e_2 \rangle ~ y ~ \langle e_1 \rangle ~ x$
+
+in two places.
+
+===========================================================================
+                           ICFP 2016 Review #8B
+---------------------------------------------------------------------------
+                  Paper #8: Higher-ranked Exception Types
+---------------------------------------------------------------------------
+
+                      Overall merit: C. Weak paper, though I will not fight
+                                        strongly against it
+                         Confidence: Y. I am knowledgeable in this area,
+                                        but not an expert
+
+                         ===== Paper summary =====
+
+This paper develops a type system for tracking exceptions-as-values in a non-strict language.  The language of exception descriptions, while itself a slightly-extended λ-calculus, can express adding exceptions, and wiping them out, but not selectively removing them.  A type inference algorithm is given, but the usual metatheory is left as future work.
+
+Points in favor:
+
++ The system is (generally) explained clearly and in detail.
+
++ The contributions are clearly enumerated.
+
++ Such a system would have practical value.
+
+Points against:
+
+- There is no metatheory.
+
+- There seems to be no implementation.
+
+Having no metatheory could be partly balanced by an implementation, but there does not seem to be one (the last paragraph of 5.4 makes some claims about number of steps, which I thought might be spurred by early experience with an implementation, but I don't think an implementation is mentioned elsewhere).  So it seems that the system hasn't been validated by proving, nor by practical experience.
+
+                      ===== Comments for author =====
+
+The abstract says "we conjecture the inference problem to remain decidable", but then "We give a type inference algorithm".  This struck me as odd, but it is consistent with not having proved the metatheory yet, so I'm not sure what to suggest.
+
+When exceptions are a form of control, modelling them as type-and-effect systems is necessary.  When exceptions are a kind of value, as in your system, do you need a dedicated type system?  You don't have a particularly rich theory of exception sets (which is fine!); could you track exceptions-as-values using indexed types (e.g. Xi's DML) or liquid types (Rondon/Vazou/et al.)?  The main respect in which you go beyond DML is, I think, in having *all* types "indexed" by an exception set.  That means you wouldn't get to reuse past metatheory directly, but it could be easier than doing it from scratch.
+
+The declarative type system in Fig. 9 feels like it has a lot of internal redundancy: the same kind of thing is done in all the rules.  One could argue this is good, because it shows the rules were developed systematically.  But it also suggests that simplification might be possible.  However, I'm not sure how to simplify it, so I won't count this against the paper.
+
+
+Comments (while reading paper):
+
+(questions and comments do NOT require author response unless explicitly marked with the phrase "in your response")
+
+Section 1:
+
+"In non-strictly evaluated languages, exceptions are not a form of control flow, but a kind of value."  What goes wrong if we have a non-strict language in which exceptions *are* a form of control flow?  I rarely use non-strict languages; maybe this is clear to users of non-strict languages, but I'm thinking of how exceptions behave in ML code that is "manually" non-strict (via explicit thunks).  Does something specific go wrong, or is it more that it "feels wrong"?  (Or, avoid the question by saying "In most popular non-strictly evaluated languages".)
+
+At this point in the paper, using the same meta-variable e for exception sets and exception operators feels strange.  It makes more sense later on (because the exceptions are λU-terms and we're used to the same meta-variable for terms of base type and terms of →-type).
+
+In the same paragraph, "e2 is an exception set operator...for example by adding…or discarding them and returning the empty set."  "For example" is not wrong, because the operator can either add to the given exception set, or discard it and return a *non*-empty set, but "for example" leaves open that the possible operations might be richer, including subtraction of elements, which you don't support.  (At this point in the paper, I don't believe you've said explicitly that you aren't trying to model "catch"/"handle" as found in strict languages, so removing elements is plausible.)
+
+"The λ∪-calculus forms the language of effects in the type-and-effect system."  Repeat and emphasize this in section 2.  Often, the first language presented in a paper is the main source language, so I was (temporarily) confused.
+
+Section 2:
+
+"and use it to order unions" → "and using it to order unions"
+
+Section 3:
+
+The note in 3.2 about the forward references within Figure 7, "additional annotations on the λ-abstraction and the fix-operator", would be more helpful if it included the annotations.  I started looking at Fig. 7 and spent some time searching through grammars for "&", before I realized that your note was about exactly that.
+
+Section 4:
+
+Missing space before "and effect" in the sentence below Fig. 11.
+
+The spacing between the premises in W-ARR is too tight (tighter than the spacing within the premises).
+
+Section 5:
+
+I didn't read this in detail, but it looks like it could use some introductory remarks; Figure 15 was somewhat intimidating.  One (somewhat) specific question: How much of the algorithm follows "naturally" from Damas-Milner?  
+
+Section 6:
+
+"Kennedy gives an Algorithm W-like type inference procedure...No type inference algorithm is given for this language."  Superficially, these sentences contradict each other.  I think you mean that Kennedy has an algorithm to infer dimensions—starting from types without dimensions—but not an algorithm to infer entire types.  Please clarify.  Also, saying "No type inference algorithm is given [by Kennedy]" sounds like it might be a criticism; but, as you note in Sec. 7, Kennedy's type system is not a conservative extension.  One *could* give a type inference algorithm that inferred dimensionless types for everything, but that wouldn't accomplish his goals.  At minimum, please add a note directing the reader to Section 7.
+
+The last paragraph of 6.1 on Holdermans & Hage (2010) interested me, and perhaps should be mentioned earlier in the paper.  I'm not always a fan of constraint-based systems, but I had wondered, in earlier sections, why you weren't using constraints.  It would be good to expand on this motivation, if you can.
+
+6.3: About work on uncaught exceptions in ML: since ML has 'handle', this work is in at least one respect more powerful than yours, because it must be able to "subtract" from exception sets.  This seems worth discussing.
+
+The mention of "accuracy in the presence of exceptions raised by pattern-matching failures" reminded me of datasort refinements (Freeman and Pfenning 1991, Davies 2005).  It may or may not be sufficiently relevant to discuss here, but you have a long bibliography already; why not make it longer? ;-)
+
+===========================================================================
+                           ICFP 2016 Review #8C
+---------------------------------------------------------------------------
+                  Paper #8: Higher-ranked Exception Types
+---------------------------------------------------------------------------
+
+                      Overall merit: C. Weak paper, though I will not fight
+                                        strongly against it
+                         Confidence: Y. I am knowledgeable in this area,
+                                        but not an expert
+
+                         ===== Paper summary =====
+
+This paper presents a type-inference algorithm for 
+a simply typed language with exceptions. The type-system 
+is complicated by two things: 1) higher-order functions; 
+2) non-strict evaluation. The paper first introduces 
+a \lambda-calculus extended with a union operator in Section 2. 
+This calculus is used by the type system to replace a more traditional 
+constraint-based approach. The paper then presents the type-and-effect
+system for the source language in Sections 3 and 4. Section 5,
+presents a type-inference algorithm. Finally, there is a discussion 
+of related work and some avenues for future work.
+
+                      ===== Comments for author =====
+
+Evaluation:
+
+Pros: 
+
++ Challenging problem. 
+
++ Formalization of various key relations and algorithms.
+
++ English is good.
+
+Cons:
+
+- Many non-trivial definitions and no proofs is usually not a good
+sign... Besides being hard to read, I get little confident that the
+developement is sound.
+
+- Written to experts on type-and-effect systems. Not self-contained.  
+
+- No proofs and/or other form of validation? (except for an
+implementation of the algorithm)
+
+- No discussion on how to present types to programmers and/or
+usability.
+
+- There are some presentation problems (see detailed comments below).
+
+Overall I found the topic of the paper interesting and I appreciate 
+that the authors have developed quite a bit of formalization. However 
+the lack of proofs (or other forms of validation) is an immediate 
+concern, especially considering that there are alot of non-trivial 
+definitions. As a non-expert in type-and-effect systems, I also 
+found it quite difficult to diggest definition after definition. 
+
+Another (minor) concern has todo with usability. How are programmers 
+expected to use such type system? When they ask for the type of 
+a function, will they see the simple types, or the types decorated 
+with exceptions? Can the exceptions be ignored by programmers 
+without giving rise to hard-to-understand errors? 
+
+In the end, I think the paper may be ready for publication in a smaller
+venue, but probably not for ICFP. If the authors do invest on the 
+proofs, then perhaps this can be ICFP-ready material.
+
+Detailed comments:
+
+* "Many programmers with a background in object-oriented languages are
+thus quite surprised, when making the transition to a functional
+language, that they lose a feature their type system formerly did
+provide: the tracking of uncaught exceptions."
+
+I think this is a reasonable sentence, but my impression is that
+checked exceptions are not that loved in OOP languages, and they are
+perceived as inflexible. I believe this is why languages like Scala or
+C# went instead for unchecked exceptions. So only Java really supports
+this feature.
+
+I personally think checked exceptions are a useful feature, and for
+sure OOP programmers do view some merits on the mechanism. However
+your text could be more precise, and you could turn things around by
+pointing out the inflexibility of checked exceptions in Java, and
+arguying for the need for improved mechanisms. 
+
+* Example in introduction:
+
+The map example shows the difficulties in typing the function
+explicitly, which ofcourse is a key motivator for type-inference. 
+However, even if we have type-inference, there's another problem
+which is understanding the infered type. Unless there is some good 
+way to hide some of the complexity in the type, I'm afraid that this 
+would lead to overwhelmingly complicated types. 
+
+A second point about the example in the introduction is that the paper 
+proposes a *simply* typed lambda calculus, but the example that is 
+given polymorphic. It would be better to have an example, which 
+can be typed in the proposed calculus. 
+
+* Figure 3: 
+
+Figure 3 is never explicitly mentioned in the text. Either the figure
+is removed and the content is inlined in the text, or the text
+should mention Figure 3.
+
+Figure 4:
+
+I believe there's a typo in R-GAMMA2: the very last term should 
+be "\x . t_n" instead of "t_n"
+
+Figure 5:
+
+Most constructs are indeed standard, but the exceptional constant 
+deserves some more explanation, I believe. It is mentioned in the 
+introduction without type annotations; but now shows up with type 
+annotations. I guess the type annotation is needed for type-checking, 
+but that could be stated explicitly.
+
+* "The omission of such a construct allows for the introduction of a
+certain amount of non-determinism in the operational semantics of the
+language— giving more freedom to an optimizing compiler—without
+breaking referential transparency."
+
+Some reference(s) needed here (presuming that this has been
+shown/argued before). 
+
+* Figure 7
+
+Unlike the syntax proposed in Figure 5, the exceptional constant used 
+in Figure 7 has no type annotation. Again this deserves an
+explanation: why are you switching back-and-fourth between these 2?
+
+* Flow in Sections 3 and 4.
+
+The flow seems wrong to me. In order to understand Figure 7, we need
+to understand the type language from the type-and-effect system in
+Section 4, first.  
+
+* Reference to Figure 9: 
+
+"The type system resembles System F! (Girard 1972) in that we have
+quantification, abstraction and application at the type level."
+
+I presume that a reference to Figure 9 is missing here? 
+
+* Figure 9: 
+
+I find little explanation of Figure 9 in the text. What is \Delta? 
+Moreover, I think there is a lot more than System F_\omega 
+typing going on. So just having a sentence saying that the type 
+system looks like F_\omega is not very satisfying. 
+
+PS: After reading more, I notice that Figure 9 is mentioned 
+in Section 4.5. But again, there's little explanation here. 
+
+* "Exception types are endowed with the usual subtyping relation 
+for type-and-effect systems"
+
+Reference(s) please. 
+
+* "Like type systems for strictness or control flow analysis—and
+unlike type systems for information flow security or dimensional
+analysis"
+
+References please.
+
+* Figure 15:
+
+I would expect to see some properties here: soundness, perhaps 
+completness. You conjecture decidability, but a proof would be better.
+
+* Related work:
+
+I would like to understand the improvement over the state-of-the art
+better. I see that Holdermans and Hage already had a type-inference
+algorithm, and the innovation over that work seems to be a different 
+technique, which avoids constraints. You say that the approach will
+scale better, but it would be nicer if you could show some benefit in
+this paper over the previous approach.
+
+===========================================================================
+                   Response by Ruud Koot <r.koot@uu.nl>
+---------------------------------------------------------------------------
+We would like to thank the reviewers for their careful and fair reviews.
+
+There are no technical inaccuracies in the reviews that need to be addressed.
+
+To answer some of the questions raised by the reviewers:
+
+- "the description of the inference algorithm doesn't do a good job of explaining when and why normalization occurs. ... is it important that the normalization occur pervasively or could normalization be invoked simply as a part of the type equality?"
+
+  While normalization could be performed during the type equality check only, this will cause the type inference algorithm to unnecessarily carry around non-normalized λ∪-terms, which may in turn show up in the elaborated source language. The algorithm maintains the invariant that each call returns a normalized type and uses the minimal number of normalization to do so.
+
+- "There seems to be no implementation."
+
+  We have written a prototype implementation than can infer exception types and generate a complete derivation tree. As the presentation of the type rules in the prototypes has diverged somewhat from those in the paper (and together with having an undocumented build process and input format), we felt that including it as supplementary material would not be beneficial. An implementation is of course also no substitute for metatheory.
+
+- "What goes wrong if we have a non-strict language in which exceptions are a form of control flow? ... I'm thinking of how exceptions behave in ML code that is 'manually' non-strict (via explicit thunks)."
+
+  These transformations change the type of the program. In a strict language a lazy function a -> b would become a thunked function, taking a thunked argument and returning a thunked result 1 -> ((1 -> a) -> (1 -> b)). Conversely, in a lazy language one could do a CPS-transformation and then thread both the current continuation and an exceptional continuation. We would have to think a bit longer about what the ramifications of this change-of-type would be w.r.t. to the effect annotations and precision of the analysis.
+
+- "How much of the algorithm follows 'naturally' from Damas-Milner?"
+
+  They both recurse structurally over the AST. But some key ingredients of Algorithm W are done rather differently here (the use of type completion in Abs; instantiation is done late in App, not early in Var; generalization is done in Lam instead of Let; iteration in the case of Fix, like Mycroft-Milner; for IfThenElse and Case we take the lub of types instead of performing unification).
+
+- "Kennedy gives an Algorithm W-like type inference procedure...No type inference algorithm is given for this language. ... Please clarify."
+
+  Kennedy gives two languages. One with rank-1 polymorphism, one with higher-ranked polymorphism. Only for the first a type inference algorithm is given.
+
+- "However, even if we have type-inference, there's another problem which is understanding the infered type. Unless there is some good way to hide some of the complexity in the type, I'm afraid that this would lead to overwhelmingly complicated types."
+
+  This is very briefly touched upon in Section 4.6. We envision these exception types to only be displayed in the IDE, REPL or documentation when requested by the programmer, for example when she wants to better understand the exceptional behaviour of a particular function.
+
