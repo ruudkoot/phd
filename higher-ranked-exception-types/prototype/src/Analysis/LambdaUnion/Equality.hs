@@ -1,7 +1,7 @@
-module Analysis.LambdaUnionOld.Equality where
+module Analysis.LambdaUnion.Equality where
 
-import Analysis.LambdaUnionOld.Syntax
-import Analysis.LambdaUnionOld.Reduce
+import Analysis.LambdaUnion.Syntax
+import Analysis.LambdaUnion.Reduce
 
 -- | Syntactic equality up to alpha-renaming
 

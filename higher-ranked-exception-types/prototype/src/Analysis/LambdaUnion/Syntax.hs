@@ -1,11 +1,12 @@
-module Analysis.LambdaUnionOld.Syntax (
+module Analysis.LambdaUnion.Syntax (
     module Analysis.Names,
     Env,
     Sort(..),
     Tm(..),
     fv,
     maxName,
-    subst
+    subst,
+    NormalizeTm(..)
 ) where
 
 import Data.Set
@@ -79,3 +80,15 @@ subst x e (Union e1 e2)
     = Union (subst x e e1) (subst x e e2)
 subst x e Empty
     = Empty
+    
+-- | Reduction trace
+
+data NormalizeTm a
+    = NormalizeVar (Tm a) (Tm a)
+    | NormalizeCon (Tm a) (Tm a)
+    | NormalizeAbs (NormalizeTm a) (Tm a) (Tm a)
+    | NormalizeApp1 (NormalizeTm a) (NormalizeTm a) (Tm a) (Tm a)
+    | NormalizeApp2 (NormalizeTm a) (NormalizeTm a) (NormalizeTm a) (Tm a) (Tm a)
+    | NormalizeUnion1 (NormalizeTm a) (NormalizeTm a) (Tm a) (Tm a)
+    | NormalizeUnion2 (NormalizeTm a) (NormalizeTm a) (NormalizeTm a) (Tm a) (Tm a)
+    | NormalizeEmpty (Tm a) (Tm a)

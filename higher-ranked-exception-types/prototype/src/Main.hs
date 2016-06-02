@@ -13,13 +13,13 @@ import Text.Blaze.Html5.Attributes (action, enctype, href, name, size, type_, va
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 
-import qualified Analysis.Names          as An
-import qualified Analysis.Common         as An
-import qualified Analysis.Completion     as An
-import qualified Analysis.Infer          as An
-import qualified Analysis.Infer.Print    as An
-import qualified Analysis.Infer.Match    as An
-import qualified Analysis.LambdaUnionOld as LUO
+import qualified Analysis.Names       as An
+import qualified Analysis.Common      as An
+import qualified Analysis.Completion  as An
+import qualified Analysis.Infer       as An
+import qualified Analysis.Infer.Print as An
+import qualified Analysis.Infer.Match as An
+import qualified Analysis.LambdaUnion as LU
 import           Analysis.Print
 
 main :: IO ()
@@ -107,9 +107,10 @@ lambdaUnion = msum [ viewForm, processForm ] where
     processForm = do
         method POST
         
-        expr :: LUO.Tm () <- read . unpack <$> lookText "expr"
+        expr :: LU.Tm () <- read . unpack <$> lookText "expr"
 
-        let (normalizationTree, _) = LUO.normalize' expr
+        -- let (normalizationTree, _) = LU.normalize' expr
+        let normalizationTree = error "not implemented" :: LU.NormalizeTm ()
 
         ok $ template "lambda-union" $ do
             H.h2 "Expression"

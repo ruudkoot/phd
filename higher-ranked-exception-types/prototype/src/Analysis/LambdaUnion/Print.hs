@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Analysis.LambdaUnionOld.Print where
+module Analysis.LambdaUnion.Print where
 
 import Text.Blaze.Html5 (ToMarkup)
 import qualified Text.Blaze.Html5 as H
@@ -8,8 +8,8 @@ import qualified Text.Blaze.Html5.Attributes as A
 
 import Analysis.Print
 
-import Analysis.LambdaUnionOld.Syntax
-import Analysis.LambdaUnionOld.Reduce
+import Analysis.LambdaUnion.Syntax
+import Analysis.LambdaUnion.Reduce
 
 instance Latex Sort where
     latex C           = "C"

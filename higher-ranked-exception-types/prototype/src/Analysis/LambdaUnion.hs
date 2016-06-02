@@ -1,7 +1,7 @@
-module Analysis.LambdaUnionOld (
-    module Analysis.LambdaUnionOld.Syntax,
-    module Analysis.LambdaUnionOld.Reduce,
-    module Analysis.LambdaUnionOld.Equality
+module Analysis.LambdaUnion (
+    module Analysis.LambdaUnion.Syntax,
+    module Analysis.LambdaUnion.Reduce,
+    module Analysis.LambdaUnion.Equality
 ) where
 
 -- TODO: make use of the fact that terms are always fully applied
@@ -12,7 +12,7 @@ module Analysis.LambdaUnionOld (
 -- TODO: test confluence, type preservation, uniqueness of normal forms, etc.
 -- TODO: dynamic type checking
 
-import Analysis.LambdaUnionOld.Syntax
-import Analysis.LambdaUnionOld.Reduce
-import Analysis.LambdaUnionOld.Equality
-import Analysis.LambdaUnionOld.Print
+import Analysis.LambdaUnion.Syntax
+import Analysis.LambdaUnion.Reduce
+import Analysis.LambdaUnion.Equality
+import Analysis.LambdaUnion.Print

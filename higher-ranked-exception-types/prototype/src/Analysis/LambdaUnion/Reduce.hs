@@ -1,12 +1,9 @@
-module Analysis.LambdaUnionOld.Reduce (
-    NormalizeTm(..),
-    reduce,
+module Analysis.LambdaUnion.Reduce (
     normalize,
-    normalize',
     etaExpand
 ) where
 
-import Analysis.LambdaUnionOld.Syntax
+import Analysis.LambdaUnion.Syntax
 
 -- | Reduction (1-step, top-level)
 
@@ -87,16 +84,6 @@ congrue _ _
     = error "congrue: not an application"
 
 -- | Normalization (full β-reduction)
-
-data NormalizeTm a
-    = NormalizeVar (Tm a) (Tm a)
-    | NormalizeCon (Tm a) (Tm a)
-    | NormalizeAbs (NormalizeTm a) (Tm a) (Tm a)
-    | NormalizeApp1 (NormalizeTm a) (NormalizeTm a) (Tm a) (Tm a)
-    | NormalizeApp2 (NormalizeTm a) (NormalizeTm a) (NormalizeTm a) (Tm a) (Tm a)
-    | NormalizeUnion1 (NormalizeTm a) (NormalizeTm a) (Tm a) (Tm a)
-    | NormalizeUnion2 (NormalizeTm a) (NormalizeTm a) (NormalizeTm a) (Tm a) (Tm a)
-    | NormalizeEmpty (Tm a) (Tm a)
 
 (#) :: (b -> a) -> b -> (a, b)
 x # y = (x y, y)
