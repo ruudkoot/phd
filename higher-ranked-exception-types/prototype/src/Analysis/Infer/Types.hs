@@ -60,16 +60,16 @@ getJT (TypeSub    _ _ _   jt) = jt
 
 -- * Syntax-directed elaboration
 
-type JudgeElab   = (Env, KindEnv, Expr, ElabTm, ExnTy, Exn)
-type JudgeTyWff  = (KindEnv, ExnTy, Ty)
+type JudgeElab    = (Env, KindEnv, Expr, ElabTm, ExnTy, Exn)
+type JudgeErase = (KindEnv, ExnTy, Ty)
 
 data DerivElab
     = ElabVar                                                          JudgeElab
     | ElabCon                                                          JudgeElab
     | ElabCrash                                                        JudgeElab
-    | ElabAbs   JudgeTyWff JudgeKind               DerivElab           JudgeElab
+    | ElabAbs                          JudgeErase  JudgeKind DerivElab JudgeElab
     | ElabApp   JudgeSubTy JudgeSubEff [JudgeKind] DerivElab DerivElab JudgeElab
-    | ElabFix                                      DerivElab           JudgeElab
+    | ElabFix                                                DerivElab JudgeElab
     | ElabFix'  JudgeSubTy JudgeSubEff [JudgeKind] DerivElab           JudgeElab
     | ElabOp                                       DerivElab DerivElab JudgeElab
     | ElabSeq                                      DerivElab DerivElab JudgeElab
@@ -77,6 +77,21 @@ data DerivElab
     | ElabNil                                                          JudgeElab
     | ElabCons                                     DerivElab DerivElab JudgeElab
     | ElabCase                          DerivElab  DerivElab DerivElab JudgeElab
+
+getJE :: DerivElab -> JudgeElab
+getJE (ElabVar              je) = je
+getJE (ElabCon              je) = je
+getJE (ElabCrash            je) = je
+getJE (ElabAbs    _ _ _     je) = je
+getJE (ElabApp    _ _ _ _ _ je) = je
+getJE (ElabFix        _     je) = je
+getJE (ElabFix'   _ _ _ _   je) = je
+getJE (ElabOp     _ _       je) = je
+getJE (ElabSeq    _ _       je) = je
+getJE (ElabIf     _ _ _     je) = je
+getJE (ElabNil              je) = je
+getJE (ElabCons   _ _       je) = je
+getJE (ElabCase     _ _ _   je) = je
 
 -- | Reconstruction algorithm
 

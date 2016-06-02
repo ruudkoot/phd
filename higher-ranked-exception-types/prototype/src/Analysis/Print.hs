@@ -87,7 +87,7 @@ derive color rule premises conclusion
                 if null premises then
                     H.td ""
                 else
-                    mapM_ (H.td ! A.style "vertical-align: bottom") premises
+                    mapM_ (H.td ! A.style "vertical-align: bottom; padding: 0em 1em 0em 1em;") premises
                 H.td ""
             H.tr $ do
                 H.td ! A.colspan colSpan $ H.hr

@@ -15,9 +15,9 @@ x # y = (x, y)
 infixr 0 #
 
 inferenceExamples = map (\(l,x) -> (l, show x, mathjax' x)) [
-    "map"                           # exMap,
     "id"                            # exId,
     "constE"                        # exConstE,
+    "map"                           # exMap,
     "map id"                        # App exMap exId,
     "map constE"                    # App exMap exConstE,
     "tail"                          # exTail,

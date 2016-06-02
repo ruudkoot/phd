@@ -163,7 +163,7 @@ instance Latex Expr where
         = "(\\mathbf{if}\\ " ++ latex e1 ++ "\\ \\mathbf{then}\\ " ++ latex e2
             ++ "\\ \\mathbf{else}\\ " ++ latex e3 ++ ")"
     latex (Crash l t)  
-        = "(⚡_{\\mathrm{" ++ l ++ "}}:" ++ latex t ++ ")"
+        = "⚡^{\\mathrm{" ++ l ++ "}}_{" ++ latex t ++ "}"
     latex (Seq e1 e2)
         = "(" ++ latex e1 ++ "\\ \\mathbf{seq}\\ " ++ latex e2 ++ ")"
     latex (Fix x t e)
@@ -175,9 +175,9 @@ instance Latex Expr where
     latex (Cons e1 e2)
         = "(" ++ latex e1 ++ " :: " ++ latex e2 ++ ")"
     latex (Case e1 e2 x1 x2 e3)
-        = "(\\mathbf{case}\\ " ++ latex e1 ++ "\\ \\mathbf{of}\\ \\{ \\varepsilon \\mapsto "
-            ++ latex e2 ++ "; x_{" ++ show x1 ++ "}::x_{" ++ show x2 ++ "} \\mapsto "
-            ++ latex e3 ++ "\\})"
+        = "(\\mathbf{case}\\ " ++ latex e1 ++ "\\ \\mathbf{of}\\ \\begin{Bmatrix} \\varepsilon & \\mapsto & "
+            ++ latex e2 ++ "\\\\ x_{" ++ show x1 ++ "}::x_{" ++ show x2 ++ "} & \\mapsto & "
+            ++ latex e3 ++ "\\end{Bmatrix})"
             
 instance Latex ElabTm where
     latex (Var' x)
@@ -200,7 +200,7 @@ instance Latex ElabTm where
         = "(\\mathbf{if}\\ " ++ latex e1 ++ "\\ \\mathbf{then}\\ " ++ latex e2
             ++ "\\ \\mathbf{else}\\ " ++ latex e3 ++ ")"
     latex (Crash' l t)  
-        = "(⚡_{\\mathrm{" ++ l ++ "}}:" ++ latex t ++ ")"
+        = "⚡^{\\mathrm{" ++ l ++ "}}_{" ++ latex t ++ "}"
     latex (Seq' e1 e2)
         = "(" ++ latex e1 ++ "\\ \\mathbf{seq}\\ " ++ latex e2 ++ ")"
     latex (Fix'_ e)
@@ -212,9 +212,9 @@ instance Latex ElabTm where
     latex (Cons' e1 e2)
         = "(" ++ latex e1 ++ " :: " ++ latex e2 ++ ")"
     latex (Case' e1 e2 x1 x2 e3)
-        = "(\\mathbf{case}\\ " ++ latex e1 ++ "\\ \\mathbf{of}\\ \\{ \\varepsilon \\mapsto "
-            ++ latex e2 ++ "; x_{" ++ show x1 ++ "}::x_{" ++ show x2 ++ "} \\mapsto "
-            ++ latex e3 ++ "\\})"
+        = "(\\mathbf{case}\\ " ++ latex e1 ++ "\\ \\mathbf{of}\\ \\begin{Bmatrix} \\varepsilon & \\mapsto & "
+            ++ latex e2 ++ "\\\\ x_{" ++ show x1 ++ "}::x_{" ++ show x2 ++ "} & \\mapsto & "
+            ++ latex e3 ++ "\\end{Bmatrix})"
 
 -- | Types
 
@@ -239,7 +239,7 @@ data Kind = EXN | Kind :=> Kind
     deriving (Eq, Read, Show)
     
 instance Latex Kind where
-    latex EXN         = "E"
+    latex EXN         = "\\mathrm{\\scriptsize EXN}"
     latex (k1 :=> k2) = "(" ++ latex k1 ++ " \\Rightarrow " ++ latex k2 ++ ")"
 
 type KindEnv = [(Name, Kind)]

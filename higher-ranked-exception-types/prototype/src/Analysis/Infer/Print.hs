@@ -43,9 +43,9 @@ instance ToMarkup DerivType where
     toMarkup dt@(TypeAbs dt1 jt)
         = derive (checkDerivType dt) "T-Abs"
             [H.toMarkup dt1] (judgeType jt)
-    toMarkup dt@(TypeAnnAbs dt1 jt)
+    toMarkup dt@(TypeAnnAbs dt1 jt@(gamma,_,AnnAbs e _ _,_,exn))
         = derive (checkDerivType dt) "T-AnnAbs"
-            [H.toMarkup dt1] (judgeType jt)
+            [H.toMarkup dt1, judgeFV e gamma exn] (judgeType jt)
     toMarkup dt@(TypeApp dt1 dt2 jt)
         = derive (checkDerivType dt) "T-App"
             (map H.toMarkup [dt1, dt2]) (judgeType jt)
@@ -189,16 +189,28 @@ instance ToMarkup DerivElab where
     toMarkup (ElabCrash je)
         = derive Black "L-Crash" [] (judgeElab je)
     toMarkup (ElabAbs jt jk de je)
-        = derive Black "L-Abs" (map H.toMarkup [de] ++ [judgeKind jk] ++ [judgeTyWff jt])
+        = derive Black "L-Abs"
+            ([judgeErase jt] ++ [judgeKind jk] ++ map H.toMarkup [de])
             (judgeElab je)
     toMarkup (ElabApp jst jse jks de1 de2 je)
-        = derive Black "L-App" (map H.toMarkup [de1, de2] ++ map judgeKind jks
-            ++ [judgeSubTy jst, judgeSubEff jse]) (judgeElab je)
-    toMarkup (ElabFix de je)
-        = derive Black "L-Fix" (map H.toMarkup [de]) (judgeElab je)
+        = derive Black "L-App"
+            ([judgeSubTy jst, judgeSubEff jse] ++ map judgeKind jks
+                ++ map H.toMarkup [de1, de2])
+            (judgeElab je)
+    toMarkup (ElabFix de@(getJE -> (tyEnv',kiEnv',tm',elabTm',exnTy',exn'))
+                      je@(tyEnv, kiEnv, tm@(Fix _ ty _), elabTm, exnTy, exn))
+        = derive Black "L-Fix"
+            ([judgeErase (kiEnv,exnTy,ty)
+             ,judgeKind (kiEnv, exn, EXN)]
+                ++ map H.toMarkup [de]
+                ++ [judgeSubTy (kiEnv,exnTy',exnTy)
+                   ,judgeSubEff (kiEnv,exn',exn)])
+            (judgeElab je)
     toMarkup (ElabFix' jst jse jks de je)
-        = derive Black "L-Fix'" (map H.toMarkup [de] ++ map judgeKind jks
-            ++ [judgeSubTy jst, judgeSubEff jse]) (judgeElab je)
+        = derive Black "L-Fix'"
+            (map H.toMarkup [de] ++ map judgeKind jks
+                ++ [judgeSubTy jst, judgeSubEff jse])
+            (judgeElab je)
     toMarkup (ElabOp de1 de2 je)
         = derive Black "L-Op" (map H.toMarkup [de1, de2]) (judgeElab je)
     toMarkup (ElabSeq de1 de2 je)
@@ -221,7 +233,7 @@ judgeType (tyEnv, kiEnv, elabTm, exnTy, exn)
 judgeElab :: JudgeElab -> H.Html
 judgeElab (tyEnv, kiEnv, tm, elabTm, exnTy, exn)
 --    = H.toHtml $ "$" ++ latex tyEnv ++ " ; " ++ latex kiEnv ++ " \\vdash " ++ latex tm ++ " \\leadsto " ++ latex elabTm ++ " : " ++ latex exnTy ++ " \\ \\&\\  " ++ latex exn ++ "$"
-    = H.toHtml $ "$" ++ "\\Gamma" ++ " ; " ++ "\\Delta" ++ " \\vdash "
+    = H.toHtml $ "$" ++ latex tyEnv ++ " ; " ++ latex kiEnv ++ " \\vdash "
         ++ latex tm ++ " \\hookrightarrow " ++ latex elabTm ++ " : " ++ latex exnTy
         ++ " \\ \\&\\  " ++ latex exn ++ "$"
 
@@ -232,18 +244,22 @@ judgeKind (kiEnv, exn, kind)
 
 judgeSubTy :: JudgeSubTy -> H.Html
 judgeSubTy (kiEnv, exnTy1, exnTy2)
-    = H.toHtml $ "$" ++ "\\Delta" ++ " \\vdash " ++ latex exnTy1 ++ " \\leq "
+    = H.toHtml $ "$" ++ latex kiEnv ++ " \\vdash " ++ latex exnTy1 ++ " \\leq "
         ++ latex exnTy2 ++ "$"
 
 judgeSubEff :: JudgeSubEff -> H.Html
 judgeSubEff (kiEnv, exn1, exn2)
-    = H.toHtml $ "$" ++ "\\Delta" ++ " \\vdash " ++ latex exn1 ++ " \\leq "
+    = H.toHtml $ "$" ++ latex kiEnv ++ " \\vdash " ++ latex exn1 ++ " \\leq "
         ++ latex exn2 ++ "$"
 
-judgeTyWff :: JudgeTyWff -> H.Html
-judgeTyWff (kiEnv, exnTy, ty)
-    = H.toHtml $ "$" ++ "\\Delta" ++ " \\vdash " ++ latex exnTy
-        ++ " \\triangleright " ++ latex ty ++ "$"
+judgeErase :: JudgeErase -> H.Html
+judgeErase (kiEnv, exnTy, ty)
+    = H.toHtml $ "$" ++ latex kiEnv ++ " \\vdash " ++ latex exnTy
+        ++ " \\downarrow " ++ latex ty ++ "$"
+        
+judgeFV :: Name -> Env -> Exn -> H.Html
+judgeFV e gamma exn
+    = H.toHtml $ "$" ++ "e_{" ++ show e ++ "}" ++ "\\not\\in " ++ "\\mathrm{fv}(" ++ latex gamma ++ ", " ++ latex exn ++ ")" ++ "$"
 
 -- | Reconstruction
 
