@@ -16,3 +16,5 @@ import Analysis.LambdaUnion.Syntax
 import Analysis.LambdaUnion.Reduce
 import Analysis.LambdaUnion.Equality
 import Analysis.LambdaUnion.Print
+
+import qualified Analysis.LambdaUnion.ReduceNew as RN

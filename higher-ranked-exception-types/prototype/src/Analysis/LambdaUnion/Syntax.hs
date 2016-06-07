@@ -19,6 +19,10 @@ type Env = [(Name, Sort)]
 
 data Sort = C | Sort :=> Sort
     deriving (Eq, Read, Show)
+    
+arity :: Sort -> Int
+arirt C           = 0
+arity (s1 :=> s2) = arity s1 + 1
 
 -- TODO: (future work) can we do multi-sorted algebras elegantly with type families?
 -- TODO: (future work) generalize over the underlying first-order algebra
