@@ -1,4 +1,8 @@
 \section{\ThesisPaper{Motivation}{Introduction}}
+
+%FIXME - ICFP: Haskell -> functional programming language
+%FIXME - ICFP: neutered overview
+
 An often-heard selling point of non-strict functional languages is that they provide strong and expressive type systems that make side-effects explicit. This supposedly makes software more reliable by lessening the mental burden placed on programmers. Many programmers with a background in object-oriented languages are thus quite surprised, when making the transition to a functional language, that they lose a feature their type system formerly did provide: the tracking of uncaught exceptions.
 
 There is an excuse for why this feature is missing from the type systems of contemporary non-strict functional languages: in a strict first-order language it is sufficient to annotate each function with a single set of uncaught exceptions the function may raise; in a non-strict higher-order language the situation becomes significantly more complicated. Let us first consider the two aspects `higher-order' and `non-strict' in isolation:
@@ -62,27 +66,5 @@ map (const bottom_E)  :: forall alpha beta e_4 e_5. ThrowsArr (Throws ([Throws a
 \end{code}
 In other words, mapping the constant function with the exceptional value |bottom_E| as its range over a list discards all existing exceptional values from the list and produces only non-exceptional values or the exceptional value |bottom_E| as elements of the list.
 
-\subsection{Overview}
-In Section~\ref{section-lambda-union} we introduce the $\LambdaUnion$-calculus, a simply typed $\lambda$-calculus embellished with an associative, commutative, idempotent and unit (\ACIone) structure. The $\LambdaUnion$-calculus forms the language of effects in the type-and-effect system.
-Section~\ref{section-source-language} describes the source language to which the analysis applies.
-In Section~\ref{section-exception-types} we present the language of exception types and two type-and-effect systems for deriving exception types: a declarative type-and-effect system and a syntax-directed elaboration system that also produces an explicitly typed term.
-A type inference algorithm for this type-and-effect system is given in Section~\ref{section-type-inference-algorithm}.
-Finally, we present related work in this area and discuss some directions for further research in Sections~\ref{section-related-work} and~\ref{section-future-research}.
-
-\subsection{Contributions}
-
-This paper makes the following contributions:
-
-\begin{itemize}
-
-    \item A \emph{$\lambda$-calculus} extended with a union-operator that respect the associative, commutative, idempotent and unit structure of sets.
-
-    \item A \emph{type-and-effect system} with higher-ranked effect-polymorphic types and effect operators that precisely tracks exceptions.
-    
-    \item An \emph{inference algorithm} for these higher-ranked exception types.
-
-\end{itemize}
-
-Some of the key insights used in the inference algorithm---in particular the facts that an underlying type can be completed to a most general exception type (Figure~\ref{figure-type-completion}), and that the form of the types encountered in the inference algorithm makes it both easy to unify two types (Figure~\ref{figure-matching}) and compute the least upper bound of two types (Figure~\ref{figure-lub})---were first noted by \citet{HoldermansHage}.
-Our inference algorithm differs in a number of aspects. Notably, by the use of reduction of $\LambdaUnion$-terms instead of constraint solving and in the manner in which recursive definitions in the source language are handled by the algorithm.
-
+% ICPF %include introduction/overview.lhs2tex
+%include introduction/contributions.lhs2tex

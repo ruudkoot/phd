@@ -1,0 +1,6 @@
+\subsection{Overview}
+In Section~\ref{section-lambda-union} we introduce the $\LambdaUnion$-calculus, a simply typed $\lambda$-calculus embellished with an associative, commutative, idempotent and unit (\ACIone) structure. The $\LambdaUnion$-calculus forms the language of effects in the type-and-effect system.
+Section~\ref{section-source-language} describes the source language to which the analysis applies.
+In Section~\ref{section-exception-types} we present the language of exception types and two type-and-effect systems for deriving exception types: a declarative type-and-effect system and a syntax-directed elaboration system that also produces an explicitly typed term.
+A type inference algorithm for this type-and-effect system is given in Section~\ref{section-type-inference-algorithm}.
+Finally, we present related work in this area and discuss some directions for further research in Sections~\ref{section-related-work} and~\ref{section-future-research}.

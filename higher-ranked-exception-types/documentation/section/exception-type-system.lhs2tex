@@ -1,7 +1,6 @@
-%include ../figure/declarative-exception-type-system.lhs2tex
-%include ../figure/type-elaboration-system.lhs2tex
-
-\clearpage\clearpage
+% ICFP %include ../figure/declarative-exception-type-system.lhs2tex
+% ICFP %include ../figure/type-elaboration-system.lhs2tex
+% ICFP  \clearpage\clearpage
 \section{Exception types}\label{section-exception-types}
 
 %\subsection{Exception types}
@@ -55,6 +54,10 @@ The exceptional function value
     \end{code}
     raises an exception when its closure is forced---as happens when it is applied to an argument, for example. As this function can never produce a result, it certainly cannot produce an exceptional value. So the result type is annotated with an empty exception set.
 \end{example}
+
+%include ../figure/declarative-exception-type-system.lhs2tex
+%include ../figure/type-elaboration-system.lhs2tex
+\clearpage\clearpage
 
 \begin{figure}[t]
     \begin{gather*}

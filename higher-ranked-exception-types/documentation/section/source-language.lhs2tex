@@ -1,3 +1,7 @@
+%include ../figure/underlying-type-system.lhs2tex
+%include ../figure/operational-semantics.lhs2tex
+%include ../figure/type-completion.lhs2tex
+
 \section{Source language}\label{section-source-language}
 
 The type-and-effect system is applicable to a simple non-strict functional language that supports boolean, integer and list data types, as well as general recursion.
@@ -46,8 +50,6 @@ The operational semantics of the source language is given in Figure~\ref{figure-
 
 The reduction rules \CiteRule{E-AnnApp} and \CiteRule{E-AnnAbsApp} apply to constructs that are introduced to the language in Section~\ref{section-exception-types}. This also holds for the additional annotations on the $\lambda$-abstraction and the $\mathbf{fix}$-operator.
 
-%include ../figure/underlying-type-system.lhs2tex
-%include ../figure/operational-semantics.lhs2tex
-%include ../figure/type-completion.lhs2tex
-
-
+% ICFP %include ../figure/underlying-type-system.lhs2tex
+% ICFP %include ../figure/operational-semantics.lhs2tex
+% ICFP %include ../figure/type-completion.lhs2tex

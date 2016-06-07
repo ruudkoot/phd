@@ -1,5 +1,13 @@
 \documentclass[authoryear]{sigplanconf}
 
+%FIXME - ICFP: Haskell -> functional programming language
+%FIXME - ICFP: neutered overview
+%FIXME - ICFP: neutered section/lambda-union
+%FIXME - ICFP: moved figures around
+%FIXME - ICFP: neutered acknowledgements
+%FIXME - ICFP: neutered bibliography
+
+
 % Math Times
 %\usepackage[T1]{fontenc}
 %\usepackage{times}
@@ -74,12 +82,19 @@
 \title{Higher-ranked Exception Types}
 %\subtitle{Subtitle Text, if any}
 
+%\authorinfo{Ruud Koot}
+%           {Utrecht University}
+%           {inbox@@ruudkoot.nl}
 \authorinfo{Ruud Koot}
            {Utrecht University\titlenote{This material is based upon work supported by the Netherlands Organisation for Scientific Research (\textsc{nwo}) under the project \emph{Higher-ranked Polyvariance Explored} (612.001.120).}}
            {inbox@@ruudkoot.nl}
-%\authorinfo{Jurriaan Hage}
-%           {Utrecht University}
-%           {j.hage@@uu.nl}
+\authorinfo{Jurriaan Hage}
+           {Utrecht University}
+           {j.hage@@uu.nl}
+%\authorinfo{Ruud Koot \and Juriaan Hage}
+%           {Utrecht University\titlenote{This material is based upon work supported by the Netherlands Organisation for Scientific Research (\textsc{nwo}) under the project \emph{Higher-ranked Polyvariance Explored} (612.001.120).}}
+%           {inbox@@ruudkoot.nl \and j.hage@@uu.nl}
+
 
 %\authorinfo{John Doe}
 %           {ACME University\titlenote{This material may or may not be based upon work supported by some shady organization under a cryptic project title. We categorically deny everything.}}
@@ -116,13 +131,13 @@ exceptions, higher-ranked polymorphism, polymorphic recursion, type-and-effect s
 %include section/future-research.lhs2tex
 %include section/conclusion.lhs2tex
 
-\acks
-We would like to thank Jurriaan Hage and the members of the Software Technology reading club at Utrecht University for their comments on earlier drafts of this paper. Vincent van Oostrom and Femke van Raamsdonk provided some helpful pointers to related literature.
+%\acks
+%We would like to thank Jurriaan Hage and the members of the Software Technology reading club at Utrecht University for their comments on earlier drafts of this paper. Vincent van Oostrom and Femke van Raamsdonk provided some helpful pointers to related literature.
 
 %\clearpage
 
 \bibliographystyle{plainnat}
-\bibliography{higher-ranked-exception-types}
+\bibliography{higher-ranked-exception-types-neutered}
 
 %BEGIN sigplanconf-template.tex
 
