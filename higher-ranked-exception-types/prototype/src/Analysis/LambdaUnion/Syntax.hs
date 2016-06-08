@@ -2,6 +2,9 @@ module Analysis.LambdaUnion.Syntax (
     module Analysis.Names,
     Env,
     Sort(..),
+    arity,
+    sortOfArgs,
+    argsToSort,
     Tm(..),
     fv,
     maxName,
@@ -23,6 +26,14 @@ data Sort = C | Sort :=> Sort
 arity :: Sort -> Int
 arirt C           = 0
 arity (s1 :=> s2) = arity s1 + 1
+
+sortOfArgs :: Sort -> [Sort]
+sortOfArgs C           = []
+sortOfArgs (s1 :=> s2) = s1 : sortOfArgs s2
+
+argsToSort :: [Sort] -> Sort
+argsToSort []     = C
+argsToSort (s:ss) = s :=> argsToSort ss
 
 -- TODO: (future work) can we do multi-sorted algebras elegantly with type families?
 -- TODO: (future work) generalize over the underlying first-order algebra
