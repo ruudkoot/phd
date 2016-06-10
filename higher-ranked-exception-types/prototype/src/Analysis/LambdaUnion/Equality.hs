@@ -2,6 +2,9 @@ module Analysis.LambdaUnion.Equality where
 
 import Analysis.LambdaUnion.Syntax
 import Analysis.LambdaUnion.Reduce
+import Analysis.LambdaUnion.ReduceNew
+
+import Control.Monad.State
 
 -- | Syntactic equality up to alpha-renaming
 
@@ -40,3 +43,11 @@ semanticallyEqual env e1 e2 =
     let e1'  = evalFresh (etaExpand env e1) (maxName e1 + 1001)
         e2'  = evalFresh (etaExpand env e2) (maxName e2 + 1001)
      in synEqAlpha (normalize e1') (normalize e2')
+     
+     
+-- ReduceNew version
+semanticallyEqual' :: (Ord a, Show a) => Env -> Tm a -> Tm a -> Bool
+semanticallyEqual' env e1 e2 =
+    let e1' = fst . fst $ runState (toTm' env e1) (maxName e1 + 1001)
+        e2' = fst . fst $ runState (toTm' env e2) (maxName e2 + 1001)
+     in synEqAlpha ((fromTm' . normalize') e1') ((fromTm' . normalize') e2')

@@ -2,6 +2,7 @@
 
 module Analysis.LambdaUnion.ReduceNew (
     toTm',
+    fromTm',
     normalize'
 ) where
 
