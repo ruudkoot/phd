@@ -8,10 +8,13 @@ module Analysis.LambdaUnion.ReduceNew (
 import Analysis.LambdaUnion.Syntax
 
 import Control.Applicative
+import Control.Arrow
 import Control.Monad
 import Control.Monad.State
 import Data.List
 import Data.Maybe
+
+-- FIXME: Redex [Tm' a] or ([Head a],[Tm' a])?
 
 data Head a = Var' Name | Con' a | Redex (Tm' a)
   deriving (Eq, Show)
@@ -133,41 +136,89 @@ isNf' (Tm' xs ts) = all isNf'' ts
 
 -- Reduce a canonical representation into a normalized and canonically ordered
 -- form.
-normalize' :: Ord a => Tm' a -> Tm' a
-normalize' t = case normalize'' t of
-                    (t', False) -> t'
-                    (t', True ) -> normalize' t
+normalize' :: (Eq a, Ord a, Show a) => Tm' a -> Tm' a
+normalize' t
+    = let t' = normalize'' t
+       in if t == t' then
+            t
+          else
+            normalize' t'
   where
-    normalize'' :: Ord a => Tm' a -> (Tm' a, Bool)
-    normalize'' (Tm' xs ts) | isApplicableBeta   ts
-        = undefined
-    normalize'' (Tm' xs ts) | isApplicableGamma1 ts
-        = undefined
-    normalize'' (Tm' xs ts) | isApplicableGamma2 ts
-        = undefined
-        
-    isApplicableBeta :: [(Head a, [Tm' a])] -> Bool
-    isApplicableBeta = undefined
+    normalize'' :: (Eq a, Ord a, Show a) => Tm' a -> Tm' a
+    
+    -- R-Beta
+    normalize'' (Tm' xs ks)
+        | let ks' = map betaReduce ks
+        , ks /= ks'
+        = Tm' xs ks'
+            where
+              betaReduce :: (Head a,[Tm' a]) -> (Head a,[Tm' a])
+              betaReduce k@(Redex (Tm' xs ks), ts)
+                = let ks' = map (subst (map fst xs) ts) ks
+                      k'  = (Redex (Tm' [] ks'), [])  -- FIXME: not a Redex!
+                   in k'                              -- handle with Gamma2? (Gamma1?)
+              betaReduce k = k                        -- (and eta-contracted by fromTm'?)
+              
+              subst :: [Name] -> [Tm' a] -> (Head a, [Tm' a]) -> (Head a, [Tm' a])
+              subst xs ts (f, ts') = (substF xs ts f, map (substT xs ts) ts')
+              
+              substF :: [Name] -> [Tm' a] -> Head a -> Head a
+              substF xs ts (Var'  x)
+                | Just n <- elemIndex x xs = Redex (ts !! n)   -- new redex!
+                | otherwise                = Var' x
+              substF xs ts (Con'  c) = Con' c
+              substF xs ts (Redex t) = Redex (substT xs ts t)
+              
+              substT :: [Name] -> [Tm' a] -> Tm' a -> Tm' a
+              substT xs ts (Tm' xs' ks)
+                | not (null (xs `intersect` (map fst xs'))) = error "substT"
+                | otherwise
+                    = Tm' xs' (map (subst xs ts) ks)
+
+    -- R-Gamma1
+    -- normalize'' (Tm' xs ts) | isApplicableGamma1 ks
+    --    = undefined
+
+    -- R-Gamma2
+    normalize'' (Tm' xs ks@((Redex (Tm' xs' _),_):_))
+        | isApplicableGamma2 ks, length xs' >= 1
+            = Tm' (xs ++ xs') (map unbind ks)
+                where
+                    unbind :: (Head a, [Tm' a]) -> (Head a, [Tm' a])
+                    unbind (Redex (Tm' xs' ts), ts')
+                        = (Redex (Tm' [] (map ar ts)), ts')
+                    ar = alphaRename (map fst xs) (map fst xs')
+                    
+    -- RECURSE
+    normalize'' (Tm' xs ks)
+        = Tm' xs (map (normalizeF'' *** map normalize'') ks)
+            where
+              normalizeF'' :: (Eq a, Ord a, Show a) => Head a -> Head a
+              normalizeF'' (Var'  x) = Var'  x
+              normalizeF'' (Con'  c) = Con'  c
+              normalizeF'' (Redex t) = Redex (normalize'' t)
 
     isApplicableGamma1 :: [(Head a, [Tm' a])] -> Bool
     isApplicableGamma1 = undefined
 
-    isApplicableGamma2 :: [(Head a, [Tm' a])] -> Bool
-    isApplicableGamma2 ts
-        | all isRedex ts, xss <- map getBinders ts
+    isApplicableGamma2 :: Show a => [(Head a, [Tm' a])] -> Bool
+    isApplicableGamma2 ks
+        | all isRedex ks                                -- all redices
+        , (xs@(length->n):xss) <- map getBinders ks     -- at least one rexed
+        -- , n >= 1                                        -- at least one binder
+        , all ((==n) . length) xss                      -- sanity check
             = True
-        | not (any isRedex ts)
+        | not (any isRedex ks)
             = False
         | otherwise
-            = error "isApplicableGamma2"            
+            = error $ "isApplicableGamma2: " ++ show ks
 
     isRedex :: (Head a, [Tm' a]) -> Bool
     isRedex (Redex _, _) = True
     isRedex _            = False
-    
+
     getBinders :: (Head a, [Tm' a]) -> [(Name, Sort)]
     getBinders (Redex (Tm' xs _), _) = xs
-
 
 
 -- | TESTS | -------------------------------------------------------------------
@@ -193,3 +244,18 @@ test_isNf'_1 =
             ==
         False
 
+test_normalize'_0 =
+    let env = [(0,C:=>(C:=>C))]
+        tm  = App (Var 0) (Con "l")
+        tm' = fst (fst (runState (toTm' env tm) 100))
+     in tm'
+
+test_normalize'_1 =
+    let env = [(0,C:=>(C:=>C))]
+        tm  = App (Var 0) (Con "l")
+        tm' = fst (fst (runState (toTm' env tm) 100))
+     in normalize' tm'
+     
+test_normalize'_2 =
+    let tm' = Tm' [(102,C)] [(Redex (Tm' [] [(Var' 0,[Tm' [] [(Redex (Tm' [] [(Con' "l",[])]),[])],Tm' [] [(Redex (Tm' [] [(Var' 102,[])]),[])]])]),[])]
+     in normalize' tm'
