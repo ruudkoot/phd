@@ -12,6 +12,7 @@ import Control.Applicative
 import Control.Arrow
 import Control.Monad
 import Control.Monad.State
+import Data.Function
 import Data.List
 import Data.Maybe
 
@@ -50,7 +51,10 @@ toTm' :: Ord a => Env -> Tm a -> State Int (Tm' a, Sort)
 
 toTm' env (Var x)
     -- does eta-expansion
-    = do let s  = fromJust $ lookup x env
+    = do let s  = case lookup x env of
+                    Just s  -> s
+                    Nothing -> error $ "toTm'(Var): x = " ++ show x
+                                            ++ "; env = " ++ show env
          let ss = sortOfArgs s
          xs <- replicateM (length ss) fresh
          xs' <- map fst <$> mapM (toTm' (zip xs ss ++ env) . Var) xs
@@ -60,7 +64,7 @@ toTm' env (Con c)
     = return (Tm' [] [(Con' c,[])], C)
 
 toTm' env (Abs x k t)
-    = do (Tm' xs ts, s) <- toTm' env t
+    = do (Tm' xs ts, s) <- toTm' ((x,k):env) t
          case lookup x xs of
             Just _  -> error "toTm': Abs"
             Nothing -> return (Tm' ((x,k):xs) ts, k :=> s)
@@ -141,24 +145,23 @@ normalize' :: (Eq a, Ord a, Show a) => Tm' a -> Tm' a
 normalize' t
     = let t' = normalize'' t
        in if t == t' then
-            t
+            canonicallyOrder t
           else
             normalize' t'
   where
     normalize'' :: (Eq a, Ord a, Show a) => Tm' a -> Tm' a
     
-    -- R-Beta
+    -- R-Beta + R-Gamma1
     normalize'' (Tm' xs ks)
-        | let ks' = map betaReduce ks
+        | let ks' = concatMap betaReduce ks
         , ks /= ks'
         = Tm' xs ks'
             where
-              betaReduce :: (Head a,[Tm' a]) -> (Head a,[Tm' a])
+              betaReduce :: (Head a,[Tm' a]) -> [(Head a,[Tm' a])]
               betaReduce k@(Redex (Tm' xs ks), ts)
-                = let ks' = map (subst (map fst xs) ts) ks
-                      k'  = (Redex (Tm' [] ks'), [])  -- FIXME: not a Redex!
-                   in k'                              -- handle with Gamma2? (Gamma1?)
-              betaReduce k = k                        -- (and eta-contracted by fromTm'?)
+                = map (subst (map fst xs) ts) ks
+              betaReduce k
+                = [k]
               
               subst :: [Name] -> [Tm' a] -> (Head a, [Tm' a]) -> (Head a, [Tm' a])
               subst xs ts (f, ts') = (substF xs ts f, map (substT xs ts) ts')
@@ -176,10 +179,6 @@ normalize' t
                 | otherwise
                     = Tm' xs' (map (subst xs ts) ks)
 
-    -- R-Gamma1
-    -- normalize'' (Tm' xs ts) | isApplicableGamma1 ks
-    --    = undefined
-
     -- R-Gamma2
     normalize'' (Tm' xs ks@((Redex (Tm' xs' _),_):_))
         | isApplicableGamma2 ks, length xs' >= 1
@@ -192,21 +191,18 @@ normalize' t
                     
     -- RECURSE
     normalize'' (Tm' xs ks)
-        = Tm' xs (map (normalizeF'' *** map normalize'') ks)
+        = Tm' xs (nub $ map (normalizeF'' *** map normalize'') ks)
             where
               normalizeF'' :: (Eq a, Ord a, Show a) => Head a -> Head a
               normalizeF'' (Var'  x) = Var'  x
               normalizeF'' (Con'  c) = Con'  c
               normalizeF'' (Redex t) = Redex (normalize'' t)
 
-    isApplicableGamma1 :: [(Head a, [Tm' a])] -> Bool
-    isApplicableGamma1 = undefined
-
     isApplicableGamma2 :: Show a => [(Head a, [Tm' a])] -> Bool
     isApplicableGamma2 ks
         | all isRedex ks                                -- all redices
         , (xs@(length->n):xss) <- map getBinders ks     -- at least one rexed
-        -- , n >= 1                                        -- at least one binder
+        , n >= 1                                        -- at least one binder
         , all ((==n) . length) xss                      -- sanity check
             = True
         | not (any isRedex ks)
@@ -220,6 +216,53 @@ normalize' t
 
     getBinders :: (Head a, [Tm' a]) -> [(Name, Sort)]
     getBinders (Redex (Tm' xs _), _) = xs
+
+
+-- Canonically order a normal form.
+canonicallyOrder :: (Ord a, Show a) => Tm' a -> Tm' a
+canonicallyOrder (Tm' xs ks)
+    = let ks'       = map (canonicallyOrderF *** map canonicallyOrder) ks
+          orderedKs = sortBy compareK ks'
+       in Tm' xs orderedKs
+            where
+              canonicallyOrderF :: (Ord a, Show a) => Head a -> Head a
+              canonicallyOrderF (Var'  x) = Var'  x
+              canonicallyOrderF (Con'  c) = Con'  c
+              canonicallyOrderF (Redex t) = Redex (canonicallyOrder t)
+
+              -- arguments assumed to have been ordered by an earlier recursive call!
+              -- normal form, so this case analysis is complete
+              compareK :: (Ord a, Show a) => (Head a, [Tm' a]) -> (Head a, [Tm' a]) -> Ordering
+              compareK (Con' c, ts) (Con' d, ts') = case compare c d of
+                                                        LT -> LT
+                                                        GT -> GT
+                                                        EQ -> compareTS ts ts'
+              compareK (Con' _, _ ) (Var' _, _  ) = LT
+              compareK (Var' _, _ ) (Con' _, _  ) = GT
+              compareK (Var' x, ts) (Var' y, ts') = case compare x y of
+                                                        LT -> LT
+                                                        GT -> GT
+                                                        EQ -> compareTS ts ts'
+
+              compareKS :: (Ord a, Show a) => [(Head a, [Tm' a])] -> [(Head a, [Tm' a])] -> Ordering
+              compareKS []     []       = EQ
+              compareKS (k:ks) (k':ks') = case compareK k k' of
+                                            LT -> LT
+                                            GT -> GT
+                                            EQ -> compareKS ks ks'
+              
+              -- assumed to have been ordered by an earlier recursive call!
+              compareT :: (Ord a, Show a) => Tm' a -> Tm' a -> Ordering
+              compareT (Tm' xs ts) (Tm' xs' ts')
+                = compareKS ts ts'
+                
+              compareTS :: (Ord a, Show a) => [Tm' a] -> [Tm' a] -> Ordering
+              compareTS []     []       = EQ                -- will get nubbed!
+              compareTS (t:ts) (t':ts') = case compareT t t' of
+                                            LT -> LT
+                                            GT -> GT
+                                            EQ -> compareTS ts ts'
+                                            
 
 
 -- | TESTS | -------------------------------------------------------------------

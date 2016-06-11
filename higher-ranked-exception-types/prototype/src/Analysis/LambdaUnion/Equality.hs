@@ -48,6 +48,21 @@ semanticallyEqual env e1 e2 =
 -- ReduceNew version
 semanticallyEqual' :: (Ord a, Show a) => Env -> Tm a -> Tm a -> Bool
 semanticallyEqual' env e1 e2 =
-    let e1' = fst . fst $ runState (toTm' env e1) (maxName e1 + 1001)
-        e2' = fst . fst $ runState (toTm' env e2) (maxName e2 + 1001)
-     in synEqAlpha ((fromTm' . normalize') e1') ((fromTm' . normalize') e2')
+    let e1Old = normalize $ evalFresh (etaExpand env e1) (maxName e1 + 1001)
+        e2Old = normalize $ evalFresh (etaExpand env e2) (maxName e2 + 1001)
+        e1New = fromTm' . normalize' . fst $ evalState (toTm' env e1) (maxName e1 + 1001)
+        e2New = fromTm' . normalize' . fst $ evalState (toTm' env e2) (maxName e2 + 1001)
+     in {- Old and New sometimes differ because new eta-contracts more agressively!
+            if synEqAlpha e1Old e1New then
+                if synEqAlpha e2Old e2New then
+                    synEqAlpha e1Old e2Old
+                else
+                    error $ "semanticallyEqual: e2Old and e2New are not equal\n"
+                            ++ "e2Old = " ++ show e2Old ++ ";\n"
+                            ++ "e2New = " ++ show e2New ++ ";\n"
+            else
+                error $ "semanticallyEqual: e1Old and e1New are not equal\n"
+                        ++ "e1Old = " ++ show e1Old ++ ";\n"
+                        ++ "e1New = " ++ show e1New ++ ";\n"
+        -}
+        synEqAlpha e1New e2New
