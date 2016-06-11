@@ -42,6 +42,29 @@ alphaRename xs ys (f, ts) = (alphaRenameF f, map alphaRenameT ts)
             Tm' xs' (map (alphaRename xs ys) ts')
           else
             error "alphaRenameF"
+            
+
+synEqUpToAlphaK :: Eq a => (Head a, [Tm' a]) -> (Head a, [Tm' a]) -> Bool
+synEqUpToAlphaK (f, ts) (f', ts')
+    = synEqUpToAlphaF f f' && length ts == length ts'
+        && and (zipWith synEqUpToAlphaT ts ts')
+  where
+    synEqUpToAlphaF :: Eq a => Head a -> Head a -> Bool
+    synEqUpToAlphaF (Var'  x) (Var'  y) = x == y
+    synEqUpToAlphaF (Con'  c) (Con'  d) = c == d
+    synEqUpToAlphaF (Redex t) (Redex u) = synEqUpToAlphaT t u
+    synEqUpToAlphaF _         _         = False
+
+    synEqUpToAlphaT :: Eq a => Tm' a -> Tm' a -> Bool
+    synEqUpToAlphaT (Tm' (unzip -> (xs,ss)) ts) (Tm' (unzip -> (xs', ss')) ts')
+        | ss == ss', length ts == length ts'
+            = and (zipWith synEqUpToAlphaK ts (map (alphaRename xs' xs) ts'))
+        | otherwise
+            = False
+
+
+nubUpToAlpha :: Eq a => [(Head a, [Tm' a])] -> [(Head a, [Tm' a])]
+nubUpToAlpha = nubBy synEqUpToAlphaK
 
 
 -- Eta-expand and transform into canonical (but not normalized or canonically
@@ -88,7 +111,7 @@ toTm' env (Union t1 t2)
          (Tm' xs2@(unzip -> (xs2x,xs2k)) ts2, s2) <- toTm' env t2
          -- FIXME: need to do some alpha-renaming
          if s1 == s2 && xs1k == xs2k then
-            return (Tm' xs1 (nub $ ts1 ++ map (alphaRename xs2x xs1x) ts2), s1)
+            return (Tm' xs1 (nubUpToAlpha $ ts1 ++ map (alphaRename xs2x xs1x) ts2), s1)
          else
             error "toTm': Union"
 
@@ -153,7 +176,7 @@ normalize' t
     
     -- R-Beta + R-Gamma1
     normalize'' (Tm' xs ks)
-        | let ks' = concatMap betaReduce ks
+        | let ks' = nubUpToAlpha $ concatMap betaReduce ks
         , ks /= ks'
         = Tm' xs ks'
             where
@@ -191,7 +214,7 @@ normalize' t
                     
     -- RECURSE
     normalize'' (Tm' xs ks)
-        = Tm' xs (nub $ map (normalizeF'' *** map normalize'') ks)
+        = Tm' xs (nubUpToAlpha $ map (normalizeF'' *** map normalize'') ks)
             where
               normalizeF'' :: (Eq a, Ord a, Show a) => Head a -> Head a
               normalizeF'' (Var'  x) = Var'  x
@@ -246,6 +269,8 @@ canonicallyOrder (Tm' xs ks)
 
               compareKS :: (Ord a, Show a) => [(Head a, [Tm' a])] -> [(Head a, [Tm' a])] -> Ordering
               compareKS []     []       = EQ
+              compareKS []     _        = LT                -- this can occur!
+              compareKS _      []       = GT                -- this can occur!
               compareKS (k:ks) (k':ks') = case compareK k k' of
                                             LT -> LT
                                             GT -> GT
@@ -258,6 +283,8 @@ canonicallyOrder (Tm' xs ks)
                 
               compareTS :: (Ord a, Show a) => [Tm' a] -> [Tm' a] -> Ordering
               compareTS []     []       = EQ                -- will get nubbed!
+              compareTS []     _        = LT                -- FIXME: should not occur
+              compareTS _      []       = GT                -- FIXME: should not occur
               compareTS (t:ts) (t':ts') = case compareT t t' of
                                             LT -> LT
                                             GT -> GT

@@ -6,6 +6,7 @@ import Analysis.LambdaUnion.ReduceNew
 
 import Control.Monad.State
 
+
 -- | Syntactic equality up to alpha-renaming
 
 synEqAlpha :: Eq a => Tm a -> Tm a -> Bool
@@ -52,10 +53,12 @@ semanticallyEqual' env e1 e2 =
         e2Old = normalize $ evalFresh (etaExpand env e2) (maxName e2 + 1001)
         e1New = fromTm' . normalize' . fst $ evalState (toTm' env e1) (maxName e1 + 1001)
         e2New = fromTm' . normalize' . fst $ evalState (toTm' env e2) (maxName e2 + 1001)
-     in {- Old and New sometimes differ because new eta-contracts more agressively!
+     in {- Old and New sometimes differ because:
+                - 'New' eta-contracts more agressively
+                - 'Old' include the R-Merge widening rule
             if synEqAlpha e1Old e1New then
                 if synEqAlpha e2Old e2New then
-                    synEqAlpha e1Old e2Old
+                    synEqAlpha e1New e2New
                 else
                     error $ "semanticallyEqual: e2Old and e2New are not equal\n"
                             ++ "e2Old = " ++ show e2Old ++ ";\n"

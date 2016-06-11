@@ -1,0 +1,10 @@
+THIS EXAMPLE DIFFERS BETWEEN OLD AND NEW:
+
+Seq (Crash "F" ((Bool :-> Bool) :-> Bool)) (Abs 1 (Bool :-> Bool) (If (Crash "G" Bool) (App (Var 1) (Con True)) (App (Var 1) (Crash "E" Bool))))
+
+
+e1Old = ({"G"}∪(x7∪(x8 {"E"})));
+e1New = ({"G"}∪(x7∪((x8 ∅)∪(x8 {"E"}))));
+
+
+NEW IS CORRECT, OLD WIDENS!

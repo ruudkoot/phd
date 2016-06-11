@@ -31,7 +31,8 @@ inferenceExamples = map (\(l,x) -> (l, show x, mathjax' x)) [
     "etaContractedExn `seq` True"   # Seq exEtaContractedExn (Con True),
     "f"                             # exF,
     "dussartHengleinMossin"         # exDHM,
-    -- TODO: Glynn, Stuckey, Sulzman (not in paper)
+    "dussartHengleinMossin3"        # exDHM3,
+    "glynnStuckeySulzmann"          # exGSS,
     "risers"                        # exRisers
   ] -- ++ inferenceExamples'
   where
@@ -59,6 +60,18 @@ inferenceExamples = map (\(l,x) -> (l, show x, mathjax' x)) [
     exDHM
         = Fix 1 (Bool :-> (Bool :-> Bool)) $ Abs 2 Bool $ Abs 3 Bool $
                 If (Var 2) (Con True) (App (App (Var 1) (Var 3)) (Var 2))
+    exDHM3
+        = Fix 1 (Bool :-> (Bool :-> (Bool :-> Bool))) $
+                Abs 2 Bool $ Abs 3 Bool $ Abs 4 Bool $
+                    If (Var 2) (Con True) $
+                        App (App (App (Var 1) (Var 4)) (Var 2)) (Var 3)
+    exGSS
+        = Fix 1 (Bool :-> (Bool :-> (Bool :-> Bool))) $
+                Abs 2 Bool $ Abs 3 Bool $ Abs 4 Bool $
+                    If (Var 4) (Var 2) $
+                        App (App (App (Var 1) (Var 2)) (
+                            App (App (App (Var 1) (Var 3)) (Var 2)) (Var 4)
+                        )) (Var 4)
     exRisers
         = Fix 1 (List Int :-> List (List Int)) $ Abs 2 (List Int) $
             Case (Var 2) (Nil (List Int)) 3 4 $

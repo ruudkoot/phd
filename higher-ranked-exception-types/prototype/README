@@ -1,0 +1,22 @@
+== BUILDING ====================================================================
+
+The application can be build using the command:
+
+    $ cabal install
+
+We have only tested this with GHC 7.8.
+
+
+== RUNNING =====================================================================
+
+Launch the executable ./dist/build/prototype/prototype.
+
+This will start a webserver than can be accessed via:
+
+    http://localhost:8000/hret/inference
+    
+
+Type a program in the text box, or load one of the supplied examples by clicking
+on them. Hit the "Submit Quert" button. The infered exception type, elaborated
+program and two derivation trees (declarative type system and syntax-directed
+elaboration) will be printed.
