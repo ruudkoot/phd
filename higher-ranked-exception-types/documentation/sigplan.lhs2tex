@@ -79,14 +79,18 @@
 \titlebanner{banner above paper title}        % These are ignored unless
 \preprintfooter{short description of paper}   % 'preprint' option specified.
 
-\title{Higher-ranked Exception Types}
+\title{Higher-ranked Exception Types\titlenote{Prototype and \textsc{icfp} reviews: \url{https://www.staff.science.uu.nl/~0422819/hret/supplementary-material.tar.gz}}}
+% https://www.staff.science.uu.nl/~0422819/hret/supplementary-material.tar.gz
 %\subtitle{Subtitle Text, if any}
 
 %\authorinfo{Ruud Koot}
 %           {Utrecht University}
 %           {inbox@@ruudkoot.nl}
+%\authorinfo{Ruud Koot}
+%           {Utrecht University\titlenote{This material is based upon work supported by the Netherlands Organisation for Scientific Research (\textsc{nwo}) under the project \emph{Higher-ranked Polyvariance Explored} (612.001.120).}}
+%           {inbox@@ruudkoot.nl}
 \authorinfo{Ruud Koot}
-           {Utrecht University\titlenote{This material is based upon work supported by the Netherlands Organisation for Scientific Research (\textsc{nwo}) under the project \emph{Higher-ranked Polyvariance Explored} (612.001.120).}}
+           {Utrecht University}
            {inbox@@ruudkoot.nl}
 \authorinfo{Jurriaan Hage}
            {Utrecht University}
@@ -94,7 +98,6 @@
 %\authorinfo{Ruud Koot \and Juriaan Hage}
 %           {Utrecht University\titlenote{This material is based upon work supported by the Netherlands Organisation for Scientific Research (\textsc{nwo}) under the project \emph{Higher-ranked Polyvariance Explored} (612.001.120).}}
 %           {inbox@@ruudkoot.nl \and j.hage@@uu.nl}
-
 
 %\authorinfo{John Doe}
 %           {ACME University\titlenote{This material may or may not be based upon work supported by some shady organization under a cryptic project title. We categorically deny everything.}}
@@ -109,7 +112,7 @@
 
 \category{D.1.1}{Programming Techniques}{Applicative (Functional) Programming}
 \category{F.3.3}{Logics and Meanings of Programs}{Studies of Program Constructs---Type structure}
-\category{D.3.3}{Programming Languages}{Language Constructs and Features---Polymorphism}
+%\category{D.3.3}{Programming Languages}{Language Constructs and Features---Polymorphism}
 %\category{F.3.2}{Logics and Meanings of Programs}{Semantics of Programming Languages---Program analysis}
 
 % general terms are not compulsory anymore, 

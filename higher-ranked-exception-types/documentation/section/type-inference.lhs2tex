@@ -43,12 +43,13 @@ The $\mathbf{fix}$-construct abstracts over a variable that is of an exception p
     Let us convince ourselves that the elaborated term is type-correct. 
     \begin{align*}
         x &: \ExnBool\ \&\ e_1 \\
+        y &: \ExnBool\ \&\ e_2 \\
         \TmTrue &: \ExnBool\ \&\ \emptyset \\
-        f \langle e_2\rangle\ y\ \langle e_1\rangle\ x &: \ExnBool\ \&\ e_2 \cup e_1
+        f' \langle e_2\rangle\ y\ \langle e_1\rangle\ x &: \ExnBool\ \&\ e_2 \cup e_1
     \end{align*}
-   Therefore, \[ \TmIf{x}{\TmTrue}{f \langle e_2\rangle\ y\ \langle e_1\rangle\ x} : \ExnBool \sqcup \ExnBool\ \&\ e_1 \cup \emptyset \cup e_2 \cup e_1 \]
+   Therefore, \[ \TmIf{x}{\TmTrue}{f' \langle e_2\rangle\ y\ \langle e_1\rangle\ x} : \ExnBool \sqcup \ExnBool\ \&\ e_1 \cup \emptyset \cup e_2 \cup e_1 \]
     By commutativity and idempotence of the union operator and the empty set being the unit, this reduces to
-    \[ \TmIf{x}{\TmTrue}{f \langle e_2\rangle\ y\ \langle e_1\rangle\ x} : \ExnBool\ \&\ e_1 \cup e_2 \]
+    \[ \TmIf{x}{\TmTrue}{f' \langle e_2\rangle\ y\ \langle e_1\rangle\ x} : \ExnBool\ \&\ e_1 \cup e_2 \]
 
     Type checking is easier than type inference, however. To infer the type of the recursive definition |f| we have to ``guess'' a type for it. How do we guess this type? We first try the least exception type $\bot_{\TyBool\to\TyBool\to\TyBool}$:
     \begin{code}
