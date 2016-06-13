@@ -6,6 +6,8 @@
 
 module Main where
 
+import Prelude hiding (log)
+
 import Control.Applicative ((<$>))
 import Control.Arrow ((***))
 import Control.Monad
@@ -968,13 +970,24 @@ maybeT = MaybeT . return
 listT :: Monad m => [a] -> ListT m a
 listT = ListT . return
 
-stateT :: Monad m => State s a -> StateT s m a
-stateT st = StateT { runStateT = \s -> return (runState st s) }
+stateT :: Monad m => State s1 a -> StateT (s1,s2) m a
+stateT st = StateT {
+        runStateT = \(s1,s2) -> let (x, s1') = runState st s1 in return (x, (s1',s2))
+    }
 
 maybeToListT :: Monad m => Maybe a -> ListT m a
 maybeToListT Nothing  = listT []
 maybeToListT (Just x) = listT [x]
 
+log :: Monad m => String -> (AGUnifProb Sig f' Int Int) -> StateT (Int, Log f') m (AGUnifProb Sig f' Int Int)
+log l1 l2 = StateT { runStateT = \(s1,s2) -> return (l2,(s1, s2 ++ [LE l1 l2])) }
+
+type Log      f' = [LogEntry f']
+data LogEntry f' = LE String (AGUnifProb Sig f' Int Int)
+  deriving Eq
+  
+instance Show f' => Show (LogEntry f') where
+    show (LE l p) = "\n    " ++ l ++ "\n        " ++ show p ++ "\n"
 
 -- FIXME: unification problems are sets of UNORDERED pairs
 -- FIXME: that "numV1" stuff is horrible and slow (find better representation)
@@ -982,13 +995,14 @@ maybeToListT (Just x) = listT [x]
 agUnifN
     :: (TermAlg Sig f' Int Int, Show f')
     => AGUnifProb Sig f' Int Int
-    -> StateT Int [] (AGUnifProb Sig f' Int Int)
+    -> StateT (Int, Log f') [] (AGUnifProb Sig f' Int Int)
 agUnifN p@(classify -> (pe, pe', pi, ph))
     -- VA (variable abstraction)
     | Just ((s,t),ph') <- uncons ph
         = do (s',rs) <- stateT $ homogeneous'' s
              (t',rt) <- stateT $ homogeneous'' t
-             agUnifN (pe ++ pe' ++ pi ++ ph' ++ [(s',t')] ++ rs ++ rt)
+             p' <- log "VA" (pe ++ pe' ++ pi ++ ph' ++ [(s',t')] ++ rs ++ rt)
+             agUnifN p'
 
     -- E-Res
     | (not . inSolvedForm) pe
@@ -997,12 +1011,14 @@ agUnifN p@(classify -> (pe, pe', pi, ph))
               numC' = maximum' 0 (map (uncurry max . (numC  *** numC )) pe)
            in do ee <- lift . maybeToList $ agUnif1' (map (toExp' numV1 numV2 numC') pe)
                  let qe = fromExp numV1 ee
-                 agUnifN (qe ++ pe' ++ pi ++ ph)
+                 p' <- log "E-Res" (qe ++ pe' ++ pi ++ ph)
+                 agUnifN p'
 
     -- E'-Res
     | (not . inSolvedForm) pe'
         = do qe' <- lift . maybeToList $ freeUnif pe'
-             agUnifN (pe ++ qe' ++ pi ++ ph)
+             p' <- log "E'-Res" (pe ++ qe' ++ pi ++ ph)
+             agUnifN p'
 
     -- E-Match    (s in E, t in E'; guaranteed by 'classify')
     | Just ((s,t),pi') <- uncons pi
@@ -1012,7 +1028,8 @@ agUnifN p@(classify -> (pe, pe', pi, ph))
              let numC' = max (numC  s) (numC  z)
              (fromExp numV1 -> qI) <- lift . maybeToList $
                 agConstMatch (toExp numV1 numV2 numC' s) (toExp numV1 numV2 numC' z)
-             agUnifN (pe ++ pe' ++ qI ++ [(z,t)] ++ pi' ++ ph)
+             p' <- log "E-Match" (pe ++ pe' ++ qI ++ [(z,t)] ++ pi' ++ ph)
+             agUnifN p'
 
     -- Merge-E-Match    (P_E and P_E' can both assumed to be solved at this point)
     -- FIXME: in Mem-Init: s in T(F,X)\X; in Merge-E-Match: s in T(F,X)?
@@ -1038,10 +1055,11 @@ agUnifN p@(classify -> (pe, pe', pi, ph))
             else
                 Nothing
             ) p
-        = agUnifN (map (applySubst [(x,y)] *** applySubst [(x,y)]) p')
+        = do p'' <- log "Var-Rep" (map (applySubst [(x,y)] *** applySubst [(x,y)]) p')
+             agUnifN p''
         
     -- DONE
-    | inSolvedForm p = return p
+    | inSolvedForm p = log "SOLVED" p
     | otherwise      = mzero
 
 
@@ -1050,10 +1068,10 @@ memRec
     :: (TermAlg Sig f' Int Int, Show f')
     => [((T Sig f' Int Int, T Sig f' Int Int), [T Sig f' Int Int])]
     -> AGUnifProb Sig f' Int Int
-    -> StateT Int [] (AGUnifProb Sig f' Int Int)
+    -> StateT (Int, Log f') [] (AGUnifProb Sig f' Int Int)
 memRec [] p
     = agUnifN p
-memRec (((s,x),smv):stack) p@(classify -> p'@(pe,pe',pi,ph))
+memRec (((s,x),smv):stack) p@(classify -> (pe,pe',pi,ph))
     = do sigma <- lift . maybeToList $ agUnif1TreatingAsConstant smv s x
     
          -- NON-DETERMINISTICALLY (DON'T KNOW) CHOOSE z!
@@ -1069,8 +1087,8 @@ memRec (((s,x),smv):stack) p@(classify -> p'@(pe,pe',pi,ph))
                             ((applySubst theta (applySubst sigma y), applySubst theta y)
                             ,applySubst theta y : smv)
                           ) ys
-
-         memRec (stack' ++ stack) (pe_sigma_theta ++ sigma' ++ theta ++ pe' ++ pi ++ ph)
+         p' <- log "Mem-Rec" (pe_sigma_theta ++ sigma' ++ theta ++ pe' ++ pi ++ ph)
+         memRec (stack' ++ stack) p'
 
          
 -- STILL TO DO FOR agUnifN:
