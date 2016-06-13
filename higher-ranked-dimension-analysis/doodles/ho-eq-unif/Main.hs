@@ -968,6 +968,9 @@ maybeT = MaybeT . return
 listT :: Monad m => [a] -> ListT m a
 listT = ListT . return
 
+stateT :: Monad m => State s a -> StateT s m a
+stateT st = StateT { runStateT = \s -> return (runState st s) }
+
 maybeToListT :: Monad m => Maybe a -> ListT m a
 maybeToListT Nothing  = listT []
 maybeToListT (Just x) = listT [x]
@@ -979,12 +982,12 @@ maybeToListT (Just x) = listT [x]
 agUnifN
     :: (TermAlg Sig f' Int Int, Show f')
     => AGUnifProb Sig f' Int Int
-    -> ListT (State Int) (AGUnifProb Sig f' Int Int)
+    -> StateT Int [] (AGUnifProb Sig f' Int Int)
 agUnifN p@(classify -> (pe, pe', pi, ph))
     -- VA (variable abstraction)
     | Just ((s,t),ph') <- uncons ph
-        = do (s',rs) <- lift $ homogeneous'' s
-             (t',rt) <- lift $ homogeneous'' t
+        = do (s',rs) <- stateT $ homogeneous'' s
+             (t',rt) <- stateT $ homogeneous'' t
              agUnifN (pe ++ pe' ++ pi ++ ph' ++ [(s',t')] ++ rs ++ rt)
 
     -- E-Res
@@ -992,27 +995,26 @@ agUnifN p@(classify -> (pe, pe', pi, ph))
         = let numV1 = maximum' 0 (map (uncurry max . (numX  *** numX )) pe)
               numV2 = maximum' 0 (map (uncurry max . (numX' *** numX')) pe)
               numC' = maximum' 0 (map (uncurry max . (numC  *** numC )) pe)
-           in do ee <- maybeToListT $ agUnif1' (map (toExp' numV1 numV2 numC') pe)
+           in do ee <- lift . maybeToList $ agUnif1' (map (toExp' numV1 numV2 numC') pe)
                  let qe = fromExp numV1 ee
                  agUnifN (qe ++ pe' ++ pi ++ ph)
 
     -- E'-Res
     | (not . inSolvedForm) pe'
-        = do qe' <- maybeToListT $ freeUnif pe'
+        = do qe' <- lift . maybeToList $ freeUnif pe'
              agUnifN (pe ++ qe' ++ pi ++ ph)
 
     -- E-Match    (s in E, t in E'; guaranteed by 'classify')
     | Just ((s,t),pi') <- uncons pi
-        = do z <- lift $ newV
+        = do z <- stateT newV
              let numV1 = max (numX  s) (numX  z)
              let numV2 = max (numX' s) (numX' z)
              let numC' = max (numC  s) (numC  z)
-             (fromExp numV1 -> qI) <- maybeToListT $
+             (fromExp numV1 -> qI) <- lift . maybeToList $
                 agConstMatch (toExp numV1 numV2 numC' s) (toExp numV1 numV2 numC' z)
              agUnifN (pe ++ pe' ++ qI ++ [(z,t)] ++ pi' ++ ph)
 
     -- Merge-E-Match    (P_E and P_E' can both assumed to be solved at this point)
-    -- FIXME: this is the non-terminating version of the rule
     -- FIXME: in Mem-Init: s in T(F,X)\X; in Merge-E-Match: s in T(F,X)?
     | Just (x,_) <- minView $
                         domNotMappingToVar pe `intersection` domNotMappingToVar pe'
@@ -1048,14 +1050,14 @@ memRec
     :: (TermAlg Sig f' Int Int, Show f')
     => [((T Sig f' Int Int, T Sig f' Int Int), [T Sig f' Int Int])]
     -> AGUnifProb Sig f' Int Int
-    -> ListT (State Int) (AGUnifProb Sig f' Int Int)
+    -> StateT Int [] (AGUnifProb Sig f' Int Int)
 memRec [] p
     = agUnifN p
 memRec (((s,x),smv):stack) p@(classify -> p'@(pe,pe',pi,ph))
-    = do sigma <- maybeToListT $ agUnif1TreatingAsConstant smv s x
+    = do sigma <- lift . maybeToList $ agUnif1TreatingAsConstant smv s x
     
          -- NON-DETERMINISTICALLY (DON'T KNOW) CHOOSE z!
-         z <- (listT . toList) (domNotMappingToVar pe')
+         z <- (lift . toList) (domNotMappingToVar pe')
 
          let theta  = if z == x then [] else [(z, x)]
          let sigma' = filter (\(x,y) -> not (x `member` domNotMappingToVar pe') && x /= y) sigma
