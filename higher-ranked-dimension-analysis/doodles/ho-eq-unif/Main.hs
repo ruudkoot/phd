@@ -15,14 +15,13 @@ import Control.Monad.State
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.List
 
-import Data.Function
-import Data.List (minimumBy, partition, sort, sortBy)
-import Data.Maybe
-
-import           Data.Map (Map)
-import qualified Data.Map as Map
-import           Data.Set        hiding (filter, foldr, map, partition, null)
-import qualified Data.Set as Set
+import           Data.Function
+import           Data.List      (intersect, minimumBy, partition, sort, sortBy)
+import           Data.Maybe
+import           Data.Map       (Map)
+import qualified Data.Map       as Map
+import           Data.Set       hiding (filter, foldr, map, partition, null)
+import qualified Data.Set       as Set
 
 -- | Utility | ------------------------------------------------------------[ ]--
 
@@ -879,8 +878,14 @@ classify (p@(s,t):ps)
 
 -- FIXME: does not check for idempotency (costly, might not be necessary)
 inSolvedForm :: TermAlg f f' c x => AGUnifProb f f' c x -> Bool
-inSolvedForm xs = all inSolvedForm' xs
-                    && length xs == Set.size (Set.fromList (map fst xs))
+inSolvedForm xs
+    = let domain = dom xs
+          range  = ran xs
+       in all inSolvedForm' xs
+            && length xs == Set.size (Set.fromList (map fst xs))
+            -- && size (domain `intersection` range) == 0
+          
+                    
   where inSolvedForm' (X  _, _) = True
         inSolvedForm' (X' _, _) = True
         inSolvedForm' _         = False
@@ -956,6 +961,16 @@ domNotMappingToVar ((_,X' _ ):xs) = domNotMappingToVar xs
 domNotMappingToVar ((X  x ,_):xs) = Set.insert (X  x ) (domNotMappingToVar xs)
 domNotMappingToVar ((X' x',_):xs) = Set.insert (X' x') (domNotMappingToVar xs)
 
+ran :: TermAlg f f' c x => AGUnifProb f f' c x -> Set (T f f' c x)
+ran [] = Set.empty
+ran ((_,t):xs) = ran' t `union` ran xs
+  where
+    ran' t@(X  _)    = Set.singleton t
+    ran' t@(X' _)    = Set.singleton t
+    ran' t@(C  _)    = Set.empty
+    ran' t@(F  _ ts) = Set.unions (map ran' ts)
+    ran' t@(F' _ ts) = Set.unions (map ran' ts)
+
 isShared :: TermAlg f f' c x =>
                     T f f' c x -> AGUnifProb f f' c x -> AGUnifProb f f' c x -> Bool
 isShared x pe pe'
@@ -979,15 +994,41 @@ maybeToListT :: Monad m => Maybe a -> ListT m a
 maybeToListT Nothing  = listT []
 maybeToListT (Just x) = listT [x]
 
-log :: Monad m => String -> (AGUnifProb Sig f' Int Int) -> StateT (Int, Log f') m (AGUnifProb Sig f' Int Int)
-log l1 l2 = StateT { runStateT = \(s1,s2) -> return (l2,(s1, s2 ++ [LE l1 l2])) }
+log :: (Ord f', Monad m) => Rule f' -> (AGUnifProb Sig f' Int Int) -> StateT (Int, Log f') m (AGUnifProb Sig f' Int Int)
+log l1 (sortBy (compare `on` fst) -> l2@(classify -> l2c))
+    = StateT { runStateT = \(s1,s2) -> return (l2,(s1, s2 ++ [LE l1 l2c])) }
+
+data Rule f'
+    = START
+    | VA
+    | E_Res     { e_resIn           :: AGUnifProb Sig f' Int Int
+                , e_resOut          :: AGUnifProb Sig f' Int Int }
+    | E'_Res
+    | E_Match
+    | Mem_Init  { mem_initX         :: T Sig f' Int Int
+                , mem_initS         :: T Sig f' Int Int
+                , mem_initT         :: T Sig f' Int Int }
+    | Mem_Rec   { mem_recGivenStack :: [((T Sig f' Int Int, T Sig f' Int Int)
+                                        ,[T Sig f' Int Int]                  )]
+                , mem_recChosenZ    :: T Sig f' Int Int
+                , mem_recSigma      :: [(T Sig f' Int Int, T Sig f' Int Int)]
+                , mem_recSigma'     :: [(T Sig f' Int Int, T Sig f' Int Int)]
+                , mem_recTheta      :: [(T Sig f' Int Int, T Sig f' Int Int)]
+                , mem_recYs         :: [T Sig f' Int Int]
+                , mem_recStack'     :: [((T Sig f' Int Int, T Sig f' Int Int)
+                                        ,[T Sig f' Int Int]                  )]
+                , mem_recStack''    :: [((T Sig f' Int Int, T Sig f' Int Int)
+                                        ,[T Sig f' Int Int]                  )] }
+    | Var_Rep
+    | SOLVED
+  deriving (Eq, Show)
 
 type Log      f' = [LogEntry f']
-data LogEntry f' = LE String (AGUnifProb Sig f' Int Int)
+data LogEntry f' = LE (Rule f') (AGClassifiedUnifProb Sig f' Int Int)
   deriving Eq
   
 instance Show f' => Show (LogEntry f') where
-    show (LE l p) = "\n    " ++ l ++ "\n        " ++ show p ++ "\n"
+    show (LE l p) = "\n    " ++ show l ++ "\n        " ++ show p ++ "\n"
 
 -- FIXME: unification problems are sets of UNORDERED pairs
 -- FIXME: that "numV1" stuff is horrible and slow (find better representation)
@@ -1001,7 +1042,7 @@ agUnifN p@(classify -> (pe, pe', pi, ph))
     | Just ((s,t),ph') <- uncons ph
         = do (s',rs) <- stateT $ homogeneous'' s
              (t',rt) <- stateT $ homogeneous'' t
-             p' <- log "VA" (pe ++ pe' ++ pi ++ ph' ++ [(s',t')] ++ rs ++ rt)
+             p' <- log VA (pe ++ pe' ++ pi ++ ph' ++ [(s',t')] ++ rs ++ rt)
              agUnifN p'
 
     -- E-Res
@@ -1011,13 +1052,13 @@ agUnifN p@(classify -> (pe, pe', pi, ph))
               numC' = maximum' 0 (map (uncurry max . (numC  *** numC )) pe)
            in do ee <- lift . maybeToList $ agUnif1' (map (toExp' numV1 numV2 numC') pe)
                  let qe = fromExp numV1 ee
-                 p' <- log "E-Res" (qe ++ pe' ++ pi ++ ph)
+                 p' <- log (E_Res pe qe) (qe ++ pe' ++ pi ++ ph)
                  agUnifN p'
 
     -- E'-Res
     | (not . inSolvedForm) pe'
         = do qe' <- lift . maybeToList $ freeUnif pe'
-             p' <- log "E'-Res" (pe ++ qe' ++ pi ++ ph)
+             p' <- log E'_Res (pe ++ qe' ++ pi ++ ph)
              agUnifN p'
 
     -- E-Match    (s in E, t in E'; guaranteed by 'classify')
@@ -1028,7 +1069,7 @@ agUnifN p@(classify -> (pe, pe', pi, ph))
              let numC' = max (numC  s) (numC  z)
              (fromExp numV1 -> qI) <- lift . maybeToList $
                 agConstMatch (toExp numV1 numV2 numC' s) (toExp numV1 numV2 numC' z)
-             p' <- log "E-Match" (pe ++ pe' ++ qI ++ [(z,t)] ++ pi' ++ ph)
+             p' <- log E_Match (pe ++ pe' ++ qI ++ [(z,t)] ++ pi' ++ ph)
              agUnifN p'
 
     -- Merge-E-Match    (P_E and P_E' can both assumed to be solved at this point)
@@ -1036,7 +1077,9 @@ agUnifN p@(classify -> (pe, pe', pi, ph))
     | Just (x,_) <- minView $
                         domNotMappingToVar pe `intersection` domNotMappingToVar pe'
     , ((_,s):pe1,pe2) <- partition ((==x) . fst) pe
-        = memRec [((s,x),[x])] (pe1 ++ pe2 ++ pe' ++ pi ++ ph)
+        = do let ((_,t):_,_) = partition ((==x) . fst) pe'      -- DUMMY / DEBUG ONLY!
+             p' <- log (Mem_Init x s t) (pe1 ++ pe2 ++ pe' ++ pi ++ ph)
+             memRec [((s,x),[x])] p'
 
     -- Var-Rep          (need to check both possible orientations here!)
     -- FIXME: prefer to eliminate X' over X (already taken care by classify?)
@@ -1055,11 +1098,11 @@ agUnifN p@(classify -> (pe, pe', pi, ph))
             else
                 Nothing
             ) p
-        = do p'' <- log "Var-Rep" (map (applySubst [(x,y)] *** applySubst [(x,y)]) p')
+        = do p'' <- log Var_Rep (map (applySubst [(x,y)] *** applySubst [(x,y)]) p')
              agUnifN p''
         
     -- DONE
-    | inSolvedForm p = log "SOLVED" p
+    | inSolvedForm p = log SOLVED p
     | otherwise      = mzero
 
 
@@ -1071,7 +1114,7 @@ memRec
     -> StateT (Int, Log f') [] (AGUnifProb Sig f' Int Int)
 memRec [] p
     = agUnifN p
-memRec (((s,x),smv):stack) p@(classify -> (pe,pe',pi,ph))
+memRec gs@(((s,x),smv):stack) p@(classify -> (pe,pe',pi,ph))
     = do sigma <- lift . maybeToList $ agUnif1TreatingAsConstant smv s x
     
          -- NON-DETERMINISTICALLY (DON'T KNOW) CHOOSE z!
@@ -1083,12 +1126,20 @@ memRec (((s,x),smv):stack) p@(classify -> (pe,pe',pi,ph))
                         domNotMappingToVar pe' `intersection` domNotMappingToVar sigma
          let pe_sigma_theta = map (applySubst theta *** applySubst theta)
                                 (map (applySubst sigma *** applySubst sigma) pe)
-         let stack' = map (\y ->
-                            ((applySubst theta (applySubst sigma y), applySubst theta y)
-                            ,applySubst theta y : smv)
-                          ) ys
-         p' <- log "Mem-Rec" (pe_sigma_theta ++ sigma' ++ theta ++ pe' ++ pi ++ ph)
-         memRec (stack' ++ stack) p'
+         let stack' = map
+                (\y -> ((applySubst theta (applySubst sigma y), applySubst theta y)
+                       ,applySubst theta y : smv)
+                ) ys
+         let stack'' = map
+                (\((s,x),smv) -> ((applySubst theta (applySubst sigma s)
+                                  ,applySubst theta (applySubst sigma x))
+                                 -- smv are constants, so sigma is idempotent
+                                 --                       theta is not?
+                                 ,map (applySubst theta) smv)
+                ) stack
+         p' <- log (Mem_Rec gs z sigma sigma' theta ys stack' stack'')
+                   (pe_sigma_theta ++ sigma' ++ theta ++ pe' ++ pi ++ ph)
+         memRec (stack' ++ stack'') p'
 
          
 -- STILL TO DO FOR agUnifN:

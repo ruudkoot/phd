@@ -159,6 +159,7 @@ tests =
     ,("classify (2)",                   test_classify_2)
     ,("inSolvedForm (1)",               test_inSolvedForm_1)
     ,("inSolvedForm (2)",               test_inSolvedForm_2)
+    ,("inSolvedForm (3)",               test_inSolvedForm_3)
     ,("numX",                           test_numX)
     ,("numX'",                          test_numX')
     ,("numC",                           test_numC)
@@ -1566,6 +1567,15 @@ test_inSolvedForm_2 =
             =?=
         False
 
+test_inSolvedForm_3 =
+    let ts = [(X  1, F "f" [C 1])
+             ,(X' 1, F "f" [X 1])
+             ] :: AGUnifProb String String Int Int
+     in inSolvedForm ts
+            =?=
+        False
+
+
 test_numX =
     numX (F "f" [F' "f'" [X 42, X' 666, C 666]])
         =?=
@@ -1900,10 +1910,10 @@ test_agUnifN_1 =
              ,F Mul [F' "f" [C 0], F' "f" [C 1]])]
                 :: AGUnifProb Sig String Int Int
         (nub . (map (sortBy (compare `on` fst) *** id)) -> ps')
-            = runStateT (agUnifN p) (0, [LE "START" p])
-     in ps'
+            = runStateT (agUnifN p) (0, [LE START (classify p)])
+     in ps' {-
             =?=
-        []
+        [] -}
 
 -- should have 3! = 6 unique solutions (Liu & Lynch)
 test_agUnifN_2 =
@@ -1911,7 +1921,7 @@ test_agUnifN_2 =
              ,F Mul [F' "f" [C 0], F Mul [F' "f" [C 1], F' "f" [C 2]]])]
                 :: AGUnifProb Sig String Int Int
         (nub . (map (sortBy (compare `on` fst) *** id)) -> ps')
-            = runStateT (agUnifN p) (0, [LE "START" p])
+            = runStateT (agUnifN p) (0, [LE START (classify p)])
      in ps'
             =?=
         []
@@ -1922,7 +1932,7 @@ test_agUnifN_3 =
              ,F Mul [F' "f" [C 0], F Mul [F' "f" [C 1], F Mul [F' "f" [C 2], F' "f" [C 3]]]])]
                 :: AGUnifProb Sig String Int Int
         (nub . (map (sortBy (compare `on` fst) *** id)) -> ps')
-            = runStateT (agUnifN p) (0, [LE "START" p])
+            = runStateT (agUnifN p) (0, [LE START (classify p)])
      in ps'
             =?=
         []
