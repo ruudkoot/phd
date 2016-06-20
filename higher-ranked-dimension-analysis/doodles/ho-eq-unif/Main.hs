@@ -876,14 +876,13 @@ classify (p@(s,t):ps)
             _ -> error "classify: should not happen"
 
 
--- FIXME: does not check for idempotency (costly, might not be necessary)
 inSolvedForm :: TermAlg f f' c x => AGUnifProb f f' c x -> Bool
 inSolvedForm xs
     = let domain = dom xs
           range  = ran xs
        in all inSolvedForm' xs
             && length xs == Set.size (Set.fromList (map fst xs))
-            -- && size (domain `intersection` range) == 0
+            && size (domain `intersection` range) == 0
           
                     
   where inSolvedForm' (X  _, _) = True
@@ -1020,7 +1019,9 @@ data Rule f'
                 , mem_recStack''    :: [((T Sig f' Int Int, T Sig f' Int Int)
                                         ,[T Sig f' Int Int]                  )] }
     | Var_Rep
+    | Simplify
     | SOLVED
+    | FAILED
   deriving (Eq, Show)
 
 type Log      f' = [LogEntry f']
@@ -1098,15 +1099,39 @@ agUnifN p@(classify -> (pe, pe', pi, ph))
             else
                 Nothing
             ) p
-        = do p'' <- log Var_Rep (map (applySubst [(x,y)] *** applySubst [(x,y)]) p')
+        = do p''  <- log Var_Rep  (map (applySubst [(x,y)] *** applySubst [(x,y)]) p')
              agUnifN p''
+    
+    -- Simplify
+    | p /= simplify p
+        = do p' <- log Simplify (simplify p)
+             agUnifN p'
         
     -- DONE
     | inSolvedForm p = log SOLVED p
-    | otherwise      = mzero
+    | otherwise      = mzero -- log FAILED p
 
 
--- FIXME: propagate failure of agUnif1TreatingAsConstant
+-- FIXME: This is not a faithful implementation of "remove equations of the form
+--        v=t where v is a variable that was not in the original problem (X')
+--        and v occurs nowhere else in P and t is not a variable of the original
+--        problem (X), or t occurs somewhere else in P. (However that last part
+--        is supposed to be read...)
+simplify :: TermAlg Sig f' Int Int
+    =>  AGUnifProb Sig f' Int Int -> AGUnifProb Sig f' Int Int
+simplify ps
+    | ps == simplify' [] ps = ps
+    | otherwise             = simplify (simplify' [] ps)
+  where
+    simplify' qs []
+        = qs
+    simplify' qs ((X' v,t):ps)
+        | X' v `notMember` unions [dom qs, ran qs, dom ps, ran ps]
+            = simplify' qs ps
+    simplify' qs (p:ps)
+        = simplify' (qs ++ [p]) ps
+
+
 memRec
     :: (TermAlg Sig f' Int Int, Show f')
     => [((T Sig f' Int Int, T Sig f' Int Int), [T Sig f' Int Int])]
@@ -1143,7 +1168,6 @@ memRec gs@(((s,x),smv):stack) p@(classify -> (pe,pe',pi,ph))
 
          
 -- STILL TO DO FOR agUnifN:
--- * Simplif
 -- * Elim (variable and constant elimination)
 -- * Rep (replacement)
 
