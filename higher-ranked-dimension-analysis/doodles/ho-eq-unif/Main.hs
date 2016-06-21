@@ -41,15 +41,18 @@ uncons (x:xs) = Just (x,xs)
 maximum' :: Ord a => a -> [a] -> a
 maximum' x xs = maximum (x : xs)
 
--- order in which the list elements are fed to 'f' is weird,
+-- FIXME: order in which the list elements are fed to 'f' is weird,
 -- (but that does not matter if they represent sets)
-forEachWithContext :: (a -> [a] -> Maybe b) -> [a] -> [b]
-forEachWithContext f = forEachWithContext' []
+mapMaybeWithContext :: (a -> [a] -> Maybe b) -> [a] -> [b]
+mapMaybeWithContext f = mapMaybeWithContext' []
   where
-    forEachWithContext' ys []     = []
-    forEachWithContext' ys (x:xs) = case f x (ys ++ xs) of
-                            Nothing ->     forEachWithContext' (x : ys) xs
-                            Just z  -> z : forEachWithContext' (x : ys) xs
+    mapMaybeWithContext' ys []     = []
+    mapMaybeWithContext' ys (x:xs) = case f x (ys ++ xs) of
+                            Nothing ->     mapMaybeWithContext' (x : ys) xs
+                            Just z  -> z : mapMaybeWithContext' (x : ys) xs
+                            
+allWithContext :: (a -> [a] -> Bool) -> [a] -> Bool
+allWithContext p = and . mapMaybeWithContext (\x ctx -> Just (p x ctx))
 
 -- * Debugging * ------------------------------------------- UNUSED! ------[X]--
 
@@ -700,12 +703,13 @@ vars' (F' _ ts) = concatMap vars' ts
 
 allVars :: TermAlg f f' c x => AGUnifProb f f' c x -> Set (T f f' c x)
 allVars = unionMap' (\(s,t) -> allVars' s `union` allVars' t)
-  where
-    allVars' t@(X  _   ) = singleton t
-    allVars' t@(X' _   ) = singleton t
-    allVars'   (C  _   ) = empty
-    allVars'   (F  _ ts) = unionMap' allVars' ts
-    allVars'   (F' _ ts) = unionMap' allVars' ts
+
+allVars' :: TermAlg f f' c x => T f f' c x -> Set (T f f' c x)
+allVars' t@(X  _   ) = singleton t
+allVars' t@(X' _   ) = singleton t
+allVars'   (C  _   ) = empty
+allVars'   (F  _ ts) = unionMap' allVars' ts
+allVars'   (F' _ ts) = unionMap' allVars' ts    
 
 homogeneous :: T f f' c x -> State (Int, AGUnifProb f f' c x) (T f f' c x)
 homogeneous (X  x    ) = return (X  x )
@@ -876,19 +880,44 @@ classify (p@(s,t):ps)
             _ -> error "classify: should not happen"
 
 
+-- FIXME: Definition 1
 inSolvedForm :: TermAlg f f' c x => AGUnifProb f f' c x -> Bool
-inSolvedForm xs
-    = let domain = dom xs
-          range  = ran xs
-       in all inSolvedForm' xs
-            && length xs == Set.size (Set.fromList (map fst xs))
+inSolvedForm p
+    = let domain = dom p
+          range  = ran p
+       in all inSolvedForm' p
+            && length p == Set.size (Set.fromList (map fst p))
             && size (domain `intersection` range) == 0
-          
-                    
   where inSolvedForm' (X  _, _) = True
         inSolvedForm' (X' _, _) = True
         inSolvedForm' _         = False
 
+-- Definition 8
+inSeparatedForm :: TermAlg f f' c x => AGUnifProb f f' c x -> Bool
+inSeparatedForm p@(classify -> (pe, pe', [], []))
+    = inSolvedForm pe && inSolvedForm pe'
+        && (flip all) pe (\p -> case p of
+            (X  x , _) -> (flip all) pe' (\p' -> case p' of
+                (X y, t) | x == y -> isVar t
+                (t, X y) | x == y -> isVar t
+                _                 -> True
+              )
+            (X' x', _) -> (flip all) pe' (\p' -> case p' of
+                (X' y', t) | x' == y' -> isVar t
+                (t, X' y') | x' == y' -> isVar t
+                _                     -> True
+              )
+            _          -> True
+           )
+        && (flip allWithContext) pe' (\(x,y) ctx ->
+                if isVar x && isVar y then
+                    let vs = allVars (pe ++ ctx)
+                     in x `notMember` vs || y `notMember` vs
+                else
+                    True
+              )
+inSeparatedForm _
+    = False
 
 numX :: T f f' c Int -> Int
 numX (X  x   ) = x + 1
@@ -962,13 +991,7 @@ domNotMappingToVar ((X' x',_):xs) = Set.insert (X' x') (domNotMappingToVar xs)
 
 ran :: TermAlg f f' c x => AGUnifProb f f' c x -> Set (T f f' c x)
 ran [] = Set.empty
-ran ((_,t):xs) = ran' t `union` ran xs
-  where
-    ran' t@(X  _)    = Set.singleton t
-    ran' t@(X' _)    = Set.singleton t
-    ran' t@(C  _)    = Set.empty
-    ran' t@(F  _ ts) = Set.unions (map ran' ts)
-    ran' t@(F' _ ts) = Set.unions (map ran' ts)
+ran ((_,t):xs) = allVars' t `union` ran xs
 
 isShared :: TermAlg f f' c x =>
                     T f f' c x -> AGUnifProb f f' c x -> AGUnifProb f f' c x -> Bool
@@ -1039,6 +1062,31 @@ agUnifN
     => AGUnifProb Sig f' Int Int
     -> StateT (Int, Log f') [] (AGUnifProb Sig f' Int Int)
 agUnifN p@(classify -> (pe, pe', pi, ph))
+    -- Var-Rep          (need to check both possible orientations here!)
+    -- FIXME: prefer to eliminate X' over X (already taken care by classify?)
+    -- FIXME: allVars is a very expensive computation than can be done incrementally
+    --        (e.g. tuple each equation with the variables occurring in that equation)
+    |  (((x,y),p'):_) <- mapMaybeWithContext (\(x,y) p' ->
+            if
+                isVar x && isVar y && x `member` allVars p' && y `member` allVars p'
+            then
+                if not (isShared x pe pe') || isShared y pe pe' then
+                    Just ((x,y), p')
+                else if not (isShared y pe pe') || isShared x pe pe' then
+                    Just ((y,x), p')
+                else
+                    Nothing
+            else
+                Nothing
+            ) p
+        = do p''  <- log Var_Rep  (map (applySubst [(x,y)] *** applySubst [(x,y)]) p')
+             agUnifN p''
+
+    -- Simplify
+    | p /= simplify p
+        = do p' <- log Simplify (simplify p)
+             agUnifN p'
+
     -- VA (variable abstraction)
     | Just ((s,t),ph') <- uncons ph
         = do (s',rs) <- stateT $ homogeneous'' s
@@ -1082,34 +1130,9 @@ agUnifN p@(classify -> (pe, pe', pi, ph))
              p' <- log (Mem_Init x s t) (pe1 ++ pe2 ++ pe' ++ pi ++ ph)
              memRec [((s,x),[x])] p'
 
-    -- Var-Rep          (need to check both possible orientations here!)
-    -- FIXME: prefer to eliminate X' over X (already taken care by classify?)
-    -- FIXME: allVars is a very expensive computation than can be done incrementally
-    --        (e.g. tuple each equation with the variables occurring in that equation)
-    |  (((x,y),p'):_) <- forEachWithContext (\(x,y) p' ->
-            if
-                isVar x && isVar y && x `member` allVars p' && y `member` allVars p'
-            then
-                if not (isShared x pe pe') || isShared y pe pe' then
-                    Just ((x,y), p')
-                else if not (isShared y pe pe') || isShared x pe pe' then
-                    Just ((y,x), p')
-                else
-                    Nothing
-            else
-                Nothing
-            ) p
-        = do p''  <- log Var_Rep  (map (applySubst [(x,y)] *** applySubst [(x,y)]) p')
-             agUnifN p''
-    
-    -- Simplify
-    | p /= simplify p
-        = do p' <- log Simplify (simplify p)
-             agUnifN p'
-        
     -- DONE
-    | inSolvedForm p = log SOLVED p
-    | otherwise      = mzero -- log FAILED p
+    | inSeparatedForm p = log SOLVED p
+    | otherwise         = mzero -- log FAILED p
 
 
 -- FIXME: This is not a faithful implementation of "remove equations of the form
@@ -1126,7 +1149,7 @@ simplify ps
     simplify' qs []
         = qs
     simplify' qs ((X' v,t):ps)
-        | X' v `notMember` unions [dom qs, ran qs, dom ps, ran ps]
+        | X' v `notMember` unions [allVars qs, allVars ps]
             = simplify' qs ps
     simplify' qs (p:ps)
         = simplify' (qs ++ [p]) ps

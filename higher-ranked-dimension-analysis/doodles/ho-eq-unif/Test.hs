@@ -25,7 +25,7 @@ tests =
     ,("statefulForM (2)",               test_statefulForM_2)
     ,("uncons (1)",                     test_uncons_1)
     ,("uncons (2)",                     test_uncons_2)
-    ,("forEachWithContext (1)",         test_forEachWithContext_1)
+    ,("mapMaybeWithContext (1)",        test_mapMaybeWithContext_1)
     ,("(!!!)",                          test_III)
     ,("unionMap",                       test_unionMap)
     ,("unionMap'",                      test_unionMap')
@@ -239,7 +239,7 @@ test_uncons_1 = uncons ([]::[Int]) =?= Nothing
 
 test_uncons_2 = uncons [1..9] =?= Just (1, [2..9])
 
-test_forEachWithContext_1 = forEachWithContext f [1..9] =?= [43,41,39,37]
+test_mapMaybeWithContext_1 = mapMaybeWithContext f [1..9] =?= [43,41,39,37]
     where f x xs | even x    = Just (sum xs)
                  | otherwise = Nothing
                     
