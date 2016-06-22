@@ -1535,7 +1535,7 @@ test_classify_1 =
         t3  = (F' "f" [X "x"], F "+" [X "y", X "z"])    -- gets reordered!
         t3' = (F "+" [X "y", X "z"], F' "f" [X "x"])
         t4  = (F' "f" [F "0" []], F' "f" [C "a"])
-     in classify [t1, t2, t3, t4]
+     in (fst $ classify [t1, t2, t3, t4])
             =?=
         ([t1, t2], [], [t3'], [t4])
 
@@ -1546,7 +1546,7 @@ test_classify_2 =
         t3' = (F' "g" [X 1, X' 2     ],           F  "f" [X 1, X' 2, C 3]        )
         t4  = (F  "f" [F' "f'" [X 1, X' 2, C 3]], F' "g" [F "f" [X 1, X' 2, C 3]])
         t5  = (X 1, X' 1)
-     in classify ([t1, t2, t3, t3', t4, t5] :: AGUnifProb String String Int Int)
+     in (fst $ classify ([t1, t2, t3, t3', t4, t5] :: AGUnifProb String String Int Int))
             =?=
         ([t1],[t2, t5],[t3, t3],[t4])
 
@@ -1910,7 +1910,7 @@ test_agUnifN_1 =
              ,F Mul [F' "f" [C 0], F' "f" [C 1]])]
                 :: AGUnifProb Sig String Int Int
         (nub . (map (sortBy (compare `on` fst) *** id)) -> ps')
-            = runStateT (agUnifN p) (0, [LE START (classify p)])
+            = runStateT (agUnifN p) (0, [LE START (fst $ classify p)])
      in ps' {-
             =?=
         [] -}
@@ -1921,7 +1921,7 @@ test_agUnifN_2 =
              ,F Mul [F' "f" [C 0], F Mul [F' "f" [C 1], F' "f" [C 2]]])]
                 :: AGUnifProb Sig String Int Int
         (nub . (map (sortBy (compare `on` fst) *** id)) -> ps')
-            = runStateT (agUnifN p) (0, [LE START (classify p)])
+            = runStateT (agUnifN p) (0, [LE START (fst $ classify p)])
      in ps'
             =?=
         []
@@ -1932,7 +1932,7 @@ test_agUnifN_3 =
              ,F Mul [F' "f" [C 0], F Mul [F' "f" [C 1], F Mul [F' "f" [C 2], F' "f" [C 3]]]])]
                 :: AGUnifProb Sig String Int Int
         (nub . (map (sortBy (compare `on` fst) *** id)) -> ps')
-            = runStateT (agUnifN p) (0, [LE START (classify p)])
+            = runStateT (agUnifN p) (0, [LE START (fst $ classify p)])
      in ps'
             =?=
         []

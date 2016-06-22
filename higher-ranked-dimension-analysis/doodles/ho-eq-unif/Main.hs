@@ -860,24 +860,29 @@ type AGClassifiedUnifProb f f' c x = (AGUnifProb f f' c x
                                      ,AGUnifProb f f' c x)
 
 
--- FIXME: orient equations with variable on the rhs?
-classify :: AGUnifProb f f' c x -> AGClassifiedUnifProb f f' c x
-classify [] = ([],[],[],[])
-classify (p@(s,t):ps)
-    = let (pe,pe',pi,ph) = classify ps
-       in case p of
-            -- order matters: {x=y} in P_E'
-            (s,t) | isPureE' s && isPureE' t
-                -> (pe, (s,t):pe', pi, ph)
-            (s,t) | isPureE s && isPureE t
-                -> ((s,t):pe, pe', pi, ph)
-            (s,t) | isPureE s && isPureE' t
-                ->  (pe, pe', (s,t):pi, ph)
-            (s,t) | isPureE' s && isPureE t                 -- orient
-                ->  (pe, pe', (t,s):pi, ph)
-            (s,t) | isHeterogeneous s || isHeterogeneous t  -- performance...
-                -> (pe,pe',pi,(s,t):ph)
-            _ -> error "classify: should not happen"
+-- FIXME: orient equations with variable on the rhs!
+classify :: AGUnifProb f f' c x -> (AGClassifiedUnifProb f f' c x, AGUnifProb f f' c x)
+classify p = let (pe,pe',pi,ph) = classify' p in ((pe,pe',pi,ph),pe++pe'++pi++ph)
+  where
+    classify' [] = ([],[],[],[])
+    classify' ((orient -> p@(s,t)):ps)
+        = let (pe,pe',pi,ph) = classify' ps
+           in case p of
+                -- order matters: {x=y} in P_E'
+                (s,t) | isPureE' s && isPureE' t
+                    -> (pe, (s,t):pe', pi, ph)
+                (s,t) | isPureE s && isPureE t
+                    -> ((s,t):pe, pe', pi, ph)
+                (s,t) | isPureE s && isPureE' t
+                    ->  (pe, pe', (s,t):pi, ph)
+                (s,t) | isPureE' s && isPureE t                 -- orient
+                    ->  (pe, pe', (t,s):pi, ph)
+                (s,t) | isHeterogeneous s || isHeterogeneous t  -- performance...
+                    -> (pe,pe',pi,(s,t):ph)
+                _ -> error "classify': should not happen"
+orient (s,t)
+    | not (isVar s), isVar t = (t,s)
+    | otherwise              = (s,t)
 
 
 -- FIXME: Definition 1
@@ -894,7 +899,7 @@ inSolvedForm p
 
 -- Definition 8
 inSeparatedForm :: TermAlg f f' c x => AGUnifProb f f' c x -> Bool
-inSeparatedForm p@(classify -> (pe, pe', [], []))
+inSeparatedForm (classify -> ((pe, pe', [], []),p))
     = inSolvedForm pe && inSolvedForm pe'
         && (flip all) pe (\p -> case p of
             (X  x , _) -> (flip all) pe' (\p' -> case p' of
@@ -1017,11 +1022,13 @@ maybeToListT Nothing  = listT []
 maybeToListT (Just x) = listT [x]
 
 log :: (Ord f', Monad m) => Rule f' -> (AGUnifProb Sig f' Int Int) -> StateT (Int, Log f') m (AGUnifProb Sig f' Int Int)
-log l1 (sortBy (compare `on` fst) -> l2@(classify -> l2c))
+log l1 (sortBy (compare `on` fst) -> l2@(classify -> (l2c,_)))
     = StateT { runStateT = \(s1,s2) -> return (l2,(s1, s2 ++ [LE l1 l2c])) }
 
 data Rule f'
     = START
+    | Var_Rep
+    | Simplify
     | VA
     | E_Res     { e_resIn           :: AGUnifProb Sig f' Int Int
                 , e_resOut          :: AGUnifProb Sig f' Int Int }
@@ -1041,8 +1048,7 @@ data Rule f'
                                         ,[T Sig f' Int Int]                  )]
                 , mem_recStack''    :: [((T Sig f' Int Int, T Sig f' Int Int)
                                         ,[T Sig f' Int Int]                  )] }
-    | Var_Rep
-    | Simplify
+    | Rep
     | SOLVED
     | FAILED
   deriving (Eq, Show)
@@ -1054,6 +1060,7 @@ data LogEntry f' = LE (Rule f') (AGClassifiedUnifProb Sig f' Int Int)
 instance Show f' => Show (LogEntry f') where
     show (LE l p) = "\n    " ++ show l ++ "\n        " ++ show p ++ "\n"
 
+-- FIXME: not all equations get oriented in all rules (fail to call 'classify')
 -- FIXME: unification problems are sets of UNORDERED pairs
 -- FIXME: that "numV1" stuff is horrible and slow (find better representation)
 -- FIXME: for better performance, only classify newly generated equations
@@ -1061,7 +1068,8 @@ agUnifN
     :: (TermAlg Sig f' Int Int, Show f')
     => AGUnifProb Sig f' Int Int
     -> StateT (Int, Log f') [] (AGUnifProb Sig f' Int Int)
-agUnifN p@(classify -> (pe, pe', pi, ph))
+agUnifN _p@(classify -> ((pe, pe', pi, ph),p))
+    | _p /= p = agUnifN p
     -- Var-Rep          (need to check both possible orientations here!)
     -- FIXME: prefer to eliminate X' over X (already taken care by classify?)
     -- FIXME: allVars is a very expensive computation than can be done incrementally
@@ -1130,6 +1138,17 @@ agUnifN p@(classify -> (pe, pe', pi, ph))
              p' <- log (Mem_Init x s t) (pe1 ++ pe2 ++ pe' ++ pi ++ ph)
              memRec [((s,x),[x])] p'
 
+    -- Rep
+    -- FIXME: side-conditions
+    | (q:qs) <- mapMaybeWithContext (\(x,s) p -> case (x,s) of
+                    (x,s) | isVar x, x `member` allVars p
+                       -> Just
+                            ((x,s) : map (applySubst [(x,s)] *** applySubst [(x,s)]) p)
+                    _  -> Nothing
+                  ) p
+        = do log Rep q
+             agUnifN q
+
     -- DONE
     | inSeparatedForm p = log SOLVED p
     | otherwise         = mzero -- log FAILED p
@@ -1162,7 +1181,7 @@ memRec
     -> StateT (Int, Log f') [] (AGUnifProb Sig f' Int Int)
 memRec [] p
     = agUnifN p
-memRec gs@(((s,x),smv):stack) p@(classify -> (pe,pe',pi,ph))
+memRec gs@(((s,x),smv):stack) (classify -> ((pe,pe',pi,ph),p))
     = do sigma <- lift . maybeToList $ agUnif1TreatingAsConstant smv s x
     
          -- NON-DETERMINISTICALLY (DON'T KNOW) CHOOSE z!
