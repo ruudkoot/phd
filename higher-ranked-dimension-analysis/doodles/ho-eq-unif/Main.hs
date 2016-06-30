@@ -25,6 +25,10 @@ import qualified Data.Set       as Set
 
 -- | Utility | ------------------------------------------------------------[ ]--
 
+assert :: String -> Bool -> Bool
+assert ss True  = True
+assert ss False = error $ "ASSERT: " ++ ss
+
 for = flip map
 
 statefulForM :: Monad m => s -> [a] -> (s -> a -> m (s, b)) -> m (s, [b])
@@ -605,15 +609,15 @@ agConstMatch (vs1@(length -> m ), cs1@(length -> n ))
 -- Solve a single equation in AG, while treating a set of given variables as
 -- constants.
 agUnif1TreatingAsConstant
-    :: TermAlg Sig f' Int Int
-    => [T Sig f' Int Int]               -- set of marked variables SMV
-    -> T Sig f' Int Int                 -- expression s
-    -> T Sig f' Int Int                 -- expression t
-    -> Maybe (AGUnifProb Sig f' Int Int)
+    :: TermAlg Sig f' () Int
+    => [T Sig f' () Int]               -- set of marked variables SMV
+    -> T Sig f' () Int                 -- expression s
+    -> T Sig f' () Int                 -- expression t
+    -> Maybe (AGUnifProb Sig f' () Int)
 agUnif1TreatingAsConstant smv s t
     = let numV1  = max (numX  s) (numX  t)
           numV2  = max (numX' s) (numX' t)
-          numC'  = max (numC  s) (numC  t)
+          numC'  = 0 -- max (numC  s) (numC  t)
           s'     = constantify numC' smv s
           t'     = constantify numC' smv t
           numC'' = max (numC s') (numC t')
@@ -625,8 +629,8 @@ agUnif1TreatingAsConstant smv s t
 constantify
     :: TermAlg Sig f' Int Int
     => Int
-    -> [T Sig f' Int Int]
-    -> T Sig f' Int Int
+    -> [T Sig f' () Int]
+    -> T Sig f' () Int
     -> T Sig f' Int Int
 constantify numC' smv = constantify'
   where
@@ -634,7 +638,7 @@ constantify numC' smv = constantify'
                             | otherwise        = X x
     constantify' (X' x'   ) | X' x' `elem` smv = C (numC' + 2 * x' + 1)
                             | otherwise        = X' x'
-    constantify' (C  c    ) = C  c
+    constantify' (C  c    ) = error "constantify'" -- C  c
     constantify' (F  f  ts) = F  f  (map constantify' ts)
     constantify' (F' f' ts) = F' f' (map constantify' ts)
     
@@ -642,12 +646,13 @@ deconstantify
     :: TermAlg Sig f' Int Int
     => Int
     -> T Sig f' Int Int
-    -> T Sig f' Int Int
+    -> T Sig f' () Int
 deconstantify numC' = deconstantify'
   where
     deconstantify' (X  x ) = X  x
     deconstantify' (X' x') = X' x'
-    deconstantify' (C  c ) | c < numC'                        = C  c
+    deconstantify' (C  c ) | c < numC'                        = error "deconstantify'"
+                                                           -- = C  c
                            | (x ,0) <- (c - numC') `divMod` 2 = X  x
                            | (x',1) <- (c - numC') `divMod` 2 = X' x'
     deconstantify' (F  f  ts) = F  f  (map deconstantify' ts)
@@ -662,15 +667,17 @@ deconstantify numC' = deconstantify'
 data T f f' c x
     = X  x                  -- variables            (E and E')
     | X' Int                -- fresh variables      (E and E')
-    | C  c                  -- nullary constants    (E)
+    | C  c                  -- nullary constants    (FIXME: E???)
     | F  f  [T f f' c x]    -- function symbols     (E)
     | F' f' [T f f' c x]    -- function symbols     (E')
   deriving (Eq, Ord, Show)
 
 type AGUnifProb f f' c x = [(T f f' c x, T f f' c x)]
   
-class    (Ord f, Ord f', Ord c, Ord x) => TermAlg f f' c x
-instance (Ord f, Ord f', Ord c, Ord x) => TermAlg f f' c x
+class    (Ord  f, Ord  f', Ord  c, Ord  x
+         ,Show f, Show f', Show c, Show x) => TermAlg f f' c x
+instance (Ord f, Ord f', Ord c, Ord x
+         ,Show f, Show f', Show c, Show x) => TermAlg f f' c x
 
 newT :: T f f' c x -> State (Int, AGUnifProb f f' c x) Int
 newT t = do (n, xs') <- get
@@ -690,14 +697,14 @@ isVar _      = False
 vars :: T f f' c x -> [x]
 vars (X  x   ) = [x]
 vars (X' _   ) = []
-vars (C  _   ) = []
+vars (C  _   ) = error "vars: C" -- []
 vars (F  _ ts) = concatMap vars ts
 vars (F' _ ts) = concatMap vars ts
 
 vars' :: T f f' c x -> [Int]
 vars' (X  _   ) = []
 vars' (X' x   ) = [x]
-vars' (C  _   ) = []
+vars' (C  _   ) = error "vars': C" -- []
 vars' (F  _ ts) = concatMap vars' ts
 vars' (F' _ ts) = concatMap vars' ts
 
@@ -707,28 +714,28 @@ allVars = unionMap' (\(s,t) -> allVars' s `union` allVars' t)
 allVars' :: TermAlg f f' c x => T f f' c x -> Set (T f f' c x)
 allVars' t@(X  _   ) = singleton t
 allVars' t@(X' _   ) = singleton t
-allVars'   (C  _   ) = empty
+allVars'   (C  _   ) = error "allVars': C" -- empty
 allVars'   (F  _ ts) = unionMap' allVars' ts
 allVars'   (F' _ ts) = unionMap' allVars' ts    
 
 homogeneous :: T f f' c x -> State (Int, AGUnifProb f f' c x) (T f f' c x)
 homogeneous (X  x    ) = return (X  x )
 homogeneous (X' x'   ) = return (X' x')
-homogeneous (C  c    ) = return (C  c )
+homogeneous (C  c    ) = error "homogeneous: C" -- return (C  c )
 homogeneous (F  f  ts) = F f <$> mapM homogeneous ts
 homogeneous (F' f' ts) = X'  <$> newT (F' f' ts)
 
 homogeneous' :: T f f' c x -> State (Int, AGUnifProb f f' c x) (T f f' c x)
 homogeneous' (X  x    ) = return (X  x )
 homogeneous' (X' x'   ) = return (X' x')
-homogeneous' (C  c    ) = X'    <$> newT (C c)
+homogeneous' (C  c    ) = error "homogeneous': C" -- X'    <$> newT (C c)
 homogeneous' (F  f  ts) = X'    <$> newT (F f ts)
 homogeneous' (F' f' ts) = F' f' <$> mapM homogeneous' ts
 
 homogeneous'' :: T f f' c x -> State Int (T f f' c x, AGUnifProb f f' c x)
 homogeneous'' (X  x   ) = return (X  x , [])
 homogeneous'' (X' x'  ) = return (X' x', [])
-homogeneous'' (C  c   ) = return (C  c , [])
+homogeneous'' (C  c   ) = error "homogeneous'': C" -- return (C  c , [])
 homogeneous'' t@(F _ _) = do
     n <- get
     let (t',(n',xs)) = runState (homogeneous t) (n, [])
@@ -743,14 +750,14 @@ homogeneous'' t@(F' _ _) = do
 isPureE :: T f f' c x -> Bool
 isPureE (X  _   ) = True
 isPureE (X' _   ) = True
-isPureE (C  _   ) = True
+isPureE (C  _   ) = error "isPureE: C" -- True
 isPureE (F  _ ts) = all isPureE ts
 isPureE (F' _ _ ) = False
 
 isPureE' :: T f f' c x -> Bool
 isPureE' (X  _   ) = True
 isPureE' (X' _   ) = True
-isPureE' (C  _   ) = False
+isPureE' (C  _   ) = error "isPureE': C" -- False
 isPureE' (F  _ _ ) = False
 isPureE' (F' _ ts) = all isPureE' ts
 
@@ -761,7 +768,7 @@ subst :: TermAlg f f' c x => x -> T f f' c x -> T f f' c x -> T f f' c x
 subst x t t'@(X  x') | x == x'   = t
                      | otherwise = t'
 subst x _ t'@(X' _ ) = t'
-subst x _ t'@(C  _ ) = t'
+subst x _ t'@(C  _ ) = error "subst: C" -- t'
 subst x t (F  f  ts) = F  f  (map (subst x t) ts)
 subst x t (F' f' ts) = F' f' (map (subst x t) ts)
 
@@ -769,7 +776,7 @@ subst' :: Int -> T f f' c x -> T f f' c x -> T f f' c x
 subst' _ _ t'@(X  _ ) = t'
 subst' x t t'@(X' x') | x == x'   = t
                       | otherwise = t'
-subst' _ _ t'@(C  _ ) = t'
+subst' _ _ t'@(C  _ ) = error "subst': C" -- t'
 subst' x t (F  f  ts) = F  f  (map (subst' x t) ts)
 subst' x t (F' f' ts) = F' f' (map (subst' x t) ts)
 
@@ -781,7 +788,7 @@ applySubst sigma (X x)
 applySubst sigma (X' x')
     | Just t <- lookup (X' x') sigma = t
     | otherwise                      = X' x'
-applySubst sigma (C c     ) = C c
+applySubst sigma (C c     ) = error "applySubst: C" -- C c
 applySubst sigma (F  f  ts) = F  f  (map (applySubst sigma) ts)
 applySubst sigma (F' f' ts) = F' f' (map (applySubst sigma) ts)
 
@@ -885,17 +892,23 @@ orient (s,t)
     | otherwise              = (s,t)
 
 
--- FIXME: Definition 1
+-- Definition 1
 inSolvedForm :: TermAlg f f' c x => AGUnifProb f f' c x -> Bool
 inSolvedForm p
     = let domain = dom p
           range  = ran p
        in all inSolvedForm' p
             && length p == Set.size (Set.fromList (map fst p))
-            && size (domain `intersection` range) == 0
+            && Set.null (domain `intersection` range)
   where inSolvedForm' (X  _, _) = True
         inSolvedForm' (X' _, _) = True
         inSolvedForm' _         = False
+        
+-- Definition 2 (Cannot check soundness and completeness!)
+isCSU :: TermAlg f f' c x => AGUnifProb f f' c x -> Set (T f f' c x) -> Bool
+isCSU p w = inSolvedForm p
+                && dom p `isSubsetOf` w
+                && Set.null (img p `intersection` w)
 
 -- Definition 8
 inSeparatedForm :: TermAlg f f' c x => AGUnifProb f f' c x -> Bool
@@ -924,17 +937,17 @@ inSeparatedForm (classify -> ((pe, pe', [], []),p))
 inSeparatedForm _
     = False
 
-numX :: T f f' c Int -> Int
+numX :: T f f' () Int -> Int
 numX (X  x   ) = x + 1
 numX (X' _   ) = 0
-numX (C  _   ) = 0
+numX (C  _   ) = error "numX: C" -- 0
 numX (F  _ ts) = maximum' 0 (map numX ts)
 numX (F' _ ts) = maximum' 0 (map numX ts)
 
-numX' :: T f f' c x -> Int
+numX' :: T f f' () x -> Int
 numX' (X  _   ) = 0
 numX' (X' x'  ) = x' + 1
-numX' (C  _   ) = 0
+numX' (C  _   ) = error "numX': C" -- 0
 numX' (F  _ ts) = maximum' 0 (map numX' ts)
 numX' (F' _ ts) = maximum' 0 (map numX' ts)
 
@@ -945,8 +958,22 @@ numC (C  c   ) = c + 1
 numC (F  _ ts) = maximum' 0 (map numC ts)
 numC (F' _ ts) = maximum' 0 (map numC ts)
 
-toExp :: Int -> Int -> Int -> T Sig f' Int Int -> AGExp1
-toExp v1 v2 c s = toExp' v1 v2 c (s, F Unit [])
+castC :: T Sig f' () Int -> T Sig f' Int Int
+castC (X  x    ) = X  x
+castC (X' x'   ) = X' x'
+castC (C  c    ) = error "castC: C"
+castC (F  f  ts) = F  f  (map castC ts)
+castC (F' f' ts) = F' f' (map castC ts)
+
+castC' :: T Sig f' Int Int -> T Sig f' () Int
+castC' (X  x    ) = X  x
+castC' (X' x'   ) = X' x'
+castC' (C  c    ) = error "castC': C"
+castC' (F  f  ts) = F  f  (map castC' ts)
+castC' (F' f' ts) = F' f' (map castC' ts)
+
+toExp :: Int -> Int -> Int -> T Sig f' () Int -> AGExp1
+toExp v1 v2 c s = toExp' v1 v2 c (castC s, F Unit [])
 
 toExp' :: Int -> Int -> Int -> (T Sig f' Int Int, T Sig f' Int Int) -> AGExp1
 toExp' v1 v2 c (s,t) = mul (toExp'' s) (inv (toExp'' t))
@@ -983,9 +1010,11 @@ fromExp v1 ss@(length -> v)
 
 
 dom :: TermAlg f f' c x => AGUnifProb f f' c x -> Set (T f f' c x)
-dom []             = Set.empty
-dom ((X  x ,_):xs) = Set.insert (X  x ) (dom xs)
-dom ((X' x',_):xs) = Set.insert (X' x') (dom xs)
+dom []                            = Set.empty
+dom ((X  x ,X  y ):_ ) | x  == y  = error "dom"
+dom ((X' x',X' y'):_ ) | x' == y' = error "dom"
+dom ((X  x ,_    ):xs)            = Set.insert (X  x ) (dom xs)
+dom ((X' x',_    ):xs)            = Set.insert (X' x') (dom xs)
 
 domNotMappingToVar :: TermAlg f f' c x => AGUnifProb f f' c x -> Set (T f f' c x)
 domNotMappingToVar []             = Set.empty
@@ -995,8 +1024,16 @@ domNotMappingToVar ((X  x ,_):xs) = Set.insert (X  x ) (domNotMappingToVar xs)
 domNotMappingToVar ((X' x',_):xs) = Set.insert (X' x') (domNotMappingToVar xs)
 
 ran :: TermAlg f f' c x => AGUnifProb f f' c x -> Set (T f f' c x)
-ran [] = Set.empty
-ran ((_,t):xs) = allVars' t `union` ran xs
+ran subst = unions (map ran' subst)
+  where
+    domain = dom subst
+    ran' (X  x , t) | X  x  `member` domain = allVars' t
+                    | otherwise             = Set.empty
+    ran' (X' x', t) | X' x' `member` domain = allVars' t
+                    | otherwise             = Set.empty
+
+img :: TermAlg f f' c x => AGUnifProb f f' c x -> Set (T f f' c x)
+img = unions . map (allVars' . snd)
 
 isShared :: TermAlg f f' c x =>
                     T f f' c x -> AGUnifProb f f' c x -> AGUnifProb f f' c x -> Bool
@@ -1021,7 +1058,7 @@ maybeToListT :: Monad m => Maybe a -> ListT m a
 maybeToListT Nothing  = listT []
 maybeToListT (Just x) = listT [x]
 
-log :: (Ord f', Monad m) => Rule f' -> (AGUnifProb Sig f' Int Int) -> StateT (Int, Log f') m (AGUnifProb Sig f' Int Int)
+log :: (Ord f', Monad m) => Rule f' -> (AGUnifProb Sig f' () Int) -> StateT (Int, Log f') m (AGUnifProb Sig f' () Int)
 log l1 (sortBy (compare `on` fst) -> l2@(classify -> (l2c,_)))
     = StateT { runStateT = \(s1,s2) -> return (l2,(s1, s2 ++ [LE l1 l2c])) }
 
@@ -1030,31 +1067,31 @@ data Rule f'
     | Var_Rep
     | Simplify
     | VA
-    | E_Res     { e_resIn           :: AGUnifProb Sig f' Int Int
-                , e_resOut          :: AGUnifProb Sig f' Int Int }
+    | E_Res     { e_resIn           :: AGUnifProb Sig f' () Int
+                , e_resOut          :: AGUnifProb Sig f' () Int }
     | E'_Res
     | E_Match
-    | Mem_Init  { mem_initX         :: T Sig f' Int Int
-                , mem_initS         :: T Sig f' Int Int
-                , mem_initT         :: T Sig f' Int Int }
-    | Mem_Rec   { mem_recGivenStack :: [((T Sig f' Int Int, T Sig f' Int Int)
-                                        ,[T Sig f' Int Int]                  )]
-                , mem_recChosenZ    :: T Sig f' Int Int
-                , mem_recSigma      :: [(T Sig f' Int Int, T Sig f' Int Int)]
-                , mem_recSigma'     :: [(T Sig f' Int Int, T Sig f' Int Int)]
-                , mem_recTheta      :: [(T Sig f' Int Int, T Sig f' Int Int)]
-                , mem_recYs         :: [T Sig f' Int Int]
-                , mem_recStack'     :: [((T Sig f' Int Int, T Sig f' Int Int)
-                                        ,[T Sig f' Int Int]                  )]
-                , mem_recStack''    :: [((T Sig f' Int Int, T Sig f' Int Int)
-                                        ,[T Sig f' Int Int]                  )] }
+    | Mem_Init  { mem_initX         :: T Sig f' () Int
+                , mem_initS         :: T Sig f' () Int
+                , mem_initT         :: T Sig f' () Int }
+    | Mem_Rec   { mem_recGivenStack :: [((T Sig f' () Int, T Sig f' () Int)
+                                        ,[T Sig f' () Int]                  )]
+                , mem_recChosenZ    :: T Sig f' () Int
+                , mem_recSigma      :: [(T Sig f' () Int, T Sig f' () Int)]
+                , mem_recSigma'     :: [(T Sig f' () Int, T Sig f' () Int)]
+                , mem_recTheta      :: [(T Sig f' () Int, T Sig f' () Int)]
+                , mem_recYs         :: [T Sig f' () Int]
+                , mem_recStack'     :: [((T Sig f' () Int, T Sig f' () Int)
+                                        ,[T Sig f' () Int]                  )]
+                , mem_recStack''    :: [((T Sig f' () Int, T Sig f' () Int)
+                                        ,[T Sig f' () Int]                  )] }
     | Rep
     | SOLVED
     | FAILED
   deriving (Eq, Show)
 
 type Log      f' = [LogEntry f']
-data LogEntry f' = LE (Rule f') (AGClassifiedUnifProb Sig f' Int Int)
+data LogEntry f' = LE (Rule f') (AGClassifiedUnifProb Sig f' () Int)
   deriving Eq
   
 instance Show f' => Show (LogEntry f') where
@@ -1065,9 +1102,9 @@ instance Show f' => Show (LogEntry f') where
 -- FIXME: that "numV1" stuff is horrible and slow (find better representation)
 -- FIXME: for better performance, only classify newly generated equations
 agUnifN
-    :: (TermAlg Sig f' Int Int, Show f')
-    => AGUnifProb Sig f' Int Int
-    -> StateT (Int, Log f') [] (AGUnifProb Sig f' Int Int)
+    :: (TermAlg Sig f' () Int, Show f')
+    => AGUnifProb Sig f' () Int
+    -> StateT (Int, Log f') [] (AGUnifProb Sig f' () Int)
 agUnifN _p@(classify -> ((pe, pe', pi, ph),p))
     | _p /= p = agUnifN p
     -- Var-Rep          (need to check both possible orientations here!)
@@ -1103,17 +1140,18 @@ agUnifN _p@(classify -> ((pe, pe', pi, ph),p))
              agUnifN p'
 
     -- E-Res
-    | (not . inSolvedForm) pe
+    | not (inSolvedForm pe)
         = let numV1 = maximum' 0 (map (uncurry max . (numX  *** numX )) pe)
               numV2 = maximum' 0 (map (uncurry max . (numX' *** numX')) pe)
-              numC' = maximum' 0 (map (uncurry max . (numC  *** numC )) pe)
-           in do ee <- lift . maybeToList $ agUnif1' (map (toExp' numV1 numV2 numC') pe)
-                 let qe = fromExp numV1 ee
+              numC' = 0 -- maximum' 0 (map (uncurry max . (numC  *** numC )) pe)
+           in do ee <- lift . maybeToList $
+                    agUnif1' (map (toExp' numV1 numV2 numC' . (castC *** castC)) pe)
+                 let qe = map (castC' *** castC') (fromExp numV1 ee)
                  p' <- log (E_Res pe qe) (qe ++ pe' ++ pi ++ ph)
                  agUnifN p'
 
     -- E'-Res
-    | (not . inSolvedForm) pe'
+    | not (inSolvedForm pe')
         = do qe' <- lift . maybeToList $ freeUnif pe'
              p' <- log E'_Res (pe ++ qe' ++ pi ++ ph)
              agUnifN p'
@@ -1123,8 +1161,8 @@ agUnifN _p@(classify -> ((pe, pe', pi, ph),p))
         = do z <- stateT newV
              let numV1 = max (numX  s) (numX  z)
              let numV2 = max (numX' s) (numX' z)
-             let numC' = max (numC  s) (numC  z)
-             (fromExp numV1 -> qI) <- lift . maybeToList $
+             let numC' = 0 -- max (numC  s) (numC  z)
+             (map (castC' *** castC') . fromExp numV1 -> qI) <- lift . maybeToList $
                 agConstMatch (toExp numV1 numV2 numC' s) (toExp numV1 numV2 numC' z)
              p' <- log E_Match (pe ++ pe' ++ qI ++ [(z,t)] ++ pi' ++ ph)
              agUnifN p'
@@ -1159,8 +1197,8 @@ agUnifN _p@(classify -> ((pe, pe', pi, ph),p))
 --        and v occurs nowhere else in P and t is not a variable of the original
 --        problem (X), or t occurs somewhere else in P. (However that last part
 --        is supposed to be read...)
-simplify :: TermAlg Sig f' Int Int
-    =>  AGUnifProb Sig f' Int Int -> AGUnifProb Sig f' Int Int
+simplify :: TermAlg Sig f' () Int
+    =>  AGUnifProb Sig f' () Int -> AGUnifProb Sig f' () Int
 simplify ps
     | ps == simplify' [] ps = ps
     | otherwise             = simplify (simplify' [] ps)
@@ -1175,10 +1213,10 @@ simplify ps
 
 
 memRec
-    :: (TermAlg Sig f' Int Int, Show f')
-    => [((T Sig f' Int Int, T Sig f' Int Int), [T Sig f' Int Int])]
-    -> AGUnifProb Sig f' Int Int
-    -> StateT (Int, Log f') [] (AGUnifProb Sig f' Int Int)
+    :: (TermAlg Sig f' () Int, Show f')
+    => [((T Sig f' () Int, T Sig f' () Int), [T Sig f' () Int])]
+    -> AGUnifProb Sig f' () Int
+    -> StateT (Int, Log f') [] (AGUnifProb Sig f' () Int)
 memRec [] p
     = agUnifN p
 memRec gs@(((s,x),smv):stack) (classify -> ((pe,pe',pi,ph),p))
@@ -1211,7 +1249,6 @@ memRec gs@(((s,x),smv):stack) (classify -> ((pe,pe',pi,ph),p))
          
 -- STILL TO DO FOR agUnifN:
 -- * Elim (variable and constant elimination)
--- * Rep (replacement)
 
 
 

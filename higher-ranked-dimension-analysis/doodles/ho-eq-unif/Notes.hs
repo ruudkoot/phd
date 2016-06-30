@@ -29,4 +29,22 @@
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
+([(X 0,C 0),(X 1,C 0)],[],[],[])    INCORRECT 1
+([(X 1,C 0)          ],[],[],[])    INCORRECT 2
+([(X 1,C 0)          ],[],[],[])    INCORRECT 2
+([(X 0,C 0),(X 1,C 0)],[],[],[])    INCORRECT 1
+([(X 0,C 0),(X 1,C 0)],[],[],[])    INCORRECT 1
+([(X 0,C 0),(X 1,C 0)],[],[],[])    INCORRECT 1
+([(X 0,C 0),(X 1,C 0)],[],[],[])    INCORRECT 1
+([(X 0,C 0)          ],[],[],[])    INCORRECT 3
+([(X 0,C 0),(X 1,C 0)],[],[],[])    INCORRECT 1
+([(X 0,C 0),(X 1,C 1)],[],[],[])    SOLUTION 1
+([(X 0,C 1),(X 1,C 1)],[],[],[])    INCORRECT 4
+([(X 0,C 1)          ],[],[],[])    INCORRECT 5
+([(X 0,C 1),(X 1,C 0)],[],[],[])    SOLUTION 2
+([(X 0,C 1),(X 1,C 1)],[],[],[])    INCORRECT 4
 
+
+-- miscellaneous fixme's in several of the rules and helper functions...
+-- can we get rid of the usual ones by the non-idempotent restriction? (why is this not a "problem" anymore? missing Elim?)
+-- can we get rid of the remaining ones by being "less defined"?

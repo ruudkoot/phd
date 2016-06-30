@@ -160,6 +160,7 @@ tests =
     ,("inSolvedForm (1)",               test_inSolvedForm_1)
     ,("inSolvedForm (2)",               test_inSolvedForm_2)
     ,("inSolvedForm (3)",               test_inSolvedForm_3)
+    ,("inSolvedForm (4)",               test_inSolvedForm_4)
     ,("numX",                           test_numX)
     ,("numX'",                          test_numX')
     ,("numC",                           test_numC)
@@ -1339,18 +1340,22 @@ test_agConstMatch_3 =
         Nothing
         
 test_constantify_1 =
-    let exp   = (F' "f'" [X 0, X 1, X' 0, X' 1, C 0, C 1]) :: T Sig String Int Int
-        exp'  = (F' "f'" [C 2, X 1, X' 0, C  5, C 0, C 1]) :: T Sig String Int Int
-        smv   = [X 0, X' 1] :: [T Sig String Int Int]
-        numC' = numC exp
+    let exp   = (F' "f'" [X 0, X 1, X' 0, X' 1, F' "C 0" [], F' "C 1" []])
+                    :: T Sig String () Int
+        exp'  = (F' "f'" [C 0, X 1, X' 0, C  3, F' "C 0" [], F' "C 1" []])
+                    :: T Sig String Int Int
+        smv   = [X 0, X' 1] :: [T Sig String () Int]
+        numC' = 0 -- numC exp
      in constantify numC' smv exp
             =?=
         exp'
 
 test_deconstantify_1 =
-    let exp   = (F' "f'" [X 0, X 1, X' 0, X' 1, C 0, C 1]) :: T Sig String Int Int
-        exp'  = (F' "f'" [C 2, X 1, X' 0, C  5, C 0, C 1]) :: T Sig String Int Int
-        numC' = numC exp
+    let exp   = (F' "f'" [X 0, X 1, X' 0, X' 1, F' "C 0" [], F' "C 1" []])
+                    :: T Sig String () Int
+        exp'  = (F' "f'" [C 0, X 1, X' 0, C  3, F' "C 0" [], F' "C 1" []])
+                    :: T Sig String Int Int
+        numC' = 0 -- numC exp
      in deconstantify numC' exp'
             =?=
         exp
@@ -1359,9 +1364,10 @@ test_agUnif1TreatingAsConstant_1 =
     let exp1 = (snd . head) (fromExp 5 [([2,3,-1,-4,-5],[])])
         exp2 = (snd . head) (fromExp 5 [([0,0, 0, 0, 0],[])])
         smv  = [X 4]
-     in (agUnif1TreatingAsConstant smv exp1 exp2 :: Maybe (AGUnifProb Sig String Int Int))
+     in (agUnif1TreatingAsConstant smv (castC' exp1) (castC' exp2)
+                :: Maybe (AGUnifProb Sig String () Int))
             =?=
-        (Just $ fromExp 5 $
+        (Just $ map (castC' *** castC') $ fromExp 5 $
              [([ 1, 0, 0, 0, 0],[])
              ,([ 0, 1, 0, 0, 0],[])
              ,([ 2, 3, 0,-4,-5],[])
@@ -1387,19 +1393,19 @@ test_isVar_1 =
     [True, True, False, False, False]
     
 test_vars_1 =
-    vars (F undefined [C undefined, F' undefined [X 666, X' undefined], X 42])
+    vars (F undefined [{-C undefined,-} F' undefined [X 666, X' undefined], X 42])
         =?=
     [666,42]
 
 test_vars'_1 =
-    vars' (F undefined [C undefined, F' undefined [X' 666, X undefined], X' 42])
+    vars' (F undefined [{-C undefined,-} F' undefined [X' 666, X undefined], X' 42])
         =?=
     [666,42]
 
 test_allVars_1 =
     allVars
-        [(F undefined [C undefined, F' undefined [X  1, X' 2], X  3]
-        ,F undefined [C undefined, F' undefined [X' 4, X  5], X' 6]
+        [(F undefined [{-C undefined,-} F' undefined [X  1, X' 2], X  3]
+        ,F undefined [{-C undefined,-} F' undefined [X' 4, X  5], X' 6]
         )]
         =?=
     (S.fromList [X  1, X' 2, X  3, X' 4, X  5, X' 6] :: S.Set (T () () () Int))
@@ -1455,23 +1461,23 @@ test_homogeneous''_3 =
 
 test_isPureE =
     map isPureE
-        [X undefined, X' undefined, C undefined
+        [X undefined, X' undefined{-, C undefined-}
         ,F undefined [X undefined], F undefined [F' undefined undefined]
         ,F' undefined undefined
         ]
             =?=
-    [True, True, True
+    [True, True{-, True-}
     ,True, False
     ,False]
 
 test_isPureE' =
     map isPureE'
-        [X undefined, X' undefined, C undefined
+        [X undefined, X' undefined{-, C undefined-}
         ,F undefined undefined
         ,F' undefined [X undefined], F' undefined [F undefined undefined]
         ]
             =?=
-    [True, True, False
+    [True, True{-, False-}
     ,False
     ,True, False]
 
@@ -1490,24 +1496,24 @@ test_isHeterogeneous_2 =
         True
 
 test_subst_1 =
-    let theta = F 2 [X 2, C 222] :: T Int Int Int Int
-        exp x = F 2 [F' 2 [X 1, x, X' 3, C 2], x]
+    let theta = F 2 [X 2{-, C 222-}] :: T Int Int Int Int
+        exp x = F 2 [F' 2 [X 1, x, X' 3{-, C 2-}], x]
      in subst 2 theta (exp (X 2))
             =?=
         exp theta
 
 test_subst'_1 =
-    let theta = F 2 [X' 2, C 222] :: T Int Int Int Int
-        exp x = F 2 [F' 2 [X 1, x, X' 3, C 2], x]
+    let theta = F 2 [X' 2{-, C 222-}] :: T Int Int Int Int
+        exp x = F 2 [F' 2 [X 1, x, X' 3{-, C 2-}], x]
      in subst' 2 theta (exp (X' 2))
             =?=
         exp theta
 
 test_applySubst_1 =
-    let theta    = F  2 [X  2, X' 2, C 2] :: T Int Int Int Int
-        theta'   = F' 2 [X' 2, X  2, C 2]
+    let theta    = F  2 [X  2, X' 2{-, C 2-}] :: T Int Int Int Int
+        theta'   = F' 2 [X' 2, X  2{-, C 2-}]
         theta''  = [(X 2, theta), (X' 2, theta')]
-        exp x x' = F 2 [x, F' 2 [X 1, X' 1, x', x, C 2], x']
+        exp x x' = F 2 [x, F' 2 [X 1, X' 1, x', x{-, C 2-}], x']
      in applySubst theta'' (exp (X 2) (X' 2))
             =?=
         exp theta theta'
@@ -1540,49 +1546,61 @@ test_classify_1 =
         ([t1, t2], [], [t3'], [t4])
 
 test_classify_2 =
-    let t1  = (F  "f" [X 1, X' 2, C 3],           F  "g" [X 1, X' 2, C 3]        )
+    let t1  = (F  "f" [X 1, X' 2, F "C 3" []],           F  "g" [X 1, X' 2, F "C 3" []]        )
         t2  = (F' "f" [X 1, X' 2     ],           F' "g" [X 1, X' 2     ]        )
-        t3  = (F  "f" [X 1, X' 2, C 3],           F' "g" [X 1, X' 2     ]        )
-        t3' = (F' "g" [X 1, X' 2     ],           F  "f" [X 1, X' 2, C 3]        )
-        t4  = (F  "f" [F' "f'" [X 1, X' 2, C 3]], F' "g" [F "f" [X 1, X' 2, C 3]])
+        t3  = (F  "f" [X 1, X' 2, F "C 3" []],           F' "g" [X 1, X' 2     ]        )
+        t3' = (F' "g" [X 1, X' 2     ],           F  "f" [X 1, X' 2, F "C 3" []]        )
+        t4  = (F  "f" [F' "f'" [X 1, X' 2, F' "C 3" []]], F' "g" [F "f" [X 1, X' 2, F' "C 3" []]])
         t5  = (X 1, X' 1)
      in (fst $ classify ([t1, t2, t3, t3', t4, t5] :: AGUnifProb String String Int Int))
             =?=
         ([t1],[t2, t5],[t3, t3],[t4])
 
 test_inSolvedForm_1 =
-    let ts = [(X  1, F "f" [C 1])
-             ,(X' 1, F "f" [C 1])
+    let ts = [(X  1, F "f" [F' "C 1" []])
+             ,(X' 1, F "f" [F' "C 1" []])
              ] :: AGUnifProb String String Int Int
+        w  = dom ts
      in inSolvedForm ts
             =?=
         True
 
 test_inSolvedForm_2 =
-    let ts = [(X  1, F "f" [C 1])
-             ,(X' 1, F "f" [C 1])
-             ,(C  1, F "f" [C 1])
+    let ts = [(X  1, F "f" [F' "C 1" []])
+             ,(X' 1, F "f" [F' "C 1" []])
+             ,(C  1, F "f" [F' "C 1" []])
              ] :: AGUnifProb String String Int Int
+        w  = dom ts
      in inSolvedForm ts
             =?=
         False
 
 test_inSolvedForm_3 =
-    let ts = [(X  1, F "f" [C 1])
+    let ts = [(X  1, F "f" [F' "C 1" []])
              ,(X' 1, F "f" [X 1])
              ] :: AGUnifProb String String Int Int
+        w  = dom ts
+     in inSolvedForm ts
+            =?=
+        False
+        
+test_inSolvedForm_4 =
+    let ts = [(X  1, F "f" [F' "C 1" []])
+             ,(X  1, F "f" [F' "C 1" []])
+             ] :: AGUnifProb String String Int Int
+        w  = dom ts
      in inSolvedForm ts
             =?=
         False
 
 
 test_numX =
-    numX (F "f" [F' "f'" [X 42, X' 666, C 666]])
+    numX (F "f" [F' "f'" [X 42, X' 666{-, C 666-}]])
         =?=
     (42 + 1)
 
 test_numX' =
-    numX' (F "f" [F' "f'" [X 666, X' 42, C 666]])
+    numX' (F "f" [F' "f'" [X 666, X' 42{-, C 666-}]])
         =?=
     (42 + 1)
     
@@ -1592,12 +1610,12 @@ test_numC =
     (42 + 1)
 
 test_toExp_1 =
-    toExp 2 2 2 (F Mul [F Mul [X 1, F Mul [X' 0, F Inv [X' 1]]]
-                       ,F Inv [F Mul [C 0, C 1]]
+    toExp 2 2 0 (F Mul [F Mul [X 1, F Mul [X' 0, F Inv [X' 1]]]
+                       ,F Inv [F Mul [X 0, X 0]]
                        ]
                 )
         =?=
-    ([0,1,1,-1],[-1,-1])
+    ([-2,1,1,-1],[])
 
 test_toExp'_1 =
     let exp = (F Mul [F Mul [X 1, F Mul [X' 0, F Inv [X' 1]]]
@@ -1610,12 +1628,15 @@ test_toExp'_1 =
 
 test_fromExp_1 =
     let exp = ([1,-2,3,-4],[5,-6])
-     in map (id *** toExp 2 2 2) (fromExp 2 (replicate 4 ([1,-2,3,-4],[5,-6])))
+     in map (id *** toExp'' 2 2 2) (fromExp 2 (replicate 4 ([1,-2,3,-4],[5,-6])))
             =?=
         [(X 0 :: T Sig Sig Int Int, exp), (X 1, exp), (X' 0, exp), (X' 1, exp)]
+            where
+                toExp'' :: Int -> Int -> Int -> T Sig f' Int Int -> AGExp1
+                toExp'' v1 v2 c s = toExp' v1 v2 c (s, F Unit [])
 
 test_dom_1 =
-    dom [(X 0, undefined), (X 42, undefined), (X' 0, undefined), (X' 666, undefined)]
+    dom [(X 0, X 1), (X 42, X 43), (X' 0, X' 1), (X' 666, X' 667)]
         =?=
     S.fromList [X 0 :: T Sig Sig Int Int, X 42, X' 0, X' 666]
 
@@ -1625,8 +1646,8 @@ test_domNotMappingToVar_1 =
     S.fromList [X 42, X' 666 :: T Sig Sig Int Int]
 
 test_isShared_1 =
-    let pe  = [(X 0, X' 1), (X' 2, X 3)] :: AGUnifProb Sig Sig Int Int
-        pe' = [(X 0, C 0), (C 0, X' 1), (X 3, X' 2)]
+    let pe  = [(X 0, X' 1), (X' 2, X 3)] :: AGUnifProb Sig String Int Int
+        pe' = [(X 0, F' "C 0" []), (F' "C 0" [], X' 1), (X 3, X' 2)]
      in map (\x -> isShared x pe pe') [X 0, X' 1, X' 2, X 3]
             =?=
         [True, True, False, False]
@@ -1907,34 +1928,56 @@ test_agUnifN_VarRep_5 =
 -- should have 2! = 2 unique solutions (Liu & Lynch)
 test_agUnifN_1 =
     let p = [(F Mul [F' "f" [X 0], F' "f" [X 1]]
-             ,F Mul [F' "f" [C 0], F' "f" [C 1]])]
-                :: AGUnifProb Sig String Int Int
+             ,F Mul [F' "f" [F' "c_0" []], F' "f" [F' "c_1" []]])]
+                :: AGUnifProb Sig String () Int
+        w   = allVars p
+
         (nub . (map (sortBy (compare `on` fst) *** id)) -> ps')
             = runStateT (agUnifN p) (0, [LE START (fst $ classify p)])
+
      in ps' {-
             =?=
         [] -}
+{-
+test_agUnifN_1' =
+    let p = [(F Mul [F' "f" [X 0], F' "f" [X 1]]
+             ,F Mul [F' "f" [C 0], F' "f" [C 1]])]
+                :: AGUnifProb Sig String Int Int
+        w   = allVars p
 
+        (nub . (map (sortBy (compare `on` fst) *** id)) -> ps')
+            = runStateT (agUnifN p) (0, [LE START (fst $ classify p)])
+
+     in ps' {-
+            =?=
+        [] -}
+        
 -- should have 3! = 6 unique solutions (Liu & Lynch)
-test_agUnifN_2 =
+test_agUnifN_2' =
     let p = [(F Mul [F' "f" [X 0], F Mul [F' "f" [X 1], F' "f" [X 2]]]
              ,F Mul [F' "f" [C 0], F Mul [F' "f" [C 1], F' "f" [C 2]]])]
                 :: AGUnifProb Sig String Int Int
+        w   = allVars p
+
         (nub . (map (sortBy (compare `on` fst) *** id)) -> ps')
             = runStateT (agUnifN p) (0, [LE START (fst $ classify p)])
-     in ps'
+
+     in ps' {-
             =?=
-        []
+        [] -}
         
 -- should have 4! = 24 unique solutions (Liu & Lynch)
-test_agUnifN_3 =
+test_agUnifN_3' =
     let p = [(F Mul [F' "f" [X 0], F Mul [F' "f" [X 1], F Mul [F' "f" [X 2], F' "f" [X 3]]]]
              ,F Mul [F' "f" [C 0], F Mul [F' "f" [C 1], F Mul [F' "f" [C 2], F' "f" [C 3]]]])]
                 :: AGUnifProb Sig String Int Int
+        w   = allVars p
+
         (nub . (map (sortBy (compare `on` fst) *** id)) -> ps')
             = runStateT (agUnifN p) (0, [LE START (fst $ classify p)])
-     in ps'
-            =?=
-        []
-        
 
+     in ps' {-
+            =?=
+        [] -}
+        
+-}
