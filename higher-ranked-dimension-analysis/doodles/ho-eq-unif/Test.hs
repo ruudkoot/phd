@@ -16,7 +16,7 @@ import Data.Maybe
 import qualified Data.Map as M
 import qualified Data.Set as S
 
-import Main hiding (main, u0)
+import Unif hiding (main, u0)
 
 tests :: [(String, Bool)]
 tests =
@@ -198,6 +198,9 @@ tests =
     ,("constantify (1)",                test_constantify_1)
     ,("deconstantify (1)",              test_deconstantify_1)
     ,("agUnif1TreatingAsConstant (1)",  test_agUnif1TreatingAsConstant_1)
+    ,("agUnifN (1)",                    test_agUnifN_1)
+    ,("agUnifN (2)",                    test_agUnifN_2)
+    ,("agUnifN (3)",                    test_agUnifN_3)
     ]
     
 len = maximum (map (length . fst) tests)
@@ -1932,52 +1935,117 @@ test_agUnifN_1 =
                 :: AGUnifProb Sig String () Int
         w   = allVars p
 
+        {-
         (nub . (map (sortBy (compare `on` fst) *** id)) -> ps')
-            = runStateT (agUnifN p) (0, [LE START (fst $ classify p)])
+            = runStateT (agUnifN' p) (0, [LE START (fst $ classify p)])
+        -}
+        ps' = agUnifN p
 
-     in ps' {-
+     in ps'
             =?=
-        [] -}
-{-
-test_agUnifN_1' =
-    let p = [(F Mul [F' "f" [X 0], F' "f" [X 1]]
-             ,F Mul [F' "f" [C 0], F' "f" [C 1]])]
-                :: AGUnifProb Sig String Int Int
+        [[(X 0,F' "c_0" []),(X 1,F' "c_1" [])]
+        ,[(X 0,F' "c_1" []),(X 1,F' "c_0" [])]]
+
+
+test_agUnifN_1B =
+    let p = [(F Mul [F' "f" [F' "c_1" []], F' "f" [F' "c_1" []]]
+             ,F Mul [F' "f" [F' "c_0" []], F' "f" [F' "c_1" []]])]
+                :: AGUnifProb Sig String () Int
         w   = allVars p
 
+        {-
         (nub . (map (sortBy (compare `on` fst) *** id)) -> ps')
-            = runStateT (agUnifN p) (0, [LE START (fst $ classify p)])
+            = runStateT (agUnifN' p) (0, [LE START (fst $ classify p)])
+        -}
+        ps' = agUnifN p
 
-     in ps' {-
+     in ps'
             =?=
-        [] -}
-        
+        []
+
 -- should have 3! = 6 unique solutions (Liu & Lynch)
-test_agUnifN_2' =
+test_agUnifN_2 =
     let p = [(F Mul [F' "f" [X 0], F Mul [F' "f" [X 1], F' "f" [X 2]]]
-             ,F Mul [F' "f" [C 0], F Mul [F' "f" [C 1], F' "f" [C 2]]])]
-                :: AGUnifProb Sig String Int Int
+             ,F Mul [F' "f" [F' "c_0" []], F Mul [F' "f" [F' "c_1" []], F' "f" [F' "c_2" []]]])]
+                :: AGUnifProb Sig String () Int
         w   = allVars p
 
+        {-
         (nub . (map (sortBy (compare `on` fst) *** id)) -> ps')
-            = runStateT (agUnifN p) (0, [LE START (fst $ classify p)])
+            = runStateT (agUnifN' p) (0, [LE START (fst $ classify p)])
+        -}
+        ps' = agUnifN p
 
-     in ps' {-
+     in ps'
             =?=
-        [] -}
+        [[(X 0,F' "c_0" []),(X 1,F' "c_1" []),(X 2,F' "c_2" [])]
+        ,[(X 0,F' "c_0" []),(X 1,F' "c_2" []),(X 2,F' "c_1" [])]
+        ,[(X 0,F' "c_1" []),(X 1,F' "c_0" []),(X 2,F' "c_2" [])]
+        ,[(X 0,F' "c_1" []),(X 1,F' "c_2" []),(X 2,F' "c_0" [])]
+        ,[(X 0,F' "c_2" []),(X 1,F' "c_0" []),(X 2,F' "c_1" [])]
+        ,[(X 0,F' "c_2" []),(X 1,F' "c_1" []),(X 2,F' "c_0" [])]]
         
 -- should have 4! = 24 unique solutions (Liu & Lynch)
-test_agUnifN_3' =
+test_agUnifN_3 =
     let p = [(F Mul [F' "f" [X 0], F Mul [F' "f" [X 1], F Mul [F' "f" [X 2], F' "f" [X 3]]]]
-             ,F Mul [F' "f" [C 0], F Mul [F' "f" [C 1], F Mul [F' "f" [C 2], F' "f" [C 3]]]])]
-                :: AGUnifProb Sig String Int Int
+             ,F Mul [F' "f" [F' "c_0" []], F Mul [F' "f" [F' "c_1" []], F Mul [F' "f" [F' "c_2" []], F' "f" [F' "c_3" []]]]])]
+                :: AGUnifProb Sig String () Int
         w   = allVars p
 
+        {-
         (nub . (map (sortBy (compare `on` fst) *** id)) -> ps')
-            = runStateT (agUnifN p) (0, [LE START (fst $ classify p)])
+            = runStateT (agUnifN' p) (0, [LE START (fst $ classify p)])
+        -}
+        ps' = agUnifN p
 
-     in ps' {-
+     in ps'
             =?=
-        [] -}
-        
+        [[(X 0,F' "c_0" []),(X 1,F' "c_1" []),(X 2,F' "c_2" []),(X 3,F' "c_3" [])]
+        ,[(X 0,F' "c_0" []),(X 1,F' "c_1" []),(X 2,F' "c_3" []),(X 3,F' "c_2" [])]
+        ,[(X 0,F' "c_0" []),(X 1,F' "c_2" []),(X 2,F' "c_1" []),(X 3,F' "c_3" [])]
+        ,[(X 0,F' "c_0" []),(X 1,F' "c_2" []),(X 2,F' "c_3" []),(X 3,F' "c_1" [])]
+        ,[(X 0,F' "c_0" []),(X 1,F' "c_3" []),(X 2,F' "c_1" []),(X 3,F' "c_2" [])]
+        ,[(X 0,F' "c_0" []),(X 1,F' "c_3" []),(X 2,F' "c_2" []),(X 3,F' "c_1" [])]
+        ,[(X 0,F' "c_1" []),(X 1,F' "c_0" []),(X 2,F' "c_2" []),(X 3,F' "c_3" [])]
+        ,[(X 0,F' "c_1" []),(X 1,F' "c_0" []),(X 2,F' "c_3" []),(X 3,F' "c_2" [])]
+        ,[(X 0,F' "c_1" []),(X 1,F' "c_2" []),(X 2,F' "c_0" []),(X 3,F' "c_3" [])]
+        ,[(X 0,F' "c_1" []),(X 1,F' "c_2" []),(X 2,F' "c_3" []),(X 3,F' "c_0" [])]
+        ,[(X 0,F' "c_1" []),(X 1,F' "c_3" []),(X 2,F' "c_0" []),(X 3,F' "c_2" [])]
+        ,[(X 0,F' "c_1" []),(X 1,F' "c_3" []),(X 2,F' "c_2" []),(X 3,F' "c_0" [])]
+        ,[(X 0,F' "c_2" []),(X 1,F' "c_0" []),(X 2,F' "c_1" []),(X 3,F' "c_3" [])]
+        ,[(X 0,F' "c_2" []),(X 1,F' "c_0" []),(X 2,F' "c_3" []),(X 3,F' "c_1" [])]
+        ,[(X 0,F' "c_2" []),(X 1,F' "c_1" []),(X 2,F' "c_0" []),(X 3,F' "c_3" [])]
+        ,[(X 0,F' "c_2" []),(X 1,F' "c_1" []),(X 2,F' "c_3" []),(X 3,F' "c_0" [])]
+        ,[(X 0,F' "c_2" []),(X 1,F' "c_3" []),(X 2,F' "c_0" []),(X 3,F' "c_1" [])]
+        ,[(X 0,F' "c_2" []),(X 1,F' "c_3" []),(X 2,F' "c_1" []),(X 3,F' "c_0" [])]
+        ,[(X 0,F' "c_3" []),(X 1,F' "c_0" []),(X 2,F' "c_1" []),(X 3,F' "c_2" [])]
+        ,[(X 0,F' "c_3" []),(X 1,F' "c_0" []),(X 2,F' "c_2" []),(X 3,F' "c_1" [])]
+        ,[(X 0,F' "c_3" []),(X 1,F' "c_1" []),(X 2,F' "c_0" []),(X 3,F' "c_2" [])]
+        ,[(X 0,F' "c_3" []),(X 1,F' "c_1" []),(X 2,F' "c_2" []),(X 3,F' "c_0" [])]
+        ,[(X 0,F' "c_3" []),(X 1,F' "c_2" []),(X 2,F' "c_0" []),(X 3,F' "c_1" [])]
+        ,[(X 0,F' "c_3" []),(X 1,F' "c_2" []),(X 2,F' "c_1" []),(X 3,F' "c_0" [])]]
+
+-- x = f ( x + y ) should have 1 solution (Liu & Lynch)
+test_agUnifN_4 =
+    let p = [(X 0
+             ,F' "f" [F Mul [X 0, X 1]]
+            )] :: AGUnifProb Sig String () Int
+     in runStateT (agUnifN' p) (0,[])
+{-            =?=
 -}
+
+-- x + f ( y ) − f ( x 1 ) = ? 0
+-- y + f ( z ) − f ( x 2 ) = ? 0  should have 3 solutions  (Liu & Lynch)
+-- z + f ( x ) − f ( x 3 ) = ? 0
+test_agUnifN_5 =
+    let x  = X 0
+        y  = X 1
+        z  = X 2
+        x1 = X 3
+        x2 = X 4
+        x3 = X 5
+        p = [(F Mul [x, F Mul [F' "f" [y], F Inv [F' "f" [x1]]]],F Unit [])
+            ,(F Mul [y, F Mul [F' "f" [z], F Inv [F' "f" [x2]]]],F Unit [])
+            ,(F Mul [z, F Mul [F' "f" [x], F Inv [F' "f" [x3]]]],F Unit [])
+            ] :: AGUnifProb Sig String () Int
+     in runStateT (agUnifN' p) (0,[])
