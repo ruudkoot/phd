@@ -5,5 +5,5 @@ import qualified Test
 
 main = do
     Test.main
-    putStrLn "\n\n"
-    print Test.test_agUnifN_5
+    -- putStrLn "\n\n"
+    -- print Test.test_agUnifN_5

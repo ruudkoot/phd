@@ -2,6 +2,7 @@
 
     STILL TO DO FOR agUnifN:
     * implement Elim (variable and constant elimination) or at least assert
+    * loops on some of the examples from Liu & Lynch...
     * Mem-Rec has been "fixed"(?) w.r.t. Boudet et al.
 
     SANITY CHECKING:
@@ -1252,7 +1253,33 @@ memRec gs@(((s,x),smv):stack) (classify -> ((pe,pe',pi,ph),p))
          z <- lift z'
 
          let theta  = if z == x then [] else [(z, x)]
-         let sigma' = filter (\(x,y) -> not (x `member` domNotMappingToVar pe') && x /= y) sigma
+
+
+         {- FIXME: how to interpret the paper's sigma'? -----------------------}
+
+         let sigma' =
+         
+         -- "sigma is applied to P_E, and the equivalent equations are added to P"
+         -- (may have too many equations, so may not be complete)
+
+                sigma
+
+
+         -- Jur's interpretation (looks to be complete and correct)
+         -- (we possibly lose an equation, so may not be correct)
+
+            --  filter (\(x,y) -> x /= z && x /= y) sigma
+
+
+         -- "sigma' is the restriction to non-E'-instantiated variables"
+         -- seems complete, but definitly not correct
+
+            --  filter (\(x,y) -> x `notMember` domNotMappingToVar pe' && x /= y) sigma
+
+         {---------------------------------------------------------------------}
+
+
+
          let ys     = toList $
                         domNotMappingToVar pe' `intersection` domNotMappingToVar sigma
          let pe_sigma_theta = map (applySubst theta *** applySubst theta)
@@ -1269,7 +1296,6 @@ memRec gs@(((s,x),smv):stack) (classify -> ((pe,pe',pi,ph),p))
                                  ,map (applySubst theta) smv)
                 ) stack
          p' <- log (Mem_Rec gs z z' sigma sigma' theta ys stack' stack'')
-                   -- FIXME: paper says sigma', I say sigma.......!
-                   (pe_sigma_theta ++ sigma ++ theta ++ pe' ++ pi ++ ph)
+                   (pe_sigma_theta ++ sigma' ++ theta ++ pe' ++ pi ++ ph)
          memRec (stack' ++ stack'') p'
 

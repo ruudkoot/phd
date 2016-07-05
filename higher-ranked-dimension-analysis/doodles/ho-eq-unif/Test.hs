@@ -2025,7 +2025,7 @@ test_agUnifN_3 =
         ,[(X 0,F' "c_3" []),(X 1,F' "c_2" []),(X 2,F' "c_0" []),(X 3,F' "c_1" [])]
         ,[(X 0,F' "c_3" []),(X 1,F' "c_2" []),(X 2,F' "c_1" []),(X 3,F' "c_0" [])]]
 
--- x = f ( x + y ) should have 1 solution (Liu & Lynch)
+-- x = f ( x + y ) should have 1 solution (Liu & Lynch) (WHICH???)
 test_agUnifN_4 =
     let p = [(X 0
              ,F' "f" [F Mul [X 0, X 1]]
@@ -2034,9 +2034,9 @@ test_agUnifN_4 =
 {-            =?=
 -}
 
--- x + f ( y ) − f ( x 1 ) = ? 0
--- y + f ( z ) − f ( x 2 ) = ? 0  should have 3 solutions  (Liu & Lynch)
--- z + f ( x ) − f ( x 3 ) = ? 0
+-- x + f ( y ) − f ( x1 ) = ? 0
+-- y + f ( z ) − f ( x2 ) = ? 0  should have 3 solutions  (Liu & Lynch)
+-- z + f ( x ) − f ( x3 ) = ? 0
 test_agUnifN_5 =
     let x  = X 0
         y  = X 1
