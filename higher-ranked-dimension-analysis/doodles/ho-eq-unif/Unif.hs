@@ -2,7 +2,9 @@
 
     STILL TO DO FOR agUnifN:
     * implement Elim (variable and constant elimination) or at least assert
-    * loops on some of the examples from Liu & Lynch...
+    * Rep causes looping on some of the examples from Liu & Lynch...
+    * occur-check?
+    * FIXME (e.g. Simplify)
     * Mem-Rec has been "fixed"(?) w.r.t. Boudet et al.
 
     SANITY CHECKING:
@@ -14,6 +16,7 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE TupleSections          #-}
 {-# LANGUAGE ViewPatterns           #-}
 
 module Unif where
@@ -28,6 +31,7 @@ import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.List
 
 import           Data.Function
+import           Data.Graph
 import           Data.List      (intersect, minimumBy, nub, partition, sort, sortBy)
 import           Data.Maybe
 import           Data.Map       (Map)
@@ -56,6 +60,13 @@ uncons (x:xs) = Just (x,xs)
 
 maximum' :: Ord a => a -> [a] -> a
 maximum' x xs = maximum (x : xs)
+
+deinterleave :: [a] -> ([a],[a])
+deinterleave []       = ([] ,[])
+deinterleave [x]      = ([x],[])
+deinterleave (x:y:zs) = 
+    let (xs,ys) = deinterleave zs
+     in (x:xs,y:ys)
 
 -- FIXME: order in which the list elements are fed to 'f' is weird,
 -- (but that does not matter if they represent sets)
@@ -701,6 +712,14 @@ newV = do n <- get
           modify (+1)
           return (X' n)
 
+isX :: T f f' x c -> Bool
+isX (X _) = True
+isX _     = False
+
+isX' :: T f f' x c -> Bool
+isX' (X' _) = True
+isX' _      = False
+
 isVar :: T f f' x c -> Bool
 isVar (X  _) = True
 isVar (X' _) = True
@@ -1066,9 +1085,13 @@ stateT st = StateT {
         runStateT = \(s1,s2) -> let (x, s1') = runState st s1 in return (x, (s1',s2))
     }
 
-log :: (Ord f', Monad m) => Rule f' -> (AGUnifProb Sig f' () Int) -> StateT (Int, Log f') m (AGUnifProb Sig f' () Int)
-log l1 (sortBy (compare `on` fst) -> l2@(classify -> (l2c,_)))
-    = StateT { runStateT = \(s1,s2) -> return (l2,(s1, s2 ++ [LE l1 l2c])) }
+log :: (Ord f', Monad m)
+    => Rule f'
+    -> (AGUnifProb Sig f' () Int)
+    -> Set (T Sig f' () Int, T Sig f' () Int)
+    -> StateT (Int, Log f') m (AGUnifProb Sig f' () Int)
+log l1 (sortBy (compare `on` fst) -> l2@(classify -> (l2c,_))) sc
+    = StateT { runStateT = \(s1,s2) -> return (l2,(s1, s2 ++ [LE l1 l2c sc])) }
 
 data Rule f'
     = START
@@ -1097,17 +1120,22 @@ data Rule f'
                                          ,[T Sig f' () Int]                  )] }
     | Rep
     -- failure/success conditions
+    | OUT_OF_FUEL
     | E'_Unification_Failure
     | FAILED
     | SOLVED
   deriving (Eq, Show)
 
 type Log      f' = [LogEntry f']
-data LogEntry f' = LE (Rule f') (AGClassifiedUnifProb Sig f' () Int)
+data LogEntry f' = LE (Rule f')
+                      (AGClassifiedUnifProb Sig f' () Int)
+                      (Set (T Sig f' () Int, T Sig f' () Int))
   deriving Eq
   
 instance Show f' => Show (LogEntry f') where
-    show (LE l p) = "\n    " ++ show l ++ "\n        " ++ show p ++ "\n"
+    show (LE l p sc) = "\n    " ++ show l  ++ "\n        "
+                                ++ show p  ++ "\n        "
+                                ++ show sc ++ "\n"
     
     
 justToList :: Maybe a -> [a]
@@ -1119,7 +1147,7 @@ agUnifN
     :: (TermAlg Sig f' () Int, Show f')
     => AGUnifProb Sig f' () Int
     -> [AGUnifProb Sig f' () Int]
-agUnifN p = nub (sort (map fst (runStateT (agUnifN' p) (0, []))))
+agUnifN p = nub (sort (map fst (runStateT (agUnifN' 666 p Set.empty) (0, []))))
 
 
 -- FIXME: not all equations get oriented in all rules (fail to call 'classify')
@@ -1128,10 +1156,13 @@ agUnifN p = nub (sort (map fst (runStateT (agUnifN' p) (0, []))))
 -- FIXME: for better performance, only classify newly generated equations
 agUnifN'
     :: (TermAlg Sig f' () Int, Show f')
-    => AGUnifProb Sig f' () Int
+    => Int
+    -> AGUnifProb Sig f' () Int
+    -> Set (T Sig f' () Int, T Sig f' () Int)
     -> StateT (Int, Log f') [] (AGUnifProb Sig f' () Int)
-agUnifN' _p@(classify -> ((pe, pe', pi, ph),p))
-    | _p /= p = agUnifN' p
+agUnifN' fuel _p@(classify -> ((pe, pe', pi, ph),p)) sc
+    | fuel <= 0 = log OUT_OF_FUEL p sc
+    | _p /= p = agUnifN' (fuel - 1) p sc
     -- Var-Rep          (need to check both possible orientations here!)
     -- FIXME: prefer to eliminate X' over X (already taken care by classify?)
     -- FIXME: allVars is a very expensive computation than can be done incrementally
@@ -1149,20 +1180,20 @@ agUnifN' _p@(classify -> ((pe, pe', pi, ph),p))
             else
                 Nothing
             ) p
-        = do p''  <- log Var_Rep  (map (applySubst [(x,y)] *** applySubst [(x,y)]) p')
-             agUnifN' p''
+        = do p'' <- log Var_Rep  (map (applySubst [(x,y)] *** applySubst [(x,y)]) p') sc
+             agUnifN' (fuel - 1) p'' sc
 
     -- Simplify
     | p /= simplify p
-        = do p' <- log Simplify (simplify p)
-             agUnifN' p'
+        = do p' <- log Simplify (simplify p) sc
+             agUnifN' (fuel - 1) p' sc
 
     -- VA (variable abstraction)
     | Just ((s,t),ph') <- uncons ph
         = do (s',rs) <- stateT $ homogeneous'' s
              (t',rt) <- stateT $ homogeneous'' t
-             p' <- log VA (pe ++ pe' ++ pi ++ ph' ++ [(s',t')] ++ rs ++ rt)
-             agUnifN' p'
+             p' <- log VA (pe ++ pe' ++ pi ++ ph' ++ [(s',t')] ++ rs ++ rt) sc
+             agUnifN' (fuel - 1) p' sc
 
     -- E-Res
     | not (inSolvedForm pe)
@@ -1172,15 +1203,15 @@ agUnifN' _p@(classify -> ((pe, pe', pi, ph),p))
            in do ee <- lift . justToList $
                     agUnif1' (map (toExp' numV1 numV2 numC' . (castC *** castC)) pe)
                  let qe = map (castC' *** castC') (fromExp numV1 ee)
-                 p' <- log (E_Res pe qe) (qe ++ pe' ++ pi ++ ph)
-                 agUnifN' p'
+                 p' <- log (E_Res pe qe) (qe ++ pe' ++ pi ++ ph) sc
+                 agUnifN' (fuel - 1) p' sc
 
     -- E'-Res
     | not (inSolvedForm pe')
         = case freeUnif pe' of
-                Just qe' -> do p' <- log E'_Res (pe ++ qe' ++ pi ++ ph)
-                               agUnifN' p'
-                Nothing  -> mzero -- log E'_Unification_Failure p
+                Just qe' -> do p' <- log E'_Res (pe ++ qe' ++ pi ++ ph) sc
+                               agUnifN' (fuel - 1) p' sc
+                Nothing  -> mzero -- log E'_Unification_Failure p sc
 
     -- E-Match    (s in E, t in E'; guaranteed by 'classify')
     | Just ((s,t),pi') <- uncons pi
@@ -1190,8 +1221,8 @@ agUnifN' _p@(classify -> ((pe, pe', pi, ph),p))
              let numC' = 0 -- max (numC  s) (numC  z)
              (map (castC' *** castC') . fromExp numV1 -> qI) <- lift . justToList $
                 agConstMatch (toExp numV1 numV2 numC' s) (toExp numV1 numV2 numC' z)
-             p' <- log E_Match (pe ++ pe' ++ qI ++ [(z,t)] ++ pi' ++ ph)
-             agUnifN' p'
+             p' <- log E_Match (pe ++ pe' ++ qI ++ [(z,t)] ++ pi' ++ ph) sc
+             agUnifN' (fuel - 1) p' sc
 
     -- Merge-E-Match    (P_E and P_E' can both assumed to be solved at this point)
     -- FIXME: in Mem-Init: s in T(F,X)\X; in Merge-E-Match: s in T(F,X)?
@@ -1199,9 +1230,21 @@ agUnifN' _p@(classify -> ((pe, pe', pi, ph),p))
                         domNotMappingToVar pe `intersection` domNotMappingToVar pe'
     , ((_,s):pe1,pe2) <- partition ((==x) . fst) pe
         = do let ((_,t):_,_) = partition ((==x) . fst) pe'      -- DUMMY / DEBUG ONLY!
-             p' <- log (Mem_Init x s t) (pe1 ++ pe2 ++ pe' ++ pi ++ ph)
-             memRec [((s,x),[x])] p'
-
+             p' <- log (Mem_Init x s t) (pe1 ++ pe2 ++ pe' ++ pi ++ ph) sc
+             memRec fuel [((s,x),[x])] p' sc
+    -- Elim
+    | inSeparatedForm p
+    , cs@(_:_) <- findCycles p
+        = if all validCycle cs then
+            -- FIXME: highly non-deterministic (unnecessarily much so?)
+            do c <- lift cs
+               let n = length c `div` 2
+               i <- lift [1 .. n]
+               
+               error $ "agUnifN' (Elim): valid cycle " ++ show cs
+          else
+            error $ "agUnifN' (Elim): invalid cycle " ++ show cs
+{- FIXME: causes looping this way...
     -- Rep
     -- FIXME: side-conditions
     | (q:qs) <- mapMaybeWithContext (\(x,s) p -> case (x,s) of
@@ -1210,12 +1253,47 @@ agUnifN' _p@(classify -> ((pe, pe', pi, ph),p))
                             ((x,s) : map (applySubst [(x,s)] *** applySubst [(x,s)]) p)
                     _  -> Nothing
                   ) p
-        = do log Rep q
-             agUnifN' q
-
+        = do log Rep q sc
+             agUnifN' (fuel - 1) q sc
+-}
     -- DONE
-    | inSeparatedForm p = log SOLVED p
-    | otherwise         = mzero -- log FAILED p
+    | inSeparatedForm p = log SOLVED p sc
+    | otherwise         = mzero -- log FAILED p sc
+
+
+{- cycle detection ------------------------------------------------------------}
+
+isCyclicSCC :: SCC a -> Bool
+isCyclicSCC (AcyclicSCC _) = False
+isCyclicSCC (CyclicSCC  _) = True
+
+unCyclicSCC :: SCC a -> [a]
+unCyclicSCC (CyclicSCC xs) = xs
+
+-- FIXME: this doesn't detect reflexive cycles (but those shouldn't be relevant,
+--        all the cycles should be of even lenght)
+findCycles :: TermAlg f f' c x => AGUnifProb f f' c x -> [[(T f f' c x, T f f' c x)]]
+findCycles p =
+    let graph  = map (\(x,t) -> ((x,t), x, toList $ allVars' t)) p
+        sccs   = stronglyConnComp graph
+        cycles = filter isCyclicSCC sccs
+     in map (rotateCycle . unCyclicSCC) cycles
+     
+-- Rotates a cycle so it is of the form E', E, ..., E', E.
+rotateCycle :: [(T f f' c x, T f f' c x)] -> [(T f f' c x, T f f' c x)]
+rotateCycle cs@((x,t):cs')
+    | isPureE  t = cs' ++ [(x,t)]
+    | isPureE' t = cs
+
+validCycle :: [(T f f' c x, T f f' c x)] -> Bool
+validCycle c =
+    let (e's, es) = deinterleave c
+     in even (length c)
+            && all (not . isVar . snd) e's && all (isPureE' . snd) e's
+            && all (not . isVar . snd) es  && all (isPureE  . snd) es
+            -- FIXME: forall i in {1..2n}, x_{i+1(mod 2n)} in V(t_i)
+
+{------------------------------------------------------------------------------}
 
 
 -- FIXME: This is not a faithful implementation of "remove equations of the form
@@ -1240,12 +1318,16 @@ simplify ps
 
 memRec
     :: (TermAlg Sig f' () Int, Show f')
-    => [((T Sig f' () Int, T Sig f' () Int), [T Sig f' () Int])]
+    => Int
+    -> [((T Sig f' () Int, T Sig f' () Int), [T Sig f' () Int])]
     -> AGUnifProb Sig f' () Int
+    -> Set (T Sig f' () Int, T Sig f' () Int)
     -> StateT (Int, Log f') [] (AGUnifProb Sig f' () Int)
-memRec [] p
-    = agUnifN' p
-memRec gs@(((s,x),smv):stack) (classify -> ((pe,pe',pi,ph),p))
+memRec 0 _ p sc
+    = do log OUT_OF_FUEL p sc
+memRec fuel [] p sc
+    = agUnifN' (fuel - 1) p sc
+memRec fuel gs@(((s,x),smv):stack) (classify -> ((pe,pe',pi,ph),p)) sc
     = do sigma <- lift . maybeToList $ agUnif1TreatingAsConstant smv s x
     
          -- NON-DETERMINISTICALLY (DON'T KNOW) CHOOSE z!
@@ -1297,5 +1379,6 @@ memRec gs@(((s,x),smv):stack) (classify -> ((pe,pe',pi,ph),p))
                 ) stack
          p' <- log (Mem_Rec gs z z' sigma sigma' theta ys stack' stack'')
                    (pe_sigma_theta ++ sigma' ++ theta ++ pe' ++ pi ++ ph)
-         memRec (stack' ++ stack'') p'
+                   sc
+         memRec (fuel - 1) (stack' ++ stack'') p' sc
 

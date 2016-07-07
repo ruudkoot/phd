@@ -2030,7 +2030,7 @@ test_agUnifN_4 =
     let p = [(X 0
              ,F' "f" [F Mul [X 0, X 1]]
             )] :: AGUnifProb Sig String () Int
-     in runStateT (agUnifN' p) (0,[])
+     in runStateT (agUnifN' 30 p S.empty) (0,[])
 {-            =?=
 -}
 
@@ -2048,4 +2048,4 @@ test_agUnifN_5 =
             ,(F Mul [y, F Mul [F' "f" [z], F Inv [F' "f" [x2]]]],F Unit [])
             ,(F Mul [z, F Mul [F' "f" [x], F Inv [F' "f" [x3]]]],F Unit [])
             ] :: AGUnifProb Sig String () Int
-     in runStateT (agUnifN' p) (0,[])
+     in runStateT (agUnifN' 1000 p S.empty) (0,[])
