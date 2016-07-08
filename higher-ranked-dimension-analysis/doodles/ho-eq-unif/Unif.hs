@@ -67,7 +67,7 @@ deinterleave [x]      = ([x],[])
 deinterleave (x:y:zs) = 
     let (xs,ys) = deinterleave zs
      in (x:xs,y:ys)
-
+     
 -- FIXME: order in which the list elements are fed to 'f' is weird,
 -- (but that does not matter if they represent sets)
 mapMaybeWithContext :: (a -> [a] -> Maybe b) -> [a] -> [b]
@@ -80,6 +80,14 @@ mapMaybeWithContext f = mapMaybeWithContext' []
                             
 allWithContext :: (a -> [a] -> Bool) -> [a] -> Bool
 allWithContext p = and . mapMaybeWithContext (\x ctx -> Just (p x ctx))
+
+allAdjacentPairsOnCycle :: (a -> a -> Bool) -> [a] -> Bool
+-- allAdjacentPairsOnCycle _ []  = True
+-- allAdjacentPairsOnCycle _ [_] = True
+allAdjacentPairsOnCycle f xs@(x0:_) = allAdjacentPairsOnCycle' xs
+  where
+    allAdjacentPairsOnCycle' [xn]            = f xn x0
+    allAdjacentPairsOnCycle' (xi:xs'@(xj:_)) = f xi xj && allAdjacentPairsOnCycle' xs'
 
 -- * Debugging * ------------------------------------------- UNUSED! ------[X]--
 
@@ -1154,6 +1162,8 @@ agUnifN p = nub (sort (map fst (runStateT (agUnifN' 666 p Set.empty) (0, []))))
 -- FIXME: unification problems are sets of UNORDERED pairs
 -- FIXME: that "numV1" stuff is horrible and slow (find better representation)
 -- FIXME: for better performance, only classify newly generated equations
+-- FIXME: for better performance, treat non-determinism as a DAG instead of tree
+--        (especially for Elim)
 agUnifN'
     :: (TermAlg Sig f' () Int, Show f')
     => Int
@@ -1237,9 +1247,14 @@ agUnifN' fuel _p@(classify -> ((pe, pe', pi, ph),p)) sc
     , cs@(_:_) <- findCycles p
         = if all validCycle cs then
             -- FIXME: highly non-deterministic (unnecessarily much so?)
-            do c <- lift cs
-               let n = length c `div` 2
-               i <- lift [1 .. n]
+            do c <- lift cs                 -- --\
+               let n = length c `div` 2     --   |--> too non-deterministic?
+               i <- lift [1 .. n]           -- --/
+               let (xi, xj) = (fst (c !! (2 * (i - 1))), fst (c !! (2 * (i - 1) + 1)))
+               let sc' = (xi, xj) `insert` sc
+               let cep = constantEliminationProblem sc' pe
+               theta <- lift $ variableIdentifications cep
+               let cep_theta = map (applySubst theta *** applySubst theta) cep
                
                error $ "agUnifN' (Elim): valid cycle " ++ show cs
           else
@@ -1260,6 +1275,31 @@ agUnifN' fuel _p@(classify -> ((pe, pe', pi, ph),p)) sc
     | inSeparatedForm p = log SOLVED p sc
     | otherwise         = mzero -- log FAILED p sc
 
+
+{- helpers for Elim -----------------------------------------------------------}
+
+constantEliminationProblem
+    :: TermAlg f f' c x
+    => Set (T f f' c x, T f f' c x)
+    -> AGUnifProb f f' c x
+    -> AGUnifProb f f' c x
+constantEliminationProblem sc pe
+    = [ (xk,s) | (xk,yk) <- toList sc, (_,s) <- filter ((== yk) . fst) pe]
+
+selectionWithReplacement :: Int -> [a] -> [[a]]
+selectionWithReplacement 0 _  = [[]]
+selectionWithReplacement n xs
+    = [ y : ys | y <- xs, ys <- selectionWithReplacement (n-1) xs ]
+
+variableIdentifications
+    :: TermAlg f f' c x
+    => AGUnifProb f f' c x
+    -> [AGUnifProb f f' c x]
+variableIdentifications cep
+    = let ys = nub (sort (map fst (filter (isPureE' . snd) cep)))
+       in [ zip ys ts | ts <- selectionWithReplacement (length ys) ys ]
+
+{------------------------------------------------------------------------------}
 
 {- cycle detection ------------------------------------------------------------}
 
@@ -1285,13 +1325,13 @@ rotateCycle cs@((x,t):cs')
     | isPureE  t = cs' ++ [(x,t)]
     | isPureE' t = cs
 
-validCycle :: [(T f f' c x, T f f' c x)] -> Bool
+validCycle :: TermAlg f f' c x => [(T f f' c x, T f f' c x)] -> Bool
 validCycle c =
     let (e's, es) = deinterleave c
      in even (length c)
             && all (not . isVar . snd) e's && all (isPureE' . snd) e's
             && all (not . isVar . snd) es  && all (isPureE  . snd) es
-            -- FIXME: forall i in {1..2n}, x_{i+1(mod 2n)} in V(t_i)
+            && allAdjacentPairsOnCycle (\(_,t) (x,_) -> x `member` allVars' t) c
 
 {------------------------------------------------------------------------------}
 
