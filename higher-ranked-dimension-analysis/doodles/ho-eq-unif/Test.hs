@@ -1367,7 +1367,7 @@ test_agUnif1TreatingAsConstant_1 =
     let exp1 = (snd . head) (fromExp 5 [([2,3,-1,-4,-5],[])])
         exp2 = (snd . head) (fromExp 5 [([0,0, 0, 0, 0],[])])
         smv  = [X 4]
-     in (agUnif1TreatingAsConstant smv (castC' exp1) (castC' exp2)
+     in (agUnif1TreatingAsConstant smv [(castC' exp1, castC' exp2)]
                 :: Maybe (AGUnifProb Sig String () Int))
             =?=
         (Just $ map (castC' *** castC') $ fromExp 5 $

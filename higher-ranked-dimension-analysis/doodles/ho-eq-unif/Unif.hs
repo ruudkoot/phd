@@ -24,7 +24,7 @@ module Unif where
 import Prelude hiding (log)
 
 import Control.Applicative ((<$>))
-import Control.Arrow ((***))
+import Control.Arrow ((***),(&&&))
 import Control.Monad
 import Control.Monad.State
 import Control.Monad.Trans.Maybe
@@ -637,22 +637,20 @@ agConstMatch (vs1@(length -> m ), cs1@(length -> n ))
                 where f (vs, splitAt n -> (cs, cs')) = (zipWith (+) vs cs', cs)
   | otherwise = error "agConstMatch: m /= m' || n /= n'"
 
--- Solve a single equation in AG, while treating a set of given variables as
+-- Solve a system of equations in AG, while treating a set of given variables as
 -- constants.
 agUnif1TreatingAsConstant
     :: TermAlg Sig f' () Int
     => [T Sig f' () Int]               -- set of marked variables SMV
-    -> T Sig f' () Int                 -- expression s
-    -> T Sig f' () Int                 -- expression t
+    -> AGUnifProb Sig f' () Int
     -> Maybe (AGUnifProb Sig f' () Int)
-agUnif1TreatingAsConstant smv s t
-    = let numV1  = max (numX  s) (numX  t)
-          numV2  = max (numX' s) (numX' t)
+agUnif1TreatingAsConstant smv p
+    = let numV1  = maximum (map (\(s,t) -> max (numX  s) (numX  t)) p)
+          numV2  = maximum (map (\(s,t) -> max (numX' s) (numX' t)) p)
           numC'  = 0 -- max (numC  s) (numC  t)
-          s'     = constantify numC' smv s
-          t'     = constantify numC' smv t
-          numC'' = max (numC s') (numC t')
-       in case agUnif1 (toExp' numV1 numV2 numC'' (s', t')) of
+          p'     = map (constantify numC'  smv *** constantify numC' smv) p
+          numC'' = maximum (map (\(s,t) -> max (numC  s) (numC  t)) p')
+       in case agUnif1' (map (toExp' numV1 numV2 numC'') p') of
             Nothing -> Nothing
             Just agSubst -> Just $ map (deconstantify numC' *** deconstantify numC')
                                        (fromExp numV1 agSubst)
@@ -976,14 +974,14 @@ inSeparatedForm (classify -> ((pe, pe', [], []),p))
 inSeparatedForm _
     = False
 
-numX :: T f f' () Int -> Int
+numX :: T f f' c Int -> Int
 numX (X  x   ) = x + 1
 numX (X' _   ) = 0
 numX (C  _   ) = error "numX: C" -- 0
 numX (F  _ ts) = maximum' 0 (map numX ts)
 numX (F' _ ts) = maximum' 0 (map numX ts)
 
-numX' :: T f f' () x -> Int
+numX' :: T f f' c x -> Int
 numX' (X  _   ) = 0
 numX' (X' x'  ) = x' + 1
 numX' (C  _   ) = error "numX': C" -- 0
@@ -997,14 +995,14 @@ numC (C  c   ) = c + 1
 numC (F  _ ts) = maximum' 0 (map numC ts)
 numC (F' _ ts) = maximum' 0 (map numC ts)
 
-castC :: T Sig f' () Int -> T Sig f' Int Int
+castC :: T f f' () x -> T f f' c x
 castC (X  x    ) = X  x
 castC (X' x'   ) = X' x'
 castC (C  c    ) = error "castC: C"
 castC (F  f  ts) = F  f  (map castC ts)
 castC (F' f' ts) = F' f' (map castC ts)
 
-castC' :: T Sig f' Int Int -> T Sig f' () Int
+castC' :: T f f' c x -> T f f' () x
 castC' (X  x    ) = X  x
 castC' (X' x'   ) = X' x'
 castC' (C  c    ) = error "castC': C"
@@ -1126,10 +1124,12 @@ data Rule f'
                                          ,[T Sig f' () Int]                  )]
                 , mem_recStack''     :: [((T Sig f' () Int, T Sig f' () Int)
                                          ,[T Sig f' () Int]                  )] }
+    | Elim      { elim_chosenPair    :: (T Sig f' () Int, T Sig f' () Int) }
     | Rep
     -- failure/success conditions
     | OUT_OF_FUEL
     | E'_Unification_Failure
+    | MemRec_Unification_Failure
     | FAILED
     | SOLVED
   deriving (Eq, Show)
@@ -1171,7 +1171,7 @@ agUnifN'
     -> Set (T Sig f' () Int, T Sig f' () Int)
     -> StateT (Int, Log f') [] (AGUnifProb Sig f' () Int)
 agUnifN' fuel _p@(classify -> ((pe, pe', pi, ph),p)) sc
-    | fuel <= 0 = log OUT_OF_FUEL p sc
+    | fuel <= 0 = error "agUnifN': OUT_OF_FUEL" -- log OUT_OF_FUEL p sc
     | _p /= p = agUnifN' (fuel - 1) p sc
     -- Var-Rep          (need to check both possible orientations here!)
     -- FIXME: prefer to eliminate X' over X (already taken care by classify?)
@@ -1246,19 +1246,35 @@ agUnifN' fuel _p@(classify -> ((pe, pe', pi, ph),p)) sc
     | inSeparatedForm p
     , cs@(_:_) <- findCycles p
         = if all validCycle cs then
-            -- FIXME: highly non-deterministic (unnecessarily much so?)
-            do c <- lift cs                 -- --\
-               let n = length c `div` 2     --   |--> too non-deterministic?
-               i <- lift [1 .. n]           -- --/
-               let (xi, xj) = (fst (c !! (2 * (i - 1))), fst (c !! (2 * (i - 1) + 1)))
+
+            do error $ "agUnifN' (Elim): valid cycle " ++ show cs
+            
+               -- choose a pair to eliminate
+               -- FIXME: too non-deterministic?
+               -- FIXME: what if all pairs are already in SC?
+               c <- lift cs
+               let n = length c `div` 2
+               let getPair i = (fst (c !! (2 * (i - 1))), fst (c !! (2 * (i - 1) + 1))) 
+               let is = [ i | i <- [1 .. n], getPair i `notMember` sc]
+               i <- lift is
+
+               -- formulate and solve the associated constant elimination problem(s)
+               let (xi, xj) = getPair i
                let sc' = (xi, xj) `insert` sc
                let cep = constantEliminationProblem sc' pe
                theta <- lift $ variableIdentifications cep
                let cep_theta = map (applySubst theta *** applySubst theta) cep
+               let e'inst    = nub (sort (map fst (filter (isPureE' . snd) cep_theta)))
+               sigma <- lift . justToList $ agUnif1TreatingAsConstant e'inst cep_theta
                
-               error $ "agUnifN' (Elim): valid cycle " ++ show cs
-          else
-            error $ "agUnifN' (Elim): invalid cycle " ++ show cs
+               -- finish up
+               p' <- log (Elim (xi, xj))
+                         (map (applySubst sigma *** applySubst sigma) pe
+                                ++ theta ++ pe' ++ sigma)
+                         sc'
+               agUnifN' (fuel - 1) p' sc'
+
+          else error $ "agUnifN' (Elim): invalid cycle " ++ show cs
 {- FIXME: causes looping this way...
     -- Rep
     -- FIXME: side-conditions
@@ -1273,7 +1289,7 @@ agUnifN' fuel _p@(classify -> ((pe, pe', pi, ph),p)) sc
 -}
     -- DONE
     | inSeparatedForm p = log SOLVED p sc
-    | otherwise         = mzero -- log FAILED p sc
+    | otherwise         = error "agUnifN': FAILED" -- log FAILED p sc
 
 
 {- helpers for Elim -----------------------------------------------------------}
@@ -1364,13 +1380,24 @@ memRec
     -> Set (T Sig f' () Int, T Sig f' () Int)
     -> StateT (Int, Log f') [] (AGUnifProb Sig f' () Int)
 memRec 0 _ p sc
-    = do log OUT_OF_FUEL p sc
+    = log OUT_OF_FUEL p sc
 memRec fuel [] p sc
     = agUnifN' (fuel - 1) p sc
 memRec fuel gs@(((s,x),smv):stack) (classify -> ((pe,pe',pi,ph),p)) sc
-    = do sigma <- lift . maybeToList $ agUnif1TreatingAsConstant smv s x
-    
-         -- NON-DETERMINISTICALLY (DON'T KNOW) CHOOSE z!
+    = case agUnif1TreatingAsConstant smv [(s,x)] of
+            Just sigma -> memRec' fuel gs p sc sigma
+            Nothing    -> mzero -- log MemRec_Unification_Failure p sc
+
+memRec'
+    :: (TermAlg Sig f' () Int, Show f')
+    => Int
+    -> [((T Sig f' () Int, T Sig f' () Int), [T Sig f' () Int])]
+    -> AGUnifProb Sig f' () Int
+    -> Set (T Sig f' () Int, T Sig f' () Int)
+    -> AGUnifProb Sig f' () Int
+    -> StateT (Int, Log f') [] (AGUnifProb Sig f' () Int)
+memRec' fuel gs@(((s,x),smv):stack) (classify -> ((pe,pe',pi,ph),p)) sc sigma
+    = do -- NON-DETERMINISTICALLY (DON'T KNOW) CHOOSE z!
          let z' = toList (domNotMappingToVar pe')
          z <- lift z'
 
