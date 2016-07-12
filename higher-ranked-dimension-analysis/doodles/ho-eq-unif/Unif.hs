@@ -1105,26 +1105,37 @@ data Rule f'
     | Var_Rep
     | Simplify
     | VA
-    | E_Res     { e_resIn            :: AGUnifProb Sig f' () Int
-                , e_resOut           :: AGUnifProb Sig f' () Int }
+    | E_Res     { e_resIn             :: AGUnifProb Sig f' () Int
+                , e_resOut            :: AGUnifProb Sig f' () Int
+                }
     | E'_Res
     | E_Match
-    | Mem_Init  { mem_initX          :: T Sig f' () Int
-                , mem_initS          :: T Sig f' () Int
-                , mem_initT          :: T Sig f' () Int }
-    | Mem_Rec   { mem_recGivenStack  :: [((T Sig f' () Int, T Sig f' () Int)
-                                         ,[T Sig f' () Int]                  )]
-                , mem_recChosenZ     :: T Sig f' () Int
-                , mem_recChosenZFrom :: [T Sig f' () Int]
-                , mem_recSigma       :: [(T Sig f' () Int, T Sig f' () Int)]
-                , mem_recSigma'      :: [(T Sig f' () Int, T Sig f' () Int)]
-                , mem_recTheta       :: [(T Sig f' () Int, T Sig f' () Int)]
-                , mem_recYs          :: [T Sig f' () Int]
-                , mem_recStack'      :: [((T Sig f' () Int, T Sig f' () Int)
-                                         ,[T Sig f' () Int]                  )]
-                , mem_recStack''     :: [((T Sig f' () Int, T Sig f' () Int)
-                                         ,[T Sig f' () Int]                  )] }
-    | Elim      { elim_chosenPair    :: (T Sig f' () Int, T Sig f' () Int) }
+    | Mem_Init  { mem_initX           :: T Sig f' () Int
+                , mem_initS           :: T Sig f' () Int
+                , mem_initT           :: T Sig f' () Int
+                }
+    | Mem_Rec   { mem_recGivenStack   :: [((T Sig f' () Int, T Sig f' () Int)
+                                          ,[T Sig f' () Int]                  )]
+                , mem_recChosenZ      :: T Sig f' () Int
+                , mem_recChosenZFrom  :: [T Sig f' () Int]
+                , mem_recSigma        :: [(T Sig f' () Int, T Sig f' () Int)]
+                , mem_recSigma'       :: [(T Sig f' () Int, T Sig f' () Int)]
+                , mem_recTheta        :: [(T Sig f' () Int, T Sig f' () Int)]
+                , mem_recYs           :: [T Sig f' () Int]
+                , mem_recStack'       :: [((T Sig f' () Int, T Sig f' () Int)
+                                          ,[T Sig f' () Int]                  )]
+                , mem_recStack''      :: [((T Sig f' () Int, T Sig f' () Int)
+                                          ,[T Sig f' () Int]                  )]
+                }
+    | Elim      { elim_cycles         :: [[(T Sig f' () Int, T Sig f' () Int)]]
+                , elim_chosenPairFrom :: [(T Sig f' () Int, T Sig f' () Int)]
+                , elim_chosenPair     :: (T Sig f' () Int, T Sig f' () Int)
+                , elim_cep            :: AGUnifProb Sig f' () Int
+                , elim_theta          :: AGUnifProb Sig f' () Int
+                , elim_cep_theta      :: AGUnifProb Sig f' () Int
+                , elim_e'inst         :: [T Sig f' () Int]
+                , elim_sigma          :: AGUnifProb Sig f' () Int
+                }
     | Rep
     -- failure/success conditions
     | OUT_OF_FUEL
@@ -1221,7 +1232,8 @@ agUnifN' fuel _p@(classify -> ((pe, pe', pi, ph),p)) sc
         = case freeUnif pe' of
                 Just qe' -> do p' <- log E'_Res (pe ++ qe' ++ pi ++ ph) sc
                                agUnifN' (fuel - 1) p' sc
-                Nothing  -> mzero -- log E'_Unification_Failure p sc
+                Nothing  -> -- mzero
+                            log E'_Unification_Failure p sc
 
     -- E-Match    (s in E, t in E'; guaranteed by 'classify')
     | Just ((s,t),pi') <- uncons pi
@@ -1247,9 +1259,10 @@ agUnifN' fuel _p@(classify -> ((pe, pe', pi, ph),p)) sc
     , cs@(_:_) <- findCycles p
         = if all validCycle cs then
 
-            do error $ "agUnifN' (Elim): valid cycle " ++ show cs
+            do -- error $ "agUnifN' (Elim): valid cycle " ++ show cs
             
-               -- choose a pair to eliminate
+
+               -- choose a pair to eliminate (non-deterministically)
                -- FIXME: too non-deterministic?
                -- FIXME: what if all pairs are already in SC?
                c <- lift cs
@@ -1257,9 +1270,21 @@ agUnifN' fuel _p@(classify -> ((pe, pe', pi, ph),p)) sc
                let getPair i = (fst (c !! (2 * (i - 1))), fst (c !! (2 * (i - 1) + 1))) 
                let is = [ i | i <- [1 .. n], getPair i `notMember` sc]
                i <- lift is
-
-               -- formulate and solve the associated constant elimination problem(s)
                let (xi, xj) = getPair i
+
+{-
+               -- choose a pair to eliminate (deterministically)
+               let ((xi, xj):_) = [ pair
+                                  | c <- cs
+                                  , let n = length c `div` 2
+                                  , i <- [1 .. n]
+                                  , let pair =
+                                            ( fst (c !! (2 * (i - 1)    ))
+                                            , fst (c !! (2 * (i - 1) + 1)) ) 
+                                  , pair `notMember` sc
+                                  ]
+-}
+               -- formulate and solve the associated constant elimination problem(s)
                let sc' = (xi, xj) `insert` sc
                let cep = constantEliminationProblem sc' pe
                theta <- lift $ variableIdentifications cep
@@ -1268,7 +1293,15 @@ agUnifN' fuel _p@(classify -> ((pe, pe', pi, ph),p)) sc
                sigma <- lift . justToList $ agUnif1TreatingAsConstant e'inst cep_theta
                
                -- finish up
-               p' <- log (Elim (xi, xj))
+               p' <- log (Elim { elim_cycles         = cs
+                               , elim_chosenPairFrom = map getPair is
+                               , elim_chosenPair     = (xi, xj)
+                               , elim_cep            = cep
+                               , elim_theta          = theta
+                               , elim_cep_theta      = cep_theta
+                               , elim_e'inst         = e'inst
+                               , elim_sigma          = sigma
+                               })
                          (map (applySubst sigma *** applySubst sigma) pe
                                 ++ theta ++ pe' ++ sigma)
                          sc'
@@ -1386,7 +1419,8 @@ memRec fuel [] p sc
 memRec fuel gs@(((s,x),smv):stack) (classify -> ((pe,pe',pi,ph),p)) sc
     = case agUnif1TreatingAsConstant smv [(s,x)] of
             Just sigma -> memRec' fuel gs p sc sigma
-            Nothing    -> mzero -- log MemRec_Unification_Failure p sc
+            Nothing    -> -- mzero 
+                          log MemRec_Unification_Failure p sc
 
 memRec'
     :: (TermAlg Sig f' () Int, Show f')
