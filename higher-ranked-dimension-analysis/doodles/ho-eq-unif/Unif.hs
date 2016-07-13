@@ -143,7 +143,7 @@ class (Ord sort, Bounded sig, Enum sig, Ord sig, Show sort, Show sig) => Theory 
     constants :: [sig]
     constants =  [minBound .. maxBound]
     signature :: sig -> Signature sort
-    unify     :: UnificationProblem sort sig -> Maybe (Subst sort sig)
+    unify     :: UnificationProblem sort sig -> [Subst sort sig]
 
 -- NOTE: What we call 'constants', Qian & Wang call 'function symbols'. Their
 -- constants are function symbols of base type.
@@ -396,7 +396,10 @@ type     Conf b s = (Subst b s,                 TermSystem b s)
 type HeadConf b s = (Subst b s, TermPair   b s, TermSystem b s)
 type PartConf b s = (Subst b s, TermSystem b s, TermSystem b s)
 
-transformAbs :: Theory b s => HeadConf b s -> State (Env b, Env b) (Maybe (Conf b s))
+transformAbs
+    :: Theory b s
+    => HeadConf b s
+    -> StateT (Env b, Env b) Maybe (Conf b s)
 transformAbs (theta', (u,v), ss) | isRigid u || isRigid v = do
     -- maximal flexible subterms
     let ps = toList $ pmfs u `union` pmfs v
@@ -405,13 +408,13 @@ transformAbs (theta', (u,v), ss) | isRigid u || isRigid v = do
     --       will not necessarily form an eta-long term. Take care of this in
     --       the application function instead (xs are remembered in the
     --       conditional mapping anyway).
-    hs <- forM ps $ \(xs,w) -> do
+    hs <- stateT $ forM ps $ \(xs,w) -> do
             xs' :-> r <- typeOfTerm [] w
             freshAtom (xs ++ xs' :-> r)
     let phi  = zipWith (\(xs,w) h -> ((xs,w),h)) ps hs
     let phi' = Map.fromList phi
     (envV, envC) <- get
-    return $ Just $
+    return $
         ( if length theta' /= unFreeV (head hs) then
             error "transformAbs: assertion failed - substitution too short (or long)"
           else
@@ -430,32 +433,39 @@ transformAbs _ | otherwise = error "transformAbs: assumptions violated"
 -- FIXME: substitutions should be partial?
 -- FIXME: don't pollute the environment with temporary variables (Y_i, Z_i)
 -- NOTE: may be non-deterministic if the unification algorithm isn't unary
---       (while AG and BR unification with nullary constants are of unitary,
---       AG and BR unification with function symbols is finitary!)
--- transformEUni :: Theory b s => PartConf b s -> State (Env b, Env b) (Maybe (Conf b s))
-transformEUni :: PartConf Sort Sig -> State (Env Sort, Env Sort) (Maybe (Conf Sort Sig))
+--       (while AG and BR unification with nullary constants are of unitary type,
+--       AG and BR unification with function symbols are finitary!)
+{- (did not yet undergo a monad transformer transformation)
+transformEUni
+    :: Theory b s
+    => PartConf b s
+    -> State (Env b, Env b) (Maybe (Conf b s))
+-}
+transformEUni
+    :: PartConf Sort Sig
+    -> StateT (Env Sort, Env Sort) [] (Conf Sort Sig)
 transformEUni (theta', ss', ss) | isEAcceptable ss' = do
+
     let ps = toList $ Set.map snd (unionMap' (\(u,v) -> pmfs u `union` pmfs v) ss')
 
-    rho <- forM ps $ \w -> do
+    rho <- stateT $ forM ps $ \w -> do
                  t <- typeOfTerm [] w
                  y <- freshAtom t
                  return (w,y)
-    let rho'   = Map.fromList rho
+
+    let rho' = Map.fromList rho
+
     -- FIXME: applyOrderReduction seems superfluous, just drop the arguments
     --        from G, to obtain Y (or do it in a more straightforward fashion)?
     let rhoSS' = map (applyOrderReduction rho' *** applyOrderReduction rho') ss'
                     -- FIXME: ^ remove duplicates (is a set)
 
-    -- FIXME: reinterpret rhoSS' as a first-order system here!
-    --        (fold in applyOrderReduction?)
-
-    let Just sigma = unify rhoSS'
-                    -- FIXME: unification can fail (propagate failure)
+    -- FIXME: unification can fail or be (in)finitary instead of unitary
+    sigma <- lift $ unify rhoSS'
                     
     {- MOCK!!! -}
-    FreeV 4 <- freshAtom (base Real)    -- FIXME: or FreeC?
-    FreeV 5 <- freshAtom (base Real)
+    FreeV 4 <- stateT $ freshAtom (base Real)    -- FIXME: or FreeC?
+    FreeV 5 <- stateT $ freshAtom (base Real)
     let sigma = [error "F0"             -- FIXME: rather not see those in here...
                 ,error "F1"             --        (env ++ sigma) !! y
                 ,A  [base Real]         -- FIXME: [base Real] shouldn't be here, yet
@@ -468,8 +478,9 @@ transformEUni (theta', ss', ss) | isEAcceptable ss' = do
 
     let xss    = map (\(A [] _ xs,_) -> xs) rho
     let ys     = map snd rho
+
     -- FIXME: commented out code is related to "reconstructing the missing binder"
-    (_, phis) <- statefulForM [] (zip xss ys) $ \s (xs_i, FreeV y) -> do
+    (_, phis) <- stateT $ statefulForM [] (zip xss ys) $ \s (xs_i, FreeV y) -> do
                     let qs = toList $ pmfs (sigma !! y)
                     statefulForM s qs $ \s' (us, z) -> do
                         case lookup (z, xs_i, us) s' of
@@ -489,26 +500,31 @@ transformEUni (theta', ss', ss) | isEAcceptable ss' = do
                 let (A us a as) = applyConditionalMapping (Map.fromList phi) (sigma !! y)
                 -- return (g, A (us ++ ts) a as)
                 return (g, A us a as)
+
     (envV, _) <- get
     let thetaD = map (\(x,y) -> (freeV envV x, y)) theta
     let thetaS = sparsifySubst envV theta
 
-    return $ Just $
+    return $
         ( error "TODO"
         , thetaD ++ map (substFreeVAndReduce thetaS *** substFreeVAndReduce thetaS) ss
         )
-
+        
 transformEUni _ | otherwise = error "transformEUni: assumptions violated"
+
 
 -- (u,v) assumed to be flexible-rigid (i.e., not rigid-flexible)
 -- are we only non-deterministic locally (choice of 'b') or also globally
 --                  (choice of '(u,v)')?
 -- FIXME: don't cross-pollute the environments of different branches
-transformBin :: Theory b s => HeadConf b s -> State (Env b, Env b) [Conf b s]
+transformBin
+    :: Theory b s
+    => HeadConf b s
+    -> StateT (Env b, Env b) [] (Conf b s)
 transformBin (theta', (u@(A xs (FreeV f) us), v@(A _xs a vs)), ss)
   | xs == _xs && isRigid v
     = do (envV, envC) <- get
-         ts :-> t <- typeOfFreeV f
+         ts :-> t <- stateT $ typeOfFreeV f
          let bs = concat  -- FIXME: can 'b' also be a free variable?
                     [ if isFreeC a && any
                             (\u -> isBound (hd u) || (isFreeC (hd u) && hd u /= a)) us
@@ -522,9 +538,9 @@ transformBin (theta', (u@(A xs (FreeV f) us), v@(A _xs a vs)), ss)
                       else
                         map FreeC [0 .. length envC - 1]
                     ]
-         pbs <- mapM (partialBinding (ts :-> t)) bs
+         pbs <- stateT $ mapM (partialBinding (ts :-> t)) bs
          (envV, envC) <- get
-         return $ for pbs $ \pb ->
+         lift $ for pbs $ \pb ->
             let theta = sparsifySubst envV [(f, pb)]
             in ( let (A ys b zs) = theta' !! f
                      theta''     = for zs $ \(A ys' b' zs') -> A (ys' ++ ys) b' zs'
@@ -559,9 +575,48 @@ instance Theory Sort Sig where
     
 -- | Unification modulo Abelian groups | ----------------------------------[ ]--
 
-unify' :: UnificationProblem Sort Sig -> Maybe (Subst Sort Sig)
-unify' = error "unify'"
+unify' :: UnificationProblem Sort Sig -> [Subst Sort Sig]
+unify' p =
+    let p'     = firstOrderify p
+        sigmas = agUnifN p'
+        substs = map solvedAGUnifProbToSubst sigmas
+     in substs
 
+data F'
+    = L Int (SimpleType Sort)   -- lambda
+    | B Int (SimpleType Sort)   -- bound
+  deriving (Eq, Ord, Show)
+
+-- p. 407
+firstOrderify
+    :: UnificationProblem Sort Sig
+    -> AGUnifProb Sig F' () Int
+firstOrderify = map (firstOrderify' 0 *** firstOrderify' 0)
+  -- where
+firstOrderify'
+    :: Int
+    -> AlgebraicTerm Sort Sig
+    -> T Sig F' () Int
+firstOrderify' n (A xs a ts) =
+    let xs' = foldr (\(i,t) r -> F' (L i t) [r]) a' (zip [n..] xs)
+        a'  = firstOrderifyAtom a ts'
+        ts' = map (firstOrderify' (n + length xs)) ts
+     in xs'
+     
+firstOrderifyAtom
+    :: Atom Sig
+    -> [T Sig F' () Int]
+    -> T Sig F' () Int
+firstOrderifyAtom (Bound n) ts = error "firstOrderifyAtom (Bound)"
+firstOrderifyAtom (FreeV n) ts = error "firstOrderifyAtom (FreeV)"
+firstOrderifyAtom (FreeC n) ts = error "firstOrderifyAtom (FreeC)" 
+firstOrderifyAtom (Const f) ts = F f ts
+
+
+solvedAGUnifProbToSubst
+    :: AGUnifProb Sig F' () Int
+    -> Subst Sort Sig
+solvedAGUnifProbToSubst = error "solvedAGUnifProbToSubst"
 
 
 -- * AG-unification with free nullary constants (unitary) * ---------------[X]--
@@ -1086,8 +1141,13 @@ maybeT = MaybeT . return
 listT :: Monad m => [a] -> ListT m a
 listT = ListT . return
 
-stateT :: Monad m => State s1 a -> StateT (s1,s2) m a
+stateT :: Monad m => State s a -> StateT s m a
 stateT st = StateT {
+        runStateT = (\s -> let (x, s') = runState st s in return (x, s'))
+    }
+
+stateT' :: Monad m => State s1 a -> StateT (s1,s2) m a
+stateT' st = StateT {
         runStateT = \(s1,s2) -> let (x, s1') = runState st s1 in return (x, (s1',s2))
     }
 
@@ -1211,8 +1271,8 @@ agUnifN' fuel _p@(classify -> ((pe, pe', pi, ph),p)) sc
 
     -- VA (variable abstraction)
     | Just ((s,t),ph') <- uncons ph
-        = do (s',rs) <- stateT $ homogeneous'' s
-             (t',rt) <- stateT $ homogeneous'' t
+        = do (s',rs) <- stateT' $ homogeneous'' s
+             (t',rt) <- stateT' $ homogeneous'' t
              p' <- log VA (pe ++ pe' ++ pi ++ ph' ++ [(s',t')] ++ rs ++ rt) sc
              agUnifN' (fuel - 1) p' sc
 
@@ -1237,7 +1297,7 @@ agUnifN' fuel _p@(classify -> ((pe, pe', pi, ph),p)) sc
 
     -- E-Match    (s in E, t in E'; guaranteed by 'classify')
     | Just ((s,t),pi') <- uncons pi
-        = do z <- stateT newV
+        = do z <- stateT' newV
              let numV1 = max (numX  s) (numX  z)
              let numV2 = max (numX' s) (numX' z)
              let numC' = 0 -- max (numC  s) (numC  z)
@@ -1259,7 +1319,7 @@ agUnifN' fuel _p@(classify -> ((pe, pe', pi, ph),p)) sc
     , cs@(_:_) <- findCycles p
         = if all validCycle cs then
 
-            do -- error $ "agUnifN' (Elim): valid cycle " ++ show cs
+            do error $ "agUnifN' (Elim): valid cycle " ++ show cs
             
 
                -- choose a pair to eliminate (non-deterministically)

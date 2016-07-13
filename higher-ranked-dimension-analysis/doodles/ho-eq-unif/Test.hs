@@ -198,9 +198,9 @@ tests =
     ,("constantify (1)",                test_constantify_1)
     ,("deconstantify (1)",              test_deconstantify_1)
     ,("agUnif1TreatingAsConstant (1)",  test_agUnif1TreatingAsConstant_1)
-    ,("agUnifN (1)",                    test_agUnifN_1)
-    ,("agUnifN (2)",                    test_agUnifN_2)
-    ,("agUnifN (3)",                    test_agUnifN_3)
+    --,("agUnifN (1)",                    test_agUnifN_1)
+    --,("agUnifN (2)",                    test_agUnifN_2)
+    --,("agUnifN (3)",                    test_agUnifN_3)
     ]
     
 len = maximum (map (length . fst) tests)
@@ -1079,9 +1079,9 @@ test_transformAbs_1 =
         termSystem = []
         envV       = [[base Real] :-> Real, [base Real] :-> Real]
         envC       = []
-     in runState (transformAbs (subst,termPair,termSystem)) (envV,envC)
+     in runStateT (transformAbs (subst,termPair,termSystem)) (envV,envC)
           =?=
-        (Just ( -- substitution
+        (Just (( -- substitution
                 subst ++
                 [A [[] :-> Real] (FreeV 0) [A [] (Bound 0) []]
                 ,A [[] :-> Real] (FreeV 1) [A [] (Bound 0) []]]
@@ -1113,7 +1113,7 @@ test_transformAbs_1 =
               )
          , -- environment
            ( envV ++ [[base Real] :-> Real, [base Real] :-> Real]
-           , envC )
+           , envC ))
          )
 
 -- \x.F(x) =?= \x.F(x)*G(x)*x
@@ -1133,8 +1133,8 @@ test_transformEUni_1 =
         envV        = [[base Real] :-> Real, [base Real] :-> Real]
         envC        = []
 
-        (Just (theta',ss),(envV',envC'))
-            = runState (transformEUni (subst,termSystem',termSystem)) (envV,envC)
+        [((theta',ss),(envV',envC'))]
+            = runStateT (transformEUni (subst,termSystem',termSystem)) (envV,envC)
             
      in ss =?= 
             [(A [[] :-> Real] (FreeV 0) [A [] (Bound 0) []]
@@ -1169,10 +1169,11 @@ test_transformBin_1 =
         envV        = [[base Real, base Real] :-> Real]
         envC        = [base Real, base Real]
 
-        (xs,(envV',envC'))
-            = runState (transformBin (subst,termPair,termSystem)) (envV, envC)
+        xs
+            = runStateT (transformBin (subst,termPair,termSystem)) (envV, envC)
+        (envV',envC') = (fst (snd (head xs)), snd (snd (head xs)))
             
-     in map snd xs
+     in map (snd . fst) xs
             =?=
         -- projection (Bound)
         [[(A [[] :-> Real,[] :-> Real] (FreeV 0) [A [] (Bound 0) [],A [] (Bound 1) []]
