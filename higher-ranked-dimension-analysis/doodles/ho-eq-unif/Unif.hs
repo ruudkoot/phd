@@ -460,9 +460,9 @@ transformEUni (theta', ss', ss) | isEAcceptable ss' = do
     let rhoSS' = map (applyOrderReduction rho' *** applyOrderReduction rho') ss'
                     -- FIXME: ^ remove duplicates (is a set)
 
-    -- FIXME: unification can fail or be (in)finitary instead of unitary
+    -- unification may fail or be (in)finitary instead of unitary
     sigma <- lift $ unify rhoSS'
-                    
+
     {- MOCK!!! -}
     FreeV 4 <- stateT $ freshAtom (base Real)    -- FIXME: or FreeC?
     FreeV 5 <- stateT $ freshAtom (base Real)
@@ -580,37 +580,43 @@ unify' p =
     let p'     = firstOrderify p
         sigmas = agUnifN p'
         substs = map solvedAGUnifProbToSubst sigmas
-     in substs
+     in -- error $ "unify' --- \n" ++ show p ++ "\n --- \n " ++ show p'
+        substs
 
 data F'
-    = L Int (SimpleType Sort)   -- lambda
-    | B Int (SimpleType Sort)   -- bound
+    = L  Int (SimpleType Sort)   -- lambda
+    | B  Int (SimpleType Sort)   -- bound
+    | FC Int                     -- free constant
   deriving (Eq, Ord, Show)
 
 -- p. 407
 firstOrderify
     :: UnificationProblem Sort Sig
     -> AGUnifProb Sig F' () Int
-firstOrderify = map (firstOrderify' 0 *** firstOrderify' 0)
-  -- where
-firstOrderify'
-    :: Int
-    -> AlgebraicTerm Sort Sig
-    -> T Sig F' () Int
-firstOrderify' n (A xs a ts) =
-    let xs' = foldr (\(i,t) r -> F' (L i t) [r]) a' (zip [n..] xs)
-        a'  = firstOrderifyAtom a ts'
-        ts' = map (firstOrderify' (n + length xs)) ts
-     in xs'
-     
-firstOrderifyAtom
-    :: Atom Sig
-    -> [T Sig F' () Int]
-    -> T Sig F' () Int
-firstOrderifyAtom (Bound n) ts = error "firstOrderifyAtom (Bound)"
-firstOrderifyAtom (FreeV n) ts = error "firstOrderifyAtom (FreeV)"
-firstOrderifyAtom (FreeC n) ts = error "firstOrderifyAtom (FreeC)" 
-firstOrderifyAtom (Const f) ts = F f ts
+firstOrderify = map (firstOrderify' [] *** firstOrderify' [])
+
+  where
+
+    firstOrderify'
+        :: [(Int, SimpleType Sort)]
+        -> AlgebraicTerm Sort Sig
+        -> T Sig F' () Int
+    firstOrderify' ns (A xs a ts) =
+        let ns' = zip [length ns .. ] xs
+            xs' = foldr (\(i,t) r -> F' (L i t) [r]) a' ns'
+            a'  = firstOrderifyAtom (ns' ++ ns) a ts'
+            ts' = map (firstOrderify' (ns' ++ ns)) ts
+         in xs'
+
+    firstOrderifyAtom
+        :: [(Int, SimpleType Sort)]
+        -> Atom Sig
+        -> [T Sig F' () Int]
+        -> T Sig F' () Int
+    firstOrderifyAtom ns (Bound n) ts = let (i,ty) = ns !! n in F' (B i ty) []
+    firstOrderifyAtom _  (FreeV n) ts = X n
+    firstOrderifyAtom _  (FreeC n) ts = F' (FC n) ts
+    firstOrderifyAtom _  (Const f) ts = F f ts
 
 
 solvedAGUnifProbToSubst
@@ -960,13 +966,21 @@ type AGClassifiedUnifProb f f' c x = (AGUnifProb f f' c x
 
 
 -- FIXME: orient equations with variable on the rhs!
-classify :: AGUnifProb f f' c x -> (AGClassifiedUnifProb f f' c x, AGUnifProb f f' c x)
+classify
+    :: TermAlg f f' c x
+    => AGUnifProb f f' c x
+    -> (AGClassifiedUnifProb f f' c x, AGUnifProb f f' c x)
 classify p = let (pe,pe',pi,ph) = classify' p in ((pe,pe',pi,ph),pe++pe'++pi++ph)
   where
     classify' [] = ([],[],[],[])
     classify' ((orient -> p@(s,t)):ps)
         = let (pe,pe',pi,ph) = classify' ps
            in case p of
+                -- remove useless equations
+                (X  x , X  y)  | x  == y
+                    -> (pe, pe', pi, ph)
+                (X' x', X' y') | x' == y'
+                    -> (pe, pe', pi, ph)
                 -- order matters: {x=y} in P_E'
                 (s,t) | isPureE' s && isPureE' t
                     -> (pe, (s,t):pe', pi, ph)
@@ -1103,8 +1117,8 @@ fromExp v1 ss@(length -> v)
 
 dom :: TermAlg f f' c x => AGUnifProb f f' c x -> Set (T f f' c x)
 dom []                            = Set.empty
-dom ((X  x ,X  y ):_ ) | x  == y  = error "dom"
-dom ((X' x',X' y'):_ ) | x' == y' = error "dom"
+dom ((X  x ,X  y ):_ ) | x  == y  = error "dom: X"
+dom ((X' x',X' y'):_ ) | x' == y' = error "dom: X'"
 dom ((X  x ,_    ):xs)            = Set.insert (X  x ) (dom xs)
 dom ((X' x',_    ):xs)            = Set.insert (X' x') (dom xs)
 
@@ -1151,7 +1165,7 @@ stateT' st = StateT {
         runStateT = \(s1,s2) -> let (x, s1') = runState st s1 in return (x, (s1',s2))
     }
 
-log :: (Ord f', Monad m)
+log :: (Ord f', Show f', Monad m)
     => Rule f'
     -> (AGUnifProb Sig f' () Int)
     -> Set (T Sig f' () Int, T Sig f' () Int)
