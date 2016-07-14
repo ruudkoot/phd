@@ -1,9 +1,8 @@
 {-------------------------------------------------------------------------------
 
     STILL TO DO FOR agUnifN:
-    * implement Elim (variable and constant elimination) or at least assert
-    * Rep causes looping on some of the examples from Liu & Lynch...
-    * occur-check?
+    * implement Elim properly
+      * occur-check?
     * FIXME (e.g. Simplify)
     * Mem-Rec has been "fixed"(?) w.r.t. Boudet et al.
 
@@ -38,6 +37,20 @@ import           Data.Map       (Map)
 import qualified Data.Map       as Map
 import           Data.Set       hiding (filter, foldr, map, partition, null)
 import qualified Data.Set       as Set
+
+
+--------------------------------------------------------------------------------
+
+
+ppp :: AGUnifProb Sig F' () Int
+ppp = [(F' (L 0 ([] :-> Real)) [X 2]
+      ,F' (L 0 ([] :-> Real)) [F Mul [X 2
+                                     ,F Mul [X 3
+                                            ,F' (B 0 ([] :-> Real)) []]
+                                     ]
+                              ]
+      )]
+
 
 -- | Utility | ------------------------------------------------------------[ ]--
 
@@ -580,8 +593,7 @@ unify' p =
     let p'     = firstOrderify p
         sigmas = agUnifN p'
         substs = map solvedAGUnifProbToSubst sigmas
-     in -- error $ "unify' --- \n" ++ show p ++ "\n --- \n " ++ show p'
-        substs
+     in substs
 
 data F'
     = L  Int (SimpleType Sort)   -- lambda
@@ -622,7 +634,19 @@ firstOrderify = map (firstOrderify' [] *** firstOrderify' [])
 solvedAGUnifProbToSubst
     :: AGUnifProb Sig F' () Int
     -> Subst Sort Sig
-solvedAGUnifProbToSubst = error "solvedAGUnifProbToSubst"
+solvedAGUnifProbToSubst p
+    = foldr (\(X n, t) r -> upd r n (fo2ho t)) [] p
+
+  where
+
+
+    fo2ho :: T Sig F' () Int -> AlgebraicTerm Sort Sig
+    fo2ho = error "fo2ho"
+
+  
+    upd r n t
+        | length r < n = r ++ map (freeV $ error "upd") [length r .. n] ++ [t]
+        | otherwise    = take n r ++ [t] ++ drop (n + 1) r
 
 
 -- * AG-unification with free nullary constants (unitary) * ---------------[X]--
@@ -1240,7 +1264,33 @@ agUnifN
     :: (TermAlg Sig f' () Int, Show f')
     => AGUnifProb Sig f' () Int
     -> [AGUnifProb Sig f' () Int]
-agUnifN p = nub (sort (map fst (runStateT (agUnifN' 666 p Set.empty) (0, []))))
+agUnifN p =
+    let sol = nub (sort (map fst (runStateT (agUnifN' 666 p Set.empty) (0, []))))
+     in map replacement sol
+     
+
+replacement
+    :: TermAlg Sig f' () Int
+    => AGUnifProb Sig f' () Int
+    -> AGUnifProb Sig f' () Int
+replacement p
+    = let p' = replacement' p
+       in if p == p' then filter originalVarsOnly p else replacement p'
+  where
+    -- Rep
+    -- FIXME: side-conditions
+    replacement' p
+      | (q:qs) <- mapMaybeWithContext (\(x,s) p -> case (x,s) of
+                    (x,s) | isVar x, x `member` allVars p
+                       -> Just
+                            ((x,s) : map (applySubst [(x,s)] *** applySubst [(x,s)]) p)
+                    _  -> Nothing
+                  ) p
+          = q
+      | otherwise = p
+      
+    originalVarsOnly q@(X _, _) = True
+    originalVarsOnly _          = False
 
 
 -- FIXME: not all equations get oriented in all rules (fail to call 'classify')
@@ -1382,18 +1432,6 @@ agUnifN' fuel _p@(classify -> ((pe, pe', pi, ph),p)) sc
                agUnifN' (fuel - 1) p' sc'
 
           else error $ "agUnifN' (Elim): invalid cycle " ++ show cs
-{- FIXME: causes looping this way...
-    -- Rep
-    -- FIXME: side-conditions
-    | (q:qs) <- mapMaybeWithContext (\(x,s) p -> case (x,s) of
-                    (x,s) | isVar x, x `member` allVars p
-                       -> Just
-                            ((x,s) : map (applySubst [(x,s)] *** applySubst [(x,s)]) p)
-                    _  -> Nothing
-                  ) p
-        = do log Rep q sc
-             agUnifN' (fuel - 1) q sc
--}
     -- DONE
     | inSeparatedForm p = log SOLVED p sc
     | otherwise         = error "agUnifN': FAILED" -- log FAILED p sc
