@@ -39,19 +39,6 @@ import           Data.Set       hiding (filter, foldr, map, partition, null)
 import qualified Data.Set       as Set
 
 
---------------------------------------------------------------------------------
-
-
-ppp :: AGUnifProb Sig F' () Int
-ppp = [(F' (L 0 ([] :-> Real)) [X 2]
-      ,F' (L 0 ([] :-> Real)) [F Mul [X 2
-                                     ,F Mul [X 3
-                                            ,F' (B 0 ([] :-> Real)) []]
-                                     ]
-                              ]
-      )]
-
-
 -- | Utility | ------------------------------------------------------------[ ]--
 
 assert :: String -> Bool -> Bool
@@ -156,7 +143,8 @@ class (Ord sort, Bounded sig, Enum sig, Ord sig, Show sort, Show sig) => Theory 
     constants :: [sig]
     constants =  [minBound .. maxBound]
     signature :: sig -> Signature sort
-    unify     :: UnificationProblem sort sig -> [Subst sort sig]
+    unify     :: UnificationProblem sort sig
+              -> State (Env Sort, Env Sort)  [Subst sort sig]
 
 -- NOTE: What we call 'constants', Qian & Wang call 'function symbols'. Their
 -- constants are function symbols of base type.
@@ -474,9 +462,12 @@ transformEUni (theta', ss', ss) | isEAcceptable ss' = do
                     -- FIXME: ^ remove duplicates (is a set)
 
     -- unification may fail or be (in)finitary instead of unitary
-    sigma <- lift $ unify rhoSS'
+    sigmas <- stateT $ unify rhoSS'
+    sigma  <- lift sigmas               -- FIXME: not elegant
+    
+    error $ "QQQ: " ++ show sigma
 
-    {- MOCK!!! -}
+    {- MOCK!!!
     FreeV 4 <- stateT $ freshAtom (base Real)    -- FIXME: or FreeC?
     FreeV 5 <- stateT $ freshAtom (base Real)
     let sigma = [error "F0"             -- FIXME: rather not see those in here...
@@ -487,7 +478,7 @@ transformEUni (theta', ss', ss) | isEAcceptable ss' = do
                     ,A [] (Const Mul) [A [] (Bound 0) [], A [] (FreeV 5) []]]
                 ,A [base Real] (FreeV 4) []
                 ]
-    {- MOCK!!! -}
+    MOCK!!! -}
 
     let xss    = map (\(A [] _ xs,_) -> xs) rho
     let ys     = map snd rho
@@ -588,12 +579,13 @@ instance Theory Sort Sig where
     
 -- | Unification modulo Abelian groups | ----------------------------------[ ]--
 
-unify' :: UnificationProblem Sort Sig -> [Subst Sort Sig]
-unify' p =
+unify'
+    :: UnificationProblem Sort Sig
+    -> State (Env Sort, Env Sort) [Subst Sort Sig]
+unify' p = do
     let p'     = firstOrderify p
-        sigmas = agUnifN p'
-        substs = map solvedAGUnifProbToSubst sigmas
-     in substs
+    let sigmas = agUnifN p'
+    mapM solvedAGUnifProbToSubst sigmas
 
 data F'
     = L  Int (SimpleType Sort)   -- lambda
@@ -633,20 +625,29 @@ firstOrderify = map (firstOrderify' [] *** firstOrderify' [])
 
 solvedAGUnifProbToSubst
     :: AGUnifProb Sig F' () Int
-    -> Subst Sort Sig
-solvedAGUnifProbToSubst p
-    = foldr (\(X n, t) r -> upd r n (fo2ho t)) [] p
+    -> State (Env Sort, Env Sort) (Subst Sort Sig)
+solvedAGUnifProbToSubst p = do
 
-  where
+    (envV, envC) <- get    
 
+    let upd r n t
+          | length r < n = r ++ map (freeV envV) [length r .. n - 1] ++ [t]
+          | otherwise    = take n r ++ [t] ++ drop (n + 1) r
 
-    fo2ho :: T Sig F' () Int -> AlgebraicTerm Sort Sig
-    fo2ho = error "fo2ho"
+    let fo2ho :: [SimpleType Sort] -> T Sig F' () Int -> AlgebraicTerm Sort Sig
+        fo2ho env (X  x    ) = freeV envV x
+        fo2ho env (X' x'   ) = error "fo2ho: X'"
+        fo2ho env (C  c    ) = error "fo2ho: C"
+        fo2ho env (F  f  ts) = A [] (Const f) (map (fo2ho env) ts)
+        fo2ho env (F' (L n ty) ts)
+            = error "fo2ho: F' L"
+        fo2ho env (F' (B n ty) ts)
+            -- FIXME: NOT n!
+            = bound (replicate (600 + n) (error "BOO!") ++ [ty]) (600 + n)            
+        fo2ho env (F' (FC n) ts)
+            = error "fo2ho: F' FC"
 
-  
-    upd r n t
-        | length r < n = r ++ map (freeV $ error "upd") [length r .. n] ++ [t]
-        | otherwise    = take n r ++ [t] ++ drop (n + 1) r
+    return $ foldr (\(X n, t) r -> upd r n (fo2ho [] t)) [] p
 
 
 -- * AG-unification with free nullary constants (unitary) * ---------------[X]--
