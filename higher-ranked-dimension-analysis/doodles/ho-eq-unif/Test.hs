@@ -104,9 +104,9 @@ tests =
     ,("pmfs (1)",                       test_pmfs_1)
     ,("pmfs (2)",                       test_pmfs_2)
     ,("pmfs (3)",                       test_pmfs_3)
-    ,("applyConditionalMapping (1)",    test_applyConditionalMapping_1)
-    ,("applyConditionalMapping (2)",    test_applyConditionalMapping_2)
-    ,("applyConditionalMapping (3)",    test_applyConditionalMapping_3)
+    ,("applyConditionalMapping' (1)",   test_applyConditionalMapping'_1)
+    ,("applyConditionalMapping' (2)",   test_applyConditionalMapping'_2)
+    ,("applyConditionalMapping' (3)",   test_applyConditionalMapping'_3)
     ,("applyOrderReduction (1)",        test_applyOrderReduction_1)
     ,("isTrivialFlexibleSubterm (1)",   test_isTrivialFlexibleSubterm_1)
     ,("isTrivialFlexibleSubterm (2)",   test_isTrivialFlexibleSubterm_2)
@@ -925,13 +925,13 @@ test_pmfs_3 =
             [A [] (FreeV 0) [A [[] :-> Real] (Bound 2) [A [] (Bound 0) []]]
             ,A [[] :-> Real] (Bound 1) [A [] (Bound 0) []]])]
 
-test_applyConditionalMapping_1 =
+test_applyConditionalMapping'_1 =
     let tm      = t1
         condMap = M.fromList $ [(([[] :-> Real],A [] (FreeV 0) [A [] (Bound 0) []])
                                     ,FreeV 2)
                                ,(([[] :-> Real],A [] (FreeV 1) [A [] (Bound 0) []])
                                     ,FreeV 3)]
-     in applyConditionalMapping condMap tm
+     in applyConditionalMapping' condMap tm
             =?=
         -- \x.*(F2(x),*(F3(x),x))
         A   [[] :-> Real]
@@ -942,7 +942,7 @@ test_applyConditionalMapping_1 =
                 ,A [] (Const Mul) [A [] (FreeV 3) [A [] (Bound 0) []]
                                   ,A [] (Bound 0) []]]
 
-test_applyConditionalMapping_2 =
+test_applyConditionalMapping'_2 =
     let tm      = u0
         condMap = M.fromList $ [(([base Real,base Real]
                                  ,A [] (FreeV 0) [A [] (Bound 0) []])
@@ -953,7 +953,7 @@ test_applyConditionalMapping_2 =
                                ,(([base Real,base Real]
                                  ,A [] (FreeV 1) [A [] (FreeV 0) [A [] (Bound 0) []]])
                                 ,FreeV 4)]
-     in applyConditionalMapping condMap tm
+     in applyConditionalMapping' condMap tm
             =?=
         A   [[] :-> Real,[] :-> Real]
             (FreeC 0)
@@ -961,7 +961,7 @@ test_applyConditionalMapping_2 =
             ,A [[] :-> Real] (FreeV 3) [A [] (Bound 0) [],A [] (Bound 1) [],A [] (Bound 2) []]
             ,A [] (FreeV 4) [A [] (Bound 0) [],A [] (Bound 1) []]]
 
-test_applyConditionalMapping_3 =
+test_applyConditionalMapping'_3 =
     let tm      = u1
         condMap = M.fromList $
             [(([[base Real]:->Real,[base Real]:->Real]
@@ -975,7 +975,7 @@ test_applyConditionalMapping_3 =
                 [A [] (FreeV 0) [A [[] :-> Real] (Bound 2) [A [] (Bound 0) []]]
                 ,A [[] :-> Real] (Bound 1) [A [] (Bound 0) []]])
              ,FreeV 4)]
-     in applyConditionalMapping condMap tm
+     in applyConditionalMapping' condMap tm
             =?=
         A [[[] :-> Real] :-> Real,[[] :-> Real] :-> Real] (FreeC 0) [A [] (FreeV 2) [A [[] :-> Real] (Bound 1) [A [] (Bound 0) []],A [[] :-> Real] (Bound 2) [A [] (Bound 0) []]],A [[[] :-> Real] :-> Real] (FreeV 3) [A [[] :-> Real] (Bound 1) [A [] (Bound 0) []],A [[] :-> Real] (Bound 2) [A [] (Bound 0) []],A [[] :-> Real] (Bound 3) [A [] (Bound 0) []]],A [[[] :-> Real] :-> Real] (FreeV 4) [A [[] :-> Real] (Bound 1) [A [] (Bound 0) []],A [[] :-> Real] (Bound 2) [A [] (Bound 0) []],A [[] :-> Real] (Bound 3) [A [] (Bound 0) []]]]
 
@@ -1138,22 +1138,19 @@ test_transformEUni_1 =
             
      in ss =?= 
             [(A [[] :-> Real] (FreeV 0) [A [] (Bound 0) []]
-             ,A [[] :-> Real] (Const Mul) [A [] (FreeV 6) [A [] (Bound 0) []]
-                                          ,A [] (Const Mul) [A [] (Bound 0) []
-                                                            ,A [] (FreeV 7) [A [] (Bound 0) []]]])
+                ,A [[] :-> Real] (FreeV 4) [A [] (Bound 0) []])
             ,(A [[] :-> Real] (FreeV 1) [A [] (Bound 0) []]
-             ,A [[] :-> Real] (FreeV 6) [A [] (Bound 0) []])]
+                ,A [[] :-> Real] (Const Inv) [A [] (Bound 0) []])
+            ]
         &&
             envV'
                 =?=
-            [[[] :-> Real] :-> Real     -- F0 / F
-            ,[[] :-> Real] :-> Real     -- F1 / G
-            ,[] :-> Real                -- F2 / Y1  (temp)
-            ,[] :-> Real                -- F3 / Y2  (temp)
-            ,[] :-> Real                -- F4 / Z1  (temp)
-            ,[] :-> Real                -- F5 / Z2  (temp)
-            ,[[] :-> Real] :-> Real     -- F6 / Z1'
-            ,[[] :-> Real] :-> Real]    -- F7 / Z2'
+            [[[] :-> Real] :-> Real
+            ,[[] :-> Real] :-> Real
+            ,[] :-> Real
+            ,[] :-> Real
+            ,[[] :-> Real] :-> Real
+            ]
         &&
             envC' =?= []
 

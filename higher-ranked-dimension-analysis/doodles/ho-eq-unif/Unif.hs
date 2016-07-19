@@ -15,6 +15,7 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TupleSections          #-}
 {-# LANGUAGE ViewPatterns           #-}
 
@@ -31,7 +32,9 @@ import Control.Monad.Trans.List
 
 import           Data.Function
 import           Data.Graph
-import           Data.List      (intersect, minimumBy, nub, partition, sort, sortBy)
+import           Data.List      ( intersect, minimumBy, nub, partition, sort, sortBy
+                                , zip4
+                                )
 import           Data.Maybe
 import           Data.Map       (Map)
 import qualified Data.Map       as Map
@@ -144,7 +147,7 @@ class (Ord sort, Bounded sig, Enum sig, Ord sig, Show sort, Show sig) => Theory 
     constants =  [minBound .. maxBound]
     signature :: sig -> Signature sort
     unify     :: UnificationProblem sort sig
-              -> State (Env Sort, Env Sort)  [Subst sort sig]
+              -> State (Env sort, Env sort)  [Subst sort sig]
 
 -- NOTE: What we call 'constants', Qian & Wang call 'function symbols'. Their
 -- constants are function symbols of base type.
@@ -261,8 +264,12 @@ reduce xs xs' a ys' ys
 
   where
 
-    bindAndReduce :: Env sort -> Env sort -> Subst sort sig -> AlgebraicTerm sort sig
-                                                                -> AlgebraicTerm sort sig
+    bindAndReduce
+        :: Env           sort
+        -> Env           sort
+        -> Subst         sort sig
+        -> AlgebraicTerm sort sig
+        -> AlgebraicTerm sort sig
     bindAndReduce ns xs' ys (A zs a zs')
       | length xs' == length ys
         = let k    = length (zs ++ ns)
@@ -340,12 +347,16 @@ partialBinding (as :-> b) a = do
 --       (this should not matter, as long as it is done consistently)
 
 
-type ConditionalMapping b s = Map ([SimpleType b], AlgebraicTerm b s) (Atom s)
-type OrderReduction     b s = Map (AlgebraicTerm b s) (Atom s)
+type ConditionalMapping  b s = Map ([SimpleType b], AlgebraicTerm b s)
+                                   (AlgebraicTerm b s)
+type ConditionalMapping' b s = Map ([SimpleType b], AlgebraicTerm b s) (Atom s)
+type OrderReduction      b s = Map (AlgebraicTerm b s) (Atom s)
 
 
-pmfs :: Theory sort sig => AlgebraicTerm sort sig
-                            -> Set ([SimpleType sort], AlgebraicTerm sort sig)
+pmfs
+    :: Theory sort sig
+    => AlgebraicTerm sort sig
+    -> Set ([SimpleType sort], AlgebraicTerm sort sig)
 pmfs = pmfs' []
   where
     pmfs' :: Theory sort sig => [SimpleType sort] -> AlgebraicTerm sort sig
@@ -354,14 +365,36 @@ pmfs = pmfs' []
     pmfs' ys (A xs a         ss) = unionMap' (pmfs' (xs ++ ys)) ss
 
 
-applyConditionalMapping
-    :: Theory b s => ConditionalMapping b s -> AlgebraicTerm b s -> AlgebraicTerm b s
+-- FIXME: merge with applyConditionalMapping
+applyConditionalMapping'    -- E-Abs
+    :: Theory b s
+    => ConditionalMapping' b s
+    -> AlgebraicTerm b s
+    -> AlgebraicTerm b s
+applyConditionalMapping' condMap = applyConditionalMapping'' []
+  where
+    applyConditionalMapping'' ctx (A xs (FreeV f) ss)
+        = case Map.lookup (xs ++ ctx, A [] (FreeV f) ss) condMap of
+            Nothing -> A xs (FreeV f) (map (applyConditionalMapping'' (xs ++ ctx)) ss)
+            Just a  -> A xs a (map (bound (xs ++ ctx)) [0 .. length (xs ++ ctx) - 1])
+    applyConditionalMapping'' ctx (A xs a ss)
+        = A xs a (map (applyConditionalMapping'' (xs ++ ctx)) ss)
+
+
+-- FIXME: merge with applyConditionalMapping'
+applyConditionalMapping     -- E-Uni
+    :: Theory b s
+    => ConditionalMapping b s
+    -> AlgebraicTerm b s
+    -> AlgebraicTerm b s
 applyConditionalMapping condMap = applyConditionalMapping' []
   where
     applyConditionalMapping' ctx (A xs (FreeV f) ss)
         = case Map.lookup (xs ++ ctx, A [] (FreeV f) ss) condMap of
-            Nothing -> A xs (FreeV f) (map (applyConditionalMapping' (xs ++ ctx)) ss)
-            Just a  -> A xs a (map (bound (xs ++ ctx)) [0 .. length (xs ++ ctx) - 1])
+            Nothing ->
+                A xs (FreeV f) (map (applyConditionalMapping' (xs ++ ctx)) ss)
+            Just (A [] a@(FreeV _) ss') ->
+                A xs a (ss' ++ ss)
     applyConditionalMapping' ctx (A xs a ss)
         = A xs a (map (applyConditionalMapping' (xs ++ ctx)) ss)
 
@@ -375,11 +408,13 @@ applyOrderReduction ordRedMap (A xs a ss)
         Nothing -> A xs a (map (applyOrderReduction ordRedMap) ss)
         Just a' -> A xs a' []
 
+
 isTrivialFlexibleSubterm :: Theory b s => Env b -> AlgebraicTerm b s -> Bool
 isTrivialFlexibleSubterm ctx (A [] (FreeV _) ys)
     = ys == map (\n -> bound ctx n) [0 .. length ctx - 1]
 isTrivialFlexibleSubterm _ _
     = False
+
         
 isEAcceptable :: Theory b s => TermSystem b s -> Bool
 isEAcceptable ss
@@ -421,37 +456,34 @@ transformAbs (theta', (u,v), ss) | isRigid u || isRigid v = do
           else
             theta' ++ for phi (\((xs,A xs' a' ys'),_h) ->
                                     substFreeVAndReduce theta' (A (xs'++xs) a' ys'))
-        , [(applyConditionalMapping phi' u,applyConditionalMapping phi' v)]
+        , [(applyConditionalMapping' phi' u,applyConditionalMapping' phi' v)]
           ++ map (\((xs,A xs' a' ys'),h) -> (atom2term [] envV envC h, A (xs'++xs) a' ys')) phi
           ++ ss
         )
 transformAbs _ | otherwise = error "transformAbs: assumptions violated"
 
 
--- FIXME: we "lose" the top-level binder in an inconvenient way. e.g.,
---        * the mock [base Real]s we have to pass to typeOfTerm
---        * when reconstruction the binder and arguments of the higher order term
 -- FIXME: substitutions should be partial?
 -- FIXME: don't pollute the environment with temporary variables (Y_i, Z_i)
+--        * allocate from separate set of names, as in agUnifN?
 -- NOTE: may be non-deterministic if the unification algorithm isn't unary
 --       (while AG and BR unification with nullary constants are of unitary type,
 --       AG and BR unification with function symbols are finitary!)
-{- (did not yet undergo a monad transformer transformation)
 transformEUni
-    :: Theory b s
-    => PartConf b s
-    -> State (Env b, Env b) (Maybe (Conf b s))
--}
-transformEUni
-    :: PartConf Sort Sig
+    :: Theory Sort Sig
+    => PartConf Sort Sig
     -> StateT (Env Sort, Env Sort) [] (Conf Sort Sig)
 transformEUni (theta', ss', ss) | isEAcceptable ss' = do
 
-    let ps = toList $ Set.map snd (unionMap' (\(u,v) -> pmfs u `union` pmfs v) ss')
+    -- NOTE: we changed from MFS to PMFS to avoid losing the binders 'bss'
+    let (unzip -> (bss, ps)) = toList $ unionMap' (\(u,v) -> pmfs u `union` pmfs v) ss'
+    -- check if this didn't increase the cardinality
+    let ps' = toList $ Set.map snd (unionMap' (\(u,v) -> pmfs u `union` pmfs v) ss')
+    () <- if length ps == length ps' then return () else error "transformEUni: ps / ps'"
 
     rho <- stateT $ forM ps $ \w -> do
                  t <- typeOfTerm [] w
-                 y <- freshAtom t
+                 y <- freshAtom t               -- FIXME: FreeV ---> freeV..?
                  return (w,y)
 
     let rho' = Map.fromList rho
@@ -464,46 +496,30 @@ transformEUni (theta', ss', ss) | isEAcceptable ss' = do
     -- unification may fail or be (in)finitary instead of unitary
     sigmas <- stateT $ unify rhoSS'
     sigma  <- lift sigmas               -- FIXME: not elegant
-    
-    error $ "QQQ: " ++ show sigma
-
-    {- MOCK!!!
-    FreeV 4 <- stateT $ freshAtom (base Real)    -- FIXME: or FreeC?
-    FreeV 5 <- stateT $ freshAtom (base Real)
-    let sigma = [error "F0"             -- FIXME: rather not see those in here...
-                ,error "F1"             --        (env ++ sigma) !! y
-                ,A  [base Real]         -- FIXME: [base Real] shouldn't be here, yet
-                    (Const Mul)         --        make everything so much easier...
-                    [A [] (FreeV 4) []  --        ("reconstructing the missing binder")
-                    ,A [] (Const Mul) [A [] (Bound 0) [], A [] (FreeV 5) []]]
-                ,A [base Real] (FreeV 4) []
-                ]
-    MOCK!!! -}
 
     let xss    = map (\(A [] _ xs,_) -> xs) rho
     let ys     = map snd rho
 
-    -- FIXME: commented out code is related to "reconstructing the missing binder"
-    (_, phis) <- stateT $ statefulForM [] (zip xss ys) $ \s (xs_i, FreeV y) -> do
-                    let qs = toList $ pmfs (sigma !! y)
-                    statefulForM s qs $ \s' (us, z) -> do
-                        case lookup (z, xs_i, us) s' of
-                            Nothing -> do
-                                tyxs_i <- mapM (typeOfTerm [{-!-}base Real{-!-}]) xs_i
-                                _ :-> t <- typeOfTerm [{-!-}base Real{-!-}] z
-                                -- z' <- freshAtom (tyxs_i ++ us :-> t)
-                                z' <- freshAtom ({- tyxs_i ++ -} us :-> t)  -- FIXME
-                                return ( ((z, xs_i, us), z') : s'
-                                       , ((us, z), z')              )
-                            Just z' -> do
-                                return ( s', ((us, z), z') )
+    -- FIXME: handle 'us' if not empty
+    (_, phis) <- stateT $
+        statefulForM [] (zip3 bss xss ys) $ \st (bs_i, xs_i, FreeV y) -> do
+            statefulForM st (toList $ pmfs (sigma !! y)) $ \st' (us@[], z) -> do
+                case lookup (z, xs_i, us) st' of
+                    Nothing -> do
+                        tyxs_i <- mapM (typeOfTerm bs_i) xs_i
+                        _ :-> t <- typeOfTerm bs_i z
+                        z' <- freshAtom (tyxs_i ++ us :-> t)
+                        return ( ((z, xs_i, us), z') : st'
+                               , ((us, z), A [] z' (xs_i))  -- FIXME: (xs_i ++ us)
+                               )                            --     or (us ++ xs_i)
+                    Just z' -> do
+                        return ( st', ((us, z), A [] z' []) )
 
-    -- FIXME: commented out code is related to "reconstructing the missing binder"
-    theta <- forM (zip3 phis ys ps) $ \(phi, FreeV y, A [] (FreeV g) xs) -> do
-                -- ts <- mapM (typeOfTerm [{-!-}base Real{-!-}]) xs
-                let (A us a as) = applyConditionalMapping (Map.fromList phi) (sigma !! y)
-                -- return (g, A (us ++ ts) a as)
-                return (g, A us a as)
+    theta <- stateT $ forM (zip4 phis ys bss ps) $
+        \(phi, FreeV y, bs_i, A [] (FreeV g) xs) -> do
+            ts <- mapM (typeOfTerm bs_i) xs
+            let (A us a as) = applyConditionalMapping (Map.fromList phi) (sigma !! y)
+            return (g, A (us ++ ts) a as)
 
     (envV, _) <- get
     let thetaD = map (\(x,y) -> (freeV envV x, y)) theta
@@ -632,6 +648,7 @@ solvedAGUnifProbToSubst p = do
 
     let upd r n t
           | length r < n = r ++ map (freeV envV) [length r .. n - 1] ++ [t]
+          -- | length r < n = r ++ map (\x -> error $ "upd: " ++ show x) [length r .. n - 1] ++ [t]
           | otherwise    = take n r ++ [t] ++ drop (n + 1) r
 
     let fo2ho :: [SimpleType Sort] -> T Sig F' () Int -> AlgebraicTerm Sort Sig
@@ -642,8 +659,7 @@ solvedAGUnifProbToSubst p = do
         fo2ho env (F' (L n ty) ts)
             = error "fo2ho: F' L"
         fo2ho env (F' (B n ty) ts)
-            -- FIXME: NOT n!
-            = bound (replicate (600 + n) (error "BOO!") ++ [ty]) (600 + n)            
+            = bound (replicate n (error "fo2ho: B") ++ [ty]) n
         fo2ho env (F' (FC n) ts)
             = error "fo2ho: F' FC"
 
