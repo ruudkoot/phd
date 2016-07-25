@@ -1079,9 +1079,9 @@ test_transformAbs_1 =
         termSystem = []
         envV       = [[base Real] :-> Real, [base Real] :-> Real]
         envC       = []
-     in runStateT (transformAbs (subst,termPair,termSystem)) (envV,envC)
+     in runState (transformAbs (subst,termPair,termSystem)) (envV,envC)
           =?=
-        (Just (( -- substitution
+        (( -- substitution
                 subst ++
                 [A [[] :-> Real] (FreeV 0) [A [] (Bound 0) []]
                 ,A [[] :-> Real] (FreeV 1) [A [] (Bound 0) []]]
@@ -1113,8 +1113,9 @@ test_transformAbs_1 =
               )
          , -- environment
            ( envV ++ [[base Real] :-> Real, [base Real] :-> Real]
-           , envC ))
+           , envC )
          )
+         
 
 -- \x.F(x) =?= \x.F(x)*G(x)*x
 --         === \x.*(F(x),*(G(x),x))

@@ -50,6 +50,14 @@ assert ss False = error $ "ASSERT: " ++ ss
 
 for = flip map
 
+extractFirst :: (a -> Bool) -> [a] -> Maybe (a, [a])
+extractFirst p = extractFirst' []
+  where
+    extractFirst' _   [] = Nothing
+    extractFirst' xs' (x:xs)
+        | p x       = Just (x, reverse xs' ++ xs)
+        | otherwise = extractFirst' (x:xs') xs
+
 statefulForM :: Monad m => s -> [a] -> (s -> a -> m (s, b)) -> m (s, [b])
 statefulForM s []     f = return (s, [])
 statefulForM s (x:xs) f = do
@@ -186,8 +194,11 @@ data AlgebraicTerm sort sig
 hd :: AlgebraicTerm sort sig -> Atom sig
 hd (A _ a _) = a
   
+isFlexible :: AlgebraicTerm sort sig -> Bool
+isFlexible = isFreeV . hd
+  
 isRigid :: AlgebraicTerm sort sig -> Bool
-isRigid = not . isFreeV . hd
+isRigid = not . isFlexible
 
 -- eta-long variables
 type Env sort = [SimpleType sort]
@@ -435,7 +446,7 @@ type PartConf b s = (Subst b s, TermSystem b s, TermSystem b s)
 transformAbs
     :: Theory b s
     => HeadConf b s
-    -> StateT (Env b, Env b) Maybe (Conf b s)
+    -> State (Env b, Env b) (Conf b s)
 transformAbs (theta', (u,v), ss) | isRigid u || isRigid v = do
     -- maximal flexible subterms
     let ps = toList $ pmfs u `union` pmfs v
@@ -444,7 +455,7 @@ transformAbs (theta', (u,v), ss) | isRigid u || isRigid v = do
     --       will not necessarily form an eta-long term. Take care of this in
     --       the application function instead (xs are remembered in the
     --       conditional mapping anyway).
-    hs <- stateT $ forM ps $ \(xs,w) -> do
+    hs <- forM ps $ \(xs,w) -> do
             xs' :-> r <- typeOfTerm [] w
             freshAtom (xs ++ xs' :-> r)
     let phi  = zipWith (\(xs,w) h -> ((xs,w),h)) ps hs
@@ -470,9 +481,9 @@ transformAbs _ | otherwise = error "transformAbs: assumptions violated"
 --       (while AG and BR unification with nullary constants are of unitary type,
 --       AG and BR unification with function symbols are finitary!)
 transformEUni
-    :: Theory Sort Sig
-    => PartConf Sort Sig
-    -> StateT (Env Sort, Env Sort) [] (Conf Sort Sig)
+    :: Theory sort sig
+    => PartConf sort sig
+    -> StateT (Env sort, Env sort) [] (Conf sort sig)
 transformEUni (theta', ss', ss) | isEAcceptable ss' = do
 
     -- NOTE: we changed from MFS to PMFS to avoid losing the binders 'bss'
@@ -529,7 +540,7 @@ transformEUni (theta', ss', ss) | isEAcceptable ss' = do
         ( error "TODO"
         , thetaD ++ map (substFreeVAndReduce thetaS *** substFreeVAndReduce thetaS) ss
         )
-        
+
 transformEUni _ | otherwise = error "transformEUni: assumptions violated"
 
 
@@ -538,9 +549,9 @@ transformEUni _ | otherwise = error "transformEUni: assumptions violated"
 --                  (choice of '(u,v)')?
 -- FIXME: don't cross-pollute the environments of different branches
 transformBin
-    :: Theory b s
-    => HeadConf b s
-    -> StateT (Env b, Env b) [] (Conf b s)
+    :: Theory sort sig
+    => HeadConf sort sig
+    -> StateT (Env sort, Env sort) [] (Conf sort sig)
 transformBin (theta', (u@(A xs (FreeV f) us), v@(A _xs a vs)), ss)
   | xs == _xs && isRigid v
     = do (envV, envC) <- get
@@ -570,9 +581,125 @@ transformBin (theta', (u@(A xs (FreeV f) us), v@(A _xs a vs)), ss)
                )
 transformBin _ = error "transformBin: assumptions violated"
 
+
 -- * Control strategy (Qian & Wang) * -------------------------------------[ ]--
 
-controlStrategy = error "controlStrategy"
+type ClassifiedTermSystem b s
+    = ( TermSystem b s
+      , TermSystem b s
+      , TermSystem b s
+      , TermSystem b s
+      )
+
+
+isTrivialVar :: Theory b s => AlgebraicTerm b s -> Bool
+isTrivialVar (A xs (FreeV _) ts)
+    | ts == map (bound xs) [0 .. length xs - 1] = True
+isTrivialVar _ = False
+
+
+classifyTermSystem
+    :: Theory b s
+    => TermSystem b s
+    -> ClassifiedTermSystem b s
+classifyTermSystem []     = ([], [], [], [])
+classifyTermSystem (t:ts) =
+    let (ss_Sol, ss_EUni, ss_FF, ss_Res) = classifyTermSystem ts
+     in case t of
+            (t1,t2) | isTrivialVar t1 ->
+                ((t1,t2) : ss_Sol, ss_EUni, ss_FF, ss_Res)
+            (t1,t2) | isTrivialVar t2 ->
+                ((t2,t1) : ss_Sol, ss_EUni, ss_FF, ss_Res)
+            (t1,t2) | let ps = toList $ pmfs t1 `union` pmfs t2
+                    , all (uncurry isTrivialFlexibleSubterm) ps ->
+                (ss_Sol, (t1,t2) : ss_EUni, ss_FF, ss_Res)
+            (t1,t2) | isFlexible t1, isFlexible t2 ->
+                (ss_Sol, ss_EUni, (t1,t2) : ss_FF, ss_Res)
+            -- orient R-F  -->  F-R
+            (t1,t2) | isFlexible t2 ->
+                (ss_Sol, ss_EUni, ss_FF, (t2,t1) : ss_Res)
+            (t1,t2) ->
+                (ss_Sol, ss_EUni, ss_FF, (t1,t2) : ss_Res)
+
+
+data CSTree b s
+    = EAbs
+        { eAbs_in       :: (Env b, Env b, Subst b s, ClassifiedTermSystem b s)
+        , eAbs_out      :: CSTree b s
+        }
+    | EUni
+        { eUni_in       :: (Env b, Env b, Subst b s, ClassifiedTermSystem b s)
+        , eUni_out      :: [CSTree b s]
+        }
+    | EBin
+        { eBin_in       :: (Env b, Env b, Subst b s, ClassifiedTermSystem b s)
+        , eBin_out      :: [CSTree b s]
+        }
+    | CS_Solved
+        { solved_Subst  :: Subst b s
+        , solved_System :: ClassifiedTermSystem b s
+        }
+  deriving Show
+
+
+-- FIXME: Again, how non-deterministic should we be? Only in so far as the rules
+--        themselves are non-deterministic, or also in the choice of equation
+--        from the unification problem (for E-Abs and E-Bin)?
+-- FIXME: StateT s []  vs. StateT s Identity  uglyness...
+controlStrategy
+    :: Theory     sort sig
+    => (Env sort, Env sort)
+    -> Subst      sort sig
+    -> TermSystem sort sig
+    -> CSTree     sort sig
+controlStrategy (envV, envC) theta ss
+    = case classifyTermSystem ss of
+        -- Solved
+        cts@(ss_Sol, [], ss_FF, []) ->
+            CS_Solved { solved_Subst = theta, solved_System = cts }
+        -- Step 1
+        -- FIXME: could be more non-deterministic here
+        cts@(ss_Sol, ss_EUni, ss_FF, (t1,t2) : ss_Res) ->
+            -- FIXME: pass the whole 'ss' or only 'ss_Res' to transformAbs?
+            let ((theta', ss'), (envV', envC')) = flip runState (envV, envC) $
+                    transformAbs ( theta
+                                 , (t1,t2)
+                                 , ss_Sol ++ ss_EUni ++ ss_FF ++ ss_Res
+                                 )
+                csTree = controlStrategy (envV', envV') theta' ss'
+             in EAbs { eAbs_in  = (envV, envC, theta, cts)
+                     , eAbs_out = csTree
+                     }
+        -- Step 2 and 3
+        cts@(ss_Sol, ss_EUni, ss_FF, []) -> do
+            let theta'ss's = flip runStateT (envV, envC) $
+                    transformEUni (theta, ss_EUni, ss_Sol ++ ss_FF)
+                csTrees = for theta'ss's $ \((theta', ss'), (envV', envC')) ->
+                    let cts'@(ss_Sol', [], ss_FF', ss_Res') = classifyTermSystem ss'
+                    -- FIXME: could be more non-deterministic here
+                    in case
+                         extractFirst (\(t1,t2) -> isRigid t1 && isRigid t2) ss_Res'
+                       of
+                        Just ((t1,t2), ss_Res'') ->
+                            let theta''ss''s = flip runStateT (envV', envC') $
+                                    transformBin ( theta
+                                                 , (t1,t2)
+                                                 , ss_Sol' ++ ss_FF ++ ss_Res''
+                                                 )
+                                csTrees = for theta''ss''s $
+                                    \((theta'', ss''), (envV'', envC'')) ->
+                                        controlStrategy (envV'', envC'') theta'' ss''
+                            in EBin { eBin_in  = (envV', envC', theta', cts')
+                                    , eBin_out = csTrees
+                                    }
+                        Nothing -> controlStrategy
+                                        (envV', envV')
+                                        theta'
+                                        (ss_Sol' ++ ss_FF' ++ ss_Res')
+             in EUni { eUni_in  = (envV, envC, theta, cts)
+                     , eUni_out = csTrees
+                     }
+
 
 -- | Higher-order dimension types | ---------------------------------------[ ]--
 
