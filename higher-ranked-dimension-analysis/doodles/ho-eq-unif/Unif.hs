@@ -15,6 +15,7 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE NamedFieldPuns         #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TupleSections          #-}
 {-# LANGUAGE ViewPatterns           #-}
@@ -537,11 +538,26 @@ transformEUni (theta', ss', ss) | isEAcceptable ss' = do
     let thetaS = sparsifySubst envV theta
 
     return $
-        ( error "TODO"
+        ( mergeSubst theta' theta
         , thetaD ++ map (substFreeVAndReduce thetaS *** substFreeVAndReduce thetaS) ss
         )
 
 transformEUni _ | otherwise = error "transformEUni: assumptions violated"
+
+
+-- FIXME: can't be this easy...
+mergeSubst
+    :: [AlgebraicTerm sort sig]
+    -> [(Int,AlgebraicTerm sort sig)]
+    -> [AlgebraicTerm sort sig]
+mergeSubst theta' theta =
+    let n = length theta'
+        m = length theta
+     in if map fst theta == [n .. n + m - 1] then
+            theta' ++ map snd theta
+        else
+            error $ "mergeSubst: FAILED"
+
 
 
 -- (u,v) assumed to be flexible-rigid (i.e., not rigid-flexible)
@@ -592,23 +608,35 @@ type ClassifiedTermSystem b s
       )
 
 
-isTrivialVar :: Theory b s => AlgebraicTerm b s -> Bool
-isTrivialVar (A xs (FreeV _) ts)
-    | ts == map (bound xs) [0 .. length xs - 1] = True
-isTrivialVar _ = False
+isTrivialVar :: Theory b s => AlgebraicTerm b s -> Maybe Int
+isTrivialVar (A xs (FreeV f) ts)
+    | ts == map (bound xs) [0 .. length xs - 1] = Just f
+isTrivialVar _ = Nothing
+
+
+fvTS :: TermSystem b s -> [Int]
+fvTS []           = []
+fvTS ((t1,t2):ts) = fvAT t1 ++ fvAT t2 ++ fvTS ts
+
+fvAT :: AlgebraicTerm b s -> [Int]
+fvAT (A _ (FreeV f) ts) = f : concatMap fvAT ts
+fvAT (A _ _         ts) =     concatMap fvAT ts
 
 
 classifyTermSystem
     :: Theory b s
     => TermSystem b s
+    -> TermSystem b s
     -> ClassifiedTermSystem b s
-classifyTermSystem []     = ([], [], [], [])
-classifyTermSystem (t:ts) =
-    let (ss_Sol, ss_EUni, ss_FF, ss_Res) = classifyTermSystem ts
+classifyTermSystem _   []     = ([], [], [], [])
+classifyTermSystem ts' (t:ts) =
+    let (ss_Sol, ss_EUni, ss_FF, ss_Res) = classifyTermSystem (t:ts') ts
      in case t of
-            (t1,t2) | isTrivialVar t1 ->
+            (t1,t2) | Just f <- isTrivialVar t1
+                    , f `notElem` fvAT t2 ++ fvTS (ts ++ ts') ->
                 ((t1,t2) : ss_Sol, ss_EUni, ss_FF, ss_Res)
-            (t1,t2) | isTrivialVar t2 ->
+            (t1,t2) | Just f <- isTrivialVar t2
+                    , f `notElem` fvAT t1 ++ fvTS (ts ++ ts') ->
                 ((t2,t1) : ss_Sol, ss_EUni, ss_FF, ss_Res)
             (t1,t2) | let ps = toList $ pmfs t1 `union` pmfs t2
                     , all (uncurry isTrivialFlexibleSubterm) ps ->
@@ -637,9 +665,20 @@ data CSTree b s
         }
     | CS_Solved
         { solved_Subst  :: Subst b s
-        , solved_System :: ClassifiedTermSystem b s
+        , solved_System :: ClassifiedTermSystem b s     -- FIXME: TermSystem b s?
         }
   deriving Show
+  
+  
+maskCS :: CSTree b s -> CSTree b s
+maskCS (EAbs { eAbs_in = (envV, envC, _, cts), eAbs_out })
+    = EAbs { eAbs_in = (envV, envC, [], cts), eAbs_out = maskCS eAbs_out }
+maskCS (EUni { eUni_in = (envV, envC, _, cts), eUni_out })
+    = EUni { eUni_in = (envV, envC, [], cts), eUni_out = map maskCS eUni_out }
+maskCS (EBin { eBin_in = (envV, envC, _, cts), eBin_out })
+    = EBin { eBin_in = (envV, envC, [], cts), eBin_out = map maskCS eBin_out }
+maskCS (CS_Solved { solved_System })
+    = CS_Solved { solved_Subst = [], solved_System = solved_System }
 
 
 -- FIXME: Again, how non-deterministic should we be? Only in so far as the rules
@@ -653,7 +692,7 @@ controlStrategy
     -> TermSystem sort sig
     -> CSTree     sort sig
 controlStrategy (envV, envC) theta ss
-    = case classifyTermSystem ss of
+    = case classifyTermSystem [] ss of
         -- Solved
         cts@(ss_Sol, [], ss_FF, []) ->
             CS_Solved { solved_Subst = theta, solved_System = cts }
@@ -675,7 +714,7 @@ controlStrategy (envV, envC) theta ss
             let theta'ss's = flip runStateT (envV, envC) $
                     transformEUni (theta, ss_EUni, ss_Sol ++ ss_FF)
                 csTrees = for theta'ss's $ \((theta', ss'), (envV', envC')) ->
-                    let cts'@(ss_Sol', [], ss_FF', ss_Res') = classifyTermSystem ss'
+                    let cts'@(ss_Sol', [], ss_FF', ss_Res') = classifyTermSystem [] ss'
                     -- FIXME: could be more non-deterministic here
                     in case
                          extractFirst (\(t1,t2) -> isRigid t1 && isRigid t2) ss_Res'
@@ -699,6 +738,34 @@ controlStrategy (envV, envC) theta ss
              in EUni { eUni_in  = (envV, envC, theta, cts)
                      , eUni_out = csTrees
                      }
+
+
+breadthFirstSearchForSolutions
+    :: [CSTree sort sig]
+    -> ([(Subst sort sig, ClassifiedTermSystem sort sig)], [CSTree sort sig])
+breadthFirstSearchForSolutions [] = ([],[])
+breadthFirstSearchForSolutions (EAbs { eAbs_out } : csTrees)
+    = breadthFirstSearchForSolutions (csTrees ++ [eAbs_out])
+breadthFirstSearchForSolutions (EUni { eUni_out } : csTrees)
+    = breadthFirstSearchForSolutions (csTrees ++ eUni_out)
+breadthFirstSearchForSolutions (EBin { eBin_out } : csTrees)
+    = breadthFirstSearchForSolutions (csTrees ++ eBin_out)
+breadthFirstSearchForSolutions (CS_Solved { solved_Subst, solved_System } : csTrees)
+    = let (sols, csTrees') = breadthFirstSearchForSolutions csTrees
+       in ((solved_Subst, solved_System) : sols, csTrees')
+
+
+higherOrderEquationalPreunification
+    :: Theory sort sig
+    => Env sort
+    -> Env sort
+    -> TermSystem sort sig
+    -> [(Subst sort sig, TermSystem sort sig, TermSystem sort sig)]
+higherOrderEquationalPreunification envV envC ts
+    -- FIXME: do lazy pattern-matching
+    = let (sols, []) = breadthFirstSearchForSolutions
+                            [controlStrategy (envV, envC) [] ts]
+       in map (\(theta,(ssSol, [], ssFF, [])) -> (theta, ssSol, ssFF)) sols
 
 
 -- | Higher-order dimension types | ---------------------------------------[ ]--

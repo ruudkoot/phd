@@ -201,6 +201,7 @@ tests =
     --,("agUnifN (1)",                    test_agUnifN_1)
     --,("agUnifN (2)",                    test_agUnifN_2)
     --,("agUnifN (3)",                    test_agUnifN_3)
+    ,("HOEP (1)",                       test_higherOrderEquatonalPreunification_1)
     ]
     
 len = maximum (map (length . fst) tests)
@@ -2048,3 +2049,35 @@ test_agUnifN_5 =
             ,(F Mul [z, F Mul [F' "f" [x], F Inv [F' "f" [x3]]]],F Unit [])
             ] :: AGUnifProb Sig String () Int
      in runStateT (agUnifN' 1000 p S.empty) (0,[])
+     
+test_higherOrderEquatonalPreunification_1 =
+    let envV1, envC1 :: Env Sort
+        envV1 = [[base Real] :-> Real
+                ,[base Real] :-> Real
+                ]
+        envC1 = []
+
+        exp1 :: TermSystem Sort Sig
+        exp1 = [(A [base Real] (FreeV   0) [ bound0 ]
+                ,A [base Real] (Const Mul) [A [] (FreeV   0) [ bound0 ]
+                                           ,A [] (Const Mul) [ A [] (FreeV 1) [ bound0 ]
+                                                             , bound0
+                                                             ]
+                                           ]
+               )]
+          where
+            bound0 = bound [base Real] 0
+
+     in higherOrderEquationalPreunification envV1 envC1 exp1
+            =?=
+        [([A [[] :-> Real] (FreeV 4) [A [] (Bound 0) []]
+                                    ,A [[] :-> Real] (Const Inv) [A [] (Bound 0) []]]
+         ,[ (A [[] :-> Real] (FreeV 0) [A [] (Bound 0) []]
+                                       ,A [[] :-> Real] (FreeV 4) [A [] (Bound 0) []]
+            )
+          , (A [[] :-> Real] (FreeV 1) [A [] (Bound 0) []]
+                                       ,A [[] :-> Real] (Const Inv) [A [] (Bound 0) []]
+            )
+          ]
+         ,[]
+        )]
