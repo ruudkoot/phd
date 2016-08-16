@@ -715,7 +715,7 @@ data F' sort
 -- p. 407
 firstOrderify
     :: UnificationProblem sort sig
-    -> AGUnifProb sig (F' sort) () Int
+    -> FOUnifProb sig (F' sort) () Int
 firstOrderify = map (firstOrderify' [] *** firstOrderify' [])
 
   where
@@ -744,7 +744,7 @@ firstOrderify = map (firstOrderify' [] *** firstOrderify' [])
 
 solvedAGUnifProbToSubst
     :: forall sort sig
-     . AGUnifProb sig (F' sort) () Int
+     . FOUnifProb sig (F' sort) () Int
     -> State (Env sort, Env sort) (Subst sort sig)
 solvedAGUnifProbToSubst p = do
 
@@ -771,7 +771,7 @@ solvedAGUnifProbToSubst p = do
     
 unify'
     :: (TermAlg sig (F' sort) () Int, Show (F' sort))
-    => (AGUnifProb sig (F' sort) () Int -> [AGUnifProb sig (F' sort) () Int])
+    => (FOUnifProb sig (F' sort) () Int -> [FOUnifProb sig (F' sort) () Int])
     -> UnificationProblem sort sig
     -> State (Env sort, Env sort) [Subst sort sig]
 unify' foUnifN p = do

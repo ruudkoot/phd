@@ -16,6 +16,8 @@ import Data.Maybe
 import qualified Data.Map as M
 import qualified Data.Set as S
 
+import Test.Util
+
 import Util
 
 import Unif hiding (main, u0)
@@ -27,14 +29,13 @@ import Unif.HigherOrder.Equational
 
 tests :: [(String, Bool)]
 tests =
+    Util._tests_ ++
     [("for",                            test_for)
     ,("statefulForM (1)",               test_statefulForM_1)
     ,("statefulForM (2)",               test_statefulForM_2)
     ,("uncons (1)",                     test_uncons_1)
     ,("uncons (2)",                     test_uncons_2)
     ,("mapMaybeWithContext (1)",        test_mapMaybeWithContext_1)
-    ,("unionMap",                       test_unionMap)
-    ,("unionMap'",                      test_unionMap')
     ,("base",                           test_base)
     ,("sig2ty",                         test_sig2ty)
     ,("sparsifySubst",                  test_sparsifySubst)
@@ -124,24 +125,8 @@ tests =
     ,("transformAbs (1)",               test_transformAbs_1)
     ,("transformEUni (1)",              test_transformEUni_1)   -- FIXME: incomplete
     ,("transformBin (1)",               test_transformBin_1)    -- FIXME: incomplete
-    ,("count (1)",                      test_count_1)
-    ,("set (1)",                        test_set_1)
-    ,("divides (1)",                    test_divides_1)
-    ,("divides (2)",                    test_divides_2)
-    ,("agIdSubst (1)",                  test_agIdSubst_1)
-    ,("agApplySubst (1)",               test_agApplySubst_1)
-    ,("agCompSubst (1)",                test_agCompSubst_1)
-    ,("agUnif1 (1)",                    test_agUnif1_1)         -- FIXME: normal form
-    ,("agUnif1 (1')",                   test_agUnif1_1')        -- FIXME: normal form
-    ,("agUnif1 (2)",                    test_agUnif1_2)         -- FIXME: normal form
-    ,("agUnif1' (1)",                   test_agUnif1'_1)
-    ,("agUnif1' (1')",                  test_agUnif1'_1')
-    ,("agConstMatch (1)",               test_agConstMatch_1)
-    ,("agConstMatch (1')",              test_agConstMatch_1')
-    ,("agConstMatch (2)",               test_agConstMatch_2)
-    ,("agConstMatch (2')",              test_agConstMatch_2')
-    ,("agConstMatch (3)",               test_agConstMatch_3)
-    ,("newT (1)",                       test_newT_1)
+    ] ++ Unif.FirstOrder.AbelianGroups._tests_ ++
+    [("newT (1)",                       test_newT_1)
     ,("newV (1)",                       test_newV_1)
     ,("isVar (1)",                      test_isVar_1)
     ,("vars (1)",                       test_vars_1)
@@ -170,9 +155,6 @@ tests =
     ,("numX",                           test_numX)
     ,("numX'",                          test_numX')
     ,("numC",                           test_numC)
-    ,("toExp (1)",                      test_toExp_1)
-    ,("toExp' (1)",                     test_toExp'_1)
-    ,("fromExp (1)",                    test_fromExp_1)
     ,("dom (1)",                        test_dom_1)
     ,("domNotMappingToVar (1)",         test_domNotMappingToVar_1)
     ,("isShared (1)",                   test_isShared_1)
@@ -201,9 +183,6 @@ tests =
     ,("agUnifN (Var-Rep, 4''')",        test_agUnifN_VarRep_4''')
     ,("agUnifN (Var-Rep, 5)",           test_agUnifN_VarRep_5)
 -}
-    ,("constantify (1)",                test_constantify_1)
-    ,("deconstantify (1)",              test_deconstantify_1)
-    ,("agUnif1TreatingAsConstant (1)",  test_agUnif1TreatingAsConstant_1)
     --,("agUnifN (1)",                    test_agUnifN_1)
     --,("agUnifN (2)",                    test_agUnifN_2)
     --,("agUnifN (3)",                    test_agUnifN_3)
@@ -226,13 +205,6 @@ runTest (name, test) = do
     putStrLn $ show test
     return test
     
-(=?=) :: (Eq a, Show a) => a -> a -> Bool
-x =?= y =
-    if x == y then
-        True
-    else
-        error $ "\n" ++ show x ++ "\n\n" ++ show y
-
 -- | Utility | ------------------------------------------------------------[ ]--
 
 test_for = for [0..9] (*2) == map (*2) [0..9]
@@ -254,18 +226,6 @@ test_mapMaybeWithContext_1 = mapMaybeWithContext f [1..9] =?= [43,41,39,37]
     where f x xs | even x    = Just (sum xs)
                  | otherwise = Nothing
                     
--- * Sets * ---------------------------------------------------------------[X]--
-
-test_unionMap = unionMap f (S.fromList [1,2,3]) =?= S.fromList [1,2,3,4,5]
-    where f 1 = S.fromList [1,2,3]
-          f 2 = S.fromList [2,3,4]
-          f 3 = S.fromList [3,4,5]
-
-test_unionMap' = unionMap' f [1,2,3] =?= S.fromList [1,2,3,4,5]
-    where f 1 = S.fromList [1,2,3]
-          f 2 = S.fromList [2,3,4]
-          f 3 = S.fromList [3,4,5]
-
 -- | General framework | --------------------------------------------------[ ]--
 
 -- * Types * --------------------------------------------------------------[X]--
@@ -1215,174 +1175,11 @@ test_transformBin_1 =
 
 -- | Unification modulo Abelian groups | ----------------------------------[ ]--
 
--- * AG-unification with free nullary constants * -------------------------[X]--
-
-test_count_1 = count odd [1..9] =?= 5
-
-test_set_1 = set "abcdefghij" 4 'E' =?= "abcdEfghij"
-
-test_divides_1 = 5 `divides` 10 =?= True
-test_divides_2 = 5 `divides` 11 =?= False
-
-test_agIdSubst_1 =
-    agIdSubst 3 2
-        =?=
-    [([1,0,0],[0,0])
-    ,([0,1,0],[0,0])
-    ,([0,0,1],[0,0])]
-
-test_agApplySubst_1 =
-    let ss  = [([0,1,2],[3,4])
-              ,([5,6,7],[8,9])
-              ,([0,2,4],[6,8])]
-        exp = ([1,2,3],[4,5])
-     in agApplySubst ss exp
-            =?=
-        ([10,19,28],[41,51])
-
-test_agCompSubst_1 =
-    let ss = [([0,1],[2])
-             ,([3,4],[5])]
-        us = [([1,3],[5])
-             ,([2,4],[6])]
-     in agCompSubst ss us
-            =?=
-        [([ 9,13],[22])
-        ,([12,18],[30])]
-
--- Lankford, Butler & Brady (EXAMPLE 1)
--- FIXME: not in (Hermite?) normal form...
-test_agUnif1_1 =
-    let exp = ([2,3,-1,-4],[-5])
-     in agUnif1 exp
-            =?=
-        Just [([ 1, 0, 0, 0],[ 0])
-             ,([ 0, 1, 0, 0],[ 0])
-             ,([ 2, 3, 0,-4],[-5])
-             ,([ 0, 0, 0, 1],[ 0])]
-             
-test_agUnif1_1' =
-    let exp = ([2,3,-1,-4],[-5])
-     in agApplySubst (fromJust $ agUnif1 exp) exp
-            =?=
-        ([0,0,0,0],[0])
-
--- Lankford, Butler & Brady (EXAMPLE 2)
--- FIXME: not in (Hermite?) normal form...
-test_agUnif1_2 =
-    let exp = ([3827,-2223,1934,-3400,8418,-6646,7833,-9433,4584,-4462],[])
-     in agApplySubst (fromJust $ agUnif1 exp) exp
-            =?=
-        (replicate 10 0, [])
-
-{-
-        Just [([   1,    0, 0,    0,    0,    0,    0,   0,    0,   0],[])
-             ,([   0,    1, 0,    0,    0,    0,    0,   0,    0,   0],[])
-             ,([ 977, -678, 0,  680, 1953, 1166, -129, 320,  381,  74],[])
-             ,([   0,    0, 0,    1,    0,    0,    0,   0,    0,   0],[])
-             ,([  44,  -31, 0,   34,   91,   53,   -2,  16,   18,   4],[])
-             ,([   0,    0, 0,    0,    0,    1,    0,   0,    0,   0],[])
-             ,([-289,  201, 0, -204, -580, -344,   34, -95, -114, -22],[])
-             ,([   0,    0, 0,    0,    0,    0,    0,   1,    0,   0],[])
-             ,([   0,    0, 0,    0,    0,    0,    0,   0,    1,   0],[])
-             ,([   0,    0, 0,    0,    0,    0,    0,   0,    0,   1],[])]
--}
-
-test_agUnif1'_1 =
-    let exps = [([3,-4,0],[])
-               ,([0,2,-3],[])]
-     in agUnif1' exps
-            =?=
-        Just [([0,4,0],[])
-             ,([0,3,0],[])
-             ,([0,2,0],[])]
-
-test_agUnif1'_1' =
-    let exps = [([3,-4,0],[])
-               ,([0,2,-3],[])]
-     in map (agApplySubst (fromJust $ agUnif1' exps)) exps
-            =?=
-        [([0,0,0],[]),([0,0,0],[])]
-        
--- FIXME: add Example 1 (p. 452)
-
-test_agConstMatch_1 =
-    let exp1 = ([1,1,0],[1,1])
-        exp2 = ([0,0,0],[1,0])
-     in agConstMatch exp1 exp2
-            =?=
-        Just [([0,-1,0],[0,-1])
-             ,([0, 1,0],[0, 0])
-             ,([0, 0,1],[0, 0])
-             ]
-             
-test_agConstMatch_1' =
-    let exp1 = ([1,1,0],[1,1])
-        exp2 = ([0,0,0],[1,0])
-     in agApplySubst (fromJust $ agConstMatch exp1 exp2) exp1
-            =?=
-        agApplySubst (fromJust $ agConstMatch exp1 exp2) exp2
-        
-test_agConstMatch_2 =
-    let exp1 = ([1],[1,0])
-        exp2 = ([0],[0,1])
-     in agConstMatch exp1 exp2
-            =?=
-        Just [([0],[-1,1])]
-             
-test_agConstMatch_2' =
-    let exp1 = ([1],[1,0])
-        exp2 = ([0],[0,1])
-     in agApplySubst (fromJust $ agConstMatch exp1 exp2) exp1
-            =?=
-        agApplySubst (fromJust $ agConstMatch exp1 exp2) exp2
-        
-test_agConstMatch_3 =
-    let exp1 = ([0],[1,0])
-        exp2 = ([1],[0,1])
-     in agConstMatch exp1 exp2
-            =?=
-        Nothing
-        
-test_constantify_1 =
-    let exp   = (F' "f'" [X 0, X 1, X' 0, X' 1, F' "C 0" [], F' "C 1" []])
-                    :: T AG String () Int
-        exp'  = (F' "f'" [C 0, X 1, X' 0, C  3, F' "C 0" [], F' "C 1" []])
-                    :: T AG String Int Int
-        smv   = [X 0, X' 1] :: [T AG String () Int]
-        numC' = 0 -- numC exp
-     in constantify numC' smv exp
-            =?=
-        exp'
-
-test_deconstantify_1 =
-    let exp   = (F' "f'" [X 0, X 1, X' 0, X' 1, F' "C 0" [], F' "C 1" []])
-                    :: T AG String () Int
-        exp'  = (F' "f'" [C 0, X 1, X' 0, C  3, F' "C 0" [], F' "C 1" []])
-                    :: T AG String Int Int
-        numC' = 0 -- numC exp
-     in deconstantify numC' exp'
-            =?=
-        exp
-        
-test_agUnif1TreatingAsConstant_1 =
-    let exp1 = (snd . head) (fromExp 5 [([2,3,-1,-4,-5],[])])
-        exp2 = (snd . head) (fromExp 5 [([0,0, 0, 0, 0],[])])
-        smv  = [X 4]
-     in (agUnif1TreatingAsConstant smv [(castC' exp1, castC' exp2)]
-                :: Maybe (AGUnifProb AG String () Int))
-            =?=
-        (Just $ map (castC' *** castC') $ fromExp 5 $
-             [([ 1, 0, 0, 0, 0],[])
-             ,([ 0, 1, 0, 0, 0],[])
-             ,([ 2, 3, 0,-4,-5],[])
-             ,([ 0, 0, 0, 1, 0],[])
-             ,([ 0, 0, 0, 0, 1],[])])    -- this last row!
 
 -- * AG-unification with free function symbols * --------------------------[ ]--
 
 test_newT_1 =
-    let env = [(X' 13,F' "b" [X' 1])] :: AGUnifProb AG String String Int
+    let env = [(X' 13,F' "b" [X' 1])] :: FOUnifProb AG String String Int
      in runState (newT (F Mul [F' "a" [],X 0])) (42,env)
             =?=
         (42,(43,env ++ [(X' 42,F Mul [F' "a" [],X 0])]))
@@ -1526,13 +1323,13 @@ test_applySubst_1 =
 test_freeUnif_1 =
     let prob = [(X 0              , F' "f" [F' "a" []])
                ,(F' "g" [X 0, X 0], F' "g" [X 0, X 1] )]
-     in freeUnif (prob :: AGUnifProb String String String Int)
+     in freeUnif (prob :: FOUnifProb String String String Int)
             =?=
         Just [(X 0,F' "f" [F' "a" []]),(X 1,F' "f" [F' "a" []])]
 
 test_freeUnif_2 =
     let prob = [(X 0, F' "f" [X 0])]
-     in freeUnif (prob :: AGUnifProb String String String Int)
+     in freeUnif (prob :: FOUnifProb String String String Int)
             =?=
         Nothing
 
@@ -1557,14 +1354,14 @@ test_classify_2 =
         t3' = (F' "g" [X 1, X' 2     ],           F  "f" [X 1, X' 2, F "C 3" []]        )
         t4  = (F  "f" [F' "f'" [X 1, X' 2, F' "C 3" []]], F' "g" [F "f" [X 1, X' 2, F' "C 3" []]])
         t5  = (X 1, X' 1)
-     in (fst $ classify ([t1, t2, t3, t3', t4, t5] :: AGUnifProb String String Int Int))
+     in (fst $ classify ([t1, t2, t3, t3', t4, t5] :: FOUnifProb String String Int Int))
             =?=
         ([t1],[t2, t5],[t3, t3],[t4])
 
 test_inSolvedForm_1 =
     let ts = [(X  1, F "f" [F' "C 1" []])
              ,(X' 1, F "f" [F' "C 1" []])
-             ] :: AGUnifProb String String Int Int
+             ] :: FOUnifProb String String Int Int
         w  = dom ts
      in inSolvedForm ts
             =?=
@@ -1574,7 +1371,7 @@ test_inSolvedForm_2 =
     let ts = [(X  1, F "f" [F' "C 1" []])
              ,(X' 1, F "f" [F' "C 1" []])
              ,(C  1, F "f" [F' "C 1" []])
-             ] :: AGUnifProb String String Int Int
+             ] :: FOUnifProb String String Int Int
         w  = dom ts
      in inSolvedForm ts
             =?=
@@ -1583,7 +1380,7 @@ test_inSolvedForm_2 =
 test_inSolvedForm_3 =
     let ts = [(X  1, F "f" [F' "C 1" []])
              ,(X' 1, F "f" [X 1])
-             ] :: AGUnifProb String String Int Int
+             ] :: FOUnifProb String String Int Int
         w  = dom ts
      in inSolvedForm ts
             =?=
@@ -1592,7 +1389,7 @@ test_inSolvedForm_3 =
 test_inSolvedForm_4 =
     let ts = [(X  1, F "f" [F' "C 1" []])
              ,(X  1, F "f" [F' "C 1" []])
-             ] :: AGUnifProb String String Int Int
+             ] :: FOUnifProb String String Int Int
         w  = dom ts
      in inSolvedForm ts
             =?=
@@ -1614,32 +1411,6 @@ test_numC =
         =?=
     (42 + 1)
 
-test_toExp_1 =
-    toExp 2 2 0 (F Mul [F Mul [X 1, F Mul [X' 0, F Inv [X' 1]]]
-                       ,F Inv [F Mul [X 0, X 0]]
-                       ]
-                )
-        =?=
-    ([-2,1,1,-1],[])
-
-test_toExp'_1 =
-    let exp = (F Mul [F Mul [X 1, F Mul [X' 0, F Inv [X' 1]]]
-                     ,F Inv [F Mul [C 0, C 1]]
-                     ]
-              ) :: T AG () Int Int
-     in toExp' 2 2 2 (exp, exp)
-            =?=
-        ([0,0,0,0],[0,0])
-
-test_fromExp_1 =
-    let exp = ([1,-2,3,-4],[5,-6])
-     in map (id *** toExp'' 2 2 2) (fromExp 2 (replicate 4 ([1,-2,3,-4],[5,-6])))
-            =?=
-        [(X 0 :: T AG AG Int Int, exp), (X 1, exp), (X' 0, exp), (X' 1, exp)]
-            where
-                toExp'' :: Int -> Int -> Int -> T AG f' Int Int -> AGExp1
-                toExp'' v1 v2 c s = toExp' v1 v2 c (s, F Unit [])
-
 test_dom_1 =
     dom [(X 0, X 1), (X 42, X 43), (X' 0, X' 1), (X' 666, X' 667)]
         =?=
@@ -1651,7 +1422,7 @@ test_domNotMappingToVar_1 =
     S.fromList [X 42, X' 666 :: T AG AG Int Int]
 
 test_isShared_1 =
-    let pe  = [(X 0, X' 1), (X' 2, X 3)] :: AGUnifProb AG String Int Int
+    let pe  = [(X 0, X' 1), (X' 2, X 3)] :: FOUnifProb AG String Int Int
         pe' = [(X 0, F' "C 0" []), (F' "C 0" [], X' 1), (X 3, X' 2)]
      in map (\x -> isShared x pe pe') [X 0, X' 1, X' 2, X 3]
             =?=
@@ -1662,7 +1433,7 @@ test_isShared_1 =
 test_agUnifN_VA_1 =
     let ph = [(X 0
               ,F Inv [F' "f'" [C 1]]
-              )] :: AGUnifProb AG String Int Int
+              )] :: FOUnifProb AG String Int Int
      in runStateT (agUnifN ph) 0
             =?=
         [([(X 0,F Inv [X' 0]),(X' 0,F' "f'" [X' 1]),(X' 1,C 1)]
@@ -1674,7 +1445,7 @@ test_agUnifN_ERes_1 =
     let exp = ([2,3,-1,-4],[-5])
         pe  = [((snd . head) (fromExp 4 [exp])
                ,F Unit []
-               )] :: AGUnifProb AG String Int Int
+               )] :: FOUnifProb AG String Int Int
      in runStateT (agUnifN pe) 42
             =?=
         [((:[]) $ (!!2) $ fromExp 4 $
@@ -1689,7 +1460,7 @@ test_agUnifN_ERes_1' =
     let exp = ([2,3,-1,-4],[-5])
         pe  = [((snd . head) (fromExp 4 [exp])
                ,F Unit []
-               )] :: AGUnifProb AG String Int Int
+               )] :: FOUnifProb AG String Int Int
         (unzip -> ([up], _)) = runStateT (agUnifN pe) 42
      in inSolvedForm up
             =?=
@@ -1698,7 +1469,7 @@ test_agUnifN_ERes_1' =
 test_agUnifN_E'Res_1 =
     let pe' = [(F' "f'" [F' "C0" [], X 0, X 1], F' "f'" [X 2, F' "C1" [], X 3])
               ,(F' "f'" [X 2, F' "C1" [], X 4], F' "f'" [X 5, X 6, F' "C2" []])
-              ] :: AGUnifProb AG String Int Int
+              ] :: FOUnifProb AG String Int Int
      in runStateT (agUnifN pe') 42
             =?=
         [(
@@ -1747,7 +1518,7 @@ test_agUnifN_VarRep_1 =
     let shared    x = [(X 0, F Inv [x]), (X 1, F' "f'" [x])]
         notShared x = [(X 2, F Inv [x])]
         p           = [(X 3, X 4)] ++ notShared (X 3) ++ shared (X 4)
-                            :: AGUnifProb AG String Int Int
+                            :: FOUnifProb AG String Int Int
         (unzip -> ([sortBy (compare `on` fst) -> p'], (all (==0) -> True)))
             = runStateT (agUnifN p) 0
      in p'
@@ -1758,7 +1529,7 @@ test_agUnifN_VarRep_1' =
     let shared    x = [(X 0, F Inv [x]), (X 1, F' "f'" [x])]
         notShared x = [(X 2, F Inv [x])]
         p           = [(X 4, X 3)] ++ notShared (X 3) ++ shared (X 4)
-                            :: AGUnifProb AG String Int Int
+                            :: FOUnifProb AG String Int Int
         (unzip -> ([sortBy (compare `on` fst) -> p'], (all (==0) -> True)))
             = runStateT (agUnifN p) 0
      in p'
@@ -1769,7 +1540,7 @@ test_agUnifN_VarRep_1'' =
     let shared    x = [(X 0, F Inv [x]), (X 1, F' "f'" [x])]
         notShared x = [(X 2, F Inv [x])]
         p           = [(X 3, X' 4)] ++ notShared (X 3) ++ shared (X' 4)
-                            :: AGUnifProb AG String Int Int
+                            :: FOUnifProb AG String Int Int
         (unzip -> ([sortBy (compare `on` fst) -> p'], (all (==0) -> True)))
             = runStateT (agUnifN p) 0
      in p'
@@ -1780,7 +1551,7 @@ test_agUnifN_VarRep_1''' =
     let shared    x = [(X 0, F Inv [x]), (X 1, F' "f'" [x])]
         notShared x = [(X 2, F Inv [x])]
         p           = [(X' 3, X 4)] ++ notShared (X' 3) ++ shared (X 4)
-                            :: AGUnifProb AG String Int Int
+                            :: FOUnifProb AG String Int Int
         (unzip -> ([sortBy (compare `on` fst) -> p'], (all (==0) -> True)))
             = runStateT (agUnifN p) 0
      in p'
@@ -1791,7 +1562,7 @@ test_agUnifN_VarRep_2 =
     let shared    x = [(X 0, F Inv [x]), (X 1, F' "f'" [x])]
         notShared x = [(X 2, F Inv [x])]
         p           = [(X 3, X 4)] ++ shared (X 3) ++ notShared (X 4)
-                            :: AGUnifProb AG String Int Int
+                            :: FOUnifProb AG String Int Int
         (unzip -> ([sortBy (compare `on` fst) -> p'], (all (==0) -> True)))
             = runStateT (agUnifN p) 0
      in p'
@@ -1802,7 +1573,7 @@ test_agUnifN_VarRep_2' =
     let shared    x = [(X 0, F Inv [x]), (X 1, F' "f'" [x])]
         notShared x = [(X 2, F Inv [x])]
         p           = [(X 4, X 3)] ++ shared (X 3) ++ notShared (X 4)
-                            :: AGUnifProb AG String Int Int
+                            :: FOUnifProb AG String Int Int
         (unzip -> ([sortBy (compare `on` fst) -> p'], (all (==0) -> True)))
             = runStateT (agUnifN p) 0
      in p'
@@ -1813,7 +1584,7 @@ test_agUnifN_VarRep_2'' =
     let shared    x = [(X 0, F Inv [x]), (X 1, F' "f'" [x])]
         notShared x = [(X 2, F Inv [x])]
         p           = [(X 4, X' 3)] ++ shared (X' 3) ++ notShared (X 4)
-                            :: AGUnifProb AG String Int Int
+                            :: FOUnifProb AG String Int Int
         (unzip -> ([sortBy (compare `on` fst) -> p'], (all (==0) -> True)))
             = runStateT (agUnifN p) 0
      in p'
@@ -1824,7 +1595,7 @@ test_agUnifN_VarRep_2''' =
     let shared    x = [(X 0, F Inv [x]), (X 1, F' "f'" [x])]
         notShared x = [(X 2, F Inv [x])]
         p           = [(X' 4, X 3)] ++ shared (X 3) ++ notShared (X' 4)
-                            :: AGUnifProb AG String Int Int
+                            :: FOUnifProb AG String Int Int
         (unzip -> ([sortBy (compare `on` fst) -> p'], (all (==0) -> True)))
             = runStateT (agUnifN p) 0
      in p'
@@ -1835,7 +1606,7 @@ test_agUnifN_VarRep_3 =
     let notShared  x = [(X 0, F  Inv  [x])]
         notShared' x = [(X 1, F' "f'" [x])]
         p            = [(X 2, X 3)] ++ notShared (X 2) ++ notShared' (X 3)
-                            :: AGUnifProb AG String Int Int
+                            :: FOUnifProb AG String Int Int
         (unzip -> ([sortBy (compare `on` fst) -> p'], (all (==0) -> True)))
             = runStateT (agUnifN p) 0
      in p'
@@ -1846,7 +1617,7 @@ test_agUnifN_VarRep_3' =
     let notShared  x = [(X 0, F  Inv  [x])]
         notShared' x = [(X 1, F' "f'" [x])]
         p            = [(X 3, X 2)] ++ notShared (X 2) ++ notShared' (X 3)
-                            :: AGUnifProb AG String Int Int
+                            :: FOUnifProb AG String Int Int
         (unzip -> ([sortBy (compare `on` fst) -> p'], (all (==0) -> True)))
             = runStateT (agUnifN p) 0
      in p'
@@ -1857,7 +1628,7 @@ test_agUnifN_VarRep_3'' =
     let notShared  x = [(X 0, F  Inv  [x])]
         notShared' x = [(X 1, F' "f'" [x])]
         p            = [(X 2, X' 3)] ++ notShared (X 2) ++ notShared' (X' 3)
-                            :: AGUnifProb AG String Int Int
+                            :: FOUnifProb AG String Int Int
         (unzip -> ([sortBy (compare `on` fst) -> p'], (all (==0) -> True)))
             = runStateT (agUnifN p) 0
      in p'
@@ -1868,7 +1639,7 @@ test_agUnifN_VarRep_3''' =
     let notShared  x = [(X 0, F  Inv  [x])]
         notShared' x = [(X 1, F' "f'" [x])]
         p            = [(X' 2, X 3)] ++ notShared (X' 2) ++ notShared' (X 3)
-                            :: AGUnifProb AG String Int Int
+                            :: FOUnifProb AG String Int Int
         (unzip -> ([sortBy (compare `on` fst) -> p'], (all (==0) -> True)))
             = runStateT (agUnifN p) 0
      in p'
@@ -1879,7 +1650,7 @@ test_agUnifN_VarRep_4 =
     let shared  x = [(X 0, F Inv [x]), (X 1, F' "f'" [x])]
         shared' x = [(X 2, F' "f'" [x]), (X 3, F Inv [x])]
         p         = [(X 4, X 5)] ++ shared (X 4) ++ shared' (X 5)
-                            :: AGUnifProb AG String Int Int
+                            :: FOUnifProb AG String Int Int
         (unzip -> ([sortBy (compare `on` fst) -> p'], (all (==0) -> True)))
             = runStateT (agUnifN p) 0
      in p'
@@ -1890,7 +1661,7 @@ test_agUnifN_VarRep_4' =
     let shared  x = [(X 0, F Inv [x]), (X 1, F' "f'" [x])]
         shared' x = [(X 2, F' "f'" [x]), (X 3, F Inv [x])]
         p         = [(X 5, X 4)] ++ shared (X 4) ++ shared' (X 5)
-                            :: AGUnifProb AG String Int Int
+                            :: FOUnifProb AG String Int Int
         (unzip -> ([sortBy (compare `on` fst) -> p'], (all (==0) -> True)))
             = runStateT (agUnifN p) 0
      in p'
@@ -1901,7 +1672,7 @@ test_agUnifN_VarRep_4'' =
     let shared  x = [(X 0, F Inv [x]), (X 1, F' "f'" [x])]
         shared' x = [(X 2, F' "f'" [x]), (X 3, F Inv [x])]
         p         = [(X 4, X' 5)] ++ shared (X 4) ++ shared' (X' 5)
-                            :: AGUnifProb AG String Int Int
+                            :: FOUnifProb AG String Int Int
         (unzip -> ([sortBy (compare `on` fst) -> p'], (all (==0) -> True)))
             = runStateT (agUnifN p) 0
      in p'
@@ -1912,7 +1683,7 @@ test_agUnifN_VarRep_4''' =
     let shared  x = [(X 0, F Inv [x]), (X 1, F' "f'" [x])]
         shared' x = [(X 2, F' "f'" [x]), (X 3, F Inv [x])]
         p         = [(X' 4, X 5)] ++ shared (X' 4) ++ shared' (X 5)
-                            :: AGUnifProb AG String Int Int
+                            :: FOUnifProb AG String Int Int
         (unzip -> ([sortBy (compare `on` fst) -> p'], (all (==0) -> True)))
             = runStateT (agUnifN p) 0
      in p'
@@ -1921,7 +1692,7 @@ test_agUnifN_VarRep_4''' =
         
 test_agUnifN_VarRep_5 =
     let p = [(X 0, X 1), (X 2, F Inv [X 0])]
-                :: AGUnifProb AG String Int Int
+                :: FOUnifProb AG String Int Int
         (unzip -> ([sortBy (compare `on` fst) -> p'], (all (==0) -> True)))
             = runStateT (agUnifN p) 0
      in p'
@@ -1934,7 +1705,7 @@ test_agUnifN_VarRep_5 =
 test_agUnifN_1 =
     let p = [(F Mul [F' "f" [X 0], F' "f" [X 1]]
              ,F Mul [F' "f" [F' "c_0" []], F' "f" [F' "c_1" []]])]
-                :: AGUnifProb AG String () Int
+                :: FOUnifProb AG String () Int
         w   = allVars p
 
         {-
@@ -1952,7 +1723,7 @@ test_agUnifN_1 =
 test_agUnifN_1B =
     let p = [(F Mul [F' "f" [F' "c_1" []], F' "f" [F' "c_1" []]]
              ,F Mul [F' "f" [F' "c_0" []], F' "f" [F' "c_1" []]])]
-                :: AGUnifProb AG String () Int
+                :: FOUnifProb AG String () Int
         w   = allVars p
 
         {-
@@ -1969,7 +1740,7 @@ test_agUnifN_1B =
 test_agUnifN_2 =
     let p = [(F Mul [F' "f" [X 0], F Mul [F' "f" [X 1], F' "f" [X 2]]]
              ,F Mul [F' "f" [F' "c_0" []], F Mul [F' "f" [F' "c_1" []], F' "f" [F' "c_2" []]]])]
-                :: AGUnifProb AG String () Int
+                :: FOUnifProb AG String () Int
         w   = allVars p
 
         {-
@@ -1991,7 +1762,7 @@ test_agUnifN_2 =
 test_agUnifN_3 =
     let p = [(F Mul [F' "f" [X 0], F Mul [F' "f" [X 1], F Mul [F' "f" [X 2], F' "f" [X 3]]]]
              ,F Mul [F' "f" [F' "c_0" []], F Mul [F' "f" [F' "c_1" []], F Mul [F' "f" [F' "c_2" []], F' "f" [F' "c_3" []]]]])]
-                :: AGUnifProb AG String () Int
+                :: FOUnifProb AG String () Int
         w   = allVars p
 
         {-
@@ -2031,7 +1802,7 @@ test_agUnifN_3 =
 test_agUnifN_4 =
     let p = [(X 0
              ,F' "f" [F Mul [X 0, X 1]]
-            )] :: AGUnifProb AG String () Int
+            )] :: FOUnifProb AG String () Int
      in runStateT (agUnifN' 30 p S.empty) (0,[])
 {-            =?=
 -}
@@ -2049,7 +1820,7 @@ test_agUnifN_5 =
         p = [(F Mul [x, F Mul [F' "f" [y], F Inv [F' "f" [x1]]]],F Unit [])
             ,(F Mul [y, F Mul [F' "f" [z], F Inv [F' "f" [x2]]]],F Unit [])
             ,(F Mul [z, F Mul [F' "f" [x], F Inv [F' "f" [x3]]]],F Unit [])
-            ] :: AGUnifProb AG String () Int
+            ] :: FOUnifProb AG String () Int
      in runStateT (agUnifN' 1000 p S.empty) (0,[])
      
 test_higherOrderEquatonalPreunification_1 =
