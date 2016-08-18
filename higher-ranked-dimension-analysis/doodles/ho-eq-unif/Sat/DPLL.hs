@@ -1,12 +1,24 @@
 {-# LANGUAGE ViewPatterns #-}
 
 module Sat.DPLL (
+    Exp(..),
+    toCNF,
+    dp
 ) where
 
+import Data.Function
+    ( on )
+import Data.List
+    ( minimumBy )
+import Data.Map
+    ( Map )
 import Data.Maybe
     ( mapMaybe )
 import Data.Set
-    ( Set, (\\), empty, insert, intersection, singleton, size, toList, union )
+    ( Set, (\\), delete, empty, findMin, insert, intersection, member, singleton
+    , size, toList, union
+    )
+import qualified Data.Set as Set
 
 -- | Data.Set | ----------------------------------------------------------------
 
@@ -28,6 +40,21 @@ data Exp atom
 type Clause atom = (Set atom, Set atom)
 type CNF    atom = [Clause atom]
 
+posLit :: atom -> Clause atom
+posLit a = (singleton a, empty)
+
+negLit :: atom -> Clause atom
+negLit a = (empty, singleton a)
+
+isConsistent :: CNF atom -> Bool
+isConsistent = null
+
+isInconsistent :: CNF atom -> Bool
+isInconsistent = any (\(pos,neg) -> Set.null pos && Set.null neg)
+
+clauseSize :: Clause atom -> Int
+clauseSize (pos, neg) = size pos + size neg
+
 unionClause :: Ord atom => Clause atom -> Clause atom -> Clause atom
 unionClause (pos1, neg1) (pos2, neg2) = (pos1 `union` pos2, neg1 `union` neg2)
 
@@ -37,7 +64,7 @@ toCNF (Val  True ) = []
 toCNF (Val  False) = [(empty, empty)]
 toCNF (Not  t    ) = negCNF (toCNF t)
 toCNF (And  t1 t2) = toCNF t1 ++ toCNF t2
-toCNF (Or   t1 t2) = [ t1' `unionClause` t2' | t1' <- toCNF t1, t2' <- toCNF t2 ]
+toCNF (Or   t1 t2) = [ unionClause t1' t2' | t1' <- toCNF t1, t2' <- toCNF t2 ]
 
 negCNF :: Ord atom => CNF atom -> CNF atom
 negCNF []        = [(empty, empty)]
@@ -47,7 +74,7 @@ negCNF (t1 : ts) =
             ++
         [ (t1' `insert` pos, neg) | t1' <- toList (snd t1), (pos, neg) <- ts' ]
 
--- | David-Putney-Logemann-Loveland | ------------------------------------------
+-- | Davis-Putney | ------------------------------------------------------------
 
 allLiterals :: Ord atom => CNF atom -> (Set atom, Set atom)
 allLiterals = foldr unionClause (empty, empty)
@@ -62,6 +89,18 @@ oneLiteralClauses = foldr op (empty, empty)
     op (x@(size -> 1),   size -> 0 ) (pos, neg) = (x `union` pos, neg)
     op (   size -> 0, x@(size -> 1)) (pos, neg) = (pos, x `union` neg)
     op _                             (pos, neg) = (pos, neg)
+    
+partitionClauses
+    :: Ord atom
+    => atom
+    -> CNF atom
+    -> (CNF atom, CNF atom, CNF atom)
+partitionClauses a []
+    = ([], [], [])
+partitionClauses a (c@(pos, neg) : cnf@(partitionClauses a -> (as, bs, rs)))
+    | a `member` pos = ((delete a pos, neg) : as, bs, rs)
+    | a `member` neg = (as, (pos, delete a neg) : bs, rs)
+    | otherwise      = (as, bs, c : rs)
 
 eliminateOneLiteralClauses :: Ord atom => CNF atom -> CNF atom
 eliminateOneLiteralClauses cnf =
@@ -84,6 +123,73 @@ positiveNegativeRule cnf =
 
         eliminate (pos, neg) = pos `overlaps` posOnly || neg `overlaps` negOnly
 
-     in filter eliminate cnf
+     in filter (not . eliminate) cnf
 
 eliminateAtom :: Ord atom => atom -> CNF atom -> CNF atom
+eliminateAtom a cnf =
+    let (as, bs, rs) = partitionClauses a cnf
+     in [ unionClause a b | a <- as, b <- bs ] ++ rs
+
+selectAtomToEliminate :: Ord atom => CNF atom -> atom
+selectAtomToEliminate cnf =
+    let (pos, neg) = minimumBy (compare `on` clauseSize) cnf
+     in findMin (pos `union` neg)
+
+dp :: Ord atom => CNF atom -> Bool
+dp cnf1 =
+    let cnf2 = eliminateOneLiteralClauses cnf1
+     in if isInconsistent cnf2 then
+            False
+        else
+            let cnf3 = positiveNegativeRule cnf2
+             in if isConsistent cnf3 then
+                    True
+                else
+                    dp (eliminateAtom (selectAtomToEliminate cnf3) cnf3)
+
+-- | Davis-Putney-Logemann-Loveland | ------------------------------------------
+
+dpll :: Ord atom => CNF atom -> Bool
+dpll cnf1 =
+    let cnf2 = eliminateOneLiteralClauses cnf1
+     in if isInconsistent cnf2 then
+            False
+        else
+            let cnf3 = positiveNegativeRule cnf2
+             in if isConsistent cnf3 then
+                    True
+                else
+                    let p = selectAtomToEliminate cnf3
+                     in dpll (posLit p : cnf3) || dpll (negLit p : cnf3)
+
+-- | EXAMPLES | ----------------------------------------------------------------
+
+example1 = -- inconsistent
+    [(Set.fromList["p","q"],Set.fromList["r"])
+    ,(Set.fromList["p"],Set.fromList["q"])
+    ,(Set.fromList[],Set.fromList["p"])
+    ,(Set.fromList["r"],Set.fromList[])
+    ]
+
+example2 = -- consistent
+    [(Set.fromList ["p","q"],empty)
+    ,(empty,Set.fromList ["q"])
+    ,(Set.fromList ["q"],Set.fromList ["q","r"])
+    ]
+
+example3 = -- consistent
+    [(Set.fromList["p"],Set.fromList["q"])
+    ,(Set.fromList["q"],Set.fromList["p"])
+    ,(Set.fromList["q"],Set.fromList["r"])
+    ,(Set.fromList[],Set.fromList["q","r"])
+    ]
+
+example4 = -- inconsistent
+    [(Set.fromList["p","r"],Set.fromList[])
+    ,(Set.fromList["p"],Set.fromList["s"])
+    ,(Set.fromList["s"],Set.fromList["p"])
+    ,(Set.fromList[],Set.fromList["p","r"])
+    ,(Set.fromList["s"],Set.fromList["r"])
+    ,(Set.fromList["r"],Set.fromList["s"])
+    ]
+
