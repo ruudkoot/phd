@@ -1,9 +1,11 @@
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE ViewPatterns  #-}
 
 module Sat.DPLL (
     Exp(..),
     toCNF,
-    dp
+    dp,
+    dpll
 ) where
 
 import Data.Function
@@ -37,8 +39,9 @@ data Exp atom
 
 -- | Conjunctive normal form | -------------------------------------------------
 
-type Clause atom = (Set atom, Set atom)
-type CNF    atom = [Clause atom]
+type Clause    atom = (Set atom, Set atom)
+type CNF       atom = [Clause atom]
+type Valuation atom = [(atom, Bool)]
 
 posLit :: atom -> Clause atom
 posLit a = (singleton a, empty)
@@ -102,7 +105,7 @@ partitionClauses a (c@(pos, neg) : cnf@(partitionClauses a -> (as, bs, rs)))
     | a `member` neg = (as, (pos, delete a neg) : bs, rs)
     | otherwise      = (as, bs, c : rs)
 
-eliminateOneLiteralClauses :: Ord atom => CNF atom -> CNF atom
+eliminateOneLiteralClauses :: Ord atom => CNF atom -> (CNF atom, Valuation atom)
 eliminateOneLiteralClauses cnf =
     let (posOLC, negOLC) = oneLiteralClauses cnf
 
@@ -113,9 +116,11 @@ eliminateOneLiteralClauses cnf =
                 = Just (pos \\ negOLC, neg \\ posOLC)
 
      in if posOLC `overlaps` negOLC then
-            [(empty, empty)]
+            ([(empty, empty)], [])
         else
-            mapMaybe eliminate cnf
+            ( mapMaybe eliminate cnf
+            , map (, True) (toList posOLC) ++ map (, False) (toList negOLC)
+            )
 
 positiveNegativeRule :: Ord atom => CNF atom -> CNF atom
 positiveNegativeRule cnf =
@@ -137,7 +142,7 @@ selectAtomToEliminate cnf =
 
 dp :: Ord atom => CNF atom -> Bool
 dp cnf1 =
-    let cnf2 = eliminateOneLiteralClauses cnf1
+    let (cnf2, _) = eliminateOneLiteralClauses cnf1
      in if isInconsistent cnf2 then
             False
         else
@@ -149,20 +154,27 @@ dp cnf1 =
 
 -- | Davis-Putney-Logemann-Loveland | ------------------------------------------
 
-dpll :: Ord atom => CNF atom -> Bool
+dpll :: Ord atom => CNF atom -> [Valuation atom]
 dpll cnf1 =
-    let cnf2 = eliminateOneLiteralClauses cnf1
+    let (cnf2, olc) = eliminateOneLiteralClauses cnf1
      in if isInconsistent cnf2 then
-            False
+            []
         else
             let cnf3 = positiveNegativeRule cnf2
              in if isConsistent cnf3 then
-                    True
+                    [olc]
                 else
                     let p = selectAtomToEliminate cnf3
-                     in dpll (posLit p : cnf3) || dpll (negLit p : cnf3)
+                     in map (olc ++) (dpll (posLit p : cnf3))
+                            ++
+                        map (olc ++) (dpll (negLit p : cnf3))
 
 -- | EXAMPLES | ----------------------------------------------------------------
+
+example0 =
+    [(Set.fromList["p"],Set.fromList[])
+    ,(Set.fromList[],Set.fromList["q"])
+    ]
 
 example1 = -- inconsistent
     [(Set.fromList["p","q"],Set.fromList["r"])
