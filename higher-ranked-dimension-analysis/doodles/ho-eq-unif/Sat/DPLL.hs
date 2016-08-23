@@ -77,7 +77,7 @@ negCNF (t1 : ts) =
             ++
         [ (t1' `insert` pos, neg) | t1' <- toList (snd t1), (pos, neg) <- ts' ]
 
--- | Davis-Putney | ------------------------------------------------------------
+-- | Davis-Putney-Logemann-Loveland | ------------------------------------------
 
 allLiterals :: Ord atom => CNF atom -> (Set atom, Set atom)
 allLiterals = foldr unionClause (empty, empty)
@@ -104,6 +104,9 @@ partitionClauses a (c@(pos, neg) : cnf@(partitionClauses a -> (as, bs, rs)))
     | a `member` pos = ((delete a pos, neg) : as, bs, rs)
     | a `member` neg = (as, (pos, delete a neg) : bs, rs)
     | otherwise      = (as, bs, c : rs)
+    
+toValuation :: Ord atom => Set atom -> Set atom -> Valuation atom
+toValuation pos neg = map (, True) (toList pos) ++ map (, False) (toList neg)
 
 eliminateOneLiteralClauses :: Ord atom => CNF atom -> (CNF atom, Valuation atom)
 eliminateOneLiteralClauses cnf =
@@ -118,17 +121,15 @@ eliminateOneLiteralClauses cnf =
      in if posOLC `overlaps` negOLC then
             ([(empty, empty)], [])
         else
-            ( mapMaybe eliminate cnf
-            , map (, True) (toList posOLC) ++ map (, False) (toList negOLC)
-            )
+            (mapMaybe eliminate cnf, toValuation posOLC negOLC)
 
-positiveNegativeRule :: Ord atom => CNF atom -> CNF atom
+positiveNegativeRule :: Ord atom => CNF atom -> (CNF atom, Valuation atom)
 positiveNegativeRule cnf =
     let (posOnly, negOnly) = singlePolarityLiterals cnf
 
         eliminate (pos, neg) = pos `overlaps` posOnly || neg `overlaps` negOnly
 
-     in filter (not . eliminate) cnf
+     in (filter (not . eliminate) cnf, toValuation posOnly negOnly)
 
 eliminateAtom :: Ord atom => atom -> CNF atom -> CNF atom
 eliminateAtom a cnf =
@@ -146,13 +147,11 @@ dp cnf1 =
      in if isInconsistent cnf2 then
             False
         else
-            let cnf3 = positiveNegativeRule cnf2
+            let (cnf3, _) = positiveNegativeRule cnf2
              in if isConsistent cnf3 then
                     True
                 else
                     dp (eliminateAtom (selectAtomToEliminate cnf3) cnf3)
-
--- | Davis-Putney-Logemann-Loveland | ------------------------------------------
 
 dpll :: Ord atom => CNF atom -> [Valuation atom]
 dpll cnf1 =
@@ -160,48 +159,11 @@ dpll cnf1 =
      in if isInconsistent cnf2 then
             []
         else
-            let cnf3 = positiveNegativeRule cnf2
+            let (cnf3, pnr) = positiveNegativeRule cnf2
              in if isConsistent cnf3 then
-                    [olc]
+                    [pnr ++ olc]
                 else
                     let p = selectAtomToEliminate cnf3
-                     in map (olc ++) (dpll (posLit p : cnf3))
+                     in map ((pnr ++ olc) ++) (dpll (posLit p : cnf3))
                             ++
-                        map (olc ++) (dpll (negLit p : cnf3))
-
--- | EXAMPLES | ----------------------------------------------------------------
-
-example0 =
-    [(Set.fromList["p"],Set.fromList[])
-    ,(Set.fromList[],Set.fromList["q"])
-    ]
-
-example1 = -- inconsistent
-    [(Set.fromList["p","q"],Set.fromList["r"])
-    ,(Set.fromList["p"],Set.fromList["q"])
-    ,(Set.fromList[],Set.fromList["p"])
-    ,(Set.fromList["r"],Set.fromList[])
-    ]
-
-example2 = -- consistent
-    [(Set.fromList ["p","q"],empty)
-    ,(empty,Set.fromList ["q"])
-    ,(Set.fromList ["q"],Set.fromList ["q","r"])
-    ]
-
-example3 = -- consistent
-    [(Set.fromList["p"],Set.fromList["q"])
-    ,(Set.fromList["q"],Set.fromList["p"])
-    ,(Set.fromList["q"],Set.fromList["r"])
-    ,(Set.fromList[],Set.fromList["q","r"])
-    ]
-
-example4 = -- inconsistent
-    [(Set.fromList["p","r"],Set.fromList[])
-    ,(Set.fromList["p"],Set.fromList["s"])
-    ,(Set.fromList["s"],Set.fromList["p"])
-    ,(Set.fromList[],Set.fromList["p","r"])
-    ,(Set.fromList["s"],Set.fromList["r"])
-    ,(Set.fromList["r"],Set.fromList["s"])
-    ]
-
+                        map ((pnr ++ olc) ++) (dpll (negLit p : cnf3))
