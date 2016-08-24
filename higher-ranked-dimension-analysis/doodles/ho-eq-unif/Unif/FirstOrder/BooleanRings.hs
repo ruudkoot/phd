@@ -8,52 +8,109 @@
 {-# LANGUAGE ViewPatterns           #-}
 
 module Unif.FirstOrder.BooleanRings (
-    BR(..)
+    BA(..),
+    BAExp,
+    BASubst,
+    baUnif1,
+    -- TODO: baUnifN,
+    BR(..),
+    BRExp,
+    BRSubst,
+    brUnif1
+    -- TODO: brUnifN
 ) where
 
-import Data.Map
+import Unif.FirstOrder.Types
+import qualified Sat.DPLL as DPLL
+
+-- | Data.List | ---------------------------------------------------------------
+
+lookupWithDefault :: Eq k => v -> k -> [(k, v)] -> v
+lookupWithDefault def k xs = maybe def id (lookup k xs)
+
+-- | Unification in Boolean algebras & rings using Löwenheim's method | --------
+
+-- The heavy lifting is done by the SAT solver; DPLL is included. Non-clausal
+-- satisfiability testing (e.g. Van Gelder 1984) may be more efficient than DPLL
+-- if we don't keep intermediate expressions in CNF. (At least asymptotically,
+-- but practically?)
+
+data BA
+    = And
+    | Or
+    | Not
+    | TRUE
+    | FALSE
+  deriving (Eq, Bounded, Enum, Ord, Show)
 
 data BR
-    = Add
-    | Mul
-    | Inv
-    | Zero
-    | Unit
+    = Add   -- xor
+    | Mul   -- and
+    | Inv   -- x = -x
+    | Zero  -- false
+    | One   -- true
   deriving (Eq, Bounded, Enum, Ord, Show)
-  -- FIXME: arbitrary Ord for Set
 
+type BAExp = T BA () Int Int
+type BRExp = T BR () Int Int
 
+br2ba :: BRExp -> BAExp
+br2ba (X x) = (X x)
+br2ba (C c) = (C c)
+br2ba (F Add [br2ba -> p', br2ba -> q'])
+    = F And [F Or [p', q'], F Or [F Not [p'], F Not [q']]]
+br2ba (F Mul  [p, q]      ) = F And [br2ba p, br2ba q]
+br2ba (F Inv  [p]         ) = br2ba p
+br2ba (F Zero []          ) = F FALSE []
+br2ba (F One  []          ) = F TRUE  []
 
+ba2exp :: BAExp -> DPLL.Exp Int
+ba2exp (X x           ) = DPLL.Atom x
+ba2exp (F And   [p, q]) = DPLL.And (ba2exp p) (ba2exp q)
+ba2exp (F Or    [p, q]) = DPLL.Or  (ba2exp p) (ba2exp q)
+ba2exp (F Not   [p]   ) = DPLL.Not (ba2exp p)
+ba2exp (F TRUE  []    ) = DPLL.Val True
+ba2exp (F FALSE []    ) = DPLL.Val False
 
+type BASubst = [BAExp]
+type BRSubst = [BRExp]
 
+valuationToVector :: Int -> [(Int,Bool)] -> [Bool]
+valuationToVector n xs = map (\i -> lookupWithDefault True i xs) [0 .. n - 1]
 
+bool2ba :: Bool -> BAExp
+bool2ba True  = F TRUE  []
+bool2ba False = F FALSE []
 
+bool2br :: Bool -> BRExp
+bool2br True  = F One  []
+bool2br False = F Zero []
 
+-- * Solve the equation f(X) = 0 in BA.
+baUnif1 :: BAExp -> Maybe BASubst
+baUnif1 t =
+    let numVars = numX t
+     in case DPLL.dpll (DPLL.toCNF (ba2exp t)) of
+            []        -> Nothing
+            (val : _) ->
+                let b = valuationToVector numVars val
 
--- | Non-clausal satisfiability testing (Van Gelder 1984) | --------------------
+                    f :: Int -> BAExp
+                    f i = F Or [ F And [X i, F Not [t]     ]
+                               , F And [bool2ba (b !! i), t] ]
 
-data BoolExp x
-    = Val Bool
-    | Lit x
-    | BoolExp x :&: BoolExp x
-    | BoolExp x :|: BoolExp x
-    | Not (BoolExp x)
-  deriving Show
+                 in Just $ map f [0 .. numVars - 1]
 
-data Polarity = Pos | Neg
-  deriving Show
+-- * Solve the equation f(X) = 0 in BR.
+brUnif1 :: BRExp -> Maybe BRSubst
+brUnif1 t =
+    let numVars = numX t
+     in case DPLL.dpll (DPLL.toCNF (ba2exp (br2ba t))) of
+            []        -> Nothing
+            (val : _) ->
+                let b = valuationToVector numVars val
 
-data SuccinctAndOrTree x
-    = VAL Bool
-    | LIT x
-    | AND (Map x Polarity) [SuccinctAndOrTree x]
-    | OR  (Map x Polarity) [SuccinctAndOrTree x]
-  deriving Show
+                    f :: Int -> BRExp
+                    f i = F Add [X i, F Mul [t, F Add [X i, bool2br (b !! i)]]]
 
-{-
-succinct :: BoolExp x -> SuccinctAndOrTree x
-succinct (Val t)     = VAL t
-succinct (Lit x)     = LIT x
-succinct (v1 :&: v2) = 
-    let 
--}
+                 in Just $ map f [0 .. numVars - 1]
