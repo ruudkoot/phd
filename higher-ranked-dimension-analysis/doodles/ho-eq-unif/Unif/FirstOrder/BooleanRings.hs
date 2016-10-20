@@ -35,6 +35,10 @@ lookupWithDefault def k xs = maybe def id (lookup k xs)
 -- if we don't keep intermediate expressions in CNF. (At least asymptotically,
 -- but practically?)
 
+-- TODO: Unification in arbitrary (as opposed to free) Boolean rings. See
+--       Martin & Nipkow, Section 6. (Needs Knuth-Bendix to compute an
+--       orthogonal basis efficiently.)
+
 data BA
     = And
     | Or
@@ -53,6 +57,15 @@ data BR
 
 type BAExp = T BA () Int Int
 type BRExp = T BR () Int Int
+
+showBRExp :: BRExp -> String
+showBRExp (X x          ) = "x" ++ show x
+showBRExp (C c          ) = "C" ++ show c
+showBRExp (F Add  [p, q]) = "(" ++ showBRExp p ++ "+" ++ showBRExp q ++ ")"
+showBRExp (F Mul  [p, q]) = "(" ++ showBRExp p ++ "+" ++ showBRExp q ++ ")"
+showBRExp (F Inv  [p]   ) = "~(" ++ showBRExp p ++ ")"
+showBRExp (F Zero []    ) = "0"
+showBRExp (F One  []    ) = "1"
 
 br2ba :: BRExp -> BAExp
 br2ba (X x) = (X x)
@@ -101,16 +114,25 @@ baUnif1 t =
 
                  in Just $ map f [0 .. numVars - 1]
 
+cToBase :: Int -> BRExp -> BRExp
+cToBase _ (X x) = X x
+cToBase c (C c')
+    | c == c'   = F One  []
+    | otherwise = F Zero []
+cToBase c (F f ts) = F f (map (cToBase c) ts)
+
 -- * Solve the equation f(X) = 0 in BR.
-brUnif1 :: BRExp -> Maybe BRSubst
-brUnif1 t =
-    let numVars = numX t
-     in case DPLL.dpll (DPLL.toCNF (ba2exp (br2ba t))) of
+brUnif1 :: Int -> BRExp -> Maybe BRSubst
+brUnif1 c t =
+    let t'      = cToBase c t
+        numVars = numX t
+        numBase = numC t
+     in case DPLL.dpll (DPLL.toCNF (ba2exp (br2ba t'))) of
             []        -> Nothing
             (val : _) ->
                 let b = valuationToVector numVars val
 
                     f :: Int -> BRExp
-                    f i = F Add [X i, F Mul [t, F Add [X i, bool2br (b !! i)]]]
+                    f i = F Add [X i, F Mul [t', F Add [X i, bool2br (b !! i)]]]
 
                  in Just $ map f [0 .. numVars - 1]

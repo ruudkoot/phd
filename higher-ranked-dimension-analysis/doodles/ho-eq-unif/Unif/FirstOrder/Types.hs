@@ -51,7 +51,7 @@ vars' (F' _ ts) = concatMap vars' ts
 numX :: T f f' c Int -> Int
 numX (X  x   ) = x + 1
 numX (X' _   ) = 0
-numX (C  _   ) = error "numX: C" -- 0
+numX (C  _   ) = 0 -- error "numX: C"
 numX (F  _ ts) = maximum' 0 (map numX ts)
 numX (F' _ ts) = maximum' 0 (map numX ts)
 
