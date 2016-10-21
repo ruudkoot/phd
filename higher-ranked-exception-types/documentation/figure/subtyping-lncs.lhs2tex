@@ -1,0 +1,56 @@
+%\begin{figure}[h]
+    \begin{gather*}
+        \Rule{S-Refl}
+             {}
+             {\JudgeSubTy{\KiEnv}{\ExnTy}{\ExnTy}}
+        \quad
+        \Rule{S-Trans}
+             {\JudgeSubTy{\KiEnv}{\ExnTy_1}{\ExnTy_2}
+              \quad
+              \JudgeSubTy{\KiEnv}{\ExnTy_2}{\ExnTy_3}
+             }
+             {\JudgeSubTy{\KiEnv}{\ExnTy_1}{\ExnTy_3}}
+        \\[1.5ex]
+        \Rule{S-Forall}
+             {\JudgeSubTy{\KiEnv, \ExnVar :: \Kind}{\ExnTy_1}{\ExnTy_2}}
+             {\JudgeSubTy{\KiEnv}
+                         {\ExnForall{\ExnVar :: \Kind}{\ExnTy_1}}
+                         {\ExnForall{\ExnVar :: \Kind}{\ExnTy_2}}
+             }
+        \quad
+        \Rule{S-List}
+             {\JudgeSubTy{\KiEnv}{\ExnTy}{\ExnTy^\prime}
+                \quad
+              \JudgeSubExn{\KiEnv}{\Exn}{\Exn^\prime}
+             }
+             {\JudgeSubTy{\KiEnv}
+                         {\ExnTyList{\ExnTy}{\Exn}}
+                         {\ExnTyList{\ExnTy^\prime}{\Exn^\prime}}
+             }
+        \\[1.5ex]
+        %\Rule{S-Bool}
+        %     {}
+        %     {\JudgeSubTy{\KiEnv}{\ExnBool}{\ExnBool}}
+        %\quad
+        %\Rule{S-Int}
+        %     {}
+        %     {\JudgeSubTy{\KiEnv}{\ExnInt}{\ExnInt}}
+        %\\[1.5ex]
+        \Rule{S-Arr}
+             {\begin{gathered}
+              \JudgeSubTy{\KiEnv}{\ExnTy_1^\prime}{\ExnTy_1}
+                \ \ 
+              \JudgeSubExn{\KiEnv}{\Exn_1^\prime}{\Exn_1}
+                \ \ 
+              \JudgeSubTy{\KiEnv}{\ExnTy_2}{\ExnTy_2^\prime}
+                \ \ 
+              \JudgeSubExn{\KiEnv}{\Exn_2}{\Exn_2^\prime}
+              \end{gathered}
+             }
+             {\JudgeSubTy{\KiEnv}
+                         {\ExnTyArr{\ExnTy_1}{\Exn_1}{\ExnTy_2}{\Exn_2}}
+                         {\ExnTyArr{\ExnTy_1^\prime}{\Exn_1^\prime}{\ExnTy_2^\prime}{\Exn_2^\prime}}
+             }
+    \end{gather*}
+%\caption{Exception types: subtyping relation ($\JudgeSubTy{\KiEnv}{\ExnTy_1}{\ExnTy_2}$)}\label{figure-subtyping}
+%\end{figure}

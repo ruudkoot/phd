@@ -1,0 +1,55 @@
+\section{Related work}\label{section-related-work}
+
+\subsection{Higher-ranked polymorphism in type-and-effect systems}
+
+\paragraph{Effect polymorphism} For plain type systems, Hindley--Milner's |let|-bound polymorphism generally provides a good compromise between expressiveness of the type system and complexity of the inference algorithm \cite{Hindley1969,Milner78atheory,Damas:1982:PTF:582153.582176}.
+Type systems were extended with effects---including |let|-bound effect-polymorphism---by \cite{Lucassen:1988:PES:73560.73564,Jouvelot:1991:ART:99583.99623}; and \cite{JFP:1457464,Talpin:1994:TED:191349.184660}.
+In type-and-effect systems it has long been recognized that $\mathbf{fix}$-bound polymorphism (polymorphic recursion) \emph{in the effects} is often beneficial or even necessary for achieving precise analysis results. For example, in type-and-effect systems for regions \cite{Tofte:1994:ITC:174675.177855}, dimensions \cite{Kennedy:1994:DT:645390.651419,Rittri:1994:STT:194679.194683,Rittri:1995:DIU:224164.224197}, binding times \cite{Dussart:1995:PRS:647163.717680}, and exceptions \cite{Glynn:2002:EAN:581478.581488,Koot:2015:TEA:2678015.2682542}.
+
+Inferring principal types in a type system with polymorphic recursion is equivalent to solving the undecidable semi-unification problem \cite{Mycroft1984,Kfoury:1990:USP:100216.100279,Kfoury:1993:TRP:169701.169687,Henglein:1993:TIP:169701.169692}.
+When restricted to polymorphic recursion in the effects, the problem often becomes decidable again. In \cite{Tofte:1994:ITC:174675.177855} this is a conjecture based on empirical observation. \cite{Rittri:1995:DIU:224164.224197} gives a semi-unification procedure based on the general semi-unification semi-algorithm by \cite{Baaz93APTCC} and proves it terminates in the special case of semi-unification in Abelian groups. \cite{Dussart:1995:PRS:647163.717680} use a constraint-based algorithm. They show that all variables that do not occur free in the context or type can be eliminated from the constraint set by a constraint reduction step during each Kleene--Mycroft iteration. As at most $n^2$ subeffecting constraints can be formed over $n$ free variables, the whole procedure must terminate. By not restarting the Kleene--Mycroft iteration from bottom, their algorithm runs in polynomial time---even in the presence of nested fixpoints.
+
+The extension to polymorphic effect-abstraction ($\lambda$-bound, higher-ranked effect polymorphism) remained less well-studied, possibly because it is of limited use without the simultaneous introduction of effect operators---in contrast to the situation of higher-ranked polymorphism in plain type systems.
+
+\paragraph{Effect operators} \cite{KennedyThesis} presents a type system that ensures the dimensional consistency of an ML-like language extended with units of measure ($\mathrm{ML}_\delta$). This language has predicative prenex dimension polymorphism. Kennedy gives an Algorithm~$\mathcal{W}$-like type inference procedure that uses equational unification to deal with the Abelian group (\textsc{ag}) structure of dimension expressions. Also described are two explicitly typed variants of the language: a System F-like language with higher-ranked dimension polymorphism ($\Lambda_\delta$), and a System~$\mathrm{F}_\omega$-like language that extends $\Lambda_\delta$ with dimension operators ($\Lambda_{\delta\omega}$). \cite{KennedyThesis} notes that this language can type strictly more programs than the language without dimension operators:
+    \begin{code}
+        twice       ::  forall F : DIM => DIM.
+                            (forall d : DIM. Real d -> Real (F d)) ->
+                                (forall d : DIM. Real d -> Real (F (F d)))
+        twice       =   LLAMBDA (F : DIM => DIM)
+                            (LAMBDA (f :: (forall d : DIM. Real d -> Real (F d)))
+                                (LLAMBDA (d : DIM) (LAMBDA (x :: Real d) (f (Angled (F d)) (f (Angled d) x)))))
+
+        square      ::  forall d : DIM. Real d -> Real (exp d 2)
+        square      =   LLAMBDA (d : DIM) (LAMBDA (x :: Real d) (exp x 2))
+
+        fourth      ::  forall d : DIM. Real d -> Real (exp d 4)
+        fourth      =   twice (Angled (LLAMBDA (d : DIM) (exp d 2))) square
+    \end{code}
+
+Without dimension operators the type of the higher-order function |twice| would not allow the application of the function |square| at the two distinct types |forall d : DIM. Real d -> Real (exp d 2)| and |forall d : DIM. Real (exp d 2) -> Real (exp d 4)| when invoked from the function |fourth|.
+
+The language $\Lambda_{\delta\omega}$ bears a striking resemblance to the language in Section~\ref{section-exception-types}: the empty and singleton exception sets constants, and the exception set union operator have been replaced with a unit dimension, and dimension product and inverse operators---as dimensions have an \textsc{ag} structure, whereas exception sets have an \ACIone structure; in the dimension type system the annotation is placed only on the real number base type instead of on the compound types, and there is no effect. No type inference algorithm is given for this language, however.
+
+\cite{Faxen:1996:PPF:646912.710963} presents a type system for flow analysis that uses constrained type schemes in the style of \cite{Aiken:1993:TIC:165180.165188}, and has $\lambda$-bound polymorphism (but no type operators) in the style of System~F. To make the inference algorithm terminate for recursive programs the size of the name supply needs to be bounded, leading to imprecision. \cite{SmithWang} present a similar framework, but one that can be instantiated with variants of either $k$-\textsc{cfa} \cite{Shivers:1991:CAH:124950} or \textsc{cpa} \cite{Agesen:1995:CPA:646153.679533} to ensure termination.
+
+\cite{HoldermansHage} design a \SystemFw-like type system for flow analysis for a strict language that has both polymorphic abstraction and effect operators. Our type inference algorithm builds on their techniques. A key difference is that they work with a constraint-based type system and a constraint solver, while we replace these with reduction of terms in an algebraic $\lambda$-calculus. This difference expresses itself particularly in how the case of (polymorphic) recursion is handled. We believe our approach will scale more easily to analyses that are either not conservative extensions of the underlying type system, or require more expressive effects (see Section~\ref{section-future-research}).
+
+\subsection{$\LambdaUnion$-calculus}
+
+\cite{DBLP:conf/lics/Breazu-Tannen88a}, \cite{Okada1989}, and \cite{BREAZUTANNEN19913} prove that if a simply typed $\lambda$-calculus is extended with a many-sorted algebraic rewrite system $R$ (by introducing the symbols of the algebraic theory as higher-order constants in the $\lambda$-calculus), then the combined rewrite system $\beta\eta R$ is confluent and strongly normalizing if $R$ is confluent and strongly normalizing.
+
+\cite{Revesz:1992:LEL:131057.131060} introduced an untyped $\lambda$-calculus with applicative lists. A model is given by \cite{Durfee97amodel}. This calculus satisfies the equations
+    \begin{align}
+        \langle t_1, ..., t_n \rangle\ t^\prime &= \langle t_1\ t^\prime, ..., t_n\ t^\prime \rangle \tag{$\gamma_1$} \\
+        \lambda x. \langle t_1, ... t_n \rangle &= \langle \lambda x. t_1, ..., \lambda x. t_n \rangle \tag{$\gamma_2$}
+    \end{align}
+similar to our typed $\LambdaUnion$-calculus.
+
+\subsection{Exception analyses}
+
+Several exception analyses have been described in the literature; these primarily target the detection of uncaught exceptions in ML.
+The exception analysis by \cite{kyi} is based on abstract interpretation.
+\cite{Guzman94anextended} and \cite{Fahndrich:1998:TDE:893957} describe type-based exception analyses. \cite{Leroy:2000:TAU:349214.349230} presents a row-based type system for exception analysis that contains a data-flow analysis component targeted towards tracking value-carrying exceptions.
+
+\cite{Glynn:2002:EAN:581478.581488} developed the first exception analysis for a non-strict language; a type-based analysis using Boolean constraints. \cite{Koot:2015:TEA:2678015.2682542} present a constraint-based type system for exception analysis of a non-strict language, where the exception-flow could depend on the data-flow using conditional constraints. This increases the accuracy in the presence of exceptions raised by pattern-matching failures.

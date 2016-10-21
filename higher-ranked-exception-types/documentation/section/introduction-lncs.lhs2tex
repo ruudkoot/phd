@@ -1,0 +1,70 @@
+\section{\ThesisPaper{Motivation}{Introduction}}
+
+%FIXME - ICFP: Haskell -> functional programming language
+%FIXME - ICFP: neutered overview
+
+An often-heard selling point of non-strict functional languages is that they provide strong and expressive type systems that make side-effects explicit. This supposedly makes software more reliable by lessening the mental burden placed on programmers. Many programmers with a background in object-oriented languages are thus quite surprised, when making the transition to a functional language, that they lose a feature their type system formerly did provide: the tracking of uncaught exceptions.
+
+There is an excuse for why this feature is missing from the type systems of contemporary non-strict functional languages: in a strict first-order language it is sufficient to annotate each function with a single set of uncaught exceptions the function may raise; in a non-strict higher-order language the situation becomes significantly more complicated. Let us first consider the two aspects `higher-order' and `non-strict' in isolation:
+
+\begin{description}
+
+    \item [Higher-order functions] The set of exceptions that may be raised by a higher-order function is not given by a fixed set of exceptions, but depends on the set of exceptions that may be raised by the function that is passed as its functional argument. Higher-order functions are thus \emph{exception polymorphic}.
+
+    \item [Non-strict evaluation] In non-strictly evaluated languages, exceptions are not a form of control flow, but a kind of value. Typically the set of values of each type is extended with an \emph{exceptional value} $\lightning$ (more commonly denoted $\bot$, but we shall not do so to avoid ambiguity), or family of exceptional values~$\lightning^\ell$. This means we do not only need to give all functions an exception-annotated function type, but give every other expression an exception-annotated type as well.
+
+\end{description}
+
+%format alphabeta = "\alpha\beta"
+Now let us consider these two aspects in combination. Take as an example the |map| function:
+\begin{code}
+map  ::  forall alphabeta. (alpha -> beta) -> [alpha] -> [beta]
+map  =   LAMBDA f (LAMBDA xs (case xs of
+                           []      -|> []
+                           (y:ys)  -|> f y : map f ys))
+\end{code}
+
+We denote the exception-annotated type of a term by $\widehat\tau\ \&\ \Exn$ or~$\widehat\tau\langle\Exn\rangle$. For function types we occasionally write $\widehat\tau_1\langle\Exn_1\rangle \xrightarrow{\Exn} \widehat\tau_2\langle\Exn_2\rangle$ instead of $\left(\widehat\tau_1\langle\Exn_1\rangle \rightarrow \widehat\tau_2\langle\Exn_2\rangle\right)\!\langle\Exn\rangle$. If $\Exn$ is the empty exception set, then we sometimes omit this annotation completely.
+
+The fully exception-polymorphic and exception-annotated type, or \emph{exception type}, of |map| is\ThesisPaper{\TODO{cramped formatting}}{}
+%format -.> = "\xrightarrow{\emptyset}"
+\begin{code}
+map  ::  forall alpha beta e_2 e_3. (forall e_1. ThrowsArr (Throws alpha e_1) (Throws beta (e_2 e_1)) (e_3))
+                                                        -.> (forall e_4 e_5. Throws ([Throws alpha e_4]) e_5 -.> Throws ([Throws beta (e_2 e_4 # e_3)]) e_5)
+\end{code}
+
+The exception type of the first argument |forall e_1. ThrowsArr (Throws alpha e_1) (Throws beta (e_2 e_1)) (e_3)| states that it can be instantiated with a function that accepts any exceptional value as its argument (as the exception set |e_1| is universally quantified) and returns a possibly exceptional value. In case the return value is exceptional, then it is one from the exception set |e_2 e_1|. Here |e_2| is an \emph{exception set operator}---a function that takes a number of exception sets and exception set operators, and transforms them into another exception set, for example by adding a number of new elements to them, or discarding them and returning the empty set. Furthermore, the function (closure) itself may be an exceptional value from the exception set |e_3|.
+
+The exception type of the second argument |Throws ([Throws alpha e_4]) e_5| states that it should be a list. Any of the exceptional elements in the list must be exceptional values from the exception set |e_4|. Any exceptional values among the constructors that form the spine of the list must be exceptional values from the exception set |e_5|.
+
+The result of |map| is a list with the exception type |Throws ([Throws beta (e_2 e_4 # e_3)]) e_5|. Any exceptional constructors in the spine of this list must be exceptional values from the exception set |e_5|, the same exception set as where exceptional values in the spine of the list argument |xs| come from. By looking at the definition of |map| we can see why this is the case: |map| only produces non-exceptional constructors, but the pattern-match on the list argument |xs| propagates any exceptional values encountered there. The elements of the list are produced by the function application |f y|. Recall that |f| has the exception type |forall e_1. ThrowsArr (Throws alpha e_1) (Throws beta (e_2 e_1)) (e_3)|. Now, one of two things can happen:
+    \begin{enumerate}
+
+        \item If |f| is an exceptional function value, then it must be one from the exception set |e_3|. Applying the exceptional value to an argument causes the exceptional value to be propagated.
+        
+        \item Otherwise, |f| is a non-exceptional value. The argument |y| has exception type |Throws alpha e_4|---it is an element from the list argument |xs|---and so can only be applied to |f| if we instantiate |e_1| to |e_4| first. If |f y| produces an exceptional value, then it is thus one from the exception set |e_2 e_4|.
+        
+    \end{enumerate}
+To account for both cases we need to take the union of the two exception sets, giving us a value with the exception type \mbox{|Throws beta (e_2 e_4 # e_3)|}.
+
+To get a better intuition for the behavior of these exception types and exception set operators, let us see what happens when we apply |map| to two different functions: the identity function |id| and the constant exception-valued function |const bottom_E|. These two functions can individually be given the exception types:
+    \begin{code}
+                    id              = LAMBDA x x            :: forall e_1. ThrowsArr (Throws alpha e_1) (Throws alpha e_1) noexn    
+                    const bottom_E  = LAMBDA x bottom_E     :: forall e_1. ThrowsArr (Throws alpha e_1) (Throws beta e_E) noexn     
+    \end{code}
+The term |id| merely propagates its argument to the result unchanged, so it also propagates any exceptional values unchanged. The term |const bottom_E| discards its argument and always returns the exceptional value |bottom_E|. This behavior of |id| and |const bottom_E| is also reflected in their exception types.
+
+When we apply |map| to |id|, we need to unify the exception type of the formal parameter |forall e_1. ThrowsArr (Throws alpha e_1) (Throws beta (e_2 e_1)) (e_3)| with the exception type of the actual parameter |forall e_1. ThrowsArr (Throws alpha e_1) (Throws alpha e_1) noexn|. This can be accomplished by instantiating |e_3| to |noexn| and |e_2| to |LAMBDA x x|---as |(LAMBDA x x) e_1| evaluates to |e_1|---giving us the resulting exception type
+\begin{code}
+map id                :: forall alpha e_4 e_5. ThrowsArr (Throws ([Throws alpha e_4]) e_5) (Throws ([Throws alpha (e_4)]) e_5) noexn
+\end{code}
+In other words, mapping the identity function over a list propagates all exceptional values already present in the list and introduces no new exceptional values.
+
+When we apply |map| to |const bottom_E| we unify the exception type of the formal parameter with |forall e_1. ThrowsArr (Throws alpha e_1) (Throws beta e_E) noexn|, which can be accomplished by instantiating |e_3| to |noexn| and |e_2| to |LAMBDA x e_E|---as |(LAMBDA x e_E) e_1| evaluates to |e_E|---giving us the exception type
+\begin{code}
+map (const bottom_E)  :: forall alpha beta e_4 e_5. ThrowsArr (Throws ([Throws alpha e_4]) e_5) (Throws ([Throws beta (e_E)]) e_5) noexn
+\end{code}
+In other words, mapping the constant function with the exceptional value |bottom_E| as its range over a list discards all existing exceptional values from the list and produces only non-exceptional values or the exceptional value |bottom_E| as elements of the list.
+
+% LNCS %include introduction/overview.lhs2tex
+% LNCS %include introduction/contributions.lhs2tex

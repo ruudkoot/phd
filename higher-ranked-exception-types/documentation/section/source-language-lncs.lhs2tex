@@ -1,0 +1,53 @@
+\section{Source language}\label{section-source-language}
+
+The type-and-effect system is applicable to a simple non-strict functional language that supports boolean, integer and list data types, as well as general recursion.
+%In this section we briefly state its syntax and semantics.
+%\begin{figure}[h]
+\paragraph{Terms}
+\begin{alignat*}{2}
+    \Tm \in \ClassTm &\ ::=\   &&\ \TmVar                   %\tag{term variable}     \\
+                     \ ||  \ \TmCon{\Ty}              %\tag{term constant}     \\
+                     \ ||  \ \TmCrash{\Ty}{\ExnLbl}   %\tag{exceptional constant}\\
+                     \ ||  \ \TmAbs{\TmVar}{\Ty}{\Tm} %\tag{term abstraction}  \\
+                     \ ||  \ \TmApp{\Tm_1}{\Tm_2}     %\tag{term application}  \\
+                     \ ||  \ \TmFIX{\TmVar}{\Ty}{\Tm} %\tag{general recursion} \\
+                     \\& &&\ \TmSeq{\Tm_1}{\Tm_2}     %\tag{forcing}           \\
+                     \ ||  \ \TmOp{\Tm_1}{\Tm_2}      %\tag{operator}          \\
+                     \ ||  \ \TmIf{\Tm_1}{\Tm_2}{\Tm_3}%\tag{conditional}      \\
+                     \\& &&\ \TmNil{\Ty}              %\tag{nil constructor}   \\
+                     \ ||  \ \TmCons{\Tm_1}{\Tm_2}    %\tag{cons constructor}  \\
+                     \ ||  \ \TmCase{\Tm_1}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}
+                                                            %\tag{list eliminator}
+\end{alignat*}
+\paragraph{Values}
+\begin{alignat}{2}
+\Val \in \ClassVal &\ ::=\  &&\ \TmCon{\Ty}\ ||\ \TmAbs{\TmVar}{\Ty}{\Tm}\ ||\ \TmFIX{\TmVar}{\Ty}{\Tm}\ ||\ \TmNil{\Ty}\ ||\ \TmCons{\Tm_1}{\Tm_2} \notag
+\end{alignat}
+\begin{alignat}{2}
+\ExnVal \in \ClassExnVal &\ ::=\  &&\ \TmCrash{\Ty}{\ExnLbl}\ ||\ \Val \notag
+\end{alignat}
+%\caption{Source language: syntax}\label{figure-source-language-syntax}
+%\end{figure}
+
+Most constructs in the source language should be familiar. The $\mathbf{seq}$-construct evaluates the term on the left to a value and then continues evaluating the term on the right.
+
+Missing from the language is a construct to `catch' exceptional values. While this may be surprising to programmers familiar with strict languages, it is a common design decision to omit such a construct from the pure fragment of non-strict languages. The omission of such a construct allows for the introduction of a certain amount of non-determinism in the operational semantics of the language---giving more freedom to an optimizing compiler---without breaking referential transparency.
+
+The values of the source language are stratified into non-exceptional values $\Val$ and possibly exceptional values $\ExnVal$.
+
+\subsection{Underlying type system}
+
+The type system of the source language is given here for reference. This is the \emph{underlying type system} with respect to the type-and-effect system that is presented in Section~\ref{section-exception-types}. We assume that any term we type in the type-and-effect system is already well-typed in the underlying type system.
+
+%include ../figure/underlying-type-system-lncs.lhs2tex
+
+\subsection{Operational semantics}
+
+The operational semantics of the source language is given below. Note that there is a small amount of non-determinism in the order of reduction. For example, in the reduction rules for primitive operators.
+
+We do not go so far as to have an \emph{imprecise exception semantics} \cite{PeytonJones:1999:SIE:301618.301637}. I.e., when the guard of a conditional evaluates to an exceptional value, we do not continue evaluation of the two branches in exception finding mode.
+
+%include ../figure/operational-semantics-lncs.lhs2tex
+
+The reduction rules on the second row apply to constructs that are introduced to the language in Section~\ref{section-exception-types}. This also holds for the additional annotations on the $\lambda$-abstraction and the $\mathbf{fix}$-operator.
+

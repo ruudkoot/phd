@@ -1,0 +1,28 @@
+* spurous \newpages
+* shrink bibliography by two entries
+  - undo removal of the Bibliography header
+  - undo \small hack if possible
+  - drop clearpage between end of paper and bilbiography
+* change references from names/year to numeric
+* redo layout of figures
+  - smaller fonts
+  - save space on "paragraph headers"
+  - vertical bnf -> horizontal bnf
+    - drop some of the labels
+  - some can be maked wider (because pages are wider than columns)
+  - drop captions
+    - if no incoming references (and those cannot be avoided)
+* make more math fit on singles lines (because pages are wider than columns)
+* drop some paragraph breaks
+* drop sections...
+  - the abstract
+  
+  
+* some lines are too wide
+  
+@ Fig. 1 (exn types & wff) -> non-fig with more paragraph headers
+  
+  
+  # appendix with prototype instructions
+  # reinstate acknowledgemetns
+  # reinstate overview/contributions

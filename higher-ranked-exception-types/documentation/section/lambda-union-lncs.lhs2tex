@@ -1,0 +1,198 @@
+\section{The $\LambdaUnion$-calculus}\label{section-lambda-union}
+
+%FIXME - ICFP: made the syntax of \lambda^\cup into not-a-figure
+%FIXME - ICFP: neutered widening
+
+The $\LambdaUnion$-calculus is a simply typed $\lambda$-calculus extended at the term-level with empty set and singleton set constants, and a set union operator. The $\LambdaUnion$-calculus forms the language of effects in the type-and-effect system developed in Section~\ref{section-exception-types}.
+
+\subsection{Syntax, types and semantics}
+
+We let $\LuVar \in \ClassVar$ range over an infinite set of variables and $c \in \ClassCon$ over a non-empty set of constants. The syntax of types $\LuTy$, terms $\LuTm$, and environments $\LuEnv$ is given by:
+%\begin{figure}[h]
+%\paragraph{Types}
+\begin{align*}
+    \LuTy \in \ClassLuTy \ ::=\ \LuBase \ ||\  \LuArr{\LuTy_1}{\LuTy_2}
+\end{align*}
+%\paragraph{Terms}
+\begin{align*}
+    \LuTm \in \ClassLuTm \ ::=\    \LuVar
+                         \ ||\   \LuAbs{\LuVar}{\LuTy}{\LuTm}
+                         \ ||\   \LuApp{\LuTm_1}{\LuTm_2}
+                         \ ||\   \LuEmpty
+                         \ ||\   \LuCon
+                         \ ||\   \LuUnion{\LuTm_1}{\LuTm_2}
+\end{align*}
+%\paragraph{Environments}
+\begin{align*}
+    \LuEnv \in \ClassLuEnv\ ::=\ \EmptyEnv \ || \ \LuEnv, \LuVar : \LuTy
+\end{align*}
+%\caption{$\LambdaUnion$-calculus: syntax}
+%\end{figure}
+
+%\subsection{Typing relation}
+
+The typing relation of the $\LambdaUnion$-calculus is an extension of the typing relation of the simply typed $\lambda$-calculus.
+% ICFP \begin{figure}[h]
+\begin{gather*}
+    \RulX{T-Var}
+         {}
+         {\JudgeLuTy[\LuEnv, \LuVar : \LuTy]{\LuVar}{\LuTy}}
+    \quad
+    \RulX{T-Abs}
+         {\JudgeLuTy[\LuEnv, \LuVar : \LuTy_1]{\LuTm}{\LuTy_2}}
+         {\JudgeLuTy{\LuAbs{\LuVar}{\LuTy_1}{\LuTm}}{\LuArr{\LuTy_1}{\LuTy_2}}}
+    \quad
+    \RulX{T-App}
+         {\JudgeLuTy{\LuTm_1}{\LuArr{\LuTy_1}{\LuTy_2}} \quad \JudgeLuTy{\LuTm_2}{\LuTy_1}}
+         {\JudgeLuTy{\LuApp{\LuTm_1}{\LuTm_2}}{\LuTy_2}}
+    \VER
+    \RulX{T-Empty}
+         {}
+         {\JudgeLuTy{\LuEmpty}{\LuBase}}
+    \quad
+    \RulX{T-Con}
+         {}
+         {\JudgeLuTy{\LuCon}{\LuBase}}
+    \quad
+    \RulX{T-Union}
+         {\JudgeLuTy{\LuTm_1}{\LuTy} \quad \JudgeLuTy{\LuTm_2}{\LuTy}}
+         {\JudgeLuTy{\LuUnion{\LuTm_1}{\LuTm_2}}{\LuTy}}
+\end{gather*}
+% ICFP \caption{$\LambdaUnion$-calculus: type system}
+% ICFP \end{figure}
+The empty set and singleton set constants are of base type and the set union of two terms can only be taken if the involved terms have the same type.
+
+%\subsection{Semantics}
+
+In the $\LambdaUnion$-calculus, terms are interpreted as sets and types as powersets.
+%\begin{figure}[h]
+    \paragraph{Types and values}
+    \begin{align*}
+        V_\LuBase &= \mathcal{P}(\ClassCon) \\
+        V_{\tau_1 \to \tau_2} &= \mathcal{P}(V_{\tau_1} \to V_{\tau_2})
+    \end{align*}
+    \paragraph{Environments}
+    \begin{align*}
+        \rho &: \ClassVar \to \bigcup \left\{V_\tau \mid \tau\ \mathrm{type}\right\}
+    \end{align*}
+    \paragraph{Terms}
+    \begin{align*}
+        \llbracket \LuVar \rrbracket_\rho &= \rho(x) \\
+        \llbracket \LuAbs{\LuVar}{\LuTy}{\LuTm} \rrbracket_\rho &= \left\{ \lambda v \in V_\tau. \llbracket t \rrbracket_{\rho[\LuVar \mapsto v]} \right\} \\
+        \llbracket \LuApp{\LuTm_1}{\LuTm_2} \rrbracket_\rho &= \bigcup \left\{ \varphi(\llbracket \LuTm_2 \rrbracket_\rho) \mid \varphi \in \llbracket \LuTm_1 \rrbracket_\rho \right\}\\
+        \llbracket \LuEmpty \rrbracket_\rho &= \LuEmpty \\
+        \llbracket \LuCon \rrbracket_\rho &= \LuCon \\
+        \llbracket \LuUnion{\LuTm_1}{\LuTm_2} \rrbracket_\rho &= \llbracket \LuTm_1 \rrbracket_\rho \cup \llbracket \LuTm_2 \rrbracket_\rho
+    \end{align*}
+%    \caption{$\LambdaUnion$-calculus: denotational semantics}
+%\end{figure}
+
+\subsection{Subsumption and observational equivalence}
+
+The set-structure of the $\LambdaUnion$-calculus induces a partial order on the terms.
+
+%\begin{definition}
+%We say that a term environment $\rho$ is \emph{compatible} with a type environment $\Gamma$ if $\mathrm{dom}(\rho) = \mathrm{dom}(\Gamma)$ and for all $x \in \mathrm{dom}(\rho)$ we have that $\Gamma \vdash \rho(x) : \Gamma(x)$.
+%\end{definition}
+
+\begin{definition}
+Denote by $\LuCtx{}$ a \emph{context}---a $\LambdaUnion$-term with a single hole in it---and by $\LuCtx{\LuTm}$ the term obtained by replacing the hole in $\LuCtx{}$ with the term $\LuTm$.
+\end{definition}
+
+\begin{definition}\label{definition-subsumption}
+    Let $\LuTm_1$ and $\LuTm_2$ be terms such that $\JudgeLuTy{\LuTm_1}{\LuTy}$ and $\JudgeLuTy{\LuTm_2}{\LuTy}$.
+    We say the term $\LuTm_2$ \emph{subsumes} the term $\LuTm_1$, written $\JudgeLuSub{\LuTm_1}{\LuTm_2}$, if for any context $\LuCtx{}$ such that $\JudgeLuTy[]{\LuCtx{\LuTm_1}}{\LuBase}$ and $\JudgeLuTy[]{\LuCtx{\LuTm_2}}{\LuBase}$ we have that $\LuDen[\emptyset]{\LuCtx{\LuTm_1}} \subseteq \LuDen[\emptyset]{\LuCtx{\LuTm_2}}$.
+\end{definition}
+
+\begin{definition}
+    Let $\LuTm_1$ and $\LuTm_2$ be terms such that $\JudgeLuTy{\LuTm_1}{\LuTy}$ and $\JudgeLuTy{\LuTm_2}{\LuTy}$.
+    We say that terms $\LuTm_1$ and $\LuTm_2$ are \emph{observationally equivalent}, denoted $\JudgeLuEqv{\LuTm_1}{\LuTm_2}$, if
+    \begin{enumerate}
+        \item $\JudgeLuSub{\LuTm_1}{\LuTm_2}$ and $\JudgeLuSub{\LuTm_2}{\LuTm_1}$, or equivalently that
+        \item for any context $\LuCtx{}$ such that $\JudgeLuTy[]{\LuCtx{\LuTm_1}}{\LuBase}$ and $\JudgeLuTy[]{\LuCtx{\LuTm_2}}{\LuBase}$ we have that $\LuDen[\emptyset]{\LuCtx{\LuTm_1}} = \LuDen[\emptyset]{\LuCtx{\LuTm_2}}$.
+    \end{enumerate}
+\end{definition}
+
+%%include ../theorem/lu-gamma1.lhs2tex
+%%include ../theorem/lu-gamma2.lhs2tex
+%%include ../proof/lu-gamma2-sketch.lhs2tex
+
+\subsection{Normalization}
+
+To reduce $\LambdaUnion$-terms to a canonical normal form we combine the $\beta$-reduction rule of the simply typed $\lambda$-calculus with rewrite rules that deal with the associativity, commutativity, idempotence and identity (\ACIone) properties of the set union operator.
+
+\subsubsection{$\beta$- and $\gamma$-reduction}
+
+If a term $t$ is $\eta$-long---i.e., it cannot be $\eta$-expanded without introducing additional $\beta$-redexes---it can be written in the form
+\begin{align*}
+    t = \lambda x_1 \cdots x_n. f_1(t_{11}, ..., t_{1q_1}) \cup \cdots \cup f_p(t_{p1}, ..., t_{pq_p})
+\end{align*}
+where $f_i$ can be a free or bound variable, a singleton-set constant, or another $\eta$-long term; and $q_i$ is equal to the arity of $f_i$ (for all $1 \leq i \leq p$).
+Here we have removed any empty set constants (unit elements), duplicate terms $f_i(t_{i1}, ..., t_{iq_i})$ (idempotent elements), and `forgotten' how the set union operator associates.
+
+A \emph{normal form} $v$ of a term $t$---obtained by repeatedly applying the reduction rules
+%\begin{figure}[h]
+    \begin{gather*}
+        \RulX{R-Beta}
+             {
+             }
+             {(\lambda x.t_1)\ t_2 \longrightarrow t_1\left[t_2 / x\right]
+             }
+        \quad
+        \RulX{R-Gamma$_1$}
+             {
+             }
+             {(t_1 \cup \cdots \cup t_n) \ t \longrightarrow t_1\ t \cup \cdots \cup t_n\ t
+             }
+        \VER
+        \RulX{R-Gamma$_2$}
+             {
+             }
+             {(\lambda x.t_1) \cup \cdots \cup (\lambda x.t_n) \longrightarrow \lambda x.t_1 \cup \cdots \cup t_n
+             }
+    \end{gather*}
+%\caption{$\LambdaUnion$-calculus: reduction}\label{figure-lu-reduction}
+%\end{figure}
+and removing any empty set constants and duplicate terms---can be written as
+\begin{align*}
+    v = \lambda x_1 \cdots x_n. k_1(v_{11}, ..., v_{1q_1}) \cup \cdots \cup k_p(v_{p1}, ..., v_{pq_p})
+\end{align*}
+where $k_i$ can be a free or bound variable, or a singleton-set constant, but not a $\lambda$-abstraction (as this would form a $\beta$-redex), nor a union (as this would form a $\gamma_1$-redex).
+%For each $k_i, k_j$ with $i < j$ we must also have that $k_i < k_j$ for some total order on $\ClassVar \cup \ClassCon$.
+%Not only does this imply that each term $k_i(v_{i1}, ..., v_{iq_i})$ occurs only once in $k_1(v_{11}, ..., v_{1q_1}), ..., k_p(v_{p1}, ..., v_{pq_p})$, but also the stronger condition that $k_i \neq k_j$ for all $i\neq j$.
+
+\subsubsection{Canonical ordering}
+
+To be able to efficiently check two normalized terms for definitional equality up to \ACIone, we also need to deal with the commutativity of the union operator. We can bring normalized terms into a fully canonical form by defining a total order on terms and using it to order unions of terms.
+
+First, pick a strict total order $\prec$ on variables and constants. The order must be fixed and be invariant under $\alpha$-renaming of variables (for example, choose the De Bruijn index of a variable), but can otherwise be arbitrary.
+We extend this order to a total order on $\beta\gamma$-normal $\eta$-long terms lexicographically:
+\begin{enumerate}
+\item Given two fully applied terms $k(v_1, ..., v_n)$ and $k^\prime(v_1^\prime, ..., v_m^\prime)$ we define:
+\begin{align*}
+    k(v_1, ..., v_n) &\prec k^\prime(v_1^\prime, ..., v_m^\prime) && \text{if $k \prec k^\prime$} \\
+    k(v_1, ..., v_i, ..., v_n) &\prec k(v_1, ..., v_{i-1},v_i^\prime, ..., v_m^\prime) &&\text{if $v_i \prec v_i^\prime$}
+\end{align*}
+\item Given two values $\lambda x_1\cdots x_n. K_1 \cup \cdots \cup K_{i-1} \cup K_i \cup \cdots \cup K_p$ and $\lambda x_1\cdots x_n. K_1 \cup \cdots \cup K_{i-1} \cup K_i^\prime \cup \cdots \cup K_q^\prime$ that have been ordered such that $K_1 \prec \cdots \prec K_{i-1} \prec K_i \prec \cdots \prec K_p$ and $K_1 \prec \cdots \prec K_{i-1} \prec K_i^\prime \prec \cdots \prec K_q^\prime$, we define:
+\begin{align*}
+    &\lambda x_1\cdots x_n. K_1 \cup \cdots \cup K_{i-1} \cup K_i \cup \cdots \cup K_p \\
+    &\quad\quad\quad\quad\prec \lambda x_1\cdots x_n. K_1 \cup \cdots \cup K_{i-1} \cup K_i^\prime \cup \cdots \cup K_q^\prime
+\end{align*}
+if $K_i \prec K_i^\prime$.
+\end{enumerate}
+
+Given a term $t$ with the types of the free variables given by the environment $\Gamma$, we denote by $\llfloor t \rrfloor_\Gamma$ the $\beta\gamma$-normal $\eta$-long and canonically ordered reduction of the term $t$.
+
+\subsection{Pattern unification}
+%Solving equations in $\lambda$-calculi is usually quite hard, but sometimes very easy.
+
+\begin{definition}\label{definition-pattern}
+A $\LambdaUnion$-term is called a \emph{pattern} if it is of the form $f(e_1, ..., e_n)$ where $f$ is a free variable and $e_1, ..., e_n$ are distinct bound variables.
+\end{definition}
+
+Note that this definition is a special case of what is usually called a \emph{pattern} in higher-order unification theory \cite{Miller1991,Dowek:2001:HUM:778522.778525}.
+
+If $f(e_1, ..., e_n)$ is a pattern and $t$ a term, then the equation
+\[ f : \LuTy_1 \to \cdots \to \LuTy_n \to \LuTy \vdash \forall e_1 : \LuTy_1, ..., e_n : \LuTy_n. f(e_1, ..., e_n) = t \]
+has a unique solution given by the unifier \[ \theta = \left[f \mapsto \lambda e_1 : \LuTy_1, ..., e_n : \LuTy_n. t \right]. \]
+

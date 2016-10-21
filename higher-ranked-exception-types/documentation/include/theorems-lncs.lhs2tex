@@ -1,0 +1,11 @@
+%\newtheorem{conjecture}{Conjecture}
+%\newtheorem{corollary}{Corollary}
+%\newtheorem{lemma}{Lemma}
+%\newtheorem{theorem}{Theorem}
+
+%\theoremstyle{definition}
+%\newtheorem{definition}{Definition}
+%\newtheorem{example}{Example}
+\newtheorem{counterexample}{Counterexample}
+
+\newcommand{\IH}[1]{\stackrel{\text{i.h.}}{#1}}

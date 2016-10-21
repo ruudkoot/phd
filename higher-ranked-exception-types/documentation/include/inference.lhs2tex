@@ -4,6 +4,7 @@
 
 % Inference rules
 \newcommand{\Rule}[3]{\frac{#2}{#3}\mbox{\ [\textsc{#1}]}}
+\newcommand{\RulX}[3]{\frac{#2}{#3}}
 \newcommand{\CiteRule}[1]{\mbox{\textsc{#1}}}
 
 \newcommand{\CaseRule}[1]{Case \textsc{#1}: }

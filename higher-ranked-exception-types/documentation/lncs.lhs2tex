@@ -1,0 +1,183 @@
+\documentclass{llncs}
+
+%FIXME - ICFP: Haskell -> functional programming language
+%FIXME - ICFP: neutered overview
+%FIXME - ICFP: neutered section/lambda-union
+%FIXME - ICFP: moved figures around
+%FIXME - ICFP: neutered acknowledgements
+%FIXME - ICFP: neutered bibliography
+
+
+% Math Times
+%\usepackage[T1]{fontenc}
+%\usepackage{times}
+%\usepackage[mtbold,mtplusscr,mtpluscal,slantedgreek,T1]{mathtime}
+%\usepackage{bm}
+
+% MTPro2
+%\usepackage[lite,subscriptcorrection,slantedGreek,nofontinfo]{mtpro2}
+%\usepackage[lite,subscriptcorrection,slantedGreek,nofontinfo]{mtpro2}
+% slantedGreek..?
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+%\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{stmaryrd}
+\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+\usepackage[numbers]{natbib}
+\usepackage{xspace}
+\usepackage{hyperref}
+
+\newcommand{\ThesisPaper}[2]{#2}
+
+\allowdisplaybreaks[1]
+
+%\def\labelitemi{--}
+
+%include polycode.fmt
+%include forall.fmt
+
+%include include/notes.lhs2tex
+%include include/definitions.lhs2tex
+%include include/theorems-lncs.lhs2tex
+%include include/inference.lhs2tex
+%include include/code.lhs2tex
+%include include/refs.lhs2tex
+
+%include definitions/text.lhs2tex
+%include definitions/lambda-union.lhs2tex
+%include definitions/completion.lhs2tex
+%include definitions/type-system.lhs2tex
+%include definitions/operational-semantics.lhs2tex
+%include definitions/algorithm.lhs2tex
+
+\begin{document}
+
+%BEGIN sigplanconf-template.tex
+
+%\special{papersize=8.5in,11in}
+%\setlength{\pdfpageheight}{\paperheight}
+%\setlength{\pdfpagewidth}{\paperwidth}
+
+%\conferenceinfo{CONF 'yy}{Month d--d, 20yy, City, ST, Country} 
+%\copyrightyear{20yy} 
+%\copyrightdata{978-1-nnnn-nnnn-n/yy/mm} 
+%\doi{nnnnnnn.nnnnnnn}
+
+% Uncomment one of the following two, if you are not going for the 
+% traditional copyright transfer agreement.
+
+%\exclusivelicense                 % ACM gets exclusive license to publish, 
+                                  % you retain copyright
+
+%\permissiontopublish             % ACM gets nonexclusive license to publish
+                                  % (paid open-access papers, 
+                                  % short abstracts)
+
+%\titlebanner{banner above paper title}        % These are ignored unless
+%\preprintfooter{short description of paper}   % 'preprint' option specified.
+
+\title{Higher-ranked Exception Types}
+\author{Ruud Koot\\\texttt{inbox@@ruudkoot.nl}}
+\institute{Utrecht University}
+%\titlenote{Prototype and \textsc{icfp} reviews: \url{https://www.staff.science.uu.nl/~0422819/hret/supplementary-material.tar.gz}}
+% https://www.staff.science.uu.nl/~0422819/hret/supplementary-material.tar.gz
+%\subtitle{Subtitle Text, if any}
+
+%\authorinfo{Ruud Koot}
+%           {Utrecht University}
+%           {inbox@@ruudkoot.nl}
+%\authorinfo{Ruud Koot}
+%           {Utrecht University\titlenote{This material is based upon work supported by the Netherlands Organisation for Scientific Research (\textsc{nwo}) under the project \emph{Higher-ranked Polyvariance Explored} (612.001.120).}}
+%           {inbox@@ruudkoot.nl}
+%\authorinfo{Ruud Koot}
+%           {Utrecht University}
+%           {inbox@@ruudkoot.nl}
+%\authorinfo{Jurriaan Hage}
+%           {Utrecht University}
+%           {j.hage@@uu.nl}
+%\authorinfo{Ruud Koot \and Juriaan Hage}
+%           {Utrecht University\titlenote{This material is based upon work supported by the Netherlands Organisation for Scientific Research (\textsc{nwo}) under the project \emph{Higher-ranked Polyvariance Explored} (612.001.120).}}
+%           {inbox@@ruudkoot.nl \and j.hage@@uu.nl}
+
+%\authorinfo{John Doe}
+%           {ACME University\titlenote{This material may or may not be based upon work supported by some shady organization under a cryptic project title. We categorically deny everything.}}
+%           {john.doe@@acm.org}
+
+
+\maketitle
+
+\begin{abstract}
+%include section/abstract-lncs.lhs2tex
+\end{abstract}
+
+%\category{D.1.1}{Programming Techniques}{Applicative (Functional) Programming}
+%\category{F.3.3}{Logics and Meanings of Programs}{Studies of Program Constructs---Type structure}
+%\category{D.3.3}{Programming Languages}{Language Constructs and Features---Polymorphism}
+%\category{F.3.2}{Logics and Meanings of Programs}{Semantics of Programming Languages---Program analysis}
+
+% general terms are not compulsory anymore, 
+% you may leave them out
+%\terms
+%Languages, Design, Theory
+
+%\keywords
+%exceptions, higher-ranked polymorphism, polymorphic recursion, type-and-effect systems, type-based program analysis, type inference, type operators, unification theory
+
+%END sigplanconf-template.tex
+
+%include section/introduction-lncs.lhs2tex
+%include section/lambda-union-lncs.lhs2tex
+%include section/source-language-lncs.lhs2tex
+%include section/exception-type-system-lncs.lhs2tex
+%include section/type-inference-lncs.lhs2tex
+%include section/related-work-lncs.lhs2tex
+%include section/future-research-lncs.lhs2tex
+%include section/conclusion-lncs.lhs2tex
+
+\section*{Acknowledgements}
+We would like to thank Jurriaan Hage and the members of the Software Technology reading club at Utrecht University for their comments on earlier drafts of this paper. Vincent van Oostrom and Femke van Raamsdonk provided some helpful pointers to related literature.
+
+%\clearpage
+
+%\bibliographystyle{plainnat}
+\bibliographystyle{splncs03}
+\renewcommand{\bibname}{}   %% LNCS HACK
+\small                      %% LNCS HACK
+\bibliography{higher-ranked-exception-types-neutered}
+
+%BEGIN sigplanconf-template.tex
+
+% We recommend abbrvnat bibliography style.
+%\bibliographystyle{abbrvnat}
+
+% The bibliography should be embedded for final submission.
+
+%\begin{thebibliography}{}
+%\softraggedright
+%
+%\bibitem[Smith et~al.(2009)Smith, Jones]{smith02}
+%P. Q. Smith, and X. Y. Jones. ...reference text...
+%
+%\end{thebibliography}
+
+%END sigplanconf-template.tex
+
+
+\clearpage
+
+\appendix
+
+\section{Prototype}
+
+A prototype implementation of the inference algorithm is available from \url{https://www.staff.science.uu.nl/~0422819/hret/supplementary-material.tar.gz}.
+
+\end{document}
+
+%include section/metatheory.lhs2tex
+
+\clearpage
+
+%include appendix/todo.lhs2tex

@@ -1,0 +1,119 @@
+%format RECONSTRUCT                 = "\mathcal{R}"
+%format reconstruct (gam) (del) (tm)  = "\mathcal{R}(" gam "; " del "; " tm ")"
+%format COMPLETE                    = "\mathcal{C}"
+%format complete (env) (ty)         = "\mathcal{C}(" env "; " ty ")"
+%format instantiate (ty)            = "\mathcal{I}(" ty ")"
+%format MATCH                       = "\mathcal{M}"
+%format match (env) (t1) (t2)       = "\mathcal{M}(" env "; " t1 "; " t2 ")"
+
+%format ClassEnv                    = "\ClassEnv"
+%format ClassTy                     = "\ClassTy"
+%format env                         = "\TyEnv"
+%format gamma'                      = "\TyEnv^\prime"
+%format kenv                        = "\KiEnv"
+
+%format Var                         = "\TmVar"
+%format env_x                       = "\TyEnv(x)"
+
+%format (ConX)                      = "c_\Ty"
+%format ty                          = "\Ty"
+%format Result (a) (b) (c)          = a " : " b "\ \&\ " c
+%format (ResultF (a) (b) (c))       = a " : " b "\ \&\ " c
+%format bottomTy                    = "\BottomTy{\Ty}"
+%format ExnEmpty                    = "\ExnEmpty"
+
+%format Crash                       = "\TmCrash{\Ty}{\ExnLbl}"
+%format ExnCon                      = "\ExnCon{\ExnLbl}"
+
+%format Abs                         = "\TmAbs{\TmVar}{\Ty}{\Tm}"
+%format (Tuple  (x) (y))            = x "\ \&\ " y
+%format (TupleI (x) (y))            = x "\triangleright " y
+%format (TupleR (x) (y) (z))        = x " : " y "\ \&\ " z
+%format (TripleC (x) (y) (z))       = x "\ \&\ " y "\triangleright" z
+%format (TripleX (x) (y) (z))       = x "; " y "\ \&\ " z
+%format ExnTy                       = "\ExnTy"
+%format ExnTy'                      = "\ExnTy^\prime"
+%format ExnTy''                     = "\ExnTy^{\prime\prime}"
+%format ExnTy_0                     = "\ExnTy_0"
+%format ExnTy_1                     = "\ExnTy_1"
+%format ExnTy_2                     = "\ExnTy_2"
+%format ExnTy_2'                    = "\ExnTy_2^\prime"
+%format ExnTy_3                     = "\ExnTy_3"
+%format ExnVar'                     = "\ExnVar^{\prime}"
+%format ExnVar_1                    = "\ExnVar_1"
+%format ExnVar_2'                   = "\ExnVar_2^\prime"
+%format Exn                         = "\Exn"
+%format Exn'                        = "\Exn^\prime"
+%format Exn''                       = "\Exn^{\prime\prime}"
+%format Exn_0                       = "\Exn_0"
+%format Exn_1                       = "\Exn_1"
+%format Exn_1'                      = "\Exn_1^\prime"
+%format Exn_2                       = "\Exn_2"
+%format Exn_2'                      = "\Exn_2^\prime"
+%format Exn_3                       = "\Exn_3"
+%format kenv'                       = "\overline{\ExnVar_i :: \Kind_i}"
+%format EmptyEnv                    = "\emptyset"
+%format (extendTyEnv env x (t) e)   = env ", " x " : " t "\ \&\ " e
+%format Tm                          = "\Tm"
+%format tm                          = "\Tm"
+%format tm'
+%format tm'_i                       = "\Tm^\prime_i"
+%format tm'_i'                      = "\Tm^\prime_{i+1}"
+%format tm_1
+%format tm'_1
+%format tm_2
+%format tm'_2
+%format tm_3
+%format tm'_3
+%format ExnTyBool                   = "\ExnBool"
+%format ExnTyInt                    = "\ExnInt"
+%format ExnTyArr (a) (b) (c) (d)    = "\ExnTyArr{" a "}{" b "}{" c "}{" d "}"
+%format ExnForall (a) (b)           = "\ExnForall{" a "}{" b "}"
+
+%format App                         = "\TmApp{\Tm_1}{\Tm_2}"
+%format subst                       = "\theta"
+%format Subst (x) (y)               = "\left[" x "\mapsto " y "\right]"
+%format ExnUnion (a) (b)            = "\ExnUnion{" a "}{" b "}"
+%format applySubst (x)              = "\theta " x
+%format (simplify (kenv) (x))       = "\llfloor " x "\rrfloor_{" kenv "}"
+
+%format Fix                         = "\TmFIX{\TmVar}{\Ty}{\Tm}"
+%format ElabFix                     = "\TmFixExn{\TmVar}{\ExnTy_i}{\Exn_i}{\Tm^\prime_i}"
+%format Exn_i                       = "\Exn_i"
+%format Exn_i1                      = "\Exn_{i+1}"
+%format Exn_im                      = "\Exn_{i-1}"
+%format Exn_w                       = "\Exn_\omega"
+%format Exn_w'                      = "\Exn_\omega^\prime"
+%format ExnTy_i                     = "\ExnTy_i"
+%format ExnTy_i1                    = "\ExnTy_{i+1}"
+%format ExnTy_im                    = "\ExnTy_{i-1}"
+%format ExnTy_w                     = "\ExnTy_\omega"
+%format ExnTy_w'                    = "\ExnTy_\omega^\prime"
+%format bottomTyU                   = "\BottomTy{\Ty}"
+%format until                       = "\mathbf{until}"
+%format return                      = "\mathbf{return}"
+
+%format BinOp                       = "\TmOp{\Tm_1}{\Tm_2}"
+%format ElabBinOp                   = "\TmOp{\Tm^\prime_1}{\Tm^\prime_2}"
+
+%format Seq                         = "\TmSeq{\Tm_1}{\Tm_2}"
+%format ElabSeq                     = "\TmSeq{\Tm^\prime_1}{\Tm^\prime_2}"
+
+%format If                          = "\TmIf{\Tm_1}{\Tm_2}{\Tm_3}"
+%format ElabIf                      = "\TmIf{\Tm^\prime_1}{\Tm^\prime_2}{\Tm^\prime_3}"
+%format ExnTyJoin a b               = "\TyJoin{" a "}{" b "}"
+
+%format Nil                         = "\TmNil{\Ty}"
+%format ExnTyList a (b)             = "\ExnTyList{" a "}{" b "}"
+
+%format Cons                        = "\TmCons{\Tm_1}{\Tm_2}"
+
+%format Case                        = "\TmCase{\Tm_1}{\Tm_2}{\TmVar_1}{\TmVar_2}{\Tm_3}"
+%format ElabCase                    = "\TmCase{\Tm^\prime_1}{\Tm^\prime_2}{\TmVar_1}{\TmVar_2}{\Tm^\prime_3}"
+
+%format Var_1
+%format Var_2
+
+%format repeat                      = "\mathbf{repeat}"
+%format ElabAbs                     = "\TmAnnAbsS{\ExnVar_i}{\Kind_i}{\TmAbsExn{\TmVar}{\ExnTy_1}{e}{\Tm^\prime}}"
+%format ElabApp                     = "\TmApp{\TmAnnApp{\Tm_1^\prime}{\overline{\theta e_i}}}{\Tm_2^\prime}"
